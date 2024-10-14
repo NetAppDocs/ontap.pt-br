@@ -1,0 +1,52 @@
+---
+permalink: encryption-at-rest/enable-root-volume-encryption-task.html 
+sidebar: sidebar 
+keywords: root, volume, encryption, enabling, node 
+summary: A partir do ONTAP 9.8, você pode usar a criptografia de volume do NetApp para proteger o volume raiz do nó. 
+---
+= Habilite a criptografia de volume raiz do nó
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.8, você pode usar a criptografia de volume do NetApp para proteger o volume raiz do nó.
+
+.Sobre esta tarefa
+
+NOTE: Este procedimento aplica-se ao volume raiz do nó. Isso não se aplica aos volumes raiz do SVM. Os volumes de raiz da SVM podem ser protegidos com a criptografia no nível de agregado e, xref:configure-nve-svm-root-task.html[A partir do ONTAP 9.14,1, NVE].
+
+Assim que a criptografia de volume raiz começar, ela deve ser concluída. Não é possível interromper a operação. Quando a criptografia estiver concluída, você não poderá atribuir uma nova chave ao volume raiz e não poderá executar uma operação de limpeza segura.
+
+.Antes de começar
+* Seu sistema precisa estar usando uma configuração de HA.
+* O volume raiz do nó já deve ser criado.
+* Seu sistema precisa ter um gerenciador de chaves integrado ou um servidor externo de gerenciamento de chaves usando o Key Management Interoperability Protocol (KMIP).
+
+
+.Passos
+. Encriptar o volume raiz:
++
+`volume encryption conversion start -vserver _SVM_name_ -volume _root_vol_name_`
+
+. Verifique o status da operação de conversão:
++
+`volume encryption conversion show`
+
+. Quando a operação de conversão estiver concluída, verifique se o volume está criptografado:
++
+`volume show -fields`
+
++
+A seguir mostra exemplos de saída para um volume criptografado.
+
++
+[listing]
+----
+::> volume show -vserver xyz  -volume vol0 -fields is-encrypted
+vserver    volume is-encrypted
+---------- ------ ------------
+xyz        vol0   true
+----
+

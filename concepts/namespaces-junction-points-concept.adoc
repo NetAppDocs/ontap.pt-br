@@ -1,0 +1,36 @@
+---
+permalink: concepts/namespaces-junction-points-concept.html 
+sidebar: sidebar 
+keywords: namespaces, junction points 
+summary: Um namespace nas é um agrupamento lógico de volumes Unidos em pontos de junção para criar uma única hierarquia de sistema de arquivos. Um cliente com permissões suficientes pode acessar arquivos no namespace sem especificar a localização dos arquivos no armazenamento. Os volumes Junctioned podem residir em qualquer lugar do cluster. 
+---
+= Namespaces e pontos de junção
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um nas _namespace_ é um agrupamento lógico de volumes Unidos em _pontos de junção_ para criar uma única hierarquia de sistema de arquivos. Um cliente com permissões suficientes pode acessar arquivos no namespace sem especificar a localização dos arquivos no armazenamento. Os volumes Junctioned podem residir em qualquer lugar do cluster.
+
+Em vez de montar cada volume contendo um arquivo de interesse, os clientes nas montam um NFS _export_ ou acessam um SMB _share._ a exportação ou compartilhamento representa todo o namespace ou um local intermediário dentro do namespace. O cliente acessa apenas os volumes montados abaixo do seu ponto de acesso.
+
+Você pode adicionar volumes ao namespace conforme necessário. Você pode criar pontos de junção diretamente abaixo de uma junção de volume pai ou em um diretório dentro de um volume. Um caminho para uma junção de volume para um volume chamado "'vol3" pode ser `/vol1/vol2/vol3`, ou `/vol1/dir2/vol3`, ou mesmo `/dir1/dir2/vol3`. O caminho é chamado de _caminho de junção._
+
+Cada SVM tem um namespace único. O volume raiz da SVM é o ponto de entrada para a hierarquia de namespace.
+
+[NOTE]
+====
+Para garantir que os dados permaneçam disponíveis no caso de uma interrupção do nó ou failover, você deve criar uma cópia de _load-sharing mirror_ para o volume raiz da SVM.
+
+====
+image:namespace-concepts.gif["Namespace e pontos de junção"]
+
+.Exemplo
+O exemplo a seguir cria um volume chamado "home4" localizado na SVM VS1 que tem um caminho de junção `/eng/home` :
+
+[listing]
+----
+cluster1::> volume create -vserver vs1 -volume home4 -aggregate aggr1 -size 1g -junction-path /eng/home
+[Job 1642] Job succeeded: Successful
+----

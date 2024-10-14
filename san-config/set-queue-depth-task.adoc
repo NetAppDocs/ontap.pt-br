@@ -1,0 +1,489 @@
+---
+permalink: san-config/set-queue-depth-task.html 
+sidebar: sidebar 
+keywords: calculate, queue depth 
+summary: Talvez seja necessário ajustar a profundidade da fila FC no host para alcançar os valores máximos de ITNs por nó e ventilador de porta FC. O número máximo de LUNs e o número de HBAs que podem se conetar a uma porta FC são limitados pela profundidade de fila disponível nas portas de destino FC. 
+---
+= Defina as profundidades da fila em hosts SAN
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Talvez seja necessário alterar as profundidades da fila em seu host para alcançar os valores máximos de ITNs por nó e ventilador de porta FC.
+
+
+
+== AIX anfitriões
+
+Você pode alterar a profundidade da fila em hosts AIX usando o `chdev` comando. As alterações feitas usando o `chdev` comando persistem nas reinicializações.
+
+Exemplos:
+
+* Para alterar a profundidade da fila do dispositivo hdisk7, use o seguinte comando:
++
+`chdev -l hdisk7 -a queue_depth=32`
+
+* Para alterar a profundidade da fila para o HBA fcs0, use o seguinte comando:
++
+`chdev -l fcs0 -a num_cmd_elems=128`
+
++
+O valor padrão para `num_cmd_elems` é 200. O valor máximo é 2.048.
+
++
+[NOTE]
+====
+Pode ser necessário colocar o HBA off-line para mudar `num_cmd_elems` e depois colocá-lo de volta on-line usando os `rmdev -l fcs0 -R` comandos e. `makdev -l fcs0 -P`
+
+====
+
+
+
+
+== Hosts HP-UX
+
+Você pode alterar a profundidade da fila de LUN ou dispositivo em hosts HP-UX usando o parâmetro kernel `scsi_max_qdepth` . Você pode alterar a profundidade da fila HBA usando o parâmetro kernel `max_fcp_reqs` .
+
+* O valor padrão para `scsi_max_qdepth` é 8. O valor máximo é 255.
++
+`scsi_max_qdepth` pode ser alterado dinamicamente em um sistema em execução usando a `-u` opção no `kmtune` comando. A alteração será efetiva para todos os dispositivos no sistema. Por exemplo, use o seguinte comando para aumentar a profundidade da fila de LUN para 64:
+
++
+`kmtune -u -s scsi_max_qdepth=64`
+
++
+É possível alterar a profundidade da fila para arquivos de dispositivos individuais usando o `scsictl` comando. As alterações usando o `scsictl` comando não são persistentes em todas as reinicializações do sistema. Para exibir e alterar a profundidade da fila de um arquivo de dispositivo específico, execute o seguinte comando:
+
++
+`scsictl -a /dev/rdsk/c2t2d0`
+
++
+`scsictl -m queue_depth=16 /dev/rdsk/c2t2d0`
+
+* O valor padrão para `max_fcp_reqs` é 512. O valor máximo é 1024.
++
+O kernel deve ser reconstruído e o sistema deve ser reinicializado para que as alterações `max_fcp_reqs` entrem em vigor. Para alterar a profundidade da fila HBA para 256, por exemplo, use o seguinte comando:
+
++
+`kmtune -u -s max_fcp_reqs=256`
+
+
+
+
+
+== Hosts Solaris
+
+Você pode definir a profundidade da fila de LUN e HBA para seus hosts Solaris.
+
+* Para a profundidade da fila de LUN: O número de LUNs em uso em um host multiplicado pelo acelerador por lun (profundidade da fila de lun) deve ser menor ou igual ao valor de profundidade da fila de tgt no host.
+* Para a profundidade da fila em uma pilha Sun: Os drivers nativos não permitem configurações por LUN ou por destino `max_throttle` no nível HBA. O método recomendado para definir o `max_throttle` valor para drivers nativos está em um nível por tipo de dispositivo (VID_PID) nos `/kernel/drv/sd.conf` arquivos e `/kernel/drv/ssd.conf`. O utilitário de host define esse valor como 64 para configurações MPxIO e 8 para configurações Veritas DMP.
+
+
+.Passos
+. `# cd/kernel/drv`
+. `# vi lpfc.conf`
+. PESQUISE `/tft-queue (/tgt-queue)`
++
+`tgt-queue-depth=32`
+
++
+[NOTE]
+====
+O valor padrão é definido como 32 na instalação.
+
+====
+. Defina o valor desejado com base na configuração do seu ambiente.
+. Salve o arquivo.
+. Reinicie o host usando o `+sync; sync; sync; reboot -- -r+` comando.
+
+
+
+
+== Hosts VMware para um HBA QLogic
+
+Use o `esxcfg-module` comando para alterar as configurações de tempo limite do HBA. A atualização manual do `esx.conf` ficheiro não é recomendada.
+
+.Passos
+. Faça logon no console de serviço como usuário raiz.
+. Use o `#vmkload_mod -l` comando para verificar qual módulo Qlogic HBA está atualmente carregado.
+. Para uma única instância de um Qlogic HBA, execute o seguinte comando:
++
+`#esxcfg-module -s ql2xmaxqdepth=64 qla2300_707`
+
++
+[NOTE]
+====
+Este exemplo usa o módulo qla2300_707. Use o módulo apropriado com base na saída do `vmkload_mod -l`.
+
+====
+. Salve suas alterações usando o seguinte comando:
++
+`#/usr/sbin/esxcfg-boot -b`
+
+. Reinicie o servidor usando o seguinte comando:
++
+`#reboot`
+
+. Confirme as alterações utilizando os seguintes comandos:
++
+.. `#esxcfg-module -g qla2300_707`
+.. `qla2300_707 enabled = 1 options = 'ql2xmaxqdepth=64'`
+
+
+
+
+
+
+== Hosts VMware para um Emulex HBA
+
+Use o `esxcfg-module` comando para alterar as configurações de tempo limite do HBA. A atualização manual do `esx.conf` ficheiro não é recomendada.
+
+.Passos
+. Faça logon no console de serviço como usuário raiz.
+. Use o `#vmkload_mod -l grep lpfc` comando para verificar qual Emulex HBA está atualmente carregado.
+. Para uma única instância de um Emulex HBA, digite o seguinte comando:
++
+`#esxcfg-module -s lpfc0_lun_queue_depth=16 lpfcdd_7xx`
+
++
+[NOTE]
+====
+Dependendo do modelo do HBA, o módulo pode ser lpfcdd_7xx ou lpfcdd_732. O comando acima usa o módulo lpfcdd_7xx. Você deve usar o módulo apropriado com base no resultado `vmkload_mod -l` do .
+
+====
++
+Executar este comando irá definir a profundidade da fila de LUN para 16 para o HBA representado por lpfc0.
+
+. Para várias instâncias de um Emulex HBA, execute o seguinte comando:
++
+`a esxcfg-module -s "lpfc0_lun_queue_depth=16 lpfc1_lun_queue_depth=16" lpfcdd_7xx`
+
++
+A profundidade da fila LUN para lpfc0 e a profundidade da fila LUN para lpfc1 estão definidas para 16.
+
+. Introduza o seguinte comando:
++
+`#esxcfg-boot -b`
+
+. Reinicie usando `#reboot`o .
+
+
+
+
+== Windows hosts para um Emulex HBA
+
+Em hosts do Windows, você pode usar o `LPUTILNT` utilitário para atualizar a profundidade da fila para HBAs Emulex.
+
+.Passos
+. Execute o `LPUTILNT` utilitário localizado no `C:\WINNT\system32` diretório.
+. Selecione *Drive Parameters* no menu à direita.
+. Role para baixo e clique duas vezes em *QueueDepth*.
++
+[NOTE]
+====
+Se você estiver definindo *QueueDepth* maior que 150, o seguinte valor do Registro do Windows também precisará ser aumentado adequadamente:
+
+`HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\lpxnds\Parameters\Device\NumberOfRequests`
+
+====
+
+
+
+
+== Hosts do Windows para um HBA Qlogic
+
+Em hosts do Windows, você pode usar o `SANsurfer` utilitário gerenciador HBA para atualizar as profundidades da fila para HBAs Qlogic.
+
+.Passos
+. Execute o `SANsurfer` utilitário gerenciador HBA.
+. Clique em *HBA port* > *Settings*.
+. Clique em *Advanced HBA port settings* (Definições avançadas da porta HBA) na caixa de listagem.
+. Atualize `Execution Throttle` o parâmetro.
+
+
+
+
+== Hosts Linux para Emulex HBA
+
+Você pode atualizar as profundidades da fila de um Emulex HBA em um host Linux. Para tornar as atualizações persistentes nas reinicializações, você deve criar uma nova imagem de disco RAM e reinicializar o host.
+
+.Passos
+. Identificar os parâmetros de profundidade da fila a modificar:
++
+`modinfo lpfc|grep queue_depth`
+
++
+É apresentada a lista de parâmetros de profundidade da fila com a respetiva descrição. Dependendo da versão do sistema operacional, você pode modificar um ou mais dos seguintes parâmetros de profundidade de fila:
+
++
+** `lpfc_lun_queue_depth`: Número máximo de comandos FC que podem ser enfileirados para um LUN específico (uint)
+** `lpfc_hba_queue_depth`: Número máximo de comandos FC que podem ser enfileirados para um HBA lpfc (uint)
+** `lpfc_tgt_queue_depth`: Número máximo de comandos FC que podem ser enfileirados para uma porta de destino específica (uint)
++
+O `lpfc_tgt_queue_depth` parâmetro é aplicável somente para sistemas Red Hat Enterprise Linux 7.x, sistemas SUSE Linux Enterprise Server 11 SP4 e sistemas 12.x.
+
+
+
+. Atualize as profundidades da fila adicionando os parâmetros de profundidade da fila ao `/etc/modprobe.conf` arquivo de um sistema Red Hat Enterprise Linux 5.x e ao `/etc/modprobe.d/scsi.conf` arquivo de um sistema Red Hat Enterprise Linux 6.x ou 7.x, ou de um sistema SUSE Linux Enterprise Server 11.x ou 12.x.
++
+Dependendo da versão do sistema operacional, você pode adicionar um ou mais dos seguintes comandos:
+
++
+** `options lpfc lpfc_hba_queue_depth=new_queue_depth`
+** `options lpfc lpfc_lun_queue_depth=new_queue_depth`
+** `options lpfc_tgt_queue_depth=new_queue_depth`
+
+
+. Crie uma nova imagem de disco RAM e reinicie o host para tornar as atualizações persistentes nas reinicializações.
++
+Para obter mais informações, consulte o link:../system-admin/index.html["Administração do sistema"] para sua versão do sistema operacional Linux.
+
+. Verifique se os valores de profundidade da fila são atualizados para cada parâmetro de profundidade da fila que você modificou:
++
+
+
++
+[listing]
+----
+root@localhost ~]#cat /sys/class/scsi_host/host5/lpfc_lun_queue_depth
+      30
+----
++
+É apresentado o valor atual da profundidade da fila.
+
+
+
+
+
+== Hosts Linux para QLogic HBA
+
+Você pode atualizar a profundidade da fila de dispositivos de um driver QLogic em um host Linux. Para tornar as atualizações persistentes nas reinicializações, você deve criar uma nova imagem de disco RAM e reinicializar o host. Você pode usar a interface de linha de comando (CLI) do QLogic HBA para modificar a profundidade da fila do QLogic HBA.
+
+Esta tarefa mostra como utilizar a CLI do QLogic HBA para modificar a profundidade da fila do QLogic HBA
+
+.Passos
+. Identificar o parâmetro de profundidade da fila do dispositivo a ser modificado:
++
+`modinfo qla2xxx | grep ql2xmaxqdepth`
+
++
+Você pode modificar apenas o `ql2xmaxqdepth` parâmetro de profundidade da fila, que indica a profundidade máxima da fila que pode ser definida para cada LUN. O valor padrão é 64 para RHEL 7,5 e posterior. O valor padrão é 32 para RHEL 7,4 e anterior.
+
++
+[listing]
+----
+root@localhost ~]# modinfo qla2xxx|grep ql2xmaxqdepth
+parm:       ql2xmaxqdepth:Maximum queue depth to set for each LUN. Default is 64. (int)
+----
+. Atualize o valor de profundidade da fila do dispositivo:
++
+** Se você quiser tornar as modificações persistentes, execute as seguintes etapas:
++
+... Atualize as profundidades da fila adicionando o parâmetro profundidade da fila ao `/etc/modprobe.conf` arquivo para um sistema Red Hat Enterprise Linux 5.x e ao `/etc/modprobe.d/scsi.conf` arquivo para um sistema Red Hat Enterprise Linux 6.x ou 7.x, ou para um sistema SUSE Linux Enterprise Server 11.x ou 12.x: `options qla2xxx ql2xmaxqdepth=new_queue_depth`
+... Crie uma nova imagem de disco RAM e reinicie o host para tornar as atualizações persistentes nas reinicializações.
++
+Para obter mais informações, consulte o link:../system-admin/index.html["Administração do sistema"] para sua versão do sistema operacional Linux.
+
+
+
+** Se você quiser modificar o parâmetro somente para a sessão atual, execute o seguinte comando:
++
+`echo new_queue_depth > /sys/module/qla2xxx/parameters/ql2xmaxqdepth`
+
++
+No exemplo a seguir, a profundidade da fila é definida como 128.
+
++
+[listing]
+----
+echo 128 > /sys/module/qla2xxx/parameters/ql2xmaxqdepth
+----
+
+
+. Verifique se os valores de profundidade da fila estão atualizados:
++
+`cat /sys/module/qla2xxx/parameters/ql2xmaxqdepth`
+
++
+É apresentado o valor atual da profundidade da fila.
+
+. Modifique a profundidade da fila do QLogic HBA atualizando o parâmetro do firmware `Execution Throttle` a partir do BIOS do QLogic HBA.
++
+.. Inicie sessão na CLI de gestão do QLogic HBA:
++
+`/opt/QLogic_Corporation/QConvergeConsoleCLI/qaucli`
+
+.. No menu principal, selecione a `Adapter Configuration` opção.
++
+[listing]
+----
+[root@localhost ~]# /opt/QLogic_Corporation/QConvergeConsoleCLI/qaucli
+Using config file: /opt/QLogic_Corporation/QConvergeConsoleCLI/qaucli.cfg
+Installation directory: /opt/QLogic_Corporation/QConvergeConsoleCLI
+Working dir: /root
+
+QConvergeConsole
+
+        CLI - Version 2.2.0 (Build 15)
+
+    Main Menu
+
+    1:  Adapter Information
+    **2:  Adapter Configuration**
+    3:  Adapter Updates
+    4:  Adapter Diagnostics
+    5:  Monitoring
+    6:  FabricCache CLI
+    7:  Refresh
+    8:  Help
+    9:  Exit
+
+
+        Please Enter Selection: 2
+----
+.. Na lista de parâmetros de configuração do adaptador, selecione a `HBA Parameters` opção.
++
+[listing]
+----
+1:  Adapter Alias
+    2:  Adapter Port Alias
+    **3:  HBA Parameters**
+    4:  Persistent Names (udev)
+    5:  Boot Devices Configuration
+    6:  Virtual Ports (NPIV)
+    7:  Target Link Speed (iiDMA)
+    8:  Export (Save) Configuration
+    9:  Generate Reports
+   10:  Personality
+   11:  FEC
+(p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 3
+----
+.. Na lista de portas HBA, selecione a porta HBA necessária.
++
+[listing]
+----
+Fibre Channel Adapter Configuration
+
+    HBA Model QLE2562 SN: BFD1524C78510
+      1: Port   1: WWPN: 21-00-00-24-FF-8D-98-E0 Online
+      2: Port   2: WWPN: 21-00-00-24-FF-8D-98-E1 Online
+    HBA Model QLE2672 SN: RFE1241G81915
+      3: Port   1: WWPN: 21-00-00-0E-1E-09-B7-62 Online
+      4: Port   2: WWPN: 21-00-00-0E-1E-09-B7-63 Online
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; ex or 99: Quit)
+        Please Enter Selection: 1
+----
++
+São apresentados os detalhes da porta HBA.
+
+.. No menu HBA Parameters (parâmetros HBA), selecione a `Display HBA Parameters` opção para visualizar o valor atual `Execution Throttle` da opção.
++
+O valor padrão da `Execution Throttle` opção é 65535.
+
++
+[listing]
+----
+HBA Parameters Menu
+
+=======================================================
+HBA           : 2 Port: 1
+SN            : BFD1524C78510
+HBA Model     : QLE2562
+HBA Desc.     : QLE2562 PCI Express to 8Gb FC Dual Channel
+FW Version    : 8.01.02
+WWPN          : 21-00-00-24-FF-8D-98-E0
+WWNN          : 20-00-00-24-FF-8D-98-E0
+Link          : Online
+=======================================================
+
+    1:  Display HBA Parameters
+    2:  Configure HBA Parameters
+    3:  Restore Defaults
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; x or 99: Quit)
+        Please Enter Selection: 1
+--------------------------------------------------------------------------------
+HBA Instance 2: QLE2562 Port 1 WWPN 21-00-00-24-FF-8D-98-E0 PortID 03-07-00
+Link: Online
+--------------------------------------------------------------------------------
+Connection Options             : 2 - Loop Preferred, Otherwise Point-to-Point
+Data Rate                      : Auto
+Frame Size                     : 2048
+Hard Loop ID                   : 0
+Loop Reset Delay (seconds)     : 5
+Enable Host HBA BIOS           : Enabled
+Enable Hard Loop ID            : Disabled
+Enable FC Tape Support         : Enabled
+Operation Mode                 : 0 - Interrupt for every I/O completion
+Interrupt Delay Timer (100us)  : 0
+**Execution Throttle             : 65535**
+Login Retry Count              : 8
+Port Down Retry Count          : 30
+Enable LIP Full Login          : Enabled
+Link Down Timeout (seconds)    : 30
+Enable Target Reset            : Enabled
+LUNs Per Target                : 128
+Out Of Order Frame Assembly    : Disabled
+Enable LR Ext. Credits         : Disabled
+Enable Fabric Assigned WWN     : N/A
+
+Press <Enter> to continue:
+----
+.. Pressione *Enter* para continuar.
+.. No menu HBA Parameters (parâmetros HBA), selecione a `Configure HBA Parameters` opção para modificar os parâmetros HBA.
+.. No menu Configurar parâmetros, selecione a `Execute Throttle` opção e atualize o valor deste parâmetro.
++
+[listing]
+----
+Configure Parameters Menu
+
+=======================================================
+HBA           : 2 Port: 1
+SN            : BFD1524C78510
+HBA Model     : QLE2562
+HBA Desc.     : QLE2562 PCI Express to 8Gb FC Dual Channel
+FW Version    : 8.01.02
+WWPN          : 21-00-00-24-FF-8D-98-E0
+WWNN          : 20-00-00-24-FF-8D-98-E0
+Link          : Online
+=======================================================
+
+    1:  Connection Options
+    2:  Data Rate
+    3:  Frame Size
+    4:  Enable HBA Hard Loop ID
+    5:  Hard Loop ID
+    6:  Loop Reset Delay (seconds)
+    7:  Enable BIOS
+    8:  Enable Fibre Channel Tape Support
+    9:  Operation Mode
+   10:  Interrupt Delay Timer (100 microseconds)
+   11:  Execution Throttle
+   12:  Login Retry Count
+   13:  Port Down Retry Count
+   14:  Enable LIP Full Login
+   15:  Link Down Timeout (seconds)
+   16:  Enable Target Reset
+   17:  LUNs per Target
+   18:  Enable Receive Out Of Order Frame
+   19:  Enable LR Ext. Credits
+   20:  Commit Changes
+   21:  Abort Changes
+
+
+        (p or 0: Previous Menu; m or 98: Main Menu; x or 99: Quit)
+        Please Enter Selection: 11
+Enter Execution Throttle [1-65535] [65535]: 65500
+----
+.. Pressione *Enter* para continuar.
+.. No menu Configurar parâmetros, selecione a `Commit Changes` opção para guardar as alterações.
+.. Saia do menu.
+
+
+

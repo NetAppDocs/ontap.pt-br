@@ -1,0 +1,212 @@
+---
+sidebar: sidebar 
+permalink: high-availability/ha_automatic_giveback_commands.html 
+keywords: ontap, high, availability, ha, pair, automatic, giveback, commands 
+summary: Comandos automáticos de giveback 
+---
+= Comandos automáticos de giveback
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Por padrão, o nó de parceiro de tomada de controle automaticamente devolve o armazenamento quando o nó off-line é colocado de volta na linha, restaurando assim a relação de par de alta disponibilidade. Na maioria dos casos, este é o comportamento desejado. Se você precisar desativar a giveback automática - por exemplo, se você quiser investigar a causa da aquisição antes de devolver - você precisa estar ciente da interação de configurações não padrão.
+
+|===
+
+
+| Se você quiser... | Use este comando... 
+
+
+ a| 
+Ative a giveback automática para que a giveback ocorra assim que o nó de tomada de posse for inicializado, atinja o estado de espera por Giveback e o atraso antes do período de retorno automático expirar.
+
+A configuração padrão é true.
+ a| 
+`storage failover modify ‑node _nodename_ ‑auto‑giveback true`
+
+
+
+ a| 
+Desativar a giveback automática. A configuração padrão é true.
+
+*Nota:* a definição deste parâmetro como false não desativa a giveback automática após a aquisição em pânico; a opção automática de domínio após a aquisição em pânico deve ser desativada definindo o `‑auto‑giveback‑after‑panic` parâmetro como false.
+ a| 
+`storage failover modify ‑node _nodename_ ‑auto‑giveback false`
+
+
+
+ a| 
+Desativar a giveback automática após a aquisição em pânico (esta definição está ativada por predefinição).
+ a| 
+`storage failover modify ‑node _nodename_ ‑auto‑giveback‑after‑panic false`
+
+
+
+ a| 
+Atrasar a giveback automática por um determinado número de segundos (o padrão é 600). Essa opção determina o tempo mínimo que um nó permanece no takeover antes de executar um giveback automático.
+ a| 
+`storage failover modify ‑node _nodename_ ‑delay‑seconds _seconds_`
+
+|===
+
+
+== Como as variações do comando de modificação de failover de armazenamento afetam a giveback automática
+
+A operação de giveback automático depende de como você configura os parâmetros do comando de modificação de failover de armazenamento.
+
+A tabela a seguir lista as configurações padrão para os `storage failover modify` parâmetros de comando que se aplicam a eventos de controle não causados por um pânico.
+
+|===
+
+
+| Parâmetro | Predefinição 
+
+
+ a| 
+`-auto-giveback _true_ | _false_`
+ a| 
+`_true_`
+
+
+
+ a| 
+`-delay-seconds _integer_ (seconds)`
+ a| 
+600
+
+
+
+ a| 
+`-onreboot _true_ | _false_`
+ a| 
+`_true_`
+
+|===
+A tabela a seguir descreve como as combinações dos `-onreboot` parâmetros e `-auto-giveback` afetam a giveback automática para eventos de aquisição não causados por pânico.
+
+|===
+
+
+| `storage failover modify` parâmetros utilizados | Causa da aquisição | Ocorre giveback automático? 
+
+
+ a| 
+`-onreboot _true_`
+
+`-auto-giveback _true_`
+| reinicie o comando | Sim 
+
+
+| Comando de parada, ou operação do ciclo de energia emitida pelo processador de serviço | Sim 
+
+
+ a| 
+`-onreboot _true_`
+
+`-auto-giveback _false_`
+| reinicie o comando | Sim 
+
+
+| Comando de parada, ou operação do ciclo de energia emitida pelo processador de serviço | Não 
+
+
+ a| 
+`-onreboot _false_`
+
+`-auto-giveback _true_`
+| reinicie o comando | N/A neste caso, a aquisição não ocorre 
+
+
+| Comando de parada, ou operação do ciclo de energia emitida pelo processador de serviço | Sim 
+
+
+ a| 
+`-onreboot _false_`
+
+`-auto-giveback _false_`
+| reinicie o comando | Não 
+
+
+| Comando de parada, ou operação do ciclo de energia emitida pelo processador de serviço | Não 
+|===
+O `-auto-giveback` parâmetro controla giveback após pânico e todas as outras tomadas automáticas. Se o `-onreboot` parâmetro estiver definido como `true` e ocorrer uma aquisição devido a uma reinicialização, a execução automática da giveback será sempre realizada, independentemente de o `-auto-giveback` parâmetro estar definido como `true`.
+
+O `-onreboot` parâmetro aplica-se a reinicializações e comandos de parada emitidos a partir do ONTAP. Quando o `-onreboot` parâmetro é definido como false, um controle não ocorre no caso de uma reinicialização de nó. Portanto, a giveback automática não pode ocorrer, independentemente de o `-auto-giveback` parâmetro estar definido como true. Ocorre uma interrupção do cliente.
+
+
+
+== Os efeitos de combinações automáticas de parâmetros de giveback que se aplicam a situações de pânico.
+
+A tabela a seguir lista os `storage failover modify` parâmetros de comando que se aplicam a situações de pânico:
+
+|===
+
+
+| Parâmetro | Predefinição 
+
+
+ a| 
+`-onpanic _true | false_`
+ a| 
+`_true_`
+
+
+
+ a| 
+`-auto-giveback-after-panic _true | false_`
+
+(Privilégio: Avançado)
+ a| 
+`_true_`
+
+
+
+ a| 
+`-auto-giveback _true | false_`
+ a| 
+`_true_`
+
+|===
+A tabela a seguir descreve como as combinações de parâmetros `storage failover modify` do comando afetam a giveback automática em situações de pânico.
+
+[cols="60,40"]
+|===
+
+
+| `storage failover` parâmetros utilizados | A giveback automática ocorre após o pânico? 
+
+
+| `-onpanic true`
+`-auto-giveback true`
+`-auto-giveback-after-panic true` | Sim 
+
+
+| `-onpanic true`
+`-auto-giveback true`
+`-auto-giveback-after-panic false` | Sim 
+
+
+| `-onpanic true`
+`-auto-giveback false`
+`-auto-giveback-after-panic true` | Sim 
+
+
+| `-onpanic true`
+`-auto-giveback false`
+`-auto-giveback-after-panic false` | Não 
+
+
+| `-onpanic false` Se `-onpanic` estiver definido como `false`, a aquisição/giveback não ocorrerá, independentemente do valor definido para `-auto-giveback` ou `-auto-giveback-after-panic` | Não 
+|===
+
+NOTE: Uma aquisição pode resultar de uma falha não associada a um pânico. Uma _falha_ é experimentada quando a comunicação é perdida entre um nó e seu parceiro, também chamada de _perda de heartbeat_. Se uma aquisição ocorrer devido a uma falha, a giveback é controlada pelo `-onfailure` parâmetro em vez do `-auto-giveback-after-panic parameter`.
+
+
+NOTE: Quando um nó entra em pânico, ele envia um pacote de pânico para seu nó parceiro. Se, por qualquer motivo, o pacote de pânico não for recebido pelo nó do parceiro, o pânico pode ser mal interpretado como uma falha. Sem o recebimento do pacote de pânico, o nó do parceiro sabe apenas que a comunicação foi perdida e não sabe que ocorreu um pânico. Neste caso, o nó parceiro processa a perda de comunicação como uma falha em vez de um pânico, e a giveback é controlada pelo `-onfailure` parâmetro (e não pelo `-auto-giveback-after-panic parameter`).
+
+Para obter detalhes sobre todos `storage failover modify` os parâmetros, consulte link:https://docs.netapp.com/us-en/ontap-cli/storage-failover-modify.html["Páginas de manual do ONTAP"].

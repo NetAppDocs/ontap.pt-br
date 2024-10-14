@@ -1,0 +1,79 @@
+---
+permalink: system-admin/sp-concept.html 
+sidebar: sidebar 
+keywords: understand, sp, service, processor, remote, management, device, access, monitor, troubleshoot, node 
+summary: 'O processador de serviço (SP) é um dispositivo de gerenciamento remoto que permite acessar, monitorar e solucionar problemas remotamente de um nó.' 
+---
+= Sobre o SP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O processador de serviço (SP) é um dispositivo de gerenciamento remoto que permite acessar, monitorar e solucionar problemas remotamente de um nó.
+
+Os principais recursos do SP incluem o seguinte:
+
+* O SP permite que você acesse um nó remotamente para diagnosticar, desligar, desligar ou reinicializar o nó, independentemente do estado do controlador do nó.
++
+O SP é alimentado por uma tensão de espera, que está disponível desde que o nó tenha energia de entrada de pelo menos uma de suas fontes de alimentação.
+
++
+Você pode fazer login no SP usando um aplicativo cliente Shell seguro de um host de administração. Em seguida, você pode usar a CLI do SP para monitorar e solucionar problemas do nó remotamente. Além disso, você pode usar o SP para acessar o console serial e executar comandos ONTAP remotamente.
+
++
+Você pode acessar o SP a partir do console serial ou acessar o console serial a partir do SP. O SP permite abrir simultaneamente uma sessão de CLI do SP e uma sessão de console separada.
+
++
+Por exemplo, quando um sensor de temperatura se torna criticamente alto ou baixo, o ONTAP aciona o SP para desligar a placa-mãe graciosamente. O console serial fica sem resposta, mas você ainda pode pressionar Ctrl-G no console para acessar a CLI do SP. Em seguida, você pode usar o `system power on` comando ou `system power cycle` do SP para ligar ou desligar o nó.
+
+* O SP monitora sensores ambientais e Registra eventos para ajudá-lo a tomar ações de serviço oportunas e eficazes.
++
+O SP monitora sensores ambientais, como as temperaturas do nó, tensões, correntes e velocidades do ventilador. Quando um sensor ambiental atinge uma condição anormal, o SP Registra as leituras anormais, notifica o ONTAP do problema e envia alertas e notificações de "sistema próprio" conforme necessário por meio de uma mensagem AutoSupport, independentemente de o nó poder enviar mensagens AutoSupport.
+
++
+O SP também Registra eventos como progresso da inicialização, alterações na Unidade substituível em Campo (FRU), eventos gerados pelo ONTAP e histórico de comandos do SP. Você pode invocar manualmente uma mensagem do AutoSupport para incluir os arquivos de log do SP coletados de um nó especificado.
+
++
+Além de gerar essas mensagens em nome de um nó inativo e anexar informações de diagnóstico adicionais a mensagens AutoSupport, o SP não tem efeito na funcionalidade AutoSupport. As configurações do AutoSupport e o comportamento do conteúdo da mensagem são herdadas do ONTAP.
+
++
+[NOTE]
+====
+O SP não depende da `-transport` configuração de parâmetro do `system node autosupport modify` comando para enviar notificações. O SP usa apenas o protocolo SMTP (Simple Mail Transport Protocol) e requer a configuração AutoSupport do host para incluir informações do host de e-mail.
+
+====
++
+Se o SNMP estiver ativado, o SP gera traps SNMP para hosts de intercetação configurados para todos os eventos de "sistema próprio".
+
+* O SP tem um buffer de memória não volátil que armazena até 4.000 eventos em um log de eventos do sistema (SEL) para ajudá-lo a diagnosticar problemas.
++
+O SEL armazena cada entrada de log de auditoria como um evento de auditoria. Ele é armazenado na memória flash integrada no SP. A lista de eventos do SEL é enviada automaticamente pelo SP para destinatários especificados por meio de uma mensagem do AutoSupport.
+
++
+O SEL contém as seguintes informações:
+
++
+** Eventos de hardware detetados pelo SP - por exemplo, status do sensor sobre fontes de alimentação, tensão ou outros componentes
+** Erros detetados pelo SP--por exemplo, um erro de comunicação, uma falha de ventilador ou um erro de memória ou CPU
+** Eventos críticos de software enviados para o SP pelo nó - por exemplo, um pânico, uma falha de comunicação, uma falha de inicialização ou um "sistema próprio" acionado pelo usuário como resultado da emissão do SP `system reset` ou `system power cycle` comando
+
+
+* O SP monitora o console serial, independentemente de os administradores estarem conetados ou conetados ao console.
++
+Quando as mensagens são enviadas para o console, o SP as armazena no log do console. O log do console persiste enquanto o SP tiver energia de qualquer uma das fontes de alimentação do nó. Como o SP funciona com energia em espera, ele permanece disponível mesmo quando o nó é ligado ou desligado.
+
+* A aquisição assistida por hardware está disponível se o SP estiver configurado.
+* O serviço API SP permite que o ONTAP se comunique com o SP pela rede.
++
+O serviço aprimora o gerenciamento do ONTAP do SP, oferecendo suporte a funcionalidades baseadas em rede, como o uso da interface de rede para a atualização de firmware do SP, permitindo que um nó acesse a funcionalidade do SP ou o console do sistema de outro nó e faça o upload do log do SP de outro nó.
+
++
+Você pode modificar a configuração do serviço API SP alterando a porta que o serviço usa, renovando os certificados SSL e SSH que são usados pelo serviço para comunicação interna ou desativando o serviço completamente.
+
+
+
+O diagrama a seguir ilustra o acesso ao ONTAP e ao SP de um nó. A interface SP é acessada através da porta Ethernet (indicada por um ícone de chave na parte traseira do chassi):
+
+image:drw-sp-netwk.gif["Acesso ao ONTAP e ao processador de serviço de um nó"]

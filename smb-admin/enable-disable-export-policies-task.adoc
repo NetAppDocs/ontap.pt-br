@@ -1,0 +1,50 @@
+---
+permalink: smb-admin/enable-disable-export-policies-task.html 
+sidebar: sidebar 
+keywords: enable, disable, export, policies, policy, smb, access, storage, virtual, machine, svm, control, resource, enable or disable export policies for smb access 
+summary: 'Você pode ativar ou desativar políticas de exportação para acesso SMB em máquinas virtuais de armazenamento (SVMs). O uso de políticas de exportação para controlar o acesso SMB a recursos é opcional.' 
+---
+= Ativar ou desativar políticas de exportação para acesso SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode ativar ou desativar políticas de exportação para acesso SMB em máquinas virtuais de armazenamento (SVMs). O uso de políticas de exportação para controlar o acesso SMB a recursos é opcional.
+
+.Antes de começar
+A seguir estão os requisitos para ativar políticas de exportação para SMB:
+
+* O cliente deve ter um Registro "PTR" no DNS antes de criar as regras de exportação para esse cliente.
+* Um conjunto adicional de Registros "'A'" e "'PTR'" para nomes de host é necessário se o SVM fornecer acesso a clientes NFS e o nome de host que você deseja usar para acesso NFS for diferente do nome do servidor CIFS.
+
+
+.Sobre esta tarefa
+Ao configurar um novo servidor CIFS na SVM, o uso de políticas de exportação para acesso SMB é desativado por padrão. Você pode habilitar políticas de exportação para acesso SMB se quiser controlar o acesso com base no protocolo de autenticação ou em endereços IP de cliente ou nomes de host. Você pode ativar ou desativar políticas de exportação para acesso SMB a qualquer momento.
+
+.Passos
+. Defina o nível de privilégio como avançado: `set -privilege advanced`
+. Ativar ou desativar políticas de exportação:
++
+** Ativar políticas de exportação: `vserver cifs options modify -vserver _vserver_name_ -is-exportpolicy-enabled true`
+** Desativar políticas de exportação: `vserver cifs options modify -vserver _vserver_name_ -is-exportpolicy-enabled false`
+
+
+. Voltar ao nível de privilégio de administrador: `set -privilege admin`
+
+
+.Exemplo
+O exemplo a seguir permite o uso de políticas de exportação para controlar o acesso de clientes SMB a recursos no SVM VS1:
+
+[listing]
+----
+cluster1::> set -privilege advanced
+Warning: These advanced commands are potentially dangerous; use them
+only when directed to do so by technical support personnel.
+Do you wish to continue? (y or n): y
+
+cluster1::*> vserver cifs options modify -vserver vs1 -is-exportpolicy-enabled true
+
+cluster1::*> set -privilege admin
+----

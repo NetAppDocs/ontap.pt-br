@@ -1,0 +1,76 @@
+---
+permalink: smb-admin/configure-bypass-traverse-checking-concept.html 
+sidebar: sidebar 
+keywords: bypass, traverse, user, privilege, permission, directory, allow, check, configure, storage, virtual, machine, svm, configure bypass traverse checking 
+summary: 'A verificação de desvio transversal é um direito de usuário (também conhecido como privilégio) que determina se um usuário pode percorrer todos os diretórios no caminho para um arquivo, mesmo que o usuário não tenha permissões no diretório atravessado. Você deve entender o que acontece ao permitir ou desativar a verificação de desvio transversal e como configurar a verificação de desvio transversal para usuários em máquinas virtuais de armazenamento (SVMs).' 
+---
+= Configure a visão geral da verificação da travessia de derivação
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A verificação de desvio transversal é um direito de usuário (também conhecido como _privilégio_) que determina se um usuário pode percorrer todos os diretórios no caminho para um arquivo, mesmo que o usuário não tenha permissões no diretório atravessado. Você deve entender o que acontece ao permitir ou desativar a verificação de desvio transversal e como configurar a verificação de desvio transversal para usuários em máquinas virtuais de armazenamento (SVMs).
+
+
+
+== O que acontece ao permitir ou ao desativar a verificação transversal de desvio
+
+* Se permitido, quando um usuário tenta acessar um arquivo, o ONTAP não verifica a permissão de avanço para os diretórios intermediários ao determinar se deve conceder ou negar acesso ao arquivo.
+* Se não for permitido, o ONTAP verifica a permissão de avanço (execução) para todos os diretórios no caminho para o arquivo.
++
+Se qualquer um dos diretórios intermediários não tiver o "X" (permissão de avanço), o ONTAP nega o acesso ao arquivo.
+
+
+
+
+
+== Configure a verificação de desvio transversal
+
+Você pode configurar a verificação de desvio transversal usando a CLI do ONTAP ou configurando políticas de grupo do ative Directory com esse direito de usuário.
+
+O `SeChangeNotifyPrivilege` privilégio controla se os usuários têm permissão para ignorar a verificação transversal.
+
+* Adicioná-lo a usuários ou grupos SMB locais na SVM ou a usuários ou grupos de domínio permite a verificação de desvio transversal.
+* Removê-lo de usuários ou grupos SMB locais no SVM ou de usuários ou grupos de domínio não permite a verificação de desvio transversal.
+
+
+Por padrão, os seguintes grupos BUILTIN no SVM têm o direito de ignorar a verificação transversal:
+
+* `BUILTIN\Administrators`
+* `BUILTIN\Power Users`
+* `BUILTIN\Backup Operators`
+* `BUILTIN\Users`
+* `Everyone`
+
+
+Se você não quiser permitir que membros de um desses grupos ignorem a verificação transversal, você deve remover esse privilégio do grupo.
+
+Você deve ter em mente o seguinte ao configurar a verificação de desvio transversal para usuários e grupos SMB locais no SVM usando a CLI:
+
+* Se você quiser permitir que membros de um grupo de domínio ou local personalizado ignorem a verificação transversal, você deve adicionar o `SeChangeNotifyPrivilege` privilégio a esse grupo.
+* Se você quiser permitir que um usuário local ou de domínio individual ignore a verificação transversal e que o usuário não seja membro de um grupo com esse privilégio, você pode adicionar o `SeChangeNotifyPrivilege` privilégio a essa conta de usuário.
+* Você pode desativar a verificação de desvio transversal para usuários ou grupos locais ou de domínio removendo o `SeChangeNotifyPrivilege` privilégio a qualquer momento.
++
+[NOTE]
+====
+Para desativar a verificação de desvio de travers para usuários ou grupos locais ou de domínio especificados, você também deve remover o `SeChangeNotifyPrivilege` privilégio do `Everyone` grupo.
+
+====
+
+
+.Informações relacionadas
+xref:allow-users-groups-bypass-directory-traverse-task.adoc[Permitir que usuários ou grupos ignorem a verificação da rotação do diretório]
+
+xref:disallow-users-groups-bypass-directory-traverse-task.adoc[Não permitir que usuários ou grupos ignorem a verificação da rotação do diretório]
+
+xref:configure-character-mappings-file-name-translation-task.adoc[Configure o mapeamento de carateres para a tradução de nomes de arquivo SMB em volumes]
+
+xref:create-share-access-control-lists-task.html[Criar listas de controle de acesso de compartilhamento SMB]
+
+xref:secure-file-access-storage-level-access-guard-concept.html[Proteja o acesso aos arquivos usando o Storage-Level Access Guard]
+
+xref:list-supported-privileges-reference.adoc[Lista de Privileges suportados]
+
+xref:add-privileges-local-domain-users-groups-task.html[Adicione Privileges a usuários ou grupos locais ou de domínio]

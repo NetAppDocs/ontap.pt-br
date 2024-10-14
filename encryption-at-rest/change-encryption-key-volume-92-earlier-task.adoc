@@ -1,0 +1,60 @@
+---
+permalink: encryption-at-rest/change-encryption-key-volume-92-earlier-task.html 
+sidebar: sidebar 
+keywords: changing, encryption key, volume, volume move start, command 
+summary: É uma prática recomendada de segurança alterar a chave de criptografia para um volume periodicamente. Você pode usar o comando volume move start para alterar a chave de criptografia. Você deve usar o volume move start no ONTAP 9.2 e anterior. O volume movido pode residir no mesmo agregado ou em um agregado diferente. 
+---
+= Altere a chave de criptografia de um volume com o comando volume Move start
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É uma prática recomendada de segurança alterar a chave de criptografia para um volume periodicamente. Você pode usar o `volume move start` comando para alterar a chave de criptografia. Você deve usar `volume move start` no ONTAP 9.2 e anterior. O volume movido pode residir no mesmo agregado ou em um agregado diferente.
+
+.Sobre esta tarefa
+Você não pode usar `volume move start` para rechavear um volume SnapLock ou FlexGroup.
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa. Como alternativa, você pode ser um administrador SVM a quem o administrador do cluster delegou autoridade. Para obter mais informações, link:delegate-volume-encryption-svm-administrator-task.html["delegar autoridade para executar o comando de movimentação de volume"]consulte .
+
+.Passos
+. Mova um volume existente e altere a chave de criptografia:
++
+`volume move start -vserver _SVM_name_ -volume _volume_name_ -destination-aggregate _aggregate_name_ -generate-destination-key true`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
++
+O comando a seguir move um volume existente nomeado `*vol1*` para o agregado de destino `*aggr2*` e altera a chave de criptografia:
+
++
+[listing]
+----
+cluster1::> volume move start -vserver vs1 -volume vol1 -destination-aggregate aggr2 -generate-destination-key true
+----
++
+Uma nova chave de criptografia é criada para o volume. Os dados no volume permanecem criptografados.
+
+. Verifique se o volume está ativado para criptografia:
++
+`volume show -is-encrypted true`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
++
+O comando a seguir exibe os volumes criptografados em `cluster1`:
+
++
+[listing]
+----
+cluster1::> volume show -is-encrypted true
+
+Vserver  Volume  Aggregate  State  Type  Size  Available  Used
+-------  ------  ---------  -----  ----  -----  --------- ----
+vs1      vol1    aggr2     online    RW  200GB    160.0GB  20%
+----
+

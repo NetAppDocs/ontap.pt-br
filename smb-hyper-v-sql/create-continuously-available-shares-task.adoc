@@ -1,0 +1,69 @@
+---
+permalink: smb-hyper-v-sql/create-continuously-available-shares-task.html 
+sidebar: sidebar 
+keywords: create, continuous, smb, available, share, sql, database, file, server, hyper, v, virtual, machine 
+summary: Depois de criar seus volumes de dados, você pode criar os compartilhamentos continuamente disponíveis que os servidores de aplicativos usam para acessar a máquina virtual Hyper-V e os arquivos de configuração e os arquivos de banco de dados do SQL Server. Você deve usar a Planilha de configuração de compartilhamento ao criar compartilhamentos SMB. 
+---
+= Crie compartilhamentos SMB continuamente disponíveis
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois de criar seus volumes de dados, você pode criar os compartilhamentos continuamente disponíveis que os servidores de aplicativos usam para acessar a máquina virtual Hyper-V e os arquivos de configuração e os arquivos de banco de dados do SQL Server. Você deve usar a Planilha de configuração de compartilhamento ao criar compartilhamentos SMB.
+
+.Passos
+. Apresenta informações sobre os volumes de dados existentes e os respetivos caminhos de junção:
++
+`*volume show -vserver _vserver_name_ -junction*`
+
+. Crie um compartilhamento SMB continuamente disponível:
++
+`*vserver cifs share create -vserver _vserver_name_ -share-name _share_name_ -path _path_ -share-properties oplocks,continuously-available -symlink "" [-comment text]*`
+
++
+** Opcionalmente, você pode adicionar um comentário à configuração de compartilhamento.
+** Por padrão, a propriedade de compartilhamento de arquivos off-line é configurada no compartilhamento e está definida como `manual`.
+** O ONTAP cria o compartilhamento com a permissão de compartilhamento padrão do Windows de `Everyone` / `Full Control`.
+
+
+. Repita a etapa anterior para todos os compartilhamentos na Planilha de configuração de compartilhamento.
+. Verifique se sua configuração está correta usando o `vserver cifs share show` comando.
+. Configure permissões de arquivo NTFS nos compartilhamentos continuamente disponíveis mapeando uma unidade para cada compartilhamento e configurando permissões de arquivo usando a janela *Propriedades do Windows*.
+
+
+.Exemplo
+Os comandos a seguir criam um compartilhamento continuamente disponível chamado "ata2" na máquina virtual de armazenamento (SVM, anteriormente conhecido como SVM) VS1. Os links simbólicos são desativados definindo o `-symlink` parâmetro para `""`:
+
+[listing]
+----
+cluster1::> volume show -vserver vs1 -junction
+                      Junction                  Junction
+Vserver   Volume      Active   Junction Path    Path Source
+--------- ----------- -------- ---------------- ------------
+vs1       data        true     /data            RW_volume
+vs1       data1       true     /data/data1      RW_volume
+vs1       data2       true     /data/data2      RW_volume
+vs1       vs1_root    -        /                -
+
+cluster1::> vserver cifs share create -vserver vs1 -share-name data2 -path /data/data2 -share-properties oplocks,continuously-available -symlink ""
+
+cluster1::> vserver cifs share show -vserver vs1 -share-name data2
+
+                      Vserver: vs1
+                        Share: data2
+     CIFS Server NetBIOS Name: VS1
+                         Path: /data/data2
+             Share Properties: oplocks
+                               continuously-available
+           Symlink Properties: -
+      File Mode Creation Mask: -
+ Directory Mode Creation Mask: -
+                Share Comment: -
+                    Share ACL: Everyone / Full Control
+File Attribute Cache Lifetime: -
+                  Volume Name: -
+                Offline Files: manual
+Vscan File-Operations Profile: standard
+----

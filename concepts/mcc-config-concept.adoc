@@ -1,0 +1,42 @@
+---
+permalink: concepts/mcc-config-concept.html 
+sidebar: sidebar 
+keywords: metrocluster continuous availability 
+summary: As configurações do MetroCluster protegem os dados com a implementação de dois clusters espelhados separados fisicamente. Cada cluster replica de forma síncrona os dados e a configuração da SVM do outro. Em caso de desastre em um local, o administrador pode ativar o SVM espelhado e começar a fornecer dados do local que sobreviveu. 
+---
+= Disponibilidade contínua da MetroCluster
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+As configurações do MetroCluster protegem os dados com a implementação de dois clusters espelhados separados fisicamente. Cada cluster replica de forma síncrona os dados e a configuração da SVM do outro. Em caso de desastre em um local, o administrador pode ativar o SVM espelhado e começar a fornecer dados do local que sobreviveu.
+
+* As configurações de _Fabric-Attached MetroCluster_ e _MetroCluster IP_ são compatíveis com clusters metropolitano.
+* As configurações do _Stretch MetroCluster_ suportam clusters em todo o campus.
+
+
+Os clusters devem ser percorridos em ambos os casos.
+
+O MetroCluster usa um recurso ONTAP chamado _SyncMirror_ para espelhar sincronamente dados agregados para cada cluster em cópias ou _plexes_ no armazenamento do outro cluster. Se ocorrer um switchover, o Plex remoto no cluster sobrevivente fica on-line e o SVM secundário começa a fornecer dados.
+
+image:metrocluster.gif["Diagrama mostrando MetroCluster fornecendo dados do local B."]
+
+|===
+
+
+ a| 
+*_Using SyncMirror em implementações não-MetroCluster_* você pode usar o SyncMirror em uma implementação não-MetroCluster para proteger contra perda de dados se mais discos falharem do que o tipo RAID protege contra, ou se houver perda de conetividade com discos do grupo RAID. O recurso está disponível somente para pares de HA.
+
+Os dados agregados são espelhados em plexos armazenados em diferentes compartimentos de disco. Se uma das gavetas ficar indisponível, o Plex não afetado continuará fornecendo dados enquanto você corrigir a causa da falha.
+
+Tenha em mente que um agregado espelhado usando o SyncMirror requer o dobro de storage que um agregado sem espelhamento. Cada Plex requer tantos discos quanto o Plex que ele espelha. Você precisaria de 2.880 GB de espaço em disco, por exemplo, para espelhar um agregado de 1.440 GB, 1.440 GB para cada Plex.
+
+Com o SyncMirror, é recomendável manter pelo menos 20% de espaço livre para agregados espelhados para performance e disponibilidade ideais de storage. Embora a recomendação seja de 10% para agregados não espelhados, os 10% adicionais de espaço podem ser usados pelo sistema de arquivos para absorver alterações incrementais. Mudanças incrementais aumentam a utilização de espaço para agregados espelhados devido à arquitetura baseada em Snapshot copy-on-write da ONTAP. A não adesão a essas práticas recomendadas pode ter um impactos negativo no desempenho de ressincronização do SyncMirror, o que afeta indiretamente fluxos de trabalho operacionais, como NDU para implantações de nuvem não compartilhadas e switchback para implantações de MetroCluster.
+
+
+NOTE: O SyncMirror também está disponível para implementações de virtualização FlexArray.
+
+|===

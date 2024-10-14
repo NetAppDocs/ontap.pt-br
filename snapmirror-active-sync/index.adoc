@@ -1,0 +1,118 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/index.html 
+keywords: SM-BC, SMBC, failover, terms, benefits, snapmirror active sync, TR-4878 
+summary: Use a sincronização ativa do SnapMirror para proteger aplicações com LUNs, possibilitando o failover de aplicações de forma transparente, garantindo a continuidade dos negócios em caso de desastre. 
+---
+= Descrição geral da sincronização ativa do SnapMirror
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+O SnapMirror ative Sync (também conhecido como SnapMirror Business Continuity _[SM-BC]_) permite que os serviços de negócios continuem operando mesmo com uma falha completa do local, dando suporte ao failover de aplicações de forma transparente usando uma cópia secundária. A intervenção manual nem o script personalizado são necessários para acionar um failover com a sincronização ativa do SnapMirror.
+
+Disponível a partir do ONTAP 9.9,1, a sincronização ativa do SnapMirror é compatível com clusters AFF, clusters All-Flash SAN Array (ASA) e C-Series (AFF ou ASA). Os clusters primário e secundário devem ser do mesmo tipo: ASA ou AFF. A sincronização ativa do SnapMirror protege aplicações com LUNs iSCSI ou FCP.
+
+A partir do ONTAP 9.15,1, o SnapMirror active Sync oferece suporte a um xref:architecture-concept.html[funcionalidade ativo-ativo simétrica], habilitando operações de e/S de leitura e gravação de ambas as cópias de um LUN protegido com replicação síncrona bidirecional, permitindo que ambas as cópias do LUN forneçam operações de e/S localmente. Antes do ONTAP 9.15,1, a sincronização ativa do SnapMirror suporta apenas configurações ativas/ativas assimétricas, nas quais os dados no local secundário são aumentados para um LUN.
+
+
+NOTE: A partir de julho de 2024, o conteúdo de relatórios técnicos publicados anteriormente como PDFs foi integrado à documentação do produto ONTAP. A documentação de sincronização ativa do ONTAP SnapMirror agora inclui conteúdo de _TR-4878: SnapMirror active Sync_.
+
+
+
+== Benefícios
+
+O SnapMirror ative Sync oferece os seguintes benefícios:
+
+* Disponibilidade contínua para aplicações essenciais aos negócios.
+* Capacidade de hospedar aplicações críticas alternadamente de locais primários e secundários.
+* Gerenciamento simplificado de aplicações usando grupos de consistência para consistência dependente da ordem de gravação.
+* Capacidade de testar failover em cada aplicação.
+* Criação instantânea de clones espelhados sem afetar a disponibilidade da aplicação.
+* Capacidade de implantar workloads protegidos e não protegidos no mesmo cluster do ONTAP.
+* A identidade de LUN permanece a mesma, então o aplicativo as vê como um dispositivo virtual compartilhado.
+* Capacidade de reutilizar clusters secundários com flexibilidade para criar clones instantâneos para uso da aplicação para fins de desenvolvimento/teste, UAT ou geração de relatórios, sem impactar a performance ou a disponibilidade da aplicação.
+
+
+O SnapMirror active Sync permite que você proteja LUNs de dados, o que permite o failover de aplicações de forma transparente, para fins de continuidade dos negócios em caso de desastre. Para obter mais informações, link:use-cases-concept.html["Casos de uso"]consulte .
+
+
+
+== Conceitos-chave
+
+A sincronização ativa do SnapMirror utiliza grupos de consistência e o Mediador ONTAP para garantir que seus dados sejam replicados e atendidos, mesmo em caso de desastre. Ao Planejar sua implantação de sincronização ativa do SnapMirror, é importante entender os conceitos essenciais do SnapMirror ative Sync e sua arquitetura.
+
+.Assimetria e simetria
+O SnapMirror ative Sync suporta soluções ativas-ativas assimétricas e, a partir do ONTAP 9.15,1, simétricas. Essas opções referem-se a como os hosts acessam caminhos de armazenamento e gravam dados. Em uma configuração assimétrica, os dados no local secundário são aumentados para um LUN. Em uma configuração ativo-ativo simétrica, ambos os locais podem acessar o storage local para e/S ativa
+
+O ativo-ativo simétrico é otimizado para aplicativos em cluster, incluindo VMware VMSc, cluster de failover do Windows com SQL e Oracle RAC.
+
+Para obter mais informações, xref:architecture-concept.html[Arquitetura de sincronização ativa do SnapMirror]consulte .
+
+.Grupo de consistência
+A link:../consistency-groups/index.html["grupo de consistência"] é uma coleção de volumes do FlexVol que garante consistência para o workload da aplicação que precisa ser protegido para manter a continuidade dos negócios.
+
+O objetivo de um grupo de consistência é tirar imagens instantâneas simultâneas de vários volumes, garantindo assim cópias consistentes com falhas de uma coleção de volumes em um momento. Um grupo de consistência garante que todos os volumes de um conjunto de dados sejam silenciados e, em seguida, encaixados exatamente no mesmo ponto no tempo. Isso fornece um ponto de restauração consistente com dados nos volumes que dão suporte ao conjunto de dados. Um grupo de consistência mantém, assim, consistência dependente da ordem de gravação. Se você decidir proteger aplicativos para a continuidade dos negócios, o grupo de volumes correspondentes a esse aplicativo deve ser adicionado a um grupo de consistência para que um relacionamento de proteção de dados seja estabelecido entre uma origem e um grupo de consistência de destino. A consistência de origem e destino deve conter o mesmo número e tipo de volumes.
+
+.Constituinte
+Um volume individual ou LUN que faz parte do grupo de consistência protegido na relação de sincronização ativa do SnapMirror.
+
+.ONTAP Mediador
+O link:../mediator/index.html["ONTAP Mediador"] recebe informações de integridade sobre nós e clusters ONTAP peered, orquestrando entre os dois e determinando se cada nó/cluster está íntegro e em execução. O Mediador ONTAP fornece as informações de saúde sobre:
+
+* Clusters peer ONTAP
+* Nós de cluster de peer ONTAP
+* Grupos de consistência (que definem as unidades de failover em uma relação de sincronização ativa do SnapMirror); para cada grupo de consistência, as seguintes informações são fornecidas:
++
+** Estado de replicação: Não inicializado, em Sincronizar ou fora de Sincronizar
+** Qual cluster hospeda a cópia primária
+** Contexto de operação (usado para failover planejado)
+
+
+
+
+Com essas informações de integridade do ONTAP Mediator, os clusters podem diferenciar entre tipos distintos de falhas e determinar se devem executar um failover automatizado. O Mediador ONTAP é uma das três partes no quorum de sincronização ativa do SnapMirror, juntamente com os clusters do ONTAP (primário e secundário). Para chegar a um consenso, pelo menos duas partes no quórum devem concordar com uma determinada operação.
+
+
+NOTE: A partir do ONTAP 9.15,1, o Gerenciador do sistema exibe o status da relação de sincronização ativa do SnapMirror de qualquer cluster. Você também pode monitorar o status do Mediador ONTAP de qualquer cluster no Gerenciador de sistema. Em versões anteriores do ONTAP, o Gerenciador de sistema exibe o status das relações de sincronização ativa do SnapMirror a partir do cluster de origem.
+
+.Failover planejado
+Uma operação manual para alterar as funções das cópias em uma relação de sincronização ativa do SnapMirror. Os locais primários se tornam secundários, e o secundário se torna o primário.
+
+.Viés primário e primário
+A sincronização ativa do SnapMirror usa um princípio primário que dá preferência à cópia primária para servir e/S no caso de uma partição de rede.
+
+Primary-bias é uma implementação de quórum especial que melhora a disponibilidade de um conjunto de dados protegido por sincronização ativa do SnapMirror. Se a cópia primária estiver disponível, o viés primário entrará em vigor quando o Mediador ONTAP não estiver acessível a partir de ambos os clusters.
+
+Primary-first e Primary bias são suportadas na sincronização ativa do SnapMirror a partir do ONTAP 9.15,1. As cópias primárias são designadas no System Manager e são enviadas com a API REST e CLI.
+
+.Failover não planejado automático (AUFO)
+Uma operação automática para executar um failover para a cópia espelhada. A operação requer a assistência do Mediador ONTAP para detetar que a cópia primária não está disponível.
+
+.Fora de sincronização (OOS)
+Quando a e/S do aplicativo não estiver replicando para o sistema de storage secundário, ela será reportada como ** fora de sincronia**. Um status fora de sincronia significa que os volumes secundários não são sincronizados com o primário (origem) e que a replicação do SnapMirror não está ocorrendo.
+
+Se o estado do espelho for `Snapmirrored`, isso indica uma falha ou falha de transferência devido a uma operação não suportada.
+
+A sincronização ativa do SnapMirror suporta ressincronização automática, permitindo que as cópias voltem a um estado InSync.
+
+A partir do ONTAP 9.15,1, a sincronização ativa do SnapMirror suporta link:interoperability-reference.html#fan-out-configurations["reconfiguração automática em configurações de fan-out"].
+
+.Configuração uniforme e não uniforme
+* **O acesso uniforme ao host** significa que os hosts de ambos os locais estão conetados a todos os caminhos para os clusters de armazenamento em ambos os locais. Os caminhos entre os locais são estendidos ao longo da distância.
+* **Acesso não uniforme ao host** significa que os hosts em cada local são conetados apenas ao cluster no mesmo local. Caminhos entre locais e caminhos esticados não estão conetados.
+
+
+
+NOTE: O acesso uniforme de host é compatível com qualquer implantação de sincronização ativa do SnapMirror. O acesso de host não uniforme só é compatível com implantações ativas/ativas simétricas.
+
+.RPO zero
+RPO significa objetivo do ponto de restauração, que é a quantidade de perda de dados considerada aceitável durante um determinado período de tempo. Zero RPO significa que nenhuma perda de dados é aceitável.
+
+.Rto zero
+Rto representa o objetivo de tempo de recuperação, que é o tempo que é considerado aceitável para um aplicativo retornar às operações normais sem interrupções, após uma interrupção, falha ou outro evento de perda de dados. Zero rto significa que nenhuma quantidade de tempo de inatividade é aceitável.

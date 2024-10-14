@@ -1,0 +1,40 @@
+---
+permalink: encryption-at-rest/enable-onboard-key-management-new-nodes-concept.html 
+sidebar: sidebar 
+keywords: onboard key management, onboard new nodes, okm, encrypt 
+summary: Você pode usar o Gerenciador de chaves integrado para proteger as chaves que o cluster usa para acessar dados criptografados. É necessário habilitar o Gerenciador de chaves integrado em cada cluster que acessa um volume criptografado ou um disco com autocriptografia. 
+---
+= Habilite o gerenciamento de chaves integradas em nós recém-adicionados
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o Gerenciador de chaves integrado para proteger as chaves que o cluster usa para acessar dados criptografados. É necessário habilitar o Gerenciador de chaves integrado em cada cluster que acessa um volume criptografado ou um disco com autocriptografia.
+
+[NOTE]
+====
+Para o ONTAP 9.5 e versões anteriores, você deve executar o `security key-manager setup` comando sempre que adicionar um nó ao cluster.
+
+Para o ONTAP 9.6 e posterior, você deve executar o `security key-manager sync` comando sempre que adicionar um nó ao cluster.
+
+Se você adicionar um nó a um cluster que tenha o gerenciamento de chaves integradas configurado, você executará esse comando para atualizar as chaves ausentes.
+
+====
+Se você tiver uma configuração do MetroCluster, revise estas diretrizes:
+
+* A partir do ONTAP 9.6, é necessário executar `security key-manager onboard enable` primeiro no cluster local e, em seguida, executar `security key-manager onboard sync` no cluster remoto, usando a mesma frase-passe em cada um.
+* No ONTAP 9.5, você deve executar `security key-manager setup` no cluster local e `security key-manager setup -sync-metrocluster-config yes` no cluster remoto, usando a mesma senha em cada um.
+* Antes do ONTAP 9.5, você deve executar `security key-manager setup` no cluster local, esperar aproximadamente 20 segundos e, em seguida, executar `security key-manager setup` no cluster remoto, usando a mesma senha em cada um.
+
+
+Por padrão, você não é obrigado a inserir a senha do gerenciador de chaves quando um nó é reinicializado. A partir do ONTAP 9.4, pode utilizar a `-enable-cc-mode yes` opção para exigir que os utilizadores introduzam a frase-passe após uma reinicialização.
+
+Para NVE, se você definir `-enable-cc-mode yes`o , os volumes criados com os `volume create` comandos e `volume move start` serão criptografados automaticamente. Para `volume create`, não é necessário especificar `-encrypt true`. Para `volume move start`, não é necessário especificar `-encrypt-destination true`.
+
+[NOTE]
+====
+Depois de uma tentativa de frase-passe com falha, tem de reiniciar o nó novamente.
+
+====

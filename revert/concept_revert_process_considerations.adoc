@@ -1,0 +1,44 @@
+---
+permalink: revert/concept_revert_process_considerations.html 
+sidebar: sidebar 
+keywords: ontap, revert, considerations 
+summary: Você precisa considerar os problemas de reversão e as limitações antes de iniciar uma reversão do ONTAP. 
+---
+= Considerações de reversão
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa considerar os problemas de reversão e as limitações antes de iniciar uma reversão do ONTAP.
+
+* Reversão é disruptiva.
++
+Nenhum acesso de cliente pode ocorrer durante a reversão. Se você estiver revertendo um cluster de produção, inclua essa interrupção no Planejamento.
+
+* A reversão afeta todos os nós no cluster.
++
+A reversão afeta todos os nós no cluster; no entanto, a reversão deve ser realizada e concluída em cada par de HA antes que outros pares de HA sejam revertidos.
+
+* A reversão é concluída quando todos os nós estão executando a nova liberação de destino.
++
+Quando o cluster está em um estado de versão mista, você não deve inserir nenhum comando que altere a operação ou configuração do cluster, exceto se necessário para atender aos requisitos de reversão; operações de monitoramento são permitidas.
+
++
+
+IMPORTANT: Se você reverteu alguns, mas não todos os nós, não tente atualizar o cluster de volta para a versão de origem.
+
+* Quando você reverte um nó, ele limpa os dados em cache em um módulo Flash Cache.
++
+Como não há dados armazenados em cache no módulo Flash Cache, o nó serve solicitações de leitura inicial do disco, o que resulta em menor desempenho de leitura durante esse período. O nó repreenche o cache à medida que serve solicitações de leitura.
+
+* Um LUN que é feito backup em fita em execução no ONTAP 9.x pode ser restaurado apenas para 9.x e versões posteriores e não para uma versão anterior.
+* Se sua versão atual do ONTAP oferecer suporte à funcionalidade ACP na banda (IBACP) e você reverter para uma versão do ONTAP que não suporte IBACP, o caminho alternativo para o compartimento de disco será desativado.
+* Se o LDAP for usado por qualquer uma de suas máquinas virtuais de armazenamento (SVMs), a referência LDAP deve ser desativada antes da reversão.
+* Em sistemas IP MetroCluster usando switches que são compatíveis com MetroCluster, mas não validados pela MetroCluster, a reversão do ONTAP 9.7 para o 9,6 é disruptiva, pois não há suporte para sistemas que usam o ONTAP 9.6 e anteriores.
+* Antes de reverter um nó para o ONTAP 9.13,1 ou anterior, você precisa primeiro converter um volume raiz criptografado SVM para um volume não criptografado
++
+Se você tentar reverter para uma versão que não ofereça suporte à criptografia de volume raiz do SVM, o sistema responderá com um aviso e bloqueará a reversão.
+
+

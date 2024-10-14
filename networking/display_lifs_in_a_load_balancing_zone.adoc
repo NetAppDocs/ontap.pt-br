@@ -1,0 +1,91 @@
+---
+sidebar: sidebar 
+permalink: networking/display_lifs_in_a_load_balancing_zone.html 
+keywords: display, view, show, lif, logical, interface, load, balancing, zone, balance, performance, display lifs in a load balancing zone, verify whether a load balancing zone is configured correctly by displaying all of the lifs that belong to it, examples of displaying load balancing zones for lifs 
+summary: Verifique se uma zona de balanceamento de carga está configurada corretamente exibindo todas as LIFs que pertencem a ela 
+---
+= Exibir LIFs em uma zona de balanceamento de carga
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode verificar se uma zona de balanceamento de carga está configurada corretamente exibindo todas as LIFs que pertencem a ela. Você também pode visualizar a zona de balanceamento de carga de um LIF específico ou as zonas de balanceamento de carga de todos os LIFs.
+
+.Passo
+Exiba os LIFs e os detalhes de balanceamento de carga desejados usando um dos seguintes comandos
+
+[cols="30,70"]
+|===
+
+
+| Para exibir... | Digite... 
+
+
+ a| 
+LIFs em uma determinada zona de balanceamento de carga
+ a| 
+`network interface show -dns-zone zone_name`
+
+`zone_name` especifica o nome da zona de balanceamento de carga.
+
+
+
+ a| 
+A zona de balanceamento de carga de um LIF específico
+ a| 
+`network interface show -lif lif_name -fields dns-zone`
+
+
+
+ a| 
+As zonas de balanceamento de carga de todos os LIFs
+ a| 
+`network interface show -fields dns-zone`
+
+|===
+
+
+== Exemplos de exibição de zonas de balanceamento de carga para LIFs
+
+O comando a seguir exibe os detalhes de todos os LIFs na zona de balanceamento de carga storage.company.com para SVM vs0:
+
+....
+net int show -vserver vs0 -dns-zone storage.company.com
+
+         Logical    Status     Network           Current   Current Is
+Vserver  Interface  Admin/Oper Address/Mask      Node      Port    Home
+-------- ---------- ---------- ----------------- --------- ------- ----
+vs0
+         lif3         up/up    10.98.226.225/20  ndeux-11  e0c     true
+         lif4         up/up    10.98.224.23/20   ndeux-21  e0c     true
+         lif5         up/up    10.98.239.65/20   ndeux-11  e0c     true
+         lif6         up/up    10.98.239.66/20   ndeux-11  e0c     true
+         lif7         up/up    10.98.239.63/20   ndeux-21  e0c     true
+         lif8         up/up    10.98.239.64/20   ndeux-21  e0c     true
+....
+O comando a seguir exibe os detalhes da zona DNS do LIF data3:
+
+....
+network interface show -lif data3 -fields dns-zone
+Vserver  lif    dns-zone
+-------  -----  --------
+vs0      data3  storage.company.com
+....
+O comando a seguir exibe a lista de todos os LIFs no cluster e suas zonas DNS correspondentes:
+
+....
+network interface show -fields dns-zone
+Vserver   lif          dns-zone
+-------   ------------ --------
+cluster   cluster_mgmt none
+ndeux-21  clus1        none
+ndeux-21  clus2        none
+ndeux-21  mgmt1        none
+vs0       data1        storage.company.com
+vs0       data2        storage.company.com
+....

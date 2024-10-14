@@ -1,0 +1,83 @@
+---
+permalink: consistency-groups/clone-task.html 
+sidebar: sidebar 
+keywords: consistency groups, consistency group, clone 
+summary: A partir do ONTAP 9.12,1, é possível clonar um grupo de consistência para criar uma cópia da configuração e dos volumes do grupo de consistência. 
+---
+= Clonar um grupo de consistência
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.12,1, você pode clonar um grupo de consistência para criar uma cópia de um grupo de consistência e seu conteúdo. Clonar um grupo de consistência cria uma cópia da configuração do grupo de consistência, seus metadados, como tipo de aplicação, e todos os volumes e seu conteúdo, como arquivos, diretórios, LUNs ou namespaces NVMe.
+
+.Sobre esta tarefa
+Ao clonar um grupo de consistência, é possível cloná-lo com a configuração atual, mas com conteúdo de volume tal como ele está ou baseado em um grupo de consistência Snapshot existente.
+
+Clonar um grupo de consistência é compatível apenas para todo o grupo de consistência. Você não pode clonar um grupo de consistência filho individual em uma relação hierárquica: Somente a configuração completa do grupo de consistência pode ser clonada.
+
+Ao clonar um grupo de consistência, os seguintes componentes não são clonados:
+
+* IGroups
+* Mapas LUN
+* Subsistemas NVMe
+* Mapas de subsistema de namespace NVMe
+
+
+.Antes de começar
+* Ao clonar um grupo de consistência, o ONTAP não criará compartilhamentos SMB para os volumes clonados se um nome de compartilhamento não for especificado. * Grupos de consistência clonados não são montados se um caminho de junção não for especificado.
+* Se você tentar clonar um grupo de consistência com base em um instantâneo que não reflita os volumes constituintes atuais do grupo de consistência, a operação falhará.
+* Depois de clonar um grupo de consistência, você precisa executar a operação de mapeamento apropriada.
++
+xref:../task_san_map_igroups_to_multiple_luns.html[Mapeie grupos para vários LUNs]Consulte ou xref:../san-admin/map-nvme-namespace-subsystem-task.html[Mapear um namespace NVMe para um subsistema] para obter mais informações.
+
+* Clonar um grupo de consistência não é compatível para um grupo de consistência em uma relação de sincronização ativa do SnapMirror ou com quaisquer volumes DP associados.
+
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência que deseja clonar no menu *Grupo de consistência*.
+. No canto superior direito da página de visão geral do grupo consistência, selecione *Clone*.
+. Insira um nome para o novo grupo de consistência clonada ou aceite o nome padrão.
++
+.. Selecione se deseja ativar link:../concepts/thin-provisioning-concept.html["*Provisionamento fino*"^]o .
+.. Escolha *Split Clone* se você quiser dissociar o grupo de consistência de sua origem e alocar espaço em disco adicional para o grupo de consistência clonada.
+
+
+. Para clonar o grupo de consistência em seu estado atual, escolha *Adicionar uma nova cópia Snapshot*.
++
+Para clonar o grupo de consistência com base em um snapshot, escolha *usar uma cópia Snapshot existente*. Selecionar esta opção irá abrir um novo submenu. Escolha o Snapshot que você deseja usar como base para a operação de clone.
+
+. Selecione *Clone*.
+. Retorne ao menu *Grupo de consistência* para confirmar que seu grupo de consistência foi clonado.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode clonar um grupo de consistência usando a CLI com credenciais de administrador do cluster.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Clonar um grupo de consistência
+. O `consistency-group clone create` comando clona o grupo de consistência em seu status de ponto no tempo atual. Para basear a operação de clone em um Snapshot, inclua o `-source-snapshot` parâmetro.
++
+`consistency-group clone create -vserver _svm_name_ -consistency-group _clone_name_ -source-consistency-group _consistency_group_name_ [-source-snapshot _snapshot_name_]`
+
+
+
+--
+====
+.Próximas etapas
+* xref:../task_san_map_igroups_to_multiple_luns.html[Mapeie grupos para vários LUNs]
+* xref:../san-admin/map-nvme-namespace-subsystem-task.html[Mapear um namespace NVMe para um subsistema]
+

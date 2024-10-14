@@ -1,0 +1,108 @@
+---
+sidebar: sidebar 
+permalink: task_nas_provision_linux_nfs.html 
+keywords: netapp, ontap, provisioning, nas, linux, servers, provision, LIF, network interface 
+summary: 'Criar volumes para fornecer storage para servidores Linux usando o protocolo NFS com o ONTAP System Manager (9,7 e posterior)' 
+---
+= Provisione storage nas para servidores Linux usando NFS
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Crie volumes para fornecer storage para servidores Linux usando o protocolo NFS com o ONTAP System Manager (9,7 e posterior).
+
+Este procedimento cria novos volumes em um link:task_nas_enable_linux_nfs.html["VM de storage habilitada por NFS existente"]. Você pode aceitar padrões do sistema ao configurar volumes ou especificar configurações personalizadas.
+
+Você pode criar o FlexVol volumes ou, para sistemas de arquivos grandes com requisitos de alta performance, criar o FlexGroup volumes. Consulte também link:task_nas_provision_flexgroup.html["Provisionar storage nas para sistemas de arquivos grandes usando volumes FlexGroup"].
+
+Você também pode salvar as especificações desse volume em um Playbook do Ansible. Para obter mais detalhes, link:task_admin_use_ansible_playbooks_add_edit_volumes_luns.html["Use os Playbooks do Ansible para adicionar ou editar volumes ou LUNs"]visite .
+
+Se quiser obter detalhes sobre a gama de capacidades do protocolo NFS da ONTAP, consulte o link:nfs-admin/index.html["Visão geral de referência de NFS"].
+
+.Passos
+. Adicionar um novo volume em uma VM de storage habilitada por NFS.
++
+.. Clique em *Storage > volumes* e, em seguida, clique em *Add*.
+.. Insira um nome, selecione a VM de armazenamento e insira um tamanho.
++
+Somente as VMs de storage configuradas com o protocolo NFS são listadas. Se apenas uma VM de armazenamento configurada com o protocolo SMB estiver disponível, o campo *Storage VM* não será exibido.
+
++
+*** Se você clicar em *Salvar* neste ponto, o Gerenciador do sistema usará os padrões do sistema para criar e adicionar um FlexVol volume.
++
+
+NOTE: A política de exportação padrão concede acesso total a todos os usuários.
+
+*** Você pode clicar em *mais opções* para personalizar a configuração do volume para ativar serviços como autorização, qualidade do serviço e proteção de dados. <<Personalizar a configuração do volume>>Consulte a e, em seguida, volte aqui para concluir os passos seguintes.
+
+
+
+
+. [[step2-complete-prov,Etapa 2 no fluxo de trabalho]] em um cliente Linux, faça o seguinte para verificar o acesso.
++
+.. Crie e monte o volume usando a interface de rede da VM de armazenamento.
+.. No volume recém-montado, crie um arquivo de teste, escreva texto nele e exclua o arquivo.
+
+
++
+Depois de verificar o acesso, você pode link:task_nas_provision_export_policies.html["restringir o acesso do cliente com a política de exportação do volume"] e definir qualquer propriedade e permissões UNIX desejadas no volume montado.
+
+
+
+
+
+== Personalizar a configuração do volume
+
+Você pode personalizar a configuração de volume quando adicionar volumes em vez de aceitar os padrões do sistema.
+
+.Procedimento
+Depois de clicar em *mais opções*, selecione a funcionalidade de que necessita e introduza os valores necessários.
+
+* Cache para volume remoto.
+* Nível de serviço de performance (qualidade do serviço, QoS).
++
+A partir do ONTAP 9.8, você pode especificar uma política de QoS personalizada ou desativar QoS, além da seleção de valor padrão.
+
++
+** Para desativar a QoS, selecione *Custom*, *existing* e, em seguida, *none*.
+** Se você selecionar *Custom* e especificar um nível de serviço existente, um nível local será escolhido automaticamente.
+** A partir do ONTAP 9.9,1, se você optar por criar um nível de serviço de desempenho personalizado, poderá usar o Gerenciador do sistema para selecionar manualmente o nível local (*colocação manual*) no qual deseja colocar o volume que está criando.
++
+Esta opção não estará disponível se selecionar as opções de cache remoto ou volume FlexGroup.
+
+
+
+* FlexGroup volumes (selecione *distribuir dados de volume pelo cluster*).
++
+Esta opção não está disponível se tiver selecionado anteriormente *colocação manual* em *nível de serviço de desempenho*. Caso contrário, o volume que você está adicionando se torna um FlexVol volume por padrão.
+
+* Permissões de acesso para os protocolos para os quais o volume está configurado.
+* Proteção de dados com SnapMirror (local ou remoto) e especifique a política de proteção e as configurações do cluster de destino nas listas suspensas.
+* Selecione *Salvar* para criar o volume e adicioná-lo ao cluster e à VM de armazenamento.
+
+
+
+NOTE: Depois de salvar o volume, retorne ao <<step2-complete-prov>>provisionamento completo para servidores Linux usando NFS.
+
+
+
+== Outras maneiras de fazer isso em ONTAP
+
+|===
+
+
+| Para executar esta tarefa com... | Consulte... 
+
+
+| Gerenciador de sistema Clássico (ONTAP 9 .7 e anteriores) | link:https://docs.netapp.com/us-en/ontap-system-manager-classic/nfs-config/index.html["Visão geral da configuração NFS"^] 
+
+
+| A interface de linha de comando (CLI) do ONTAP | link:nfs-config/index.html["Visão geral da configuração de NFS com a CLI"] 
+|===

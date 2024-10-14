@@ -1,0 +1,59 @@
+---
+permalink: flexgroup/enable-storage-efficiency-task.html 
+sidebar: sidebar 
+keywords: enable, storage, efficiency, flexgroup, volume 
+summary: Você pode executar deduplicação e compactação de dados em conjunto ou de forma independente em um volume FlexGroup para obter a melhor economia de espaço. 
+---
+= Habilite a eficiência de storage em um volume FlexGroup
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode executar deduplicação e compactação de dados em conjunto ou de forma independente em um volume FlexGroup para obter a melhor economia de espaço.
+
+.O que você vai precisar
+O volume FlexGroup deve estar online.
+
+.Passos
+. Habilite a eficiência de storage no volume FlexGroup: `volume efficiency on -vserver svm_name -volume volume_name`
++
+As operações de eficiência de storage são ativadas em todos os componentes do volume FlexGroup.
+
++
+Se um volume de FlexGroup for expandido depois que a eficiência de storage for habilitada no volume, a eficiência de storage será automaticamente ativada nos novos componentes.
+
+. Ative a operação de eficiência de storage necessária no volume FlexGroup usando o `volume efficiency modify` comando.
++
+Você pode habilitar a deduplicação in-line, a deduplicação pós-processo, a compactação in-line e a compactação pós-processo em volumes FlexGroup. Você também pode definir o tipo de compactação (secundária ou adaptável) e especificar uma programação ou política de eficiência para o volume FlexGroup.
+
+. Se você não estiver usando programações ou políticas de eficiência para executar as operações de eficiência de storage, inicie a operação de eficiência: `volume efficiency start -vserver svm_name -volume volume_name`
++
+Se a deduplicação e a compactação de dados estiverem habilitadas em um volume, a compactação de dados será executada inicialmente seguida pela deduplicação. Este comando falha se alguma operação de eficiência já estiver ativa no volume FlexGroup.
+
+. Verifique as operações de eficiência ativadas no volume FlexGroup: `volume efficiency show -vserver svm_name -volume volume_name`
++
+[listing]
+----
+cluster1::> volume efficiency show -vserver vs1 -volume fg1
+             Vserver Name: vs1
+              Volume Name: fg1
+              Volume Path: /vol/fg1
+                    State: Enabled
+                   Status: Idle
+                 Progress: Idle for 17:07:25
+                     Type: Regular
+                 Schedule: sun-sat@0
+
+...
+
+             Compression: true
+      Inline Compression: true
+Incompressible Data Detection: false
+      Constituent Volume: false
+Compression Quick Check File Size: 524288000
+           Inline Dedupe: true
+         Data Compaction: false
+----
+

@@ -1,0 +1,73 @@
+---
+permalink: volumes/rehost-san-task.html 
+sidebar: sidebar 
+keywords: rehost, san volumes 
+summary: Rehospede um volume de SAN que atenda dados por meio de LUNs mapeados. 
+---
+= Rehospede um volume SAN
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É possível rehospedar um volume de SAN que fornece dados por meio de LUNs mapeados. Depois de recriar o grupo de iniciadores (igrop) no SVM de destino, a operação de rehost de volume pode remapear automaticamente o volume no mesmo SVM.
+
+.Sobre esta tarefa
+* A rehospedagem é uma operação disruptiva.
+* Se a operação de rehospedagem falhar, talvez seja necessário reconfigurar as políticas de volume e as regras associadas no volume de origem.
+* A partir do ONTAP 9.8, é suportado o realojamento de um volume com encriptação de volume NetApp (NVE). Se você estiver usando um gerenciador de chaves integrado, os metadados criptografados serão modificados durante a operação de rehost. Os dados do utilizador não são alterados.
++
+Se você estiver usando o ONTAP 9.8 ou anterior, será necessário descriptografar o volume antes de executar a operação de rehost.
+
+
+
+* Após a operação de rehost, as seguintes políticas de volume, regras de política e configurações são perdidas do volume de origem e devem ser reconfiguradas manualmente no volume rehospedado:
++
+** Políticas de antivírus
+** Política de eficiência de volume
+** Políticas de qualidade do serviço (QoS)
+** Políticas do Snapshot
+** política e regras de exportação de configuração de serviços de nomes e de switch ns
+** IDs de usuário e grupo
+
+
+
+
+.Antes de começar
+* O volume deve estar online.
+* As operações de gerenciamento de volumes, como movimentos de volume ou movimentos LUN, não devem estar em execução.
+* Não deve haver e/S ativa nos volumes ou LUNs.
+* Você deve ter verificado que o SVM de destino não tem um grupo com o mesmo nome, mas iniciadores diferentes.
++
+Se o grupo tiver o mesmo nome, você deve ter renomeado o grupo em um dos SVMs (origem ou destino).
+
+* Tem de ter ativado a `force-unmap-luns` opção.
++
+** O valor padrão da `force-unmap-luns` opção é `false`.
+** Nenhuma mensagem de aviso ou confirmação é exibida quando você define a `force-unmap-luns` opção como `true`.
+
+
+
+
+.Passos
+. Gravar informações de mapeamento LUN no volume de destino:
++
+`lun mapping show volume _volume_ vserver _source_svm_`
+
++
+Esta é uma etapa de precaução para evitar a perda de informações sobre o mapeamento LUN caso o rehost de volume falhe.
+
+. Excluir grupos associados ao volume alvo.
+. Rehospede o volume de destino para o SVM de destino:
++
+`volume rehost -vserver _source_svm_ -volume _volume_name_ -destination-vserver _destination_svm_`
+
+. Mapear LUNs no volume alvo para os grupos apropriados:
++
+** O rehost de volume preserva LUNs no volume de destino, no entanto, os LUNs permanecem não mapeados.
+** Use o conjunto de portas SVM de destino durante o mapeamento de LUNs.
+** Se a `auto-remap-luns` opção estiver definida como `true`, os LUNs serão mapeados automaticamente após o novo host.
+
+
+

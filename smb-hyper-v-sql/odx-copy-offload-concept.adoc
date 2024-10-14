@@ -1,0 +1,64 @@
+---
+permalink: smb-hyper-v-sql/odx-copy-offload-concept.html 
+sidebar: sidebar 
+keywords: offload, data, transfer, odx, copy, application, server, copy, operation 
+summary: 'A transferência de dados descarregados (ODX), também conhecida como descarga de cópia, permite transferências diretas de dados dentro ou entre dispositivos de armazenamento compatíveis sem transferir os dados através do computador host. A descarga de cópia ODX da ONTAP fornece benefícios de desempenho ao executar operações de cópia no servidor de aplicações através da instalação SMB.' 
+---
+= Como a descarga de cópia ODX é usada com Hyper-V e SQL Server em compartilhamentos SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A transferência de dados descarregados (ODX), também conhecida como _copy offload_, permite transferências diretas de dados dentro ou entre dispositivos de armazenamento compatíveis sem transferir os dados através do computador host. A descarga de cópia ODX da ONTAP fornece benefícios de desempenho ao executar operações de cópia no servidor de aplicações através da instalação SMB.
+
+Em transferências de arquivos não ODX, os dados são lidos do servidor CIFS de origem e são transferidos através da rede para o computador cliente. O computador cliente transfere os dados de volta pela rede para o servidor CIFS de destino. Em resumo, o computador cliente lê os dados da origem e grava-os no destino. Com as transferências de arquivos ODX, os dados são copiados diretamente da origem para o destino.
+
+Como as cópias descarregadas do ODX são realizadas diretamente entre o armazenamento de origem e destino, há benefícios significativos de desempenho. Os benefícios de desempenho obtidos incluem tempo de cópia mais rápido entre a origem e o destino, utilização reduzida de recursos (CPU, memória) no cliente e utilização reduzida da largura de banda de e/S de rede.
+
+ ONTAP ODX copy offload is supported on both SAN LUNs and SMB 3.0 continuously available connections.
+Os seguintes casos de uso suportam o uso de cópias e movimentos ODX:
+
+* Intra-volume
++
+Os arquivos de origem e destino ou LUNs estão dentro do mesmo volume.
+
+* Entre volumes, mesmo nó e mesma máquina virtual de storage (SVM)
++
+Os arquivos de origem e destino ou LUNs estão em volumes diferentes localizados no mesmo nó. Os dados pertencem ao mesmo SVM.
+
+* Entre volumes, nós diferentes e o mesmo SVM
++
+Os arquivos de origem e destino ou LUNs estão em volumes diferentes localizados em nós diferentes. Os dados pertencem ao mesmo SVM.
+
+* Entre SVM, mesmo nó
++
+O arquivo de origem e destino ou LUNs estão em volumes diferentes localizados no mesmo nó. Os dados pertencem a diferentes SVMs.
+
+* Entre SVM, nós diferentes
++
+O arquivo de origem e destino ou LUNs estão em volumes diferentes localizados em nós diferentes. Os dados pertencem a diferentes SVMs.
+
+
+
+Casos de uso específicos para descarga de cópia ODX com soluções Hyper-V incluem o seguinte:
+
+* Você pode usar a passagem de descarga de cópia ODX com o Hyper-V para copiar dados dentro ou através de arquivos de disco rígido virtual (VHD) ou para copiar dados entre compartilhamentos SMB mapeados e LUNs iSCSI conetados dentro do mesmo cluster.
++
+Isso permite que cópias de sistemas operacionais convidados passem para o storage subjacente.
+
+* Ao criar VHDs de tamanho fixo, o ODX é usado para inicializar o disco com zeros, usando um token zerado bem conhecido.
+* A descarga de cópia ODX é usada para migração de armazenamento de máquina virtual se o armazenamento de origem e destino estiver no mesmo cluster.
+
+
+[NOTE]
+====
+Para aproveitar os casos de uso para a passagem de descarga de cópia ODX com Hyper-V, o sistema operacional convidado deve suportar ODX e os discos do sistema operacional convidado devem ser discos SCSI suportados pelo armazenamento (SMB ou SAN) que suporte ODX. Os discos IDE no sistema operacional convidado não suportam passagem ODX.
+
+====
+Casos de uso específicos para descarga de cópia ODX com soluções SQL Server incluem o seguinte:
+
+* Você pode usar a descarga de cópia ODX para exportar e importar bancos de dados SQL Server entre compartilhamentos SMB mapeados ou entre compartilhamentos SMB e LUNs iSCSI conetados no mesmo cluster.
+* A descarga de cópia ODX é usada para exportações e importações de banco de dados se o armazenamento de origem e destino estiver no mesmo cluster.
+

@@ -1,0 +1,316 @@
+---
+permalink: snaplock/set-retention-period-task.html 
+sidebar: sidebar 
+keywords: snaplock, set, retention, time, default, explicit, file, modify, volume, period, ebr, event, based 
+summary: Você pode definir o tempo de retenção de um arquivo explicitamente ou usar o período de retenção padrão para o volume para obter o tempo de retenção. A menos que você defina o tempo de retenção explicitamente, o SnapLock usará o período de retenção padrão para calcular o tempo de retenção. Você também pode definir a retenção de arquivos após um evento. 
+---
+= Defina o tempo de retenção
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode definir o tempo de retenção de um arquivo explicitamente ou usar o período de retenção padrão para o volume para obter o tempo de retenção. A menos que você defina o tempo de retenção explicitamente, o SnapLock usará o período de retenção padrão para calcular o tempo de retenção. Você também pode definir a retenção de arquivos após um evento.
+
+.Sobre o período de retenção e o tempo de retenção
+O _período de retenção_ para um arquivo WORM especifica a duração do tempo em que o arquivo deve ser retido depois de ser comprometido com o estado WORM. O _tempo de retenção_ para um arquivo WORM é o tempo após o qual o arquivo não precisa mais ser retido. Um período de retenção de 20 anos para um arquivo comprometido com o estado WORM em 10 de novembro de 2020 6:00, por exemplo, permitiria um tempo de retenção de 10 de novembro de 2040 6:00
+
+image:retention.gif["Exemplo de período de retenção"]
+
+[NOTE]
+====
+A partir do ONTAP 9.10,1, você pode definir um tempo de retenção até 26 de outubro de 3058 e um período de retenção de até 100 anos. Quando você estende as datas de retenção, as políticas mais antigas são convertidas automaticamente. No ONTAP 9.9,1 e versões anteriores, a menos que você defina o período de retenção padrão como infinito, o tempo de retenção máximo suportado é 19 2071 de janeiro (GMT).
+
+====
+.Considerações importantes sobre replicação
+Ao estabelecer uma relação SnapMirror com um volume de origem SnapLock usando uma data de retenção posterior a 19th 2071 de janeiro (GMT), o cluster de destino deve estar executando o ONTAP 9.10,1 ou posterior ou a transferência SnapMirror falhará.
+
+.Considerações importantes de reversão
+O ONTAP impede que você reverta um cluster do ONTAP 9.10,1 para uma versão anterior do ONTAP quando houver arquivos com um período de retenção posterior a "19 de janeiro de 2071 8:44:07 AM".
+
+.Compreender os períodos de retenção
+Um volume SnapLock Compliance ou empresa tem quatro períodos de retenção:
+
+* Período de retenção mínimo (`min`), com um padrão de 0
+* Período máximo de retenção (`max`), com um incumprimento de 30 anos
+* Período de retenção padrão, com um padrão igual a `min` para o modo de conformidade e o modo Enterprise começando com ONTAP 9.10,1. Nas versões do ONTAP anteriores ao ONTAP 9.10,1, o período de retenção padrão depende do modo:
++
+** Para o modo de conformidade, o padrão é igual a `max`.
+** Para o modo Enterprise, o padrão é igual a `min`.
+
+
+* Período de retenção não especificado.
++
+A partir do ONTAP 9.8, é possível definir o período de retenção de arquivos em um volume como `unspecified`, para permitir que o arquivo seja mantido até que você defina um tempo de retenção absoluto. Você pode definir um arquivo com tempo de retenção absoluto para retenção não especificada e voltar para retenção absoluta, desde que o novo tempo de retenção absoluta seja posterior ao tempo absoluto definido anteriormente.
+
++
+A partir do ONTAP 9.12,1, os arquivos WORM com o período de retenção definido como têm a garantia de ter um período de retenção definido `unspecified` para o período de retenção mínimo configurado para o volume SnapLock. Quando você altera o período de retenção de arquivos de `unspecified` para um tempo de retenção absoluto, o novo tempo de retenção especificado deve ser maior do que o tempo de retenção mínimo já definido no arquivo.
+
+
+
+Portanto, se você não definir o tempo de retenção explicitamente antes de armazenar um arquivo em modo de conformidade no estado WORM e não modificar os padrões, o arquivo será retido por 30 anos. Da mesma forma, se você não definir o tempo de retenção explicitamente antes de armazenar um arquivo no modo Enterprise no estado WORM e não modificar os padrões, o arquivo será retido por 0 anos ou, efetivamente, não será de todo.
+
+
+
+== Defina o período de retenção padrão
+
+Você pode usar o `volume snaplock modify` comando para definir o período de retenção padrão para arquivos em um volume SnapLock.
+
+.O que você vai precisar
+O volume SnapLock deve estar online.
+
+.Sobre esta tarefa
+A tabela a seguir mostra os valores possíveis para a opção período de retenção padrão:
+
+[NOTE]
+====
+O período de retenção predefinido deve ser superior ou igual a (>) o período de retenção mínimo e inferior ou igual a (>) o período de retenção máximo.
+
+====
+|===
+| Valor | Unidade | Notas 
+
+
+ a| 
+0 - 65535
+ a| 
+segundos
+ a| 
+
+
+
+ a| 
+0 - 24
+ a| 
+horas
+ a| 
+
+
+
+ a| 
+0 - 365
+ a| 
+dias
+ a| 
+
+
+
+ a| 
+0 - 12
+ a| 
+meses
+ a| 
+
+
+
+ a| 
+0 - 100
+ a| 
+anos
+ a| 
+Começando com ONTAP 9.10,1. Para versões anteriores do ONTAP, o valor é 0 - 70.
+
+
+
+ a| 
+máx
+ a| 
+-
+ a| 
+Use o período de retenção máximo.
+
+
+
+ a| 
+mín
+ a| 
+-
+ a| 
+Use o período de retenção mínimo.
+
+
+
+ a| 
+infinito
+ a| 
+-
+ a| 
+Guarde os arquivos para sempre.
+
+
+
+ a| 
+não especificado
+ a| 
+-
+ a| 
+Guarde os arquivos até que um período de retenção absoluto seja definido.
+
+|===
+Os valores e intervalos para os períodos de retenção máximo e mínimo são idênticos, exceto para `max` e `min`, que não são aplicáveis. Para obter mais informações sobre esta tarefa, link:set-retention-period-task.html["Defina a visão geral do tempo de retenção"]consulte .
+
+Você pode usar o `volume snaplock show` comando para exibir as configurações do período de retenção do volume. Para obter mais informações, consulte a página man para o comando.
+
+[NOTE]
+====
+Depois que um arquivo foi comprometido com o estado WORM, você pode estender, mas não reduzir o período de retenção.
+
+====
+.Passos
+. Defina o período de retenção padrão para arquivos em um volume SnapLock:
++
+`*volume snaplock modify -vserver _SVM_name_ -volume _volume_name_ -default-retention-period _default_retention_period_ -minimum-retention-period _min_retention_period_ -maximum-retention-period _max_retention_period_*`
+
++
+Para obter uma lista completa de opções, consulte a página de manual do comando.
+
++
+[NOTE]
+====
+Os exemplos a seguir pressupõem que os períodos de retenção mínimo e máximo não foram modificados anteriormente.
+
+====
++
+O comando a seguir define o período de retenção padrão para um volume de conformidade ou empresa para 20 dias:
+
++
+[listing]
+----
+cluster1::> volume snaplock modify -vserver vs1 -volume vol1 -default-retention-period 20days
+----
++
+O comando a seguir define o período de retenção padrão para um volume de conformidade para 70 anos:
+
++
+[listing]
+----
+cluster1::> volume snaplock modify -vserver vs1 -volume vol1 -maximum-retention-period 70years
+----
++
+O comando a seguir define o período de retenção padrão para um volume Enterprise para 10 anos:
+
++
+[listing]
+----
+cluster1::> volume snaplock modify -vserver vs1 -volume vol1 -default-retention-period max -maximum-retention-period 10years
+----
++
+Os comandos a seguir definem o período de retenção padrão para um volume Enterprise para 10 dias:
+
++
+[listing]
+----
+cluster1::> volume snaplock modify -vserver vs1 -volume vol1 -minimum-retention-period 10days
+cluster1::> volume snaplock modify -vserver vs1 -volume vol1 -default-retention-period min
+----
++
+O comando a seguir define o período de retenção padrão para um volume de conformidade como infinito:
+
++
+[listing]
+----
+cluster1::> volume snaplock modify -vserver vs1 -volume vol1 -default-retention-period infinite -maximum-retention-period infinite
+----
+
+
+
+
+== Defina o tempo de retenção de um arquivo explicitamente
+
+Você pode definir o tempo de retenção de um arquivo explicitamente modificando seu último tempo de acesso. Você pode usar qualquer comando ou programa adequado em NFS ou CIFS para modificar o último tempo de acesso.
+
+.Sobre esta tarefa
+Depois que um arquivo foi comprometido com WORM, você pode estender, mas não reduzir o tempo de retenção. O tempo de retenção é armazenado `atime` no campo para o arquivo.
+
+[NOTE]
+====
+Não é possível definir explicitamente o tempo de retenção de um arquivo como `infinite`. Esse valor só está disponível quando você usa o período de retenção padrão para calcular o tempo de retenção.
+
+====
+.Passos
+. Use um comando ou programa adequado para modificar a última hora de acesso para o arquivo cujo tempo de retenção você deseja definir.
++
+Em um shell UNIX, use o seguinte comando para definir um tempo de retenção de 21 de novembro de 2020 6:00 em um arquivo chamado `document.txt`:
+
++
+[listing]
+----
+touch -a -t 202011210600 document.txt
+----
++
+[NOTE]
+====
+Você pode usar qualquer comando ou programa adequado para modificar a última hora de acesso no Windows.
+
+====
+
+
+
+
+== Defina o período de retenção do arquivo após um evento
+
+A partir do ONTAP 9.3, você pode definir quanto tempo um arquivo é retido após um evento ocorrer usando o recurso SnapLock _retenção baseada em eventos (EBR)_.
+
+.O que você vai precisar
+* Você deve ser um administrador do SnapLock para executar esta tarefa.
++
+link:create-compliance-administrator-account-task.html["Crie uma conta de administrador do SnapLock"]
+
+* Você deve ter feito login em uma conexão segura (SSH, console ou ZAPI).
+
+
+.Sobre esta tarefa
+A política de retenção _evento_ define o período de retenção para o arquivo após o evento ocorrer. A política pode ser aplicada a um único arquivo ou a todos os arquivos em um diretório.
+
+* Se um arquivo não for um arquivo WORM, ele será comprometido com o estado WORM durante o período de retenção definido na política.
+* Se um arquivo for um arquivo WORM ou um arquivo anexado WORM, seu período de retenção será estendido pelo período de retenção definido na política.
+
+
+Você pode usar um volume de modo de conformidade ou de modo empresarial.
+
+[NOTE]
+====
+As políticas EBR não podem ser aplicadas a ficheiros sob retenção legal.
+
+====
+Para uma utilização avançada, link:https://www.netapp.com/pdf.html?item=/media/6158-tr4526pdf.pdf["Storage WORM em conformidade com NetApp SnapLock"^]consulte .
+
+|===
+
+
+| *_usando EBR para estender o período de retenção de arquivos WORM já existentes_* 
+
+
+ a| 
+O EBR é conveniente quando você deseja estender o período de retenção de arquivos WORM já existentes. Por exemplo, pode ser política da sua empresa manter os Registros W-4 de funcionários em forma não modificada por três anos após o funcionário mudar uma eleição de retenção. Outra política da empresa pode exigir que os Registros W-4 sejam mantidos por cinco anos após o término do funcionário.
+
+Nessa situação, você pode criar uma política de EBR com um período de retenção de cinco anos. Depois que o funcionário for rescindido (o "evento"), você aplicará a política EBR ao Registro W-4 do funcionário, fazendo com que seu período de retenção seja estendido. Isso geralmente será mais fácil do que estender o período de retenção manualmente, especialmente quando um grande número de arquivos está envolvido.
+
+|===
+.Passos
+. Criar uma política EBR:
++
+`*snaplock event-retention policy create -vserver _SVM_name_ -name _policy_name_ -retention-period _retention_period_*`
+
++
+O comando a seguir cria a política de EBR `employee_exit` `vs1` com um período de retenção de dez anos:
+
++
+[listing]
+----
+cluster1::>snaplock event-retention policy create -vserver vs1 -name employee_exit -retention-period 10years
+----
+. Aplicar uma política EBR:
++
+`*snaplock event-retention apply -vserver _SVM_name_ -name _policy_name_ -volume _volume_name_ -path _path_name_*`
+
++
+O comando a seguir aplica a diretiva EBR `employee_exit` `vs1` a todos os arquivos no diretório `d1`:
+
++
+[listing]
+----
+cluster1::>snaplock event-retention apply -vserver vs1 -name employee_exit -volume vol1 -path /d1
+----
+

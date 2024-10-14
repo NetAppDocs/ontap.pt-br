@@ -1,0 +1,81 @@
+---
+permalink: nas-audit/troubleshoot-auditing-staging-volume-concept.html 
+sidebar: sidebar 
+keywords: troubleshoot, audit, stage, volume space, issues 
+summary: Problemas podem surgir quando não houver espaço suficiente nos volumes de teste ou no volume que contém os logs de eventos de auditoria. Se não houver espaço suficiente, novos Registros de auditoria não podem ser criados, o que impede que os clientes acessem dados e as solicitações de acesso falhem. Você deve saber como solucionar e resolver esses problemas de espaço de volume. 
+---
+= Solucionar problemas de volume de auditoria e preparação
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Problemas podem surgir quando não houver espaço suficiente nos volumes de teste ou no volume que contém os logs de eventos de auditoria. Se não houver espaço suficiente, novos Registros de auditoria não podem ser criados, o que impede que os clientes acessem dados e as solicitações de acesso falhem. Você deve saber como solucionar e resolver esses problemas de espaço de volume.
+
+
+
+== Solucionar problemas de espaço relacionados aos volumes de log de eventos
+
+Se os volumes contendo arquivos de log de eventos ficarem sem espaço, a auditoria não poderá converter Registros de log em arquivos de log. Isso resulta em falhas de acesso do cliente. Você deve saber como solucionar problemas de espaço relacionados aos volumes de log de eventos.
+
+* Os administradores de cluster e máquina virtual de storage (SVM) podem determinar se há espaço de volume insuficiente exibindo informações sobre o volume e o uso e a configuração agregados.
+* Se houver espaço insuficiente nos volumes que contêm logs de eventos, os administradores de SVM e cluster poderão resolver os problemas de espaço removendo alguns dos arquivos de log de eventos ou aumentando o tamanho do volume.
++
+[NOTE]
+====
+Se o agregado que contém o volume do log de eventos estiver cheio, o tamanho do agregado deve ser aumentado antes que você possa aumentar o tamanho do volume. Somente um administrador de cluster pode aumentar o tamanho de um agregado.
+
+====
+* O caminho de destino para os arquivos de log de eventos pode ser alterado para um diretório em outro volume, modificando a configuração de auditoria.
++
+[NOTE]
+====
+O acesso aos dados é negado nos seguintes casos:
+
+** O diretório de destino é excluído.
+** O limite de arquivo em um volume, que hospeda o diretório de destino, atinge seu nível máximo.
+
+
+====
+
+
+Saiba mais sobre:
+
+* link:../volumes/index.html["Como visualizar informações sobre volumes e aumentar o tamanho do volume"].
+* link:../disks-aggregates/index.html["Como visualizar informações sobre agregados e gerenciar agregados"].
+
+
+
+
+== Solucionar problemas de espaço relacionados aos volumes de teste
+
+Se algum dos volumes que contém arquivos de teste para a máquina virtual de armazenamento (SVM) ficar sem espaço, a auditoria não poderá gravar Registros de log em arquivos de teste. Isso resulta em falhas de acesso do cliente. Para solucionar esse problema, você precisa determinar se algum dos volumes de teste usados no SVM está cheio exibindo informações sobre o uso de volume.
+
+Se o volume que contém os arquivos de log de eventos consolidados tiver espaço suficiente, mas ainda houver falhas de acesso do cliente devido a espaço insuficiente, os volumes de teste podem estar fora do espaço. O administrador do SVM deve entrar em Contato com você para determinar se os volumes de teste que contêm arquivos de teste para o SVM têm espaço insuficiente. O subsistema de auditoria gera um evento EMS se os eventos de auditoria não puderem ser gerados devido a espaço insuficiente em um volume de teste. É apresentada a seguinte mensagem: `No space left on device`. Somente você pode exibir informações sobre volumes de teste; os administradores do SVM não podem.
+
+Todos os nomes de volume de estadiamento começam com `MDV_aud_` seguido pelo UUID do agregado que contém esse volume de estadiamento. O exemplo a seguir mostra quatro volumes de sistema no SVM admin, que foram criados automaticamente quando uma configuração de auditoria de serviços de arquivo foi criada para um data SVM no cluster:
+
+[listing]
+----
+cluster1::> volume show -vserver cluster1
+Vserver   Volume       Aggregate    State      Type       Size  Available Used%
+--------- ------------ ------------ ---------- ---- ---------- ---------- -----
+cluster1  MDV_aud_1d0131843d4811e296fc123478563412
+                       aggr0        online     RW          5GB     4.75GB    5%
+cluster1  MDV_aud_8be27f813d7311e296fc123478563412
+                       root_vs0     online     RW          5GB     4.75GB    5%
+cluster1  MDV_aud_9dc4ad503d7311e296fc123478563412
+                       aggr1        online     RW          5GB     4.75GB    5%
+cluster1  MDV_aud_a4b887ac3d7311e296fc123478563412
+                       aggr2        online     RW          5GB     4.75GB    5%
+4 entries were displayed.
+----
+Se não houver espaço suficiente nos volumes de teste, você poderá resolver os problemas de espaço aumentando o tamanho do volume.
+
+[NOTE]
+====
+Se o agregado que contém o volume de estadiamento estiver cheio, o tamanho do agregado deverá ser aumentado antes de poder aumentar o tamanho do volume. Somente você pode aumentar o tamanho de um agregado. Os administradores de SVM não podem.
+
+====
+Se um ou mais agregados tiverem um espaço disponível inferior a 2GB TB (no ONTAP 9.14,1 e anterior) ou 5GB TB (começando com o ONTAP 9.15,1), a criação da auditoria SVM falhará. Quando a criação da auditoria SVM falhar, os volumes de teste criados são excluídos.

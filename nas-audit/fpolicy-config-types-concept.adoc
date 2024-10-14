@@ -1,0 +1,58 @@
+---
+permalink: nas-audit/fpolicy-config-types-concept.html 
+sidebar: sidebar 
+keywords: fpolicy, configuration types 
+summary: Existem dois tipos básicos de configuração FPolicy. Uma configuração usa servidores FPolicy externos para processar e agir mediante notificações. A outra configuração não usa servidores FPolicy externos; em vez disso, ele usa o servidor FPolicy interno e nativo do ONTAP para bloqueio de arquivos simples com base em extensões. 
+---
+= Tipos de configuração FPolicy
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Existem dois tipos básicos de configuração FPolicy. Uma configuração usa servidores FPolicy externos para processar e agir mediante notificações. A outra configuração não usa servidores FPolicy externos; em vez disso, ele usa o servidor FPolicy interno e nativo do ONTAP para bloqueio de arquivos simples com base em extensões.
+
+* * Configuração externa do servidor FPolicy*
++
+A notificação é enviada para o servidor FPolicy, que exibe a solicitação e aplica regras para determinar se o nó deve permitir a operação do arquivo solicitado. Para políticas síncronas, o servidor FPolicy envia uma resposta ao nó para permitir ou bloquear a operação de arquivo solicitada.
+
+* * Configuração nativa do servidor FPolicy*
++
+A notificação é rastreada internamente. A solicitação é permitida ou negada com base nas configurações de extensão de arquivo configuradas no escopo FPolicy.
+
++
+*Nota*: As solicitações de extensão de arquivo negadas não são registradas.
+
+
+
+
+
+== Quando criar uma configuração FPolicy nativa
+
+As configurações nativas de FPolicy usam o mecanismo interno de FPolicy do ONTAP para monitorar e bloquear operações de arquivos com base na extensão do arquivo. Esta solução não requer servidores FPolicy externos (servidores FPolicy). O uso de uma configuração de bloqueio de arquivos nativa é apropriado quando essa solução simples é tudo o que é necessário.
+
+O bloqueio de arquivos nativos permite monitorar quaisquer operações de arquivos que correspondam a eventos de operação e filtragem configurados e, em seguida, negar acesso a arquivos com extensões específicas. Esta é a configuração padrão.
+
+Esta configuração fornece um meio de bloquear o acesso a arquivos com base apenas na extensão do arquivo. Por exemplo, para bloquear arquivos que contêm `mp3` extensões, configure uma política para fornecer notificações para determinadas operações com extensões de arquivo de destino `mp3` do . A política é configurada para negar `mp3` solicitações de arquivos para operações que geram notificações.
+
+O seguinte se aplica a configurações nativas de FPolicy:
+
+* O mesmo conjunto de filtros e protocolos que são suportados pela triagem de arquivos baseada no servidor FPolicy também são suportados para bloqueio de arquivos nativos.
+* O bloqueio de arquivos nativo e os aplicativos de triagem de arquivos baseados no servidor FPolicy podem ser configurados ao mesmo tempo.
++
+Para fazer isso, você pode configurar duas políticas FPolicy separadas para a máquina virtual de armazenamento (SVM), com uma configurada para bloqueio de arquivos nativos e uma configurada para triagem de arquivos baseada no servidor FPolicy.
+
+* O recurso de bloqueio de arquivos nativo somente exibe arquivos com base nas extensões e não no conteúdo do arquivo.
+* No caso de links simbólicos, o bloqueio de arquivos nativos usa a extensão de arquivo do arquivo raiz.
+
+
+Saiba mais link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/FPolicy%3A_Native_File_Blocking["FPolicy: Bloqueio de arquivos nativos"^]sobre o .
+
+
+
+== Quando criar uma configuração que use servidores FPolicy externos
+
+As configurações FPolicy que usam servidores FPolicy externos para processar e gerenciar notificações fornecem soluções robustas para casos de uso em que mais do que simples bloqueio de arquivos com base na extensão de arquivo é necessário.
+
+Você deve criar uma configuração que use servidores FPolicy externos quando quiser fazer coisas como monitorar e gravar eventos de acesso a arquivos, fornecer serviços de cota, executar bloqueio de arquivos com base em critérios diferentes de extensões de arquivo simples, fornecer serviços de migração de dados usando aplicativos de gerenciamento de storage hierárquico ou fornecer um conjunto refinado de políticas que monitoram apenas um subconjunto de dados na máquina virtual de armazenamento (SVM).

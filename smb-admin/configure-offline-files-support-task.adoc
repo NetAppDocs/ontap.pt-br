@@ -1,0 +1,131 @@
+---
+permalink: smb-admin/configure-offline-files-support-task.html 
+sidebar: sidebar 
+keywords: configure, offline, file, support, ontap, cli, smb, modify, exist, smb, share, manual, default, setting, configure offline files support on smb shares using the cli 
+summary: Você pode configurar o suporte a arquivos off-line usando a CLI do ONTAP especificando uma das quatro configurações de arquivos off-line ao criar compartilhamentos SMB ou a qualquer momento modificando compartilhamentos SMB existentes. O suporte manual de arquivos offline é a configuração padrão. 
+---
+= Configure o suporte a arquivos off-line em compartilhamentos SMB usando a CLI
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar o suporte a arquivos off-line usando a CLI do ONTAP especificando uma das quatro configurações de arquivos off-line ao criar compartilhamentos SMB ou a qualquer momento modificando compartilhamentos SMB existentes. O suporte manual de arquivos offline é a configuração padrão.
+
+.Sobre esta tarefa
+Ao configurar o suporte a arquivos off-line, você pode escolher uma das quatro configurações de arquivos off-line a seguir:
+
+|===
+| Definição | Descrição 
+
+
+ a| 
+`none`
+ a| 
+Não permite que os clientes Windows armazenem quaisquer arquivos neste compartilhamento.
+
+
+
+ a| 
+`manual`
+ a| 
+Permite que os usuários em clientes Windows selecionem manualmente os arquivos a serem armazenados em cache.
+
+
+
+ a| 
+`documents`
+ a| 
+Permite que os clientes Windows armazenem documentos de usuário que são usados pelo usuário para acesso off-line.
+
+
+
+ a| 
+`programs`
+ a| 
+Permite que os clientes do Windows armazenem programas que são usados pelo usuário para acesso off-line. Os clientes podem usar os arquivos de programa armazenados em cache no modo offline, mesmo que o compartilhamento esteja disponível.
+
+|===
+Você pode escolher apenas uma configuração de arquivo off-line. Se você modificar uma configuração de arquivos off-line em um compartilhamento SMB existente, a nova configuração arquivos off-line substituirá a configuração original. Outras configurações de compartilhamento SMB existentes e propriedades de compartilhamento não são removidas ou substituídas. Eles permanecem em vigor até que sejam explicitamente removidos ou alterados.
+
+.Passos
+. Execute a ação apropriada:
++
+|===
+| Se você quiser configurar arquivos off-line em... | Digite o comando... 
+
+
+ a| 
+Um novo compartilhamento SMB
+ a| 
+`vserver cifs share create -vserver vserver_name -share-name share_name -path path -offline-files {none|manual|documents|programs}`
+
+
+
+ a| 
+Um compartilhamento SMB existente
+ a| 
+`vserver cifs share modify -vserver vserver_name -share-name share_name -offline-files {none|manual|documents|programs}`
+
+|===
+. Verifique se a configuração do compartilhamento SMB está correta: `vserver cifs share show -vserver vserver_name -share-name share_name -instance`
+
+
+.Exemplo
+O comando a seguir cria um compartilhamento SMB chamado "d.ATA1" com arquivos off-line definidos como `documents`:
+
+[listing]
+----
+cluster1::> vserver cifs share create -vserver vs1 -share-name data1 -path /data1 -comment "Offline files" -offline-files documents
+
+cluster1::> vserver cifs share show -vserver vs1 -share-name data1 -instance
+
+                          Vserver: vs1
+                            Share: data1
+         CIFS Server NetBIOS Name: VS1
+                             Path: /data1
+                 Share Properties: oplocks
+                                   browsable
+                                   changenotify
+               Symlink Properties: enable
+          File Mode Creation Mask: -
+     Directory Mode Creation Mask: -
+                    Share Comment: Offline files
+                        Share ACL: Everyone / Full Control
+    File Attribute Cache Lifetime: -
+                      Volume Name: -
+                    Offline Files: documents
+    Vscan File-Operations Profile: standard
+Maximum Tree Connections on Share: 4294967295
+       UNIX Group for File Create: -
+----
+O comando a seguir modifica um compartilhamento SMB existente chamado "d.ATA1" alterando a configuração de arquivos off-line `manual` e adicionando valores para a máscara de criação de modo de arquivo e diretório:
+
+[listing]
+----
+cluster1::> vserver cifs share modify -vserver vs1 -share-name data1 -offline-files manual -file-umask 644 -dir-umask 777
+
+cluster1::> vserver cifs share show -vserver vs1 -share-name data1 -instance
+
+                          Vserver: vs1
+                            Share: data1
+         CIFS Server NetBIOS Name: VS1
+                             Path: /data1
+                 Share Properties: oplocks
+                                   browsable
+                                   changenotify
+               Symlink Properties: enable
+          File Mode Creation Mask: 644
+     Directory Mode Creation Mask: 777
+                    Share Comment: Offline files
+                        Share ACL: Everyone / Full Control
+    File Attribute Cache Lifetime: -
+                      Volume Name: -
+                    Offline Files: manual
+    Vscan File-Operations Profile: standard
+Maximum Tree Connections on Share: 4294967295
+       UNIX Group for File Create: -
+----
+.Informações relacionadas
+xref:add-remove-share-properties-existing-share-task.adoc[Adicionar ou remover propriedades de compartilhamento em um compartilhamento SMB existente]

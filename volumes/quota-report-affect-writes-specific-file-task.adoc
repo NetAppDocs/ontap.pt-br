@@ -1,0 +1,38 @@
+---
+permalink: volumes/quota-report-affect-writes-specific-file-task.html 
+sidebar: sidebar 
+keywords: use, quota report, determine, quotas limit, writes, specific file 
+summary: Use o comando volume quota report com um caminho de arquivo específico para determinar quais limites de cota afetam as operações de gravação em um arquivo. 
+---
+= Use o relatório de cota para determinar qual limite de cotas grava em um arquivo específico
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o comando de relatório de cota de volume com um caminho de arquivo específico para determinar quais limites de cota afetam as operações de gravação em um arquivo. Isso pode ajudá-lo a entender qual cota está impedindo uma operação de gravação.
+
+.Passos
+. Use o comando volume quota report com o parâmetro -path.
+
+
+.Exemplo de mostrar cotas que afetam um arquivo específico
+O exemplo a seguir mostra o comando e a saída para determinar quais cotas estão em vigor para gravações no arquivo file1, que reside no qtree Q1 no FlexVol volume vol2:
+
+[listing]
+----
+cluster1:> volume quota report -vserver vs0 -volume vol2 -path /vol/vol2/q1/file1
+Virtual Server: vs0
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol2     q1        tree    jsmith     1MB  100MB       2   10000   q1
+vol2     q1        group   eng        1MB  700MB       2   70000
+vol2               group   eng        1MB  700MB       6   70000   *
+vol2               user    corp\jsmith
+                                      1MB   50MB       1       -   *
+vol2     q1        user    corp\jsmith
+                                      1MB   50MB       1       -
+5 entries were displayed.
+----

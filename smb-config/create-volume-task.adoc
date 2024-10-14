@@ -1,0 +1,76 @@
+---
+permalink: smb-config/create-volume-task.html 
+sidebar: sidebar 
+keywords: create, volume, junction, point, properties, property, command, create a volume 
+summary: Você pode criar um volume e especificar seu ponto de junção e outras propriedades usando o comando volume create. 
+---
+= Crie um volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar um volume e especificar seu ponto de junção e outras propriedades usando o `volume create` comando.
+
+.Sobre esta tarefa
+Um volume deve incluir um _caminho de junção_ para que seus dados sejam disponibilizados aos clientes. Você pode especificar o caminho de junção ao criar um novo volume. Se você criar um volume sem especificar um caminho de junção, será necessário _montar_ o volume no namespace SVM usando o `volume mount` comando.
+
+.Antes de começar
+* O SMB deve ser configurado e executado.
+* O estilo de segurança da SVM deve ser NTFS.
+* A partir do ONTAP 9.13,1, você pode criar volumes com análise de capacidade e acompanhamento de atividades habilitados. Para ativar o acompanhamento de capacidade ou atividade, emita o `volume create` comando com `-analytics-state` ou `-activity-tracking-state` defina como `on`.
++
+Para saber mais sobre análise de capacidade e acompanhamento de atividades, https://docs.netapp.com/us-en/ontap/task_nas_file_system_analytics_enable.html["Ative a análise do sistema de ficheiros"] consulte .
+
+
+
+.Passos
+. Crie o volume com um ponto de junção: `volume create -vserver _svm_name_ -volume _volume_name_ -aggregate _aggregate_name_ -size {integer[KB|MB|GB|TB|PB]} -security-style ntfs -junction-path _junction_path_]`
++
+As opções para `-junction-path` são as seguintes:
+
++
+** Diretamente sob a raiz, por exemplo, `/new_vol`
++
+Você pode criar um novo volume e especificar que ele seja montado diretamente no volume raiz da SVM.
+
+** Em um diretório existente, por exemplo, `/existing_dir/new_vol`
++
+Você pode criar um novo volume e especificar que ele seja montado em um volume existente (em uma hierarquia existente), expresso como um diretório.
+
+
+
++
+Se você quiser criar um volume em um novo diretório (em uma nova hierarquia em um novo volume), por exemplo, `/new_dir/new_vol` será necessário criar primeiro um novo volume pai que seja juntado ao volume raiz SVM. Em seguida, você criaria o novo volume filho no caminho de junção do novo volume pai (novo diretório).
+
+. Verifique se o volume foi criado com o ponto de junção desejado: `volume show -vserver _svm_name_ -volume _volume_name_ -junction`
+
+
+.Exemplos
+O comando a seguir cria um novo volume chamado users1 no SVM vs1.example.com e no agregado aggr1. O novo volume é disponibilizado em `/users`. O volume tem 750 GB de tamanho e sua garantia de volume é do tipo volume (por padrão).
+
+[listing]
+----
+cluster1::> volume create -vserver vs1.example.com -volume users -aggregate aggr1 -size 750g -junction-path /users
+[Job 1642] Job succeeded: Successful
+
+cluster1::> volume show -vserver vs1.example.com -volume users -junction
+                          Junction                 Junction
+Vserver           Volume  Active   Junction Path   Path Source
+----------------- ------- -------- --------------- -----------
+vs1.example.com   users1  true     /users          RW_volume
+----
+O comando a seguir cria um novo volume chamado "'home4" na SVM"'vs1.example.com`" e o agregado "'aggr1". O diretório `/eng/` já existe no namespace para o VS1 SVM, e o novo volume é disponibilizado no `/eng/home`, que se torna o diretório home do `/eng/` namespace. O volume é de 750 GB de tamanho e sua garantia de volume é do tipo `volume` (por padrão).
+
+[listing]
+----
+cluster1::> volume create -vserver vs1.example.com -volume home4 -aggregate aggr1 -size 750g -junction-path /eng/home
+[Job 1642] Job succeeded: Successful
+
+cluster1::> volume show -vserver vs1.example.com -volume home4 -junction
+                         Junction                 Junction
+Vserver          Volume  Active   Junction Path   Path Source
+---------------- ------- -------- --------------- -----------
+vs1.example.com  home4   true     /eng/home       RW_volume
+----

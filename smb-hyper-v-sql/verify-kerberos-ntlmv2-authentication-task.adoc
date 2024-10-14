@@ -1,0 +1,78 @@
+---
+permalink: smb-hyper-v-sql/verify-kerberos-ntlmv2-authentication-task.html 
+sidebar: sidebar 
+keywords: nondisruptive, operation, hyper, v, verify, kerberos, ntlmv2, authentication, cifs, server, svm, data 
+summary: Operações ininterruptas para Hyper-V em SMB exigem que o servidor CIFS em um SVM de dados e o servidor Hyper-V permitam a autenticação Kerberos e NTLMv2. Você deve verificar as configurações no servidor CIFS e nos servidores Hyper-V que controlam quais métodos de autenticação são permitidos. 
+---
+= Verifique se a autenticação Kerberos e NTLMv2 são permitidas (Hyper-V sobre compartilhamentos SMB)
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Operações ininterruptas para Hyper-V em SMB exigem que o servidor CIFS em um SVM de dados e o servidor Hyper-V permitam a autenticação Kerberos e NTLMv2. Você deve verificar as configurações no servidor CIFS e nos servidores Hyper-V que controlam quais métodos de autenticação são permitidos.
+
+.Sobre esta tarefa
+A autenticação Kerberos é necessária ao fazer uma conexão de compartilhamento continuamente disponível. Parte do processo VSS remoto usa autenticação NTLMv2.1X. Portanto, conexões usando ambos os métodos de autenticação devem ser suportadas para configurações Hyper-V em SMB.
+
+As seguintes configurações devem ser configuradas para permitir a autenticação Kerberos e NTLMv2:
+
+* As políticas de exportação para SMB devem ser desativadas na máquina virtual de storage (SVM).
+
+
+A autenticação Kerberos e NTLMv2 estão sempre ativadas em SVMs, mas as políticas de exportação podem ser usadas para restringir o acesso com base no método de autenticação.
+
+As políticas de exportação para SMB são opcionais e estão desativadas por padrão. Se as políticas de exportação estiverem desativadas, a autenticação Kerberos e NTLMv2 serão permitidas em um servidor CIFS por padrão.
+
+* O domínio ao qual o servidor CIFS e os servidores Hyper-V pertencem deve permitir a autenticação Kerberos e NTLMv2.
+
+
+A autenticação Kerberos é ativada por padrão em domínios do ative Directory. No entanto, a autenticação NTLMv2.1X pode ser desativada, utilizando as definições de Política de Segurança ou políticas de Grupo.
+
+.Passos
+. Execute o seguinte procedimento para verificar se as políticas de exportação estão desativadas no SVM:
++
+.. Defina o nível de privilégio como avançado:
++
+`*set -privilege advanced*`
+
+.. Verifique se a `-is-exportpolicy-enabled` opção de servidor CIFS está definida como `false`:
++
+`*vserver cifs options show -vserver _vserver_name_ -fields vserver,is-exportpolicy-enabled*`
+
+.. Voltar ao nível de privilégio de administrador:
++
+`*set -privilege admin*`
+
+
+
+. Se as políticas de exportação para SMB não estiverem desativadas, desative-as:
++
+`*vserver cifs options modify -vserver _vserver_name_ -is-exportpolicy-enabled false*`
+
+. Verifique se a autenticação NTLMv2 e Kerberos são permitidas no domínio.
++
+Para obter informações sobre como determinar quais métodos de autenticação são permitidos no domínio, consulte a Biblioteca Microsoft TechNet.
+
+. Se o domínio não permitir a autenticação NTMLv2.1x, ative a autenticação NTLMv2.1x utilizando um dos métodos descritos na documentação da Microsoft.
+
+
+.Exemplo
+Os comandos a seguir verificam se as políticas de exportação para SMB estão desativadas no SVM VS1:
+
+[listing]
+----
+cluster1::> set -privilege advanced
+Warning: These advanced commands are potentially dangerous; use them
+only when directed to do so by technical support personnel.
+Do you wish to continue? (y or n): y
+
+cluster1::*> vserver cifs options show -vserver vs1 -fields vserver,is-exportpolicy-enabled
+
+vserver  is-exportpolicy-enabled
+-------- -----------------------
+vs1      false
+
+cluster1::*> set -privilege admin
+----

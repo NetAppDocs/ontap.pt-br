@@ -1,0 +1,151 @@
+---
+permalink: smb-admin/monitor-signed-session-statistics-task.html 
+sidebar: sidebar 
+keywords: monitor, smb, session, statistic, establish, sign, monitor smb signed session statistics 
+summary: Você pode monitorar estatísticas de sessões SMB e determinar quais sessões estabelecidas são assinadas e quais não são. 
+---
+= Monitorar estatísticas de sessão assinadas pelo SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode monitorar estatísticas de sessões SMB e determinar quais sessões estabelecidas são assinadas e quais não são.
+
+.Sobre esta tarefa
+O `statistics` comando no nível de privilégio avançado fornece o `signed_sessions` contador que você pode usar para monitorar o número de sessões SMB assinadas. O `signed_sessions` contador está disponível com os seguintes objetos estatísticos:
+
+* `cifs` Permite monitorar a assinatura SMB para todas as sessões SMB.
+* `smb1` Permite monitorar a assinatura SMB para sessões SMB 1,0.
+* `smb2` Permite monitorar a assinatura SMB para sessões SMB 2.x e SMB 3,0.
++
+As estatísticas SMB 3,0 são incluídas na saída para o `smb2` objeto.
+
+
+
+Se você quiser comparar o número de sessão assinada com o número total de sessões, você pode comparar a saída para o contador com a saída `established_sessions` para `signed_sessions` o contador.
+
+Você deve iniciar uma coleta de amostras de estatísticas antes de poder visualizar os dados resultantes. Você pode exibir dados da amostra se não parar a coleta de dados. Parar a coleta de dados dá-lhe uma amostra fixa. Não interromper a coleta de dados dá a você a capacidade de obter dados atualizados que você pode usar para comparar com consultas anteriores. A comparação pode ajudá-lo a identificar tendências.
+
+.Passos
+. Defina o nível de privilégio como avançado
+`set -privilege advanced`
+. Iniciar uma coleta de dados
+`statistics start -object {cifs|smb1|smb2} -instance instance -sample-id _sample_ID_ [-node _node_name_]`
++
+Se você não especificar o `-sample-id` parâmetro, o comando gera um identificador de amostra para você e define esse exemplo como a amostra padrão para a sessão CLI. O valor para `-sample-id` é uma cadeia de texto. Se você executar esse comando durante a mesma sessão CLI e não especificar o `-sample-id` parâmetro, o comando sobrescreverá a amostra padrão anterior.
+
++
+Opcionalmente, você pode especificar o nó no qual deseja coletar estatísticas. Se você não especificar o nó, a amostra coletará estatísticas para todos os nós no cluster.
+
+. Use o `statistics stop` comando para parar de coletar dados para a amostra.
+. Exibir estatísticas de assinatura SMB:
++
+|===
+| Se você quiser ver informações para... | Digite... 
+
+
+ a| 
+Sessões assinadas
+ a| 
+`show -sample-id sample_ID -counter signed_sessions|_node_name_ [-node _node_name_]`
+
+
+
+ a| 
+Sessões assinadas e sessões estabelecidas
+ a| 
+`show -sample-id _sample_ID_ -counter signed_sessions|established_sessions|_node_name_ [-node node_name]`
+
+|===
++
+Se você quiser exibir informações apenas para um único nó, especifique o parâmetro opcional `-node`.
+
+. Voltar para o nível de privilégio de administrador
+`set -privilege admin`
+
+
+.Exemplos
+[%collapsible]
+====
+O exemplo a seguir mostra como você pode monitorar as estatísticas de assinatura SMB 2.x e SMB 3,0 na máquina virtual de armazenamento (SVM) VS1.
+
+O seguinte comando move-se para o nível de privilégio avançado:
+
+[listing]
+----
+cluster1::> set -privilege advanced
+
+Warning: These advanced commands are potentially dangerous; use them only when directed to do so by support personnel.
+Do you want to continue? {y|n}: y
+----
+O comando a seguir inicia a coleta de dados para uma nova amostra:
+
+[listing]
+----
+cluster1::*> statistics start -object smb2 -sample-id smbsigning_sample -vserver vs1
+Statistics collection is being started for Sample-id: smbsigning_sample
+----
+O comando a seguir interrompe a coleta de dados para a amostra:
+
+[listing]
+----
+cluster1::*> statistics stop -sample-id smbsigning_sample
+Statistics collection is being stopped for Sample-id: smbsigning_sample
+----
+O comando a seguir mostra sessões SMB assinadas e sessões SMB estabelecidas por nó da amostra:
+
+[listing]
+----
+cluster1::*> statistics show -sample-id smbsigning_sample -counter signed_sessions|established_sessions|node_name
+
+Object: smb2
+Instance: vs1
+Start-time: 2/6/2013 01:00:00
+End-time: 2/6/2013 01:03:04
+Cluster: cluster1
+
+    Counter                                              Value
+    -------------------------------- -------------------------
+    established_sessions                                     0
+    node_name                                           node1
+    signed_sessions                                          0
+    established_sessions                                     1
+    node_name                                           node2
+    signed_sessions                                          1
+    established_sessions                                     0
+    node_name                                           node3
+    signed_sessions                                          0
+    established_sessions                                     0
+    node_name                                           node4
+    signed_sessions                                          0
+----
+O comando a seguir mostra sessões SMB assinadas para node2 da amostra:
+
+[listing]
+----
+cluster1::*> statistics show -sample-id smbsigning_sample -counter signed_sessions|node_name -node node2
+
+Object: smb2
+Instance: vs1
+Start-time: 2/6/2013 01:00:00
+End-time: 2/6/2013 01:22:43
+Cluster: cluster1
+
+    Counter                                              Value
+    -------------------------------- -------------------------
+    node_name                                            node2
+    signed_sessions                                          1
+----
+O seguinte comando volta para o nível de privilégio admin:
+
+[listing]
+----
+cluster1::*> set -privilege admin
+----
+====
+.Informações relacionadas
+xref:determine-sessions-signed-task.adoc[Determinar se as sessões SMB são assinadas]
+
+link:../performance-admin/index.html["Visão geral do gerenciamento e monitoramento de desempenho"]

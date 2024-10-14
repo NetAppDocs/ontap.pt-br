@@ -1,0 +1,39 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/strategy-concept.html 
+keywords: snapmirror, snapmirror business continuity, sm-bc, deployment, recommendations 
+summary: Saiba mais sobre a implantação e as práticas recomendadas para a sincronização ativa do SnapMirror. 
+---
+= Estratégia de implantação e práticas recomendadas para a sincronização ativa do SnapMirror
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+É importante que sua estratégia de proteção de dados identifique claramente as ameaças aos workloads que precisam ser protegidas para manter a continuidade dos negócios. A etapa mais importante na estratégia de proteção de dados é ter clareza no layout de dados de aplicações empresariais para que você possa decidir como distribuir os volumes e proteger a continuidade dos negócios. Como o failover ocorre no nível do grupo de consistência por aplicação, adicione os volumes de dados necessários ao grupo de consistência.
+
+
+
+== Configuração SVM
+
+O diagrama captura uma configuração recomendada de VM de storage (SVM) para sincronização ativa do SnapMirror.
+
+image:snapmirror-svm-layout.png["Configuração de storage VM ou SVM para SnapMirror active Sync"]
+
+* Para volumes de dados:
++
+** Cargas de trabalho de leitura aleatória são isoladas de gravações sequenciais; portanto, dependendo do tamanho do banco de dados, os dados e arquivos de log são normalmente colocados em volumes separados.
++
+*** Para grandes bancos de dados críticos, o único arquivo de dados está no FlexVol 1 e seu arquivo de log correspondente está no FlexVol 2.
+*** Para uma melhor consolidação, bancos de dados não críticos de tamanho pequeno a médio são agrupados de modo que todos os arquivos de dados estejam no FlexVol 1 e seus arquivos de log correspondentes estejam no FlexVol 2. No entanto, você perderá a granularidade no nível do aplicativo por meio desse agrupamento.
+
+
+** Outra variante é ter todos os arquivos dentro do mesmo FlexVol 3, com arquivos de dados em LUN1 e seus arquivos de log em LUN 2.
+
+
+* Se o seu ambiente for virtualizado, você terá todas as VMs para vários aplicativos empresariais compartilhados em um datastore. Normalmente, as VMs e os binários da aplicação são replicados assincronamente usando o SnapMirror.
+

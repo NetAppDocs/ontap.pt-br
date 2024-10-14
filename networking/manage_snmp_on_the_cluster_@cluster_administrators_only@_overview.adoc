@@ -1,0 +1,73 @@
+---
+sidebar: sidebar 
+permalink: networking/manage_snmp_on_the_cluster_@cluster_administrators_only@_overview.html 
+keywords: 'manage, managing, snmp, monitor, monitoring, troubleshooting, error detection, traps, overview, configure snmp to monitor svms in your cluster, snmp, trap, traphosts, asynchronous, notification, notify, alert, message, thresholds, failures, errors, fail, rfc 1215, built in, built-in, standard, snmp traps, use snmp traps to periodically check for operational thresholds or failures, standard snmp traps, system snmp authtrap, rfc 1215, coldstart, warmstart, linkdown, linkup, authenticationfailure, built-in snmp traps, traphost, diskfailedshutdown, cputoobusy, and volumenearlyfull, introducing, introduction, overview, mib, management information base, text, structure, netapp.mib, what mibs are, introducing management information bases (mibs), snmp objects and traps, object identifiers, oids, traps.dat' 
+summary: Configure o SNMP para monitorar SVMs no cluster 
+---
+= Visão geral da SNMP
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode configurar o SNMP para monitorar SVMs em seu cluster para evitar problemas antes que eles ocorram e responder a problemas se eles ocorrerem. O gerenciamento do SNMP envolve a configuração de usuários SNMP e a configuração de destinos de host SNMP (estações de trabalho de gerenciamento) para todos os eventos SNMP. O SNMP está desativado por padrão em LIFs de dados.
+
+Você pode criar e gerenciar usuários SNMP somente leitura no data SVM. As LIFs de dados devem ser configuradas para receber solicitações SNMP no SVM.
+
+As estações de trabalho de gerenciamento de rede SNMP, ou gerentes, podem consultar o agente SNMP SVM para obter informações. O agente SNMP reúne informações e as encaminha para os gerentes SNMP. O agente SNMP também gera notificações de intercetação sempre que ocorrem eventos específicos. O agente SNMP no SVM tem Privileges somente leitura; ele não pode ser usado para nenhuma operação definida ou para tomar uma ação corretiva em resposta a uma armadilha. O ONTAP fornece um agente SNMP compatível com as versões v1, v2c e v3 do SNMP. O SNMPv3 oferece segurança avançada usando senhas e criptografia.
+
+Para obter mais informações sobre o suporte SNMP em sistemas ONTAP, https://www.netapp.com/pdf.html?item=/media/16417-tr-4220pdf.pdf["TR-4220: Suporte SNMP no Data ONTAP"^] consulte .
+
+
+
+== Visão geral da MIB
+
+Um MIB (Management Information base) é um arquivo de texto que descreve objetos e traps SNMP.
+
+As MIBs descrevem a estrutura dos dados de gerenciamento do sistema de armazenamento e usam um namespace hierárquico contendo identificadores de objeto (OIDs). Cada OID identifica uma variável que pode ser lida usando SNMP.
+
+Como MIBs não são arquivos de configuração e o ONTAP não lê esses arquivos, a funcionalidade SNMP não é afetada por MIBs. O ONTAP fornece o seguinte arquivo MIB:
+
+* Um MIB personalizado NetApp (`netapp.mib`)
+
+
+O ONTAP suporta MIBs IPv6 (RFC 2465), TCP (RFC 4022), UDP (RFC 4113) e ICMP (RFC 2466), que mostram dados IPv4 e IPv6, são suportados.
+
+O ONTAP também fornece uma breve referência cruzada entre identificadores de objeto (OIDs) e nomes curtos de objetos no `traps.dat` arquivo.
+
+
+NOTE: As versões mais recentes dos arquivos MIBs ONTAP e 'traps.dat' estão disponíveis no site de suporte da NetApp. No entanto, as versões desses arquivos no site de suporte não correspondem necessariamente aos recursos SNMP de sua versão do ONTAP. Esses arquivos são fornecidos para ajudá-lo a avaliar os recursos SNMP na versão mais recente do ONTAP.
+
+
+
+== Traps SNMP
+
+Os traps SNMP capturam informações de monitoramento do sistema que são enviadas como uma notificação assíncrona do agente SNMP para o gerenciador SNMP.
+
+Existem três tipos de traps SNMP: Padrão, embutido e definido pelo usuário. Os traps definidos pelo usuário não são suportados no ONTAP.
+
+Uma armadilha pode ser usada para verificar periodicamente se há limites operacionais ou falhas que são definidos na MIB. Se um limite for atingido ou uma falha for detetada, o agente SNMP enviará uma mensagem (trap) aos hosts que os alertam sobre o evento.
+
+
+NOTE: ONTAP suporta SNMPv1 armadilhas e, olhando em ONTAP 9.1, SNMPv3 armadilhas. ONTAP não suporta SNMPv2c armadilhas e informa.
+
+
+
+== Traps SNMP padrão
+
+Esses traps são definidos no RFC 1215. Existem cinco traps SNMP padrão que são suportados pelo ONTAP: Coldstart, warmStart, linkDown, linkup e autenticationFailure.
+
+
+NOTE: A armadilha autenticationFailure é desativada por padrão. Você deve usar o `system snmp authtrap` comando para ativar a armadilha. Para obter mais informações, consulte as páginas de manual: link:../concepts/manual-pages.html["Referência do comando ONTAP"]
+
+
+
+== Traps SNMP incorporados
+
+Os traps incorporados são predefinidos no ONTAP e são enviados automaticamente para as estações de gerenciamento de rede na lista de traphost se ocorrer um evento. Essas armadilhas, como diskFailedShutdown, cpuTooBusy e volumeNearlyFull, são definidas no MIB personalizado.
+
+Cada armadilha incorporada é identificada por um código de armadilha exclusivo.

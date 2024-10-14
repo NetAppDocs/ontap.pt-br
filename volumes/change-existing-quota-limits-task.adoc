@@ -1,0 +1,46 @@
+---
+permalink: volumes/change-existing-quota-limits-task.html 
+sidebar: sidebar 
+keywords: modify, resize, quota limits, quota, limits, volume, volumes, quotas 
+summary: Você pode alterar ou redimensionar as cotas em todos os volumes afetados, o que é mais rápido do que reinicializar cotas nesses volumes. 
+---
+= Modificar ou redimensionar limites de cota
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode alterar ou redimensionar as cotas em todos os volumes afetados, o que é mais rápido do que reinicializar cotas nesses volumes.
+
+.Sobre esta tarefa
+Você tem uma máquina virtual de storage (SVM, anteriormente conhecida como SVM) com cotas aplicadas e deseja alterar os limites de tamanho das cotas existentes ou adicionar ou excluir cotas de destinos que já tenham cotas derivadas.
+
+.Passos
+. Use o `vserver show` comando com o `-instance` parâmetro para determinar o nome da política atualmente atribuída ao SVM.
+. Modifique as regras de cota executando qualquer uma das seguintes ações:
++
+** Use o `volume quota policy rule modify` comando para modificar os limites de disco ou arquivo das regras de cota existentes.
+** Use o `volume quota policy rule create` comando para criar regras de cota explícitas para alvos (usuários, grupos ou qtrees) que atualmente têm cotas derivadas.
+** Use o `volume quota policy rule delete` comando para excluir regras de cota explícitas para alvos (usuários, grupos ou qtrees) que também têm cotas padrão.
+
+
+. Use o `volume quota policy rule show` comando para verificar se as regras de cota estão configuradas corretamente.
+. Use o `volume quota resize` comando em cada volume em que você alterou cotas para ativar as alterações em cada volume.
++
+Você pode monitorar o processo de redimensionamento de uma das seguintes maneiras:
+
++
+** Ao usar o `volume quota resize` comando, você pode adicionar o `-foreground` parâmetro para executar o trabalho de redimensionamento em primeiro plano. (Por padrão, o trabalho é executado em segundo plano.)
++
+Quando o trabalho é executado em segundo plano, você pode monitorar seu progresso usando o `job show` comando.
+
+** Você pode usar o `volume quota show` comando para monitorar o status de redimensionamento.
+
+
+. Use o `volume quota show -instance` comando para verificar se há erros de redimensionamento, como regras de cota que não conseguiram ser redimensionadas.
++
+Em particular, verifique se há erros de "nova definição", que ocorrem quando você redimensiona cotas depois de adicionar uma cota explícita para um destino que ainda não tenha uma cota derivada.
+
+. Use o `volume quota report` comando para exibir um relatório de cota para que você possa garantir que as cotas aplicadas correspondam aos seus requisitos.
+

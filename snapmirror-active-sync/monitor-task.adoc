@@ -1,0 +1,108 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/monitor-task.html 
+keywords: SM-BC, SMBC, monitoring, Mediator status, EMS, errors, planned failover status, automatic unplanned failover status, , snapmirror active sync 
+summary: Existem vários componentes e operações de sincronização ativa do SnapMirror que você pode monitorar. 
+---
+= Monitorar operações de sincronização ativa do SnapMirror
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode monitorar as seguintes operações de sincronização ativa do SnapMirror para garantir a integridade da configuração de sincronização ativa do SnapMirror:
+
+* ONTAP Mediador
+* Operações de failover planejadas
+* Operações automáticas de failover não planejadas
+* Disponibilidade de sincronização ativa do SnapMirror
+
+
+
+NOTE: A partir do ONTAP 9.15,1, o Gerenciador do sistema exibe o status da relação de sincronização ativa do SnapMirror de qualquer cluster. Você também pode monitorar o status do Mediador ONTAP de qualquer cluster no Gerenciador de sistema.
+
+
+
+== ONTAP Mediador
+
+Durante as operações normais, o estado do Mediador ONTAP deve ser conetado. Se estiver em qualquer outro estado, isso pode indicar uma condição de erro. Pode rever o link:https://docs.netapp.com/us-en/ontap-ems-9131/sm-mediator-events.html["Mensagens do sistema de Gestão de Eventos (EMS)"^] para determinar o erro e as ações corretivas adequadas.
+
+
+
+== Operações de failover planejadas
+
+Você pode monitorar o status e o progresso de uma operação de failover planejada usando o `snapmirror failover show` comando. Por exemplo:
+
+....
+ClusterB::> snapmirror failover start -destination-path vs1:/cg/dcg1
+....
+Depois que a operação de failover estiver concluída, você poderá monitorar o status de proteção SnapMirror a partir do novo cluster de destino. Por exemplo:
+
+....
+ClusterA::> snapmirror show
+....
+Consulte link:https://docs.netapp.com/us-en/ontap-ems-9131/smbc-pfo-events.html["Referência da EMS"^]para obter informações sobre mensagens de eventos e ações corretivas.
+
+
+
+== Operações automáticas de failover não planejadas
+
+Durante um failover automático não planejado, você pode monitorar o status da operação usando o `snapmirror failover show` comando.
+
+....
+ClusterB::> snapmirror failover show -instance
+Start Time: 9/23/2020 22:03:29
+         Source Path: vs1:/cg/scg3
+    Destination Path: vs3:/cg/dcg3
+     Failover Status: completed
+        Error Reason:
+            End Time: 9/23/2020 22:03:30
+Primary Data Cluster: cluster-2
+Last Progress Update: -
+       Failover Type: unplanned
+  Error Reason codes: -
+....
+Consulte link:https://docs.netapp.com/us-en/ontap-ems-9131/smbc-aufo-events.html["Referência da EMS"^]para obter informações sobre mensagens de eventos e sobre ações corretivas.
+
+
+
+== Disponibilidade de sincronização ativa do SnapMirror
+
+Você pode verificar a disponibilidade da relação de sincronização ativa do SnapMirror usando uma série de comandos, no cluster primário, no cluster secundário ou em ambos.
+
+Os comandos usados incluem o `snapmirror mediator show` comando no cluster primário e secundário para verificar o status da conexão e do quórum, o `snapmirror show` comando e o `volume show` comando. Por exemplo:
+
+....
+SMBC_A::*> snapmirror mediator show
+Mediator Address Peer Cluster     Connection Status Quorum Status
+---------------- ---------------- ----------------- -------------
+10.236.172.86    SMBC_B           connected         true
+
+SMBC_B::*> snapmirror mediator show
+Mediator Address Peer Cluster     Connection Status Quorum Status
+---------------- ---------------- ----------------- -------------
+10.236.172.86    SMBC_A           connected         true
+
+SMBC_B::*> snapmirror show -expand
+                                                                       Progress
+Source            Destination Mirror  Relationship   Total             Last
+Path        Type  Path        State   Status         Progress  Healthy Updated
+----------- ---- ------------ ------- -------------- --------- ------- --------
+vs0:/cg/cg1 XDP  vs1:/cg/cg1_dp Snapmirrored Insync -         true    -
+vs0:vol1    XDP  vs1:vol1_dp  Snapmirrored Insync   -         true    -
+2 entries were displayed.
+
+SMBC_A::*> volume show -fields is-smbc-master,smbc-consensus,is-smbc-failover-capable -volume vol1
+vserver volume is-smbc-master is-smbc-failover-capable smbc-consensus
+------- ------ -------------- ------------------------ --------------
+vs0     vol1   true           false                    Consensus
+
+SMBC_B::*> volume show -fields is-smbc-master,smbc-consensus,is-smbc-failover-capable -volume vol1_dp
+vserver volume  is-smbc-master is-smbc-failover-capable smbc-consensus
+------- ------- -------------- ------------------------ --------------
+vs1     vol1_dp false          true                     No-consensus
+....

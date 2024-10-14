@@ -1,0 +1,67 @@
+---
+permalink: system-admin/upload-core-dump-files-task.html 
+sidebar: sidebar 
+keywords: upload, core, dump, file, autosupport, device, send, messages, email 
+summary: Quando um arquivo de despejo de memória é salvo, uma mensagem de evento é gerada. Se o serviço AutoSupport estiver ativado e configurado para enviar mensagens ao suporte do NetApp, uma mensagem AutoSupport será transmitida e uma confirmação automática por e-mail será enviada para você. 
+---
+= Carregue arquivos de despejo de memória
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando um arquivo de despejo de memória é salvo, uma mensagem de evento é gerada. Se o serviço AutoSupport estiver ativado e configurado para enviar mensagens ao suporte do NetApp, uma mensagem AutoSupport será transmitida e uma confirmação automática por e-mail será enviada para você.
+
+.O que você vai precisar
+* Você deve ter configurado o AutoSupport com as seguintes configurações:
++
+** O AutoSupport está ativado no nó.
+** O AutoSupport está configurado para enviar mensagens ao suporte técnico.
+** O AutoSupport está configurado para usar o protocolo de transporte HTTP ou HTTPS.
++
+O protocolo de transporte SMTP não é suportado ao enviar mensagens que incluam arquivos grandes, como arquivos de despejo de memória.
+
+
+
+
+
+.Sobre esta tarefa
+Você também pode fazer o upload do arquivo de despejo do núcleo através do serviço AutoSupport em HTTPS usando o `system node autosupport invoke-core-upload` comando, se solicitado pelo suporte do NetApp.
+
+https://kb.netapp.com/Advice_and_Troubleshooting/Miscellaneous/How_to_upload_a_file_to_NetApp["Como fazer upload de um arquivo para o NetApp"^]
+
+.Passos
+. Veja os arquivos de despejo de núcleo para um nó usando o `system node coredump show` comando.
++
+No exemplo a seguir, os arquivos de despejo do núcleo são exibidos para o nó local:
+
++
+[listing]
+----
+cluster1::> system node coredump show -node local
+Node:Type Core Name Saved Panic Time
+--------- ------------------------------------------- ----- -----------------
+node:kernel
+core.4073000068.2013-09-11.15_05_01.nz true 9/11/2013 15:05:01
+----
+. Gere uma mensagem AutoSupport e carregue um arquivo de despejo de memória usando o `system node autosupport invoke-core-upload` comando.
++
+No exemplo a seguir, uma mensagem do AutoSupport é gerada e enviada para o local padrão, que é suporte técnico, e o arquivo de despejo de núcleo é carregado para o local padrão, que é o site de suporte do NetApp:
+
++
+[listing]
+----
+cluster1::> system node autosupport invoke-core-upload -core-filename
+core.4073000068.2013-09-11.15_05_01.nz -node local
+----
++
+No exemplo a seguir, uma mensagem do AutoSupport é gerada e enviada para o local especificado no URI, e o arquivo de despejo do núcleo é carregado para o URI:
+
++
+[listing]
+----
+cluster1::> system node autosupport invoke-core-upload -uri https//files.company.com -core-filename
+core.4073000068.2013-09-11.15_05_01.nz -node local
+----
+

@@ -1,0 +1,52 @@
+---
+permalink: smb-admin/file-locking-between-protocols-concept.html 
+sidebar: sidebar 
+keywords: file, lock, method, use, client, application, prevent, user, access, open, ontap, protocol, about file locking between protocols 
+summary: Bloqueio de arquivos é um método usado por aplicativos cliente para impedir que um usuário acesse um arquivo aberto anteriormente por outro usuário. A forma como o ONTAP bloqueia ficheiros depende do protocolo do cliente. 
+---
+= Acerca do bloqueio de ficheiros entre protocolos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Bloqueio de arquivos é um método usado por aplicativos cliente para impedir que um usuário acesse um arquivo aberto anteriormente por outro usuário. A forma como o ONTAP bloqueia ficheiros depende do protocolo do cliente.
+
+Se o cliente for um cliente NFS, os bloqueios são consultivos; se o cliente for um cliente SMB, os bloqueios são obrigatórios.
+
+Devido às diferenças entre os bloqueios de arquivos NFS e SMB, um cliente NFS pode não conseguir acessar um arquivo aberto anteriormente por um aplicativo SMB.
+
+O seguinte ocorre quando um cliente NFS tenta aceder a um ficheiro bloqueado por uma aplicação SMB:
+
+* Em volumes mistos ou NTFS, operações de manipulação de arquivos como `rm` , `rmdir` e `mv` podem causar falha no aplicativo NFS.
+* As operações de leitura e gravação NFS são negadas pelos modos abertos SMB deny-read e deny-write, respetivamente.
+* As operações de gravação NFS falham quando o intervalo escrito do arquivo é bloqueado com um bytelock SMB exclusivo.
+* Desvincular
++
+** Para sistemas de arquivos NTFS, as operações de exclusão SMB e CIFS são suportadas.
++
+O arquivo será removido após o último fechamento.
+
+** As operações de desvinculação NFS não são suportadas.
++
+Ele não é suportado porque as semânticas NTFS e SMB são necessárias e a última operação Excluir-em-close não é suportada para NFS.
+
+** Para sistemas de arquivos UNIX, a operação de desvinculação é suportada.
++
+Ele é compatível porque a semântica NFS e UNIX são necessárias.
+
+
+
+* Mudar o nome
++
+** Para sistemas de arquivos NTFS, se o arquivo de destino for aberto a partir de SMB ou CIFS, o arquivo de destino pode ser renomeado.
+** O nome de NFS não é suportado.
++
+Não é suportado porque as semânticas NTFS e SMB são necessárias.
+
+
+
+
+
+Em volumes de estilo de segurança UNIX, as operações NFS desvincular e renomear ignoram o estado de bloqueio SMB e permitem o acesso ao arquivo. Todas as outras operações NFS em volumes estilo segurança UNIX honram o estado de bloqueio SMB.

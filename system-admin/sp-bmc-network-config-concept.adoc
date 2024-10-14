@@ -1,0 +1,58 @@
+---
+permalink: system-admin/sp-bmc-network-config-concept.html 
+sidebar: sidebar 
+keywords: consideration, sp, bmc, network, configuration, cluster, level, disable, configuration 
+summary: 'Pode ativar a configuração automática de rede no nível do cluster para o SP (recomendado). Você também pode deixar a configuração automática de rede do SP desativada (o padrão) e gerenciar a configuração de rede do SP manualmente no nível do nó. Existem algumas considerações para cada caso.' 
+---
+= Considerações para a configuração de rede SP/BMC
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Pode ativar a configuração automática de rede no nível do cluster para o SP (recomendado). Você também pode deixar a configuração automática de rede do SP desativada (o padrão) e gerenciar a configuração de rede do SP manualmente no nível do nó. Existem algumas considerações para cada caso.
+
+[NOTE]
+====
+Este tópico aplica-se tanto ao SP como ao BMC.
+
+====
+A configuração automática de rede SP permite que o SP use recursos de endereço (incluindo o endereço IP, máscara de sub-rede e endereço de gateway) da sub-rede especificada para configurar sua rede automaticamente. Com a configuração automática de rede SP, não é necessário atribuir manualmente endereços IP para o SP de cada nó. Por padrão, a configuração automática de rede do SP está desativada; isso ocorre porque a ativação da configuração exige que a sub-rede a ser usada para a configuração seja definida primeiro no cluster.
+
+Se você ativar a configuração automática de rede do SP, os seguintes cenários e considerações serão aplicados:
+
+* Se o SP nunca tiver sido configurado, a rede SP é configurada automaticamente com base na sub-rede especificada para a configuração automática de rede SP.
+* Se o SP foi configurado manualmente anteriormente ou se a configuração de rede SP existente for baseada em uma sub-rede diferente, a rede SP de todos os nós do cluster será reconfigurada com base na sub-rede especificada na configuração automática de rede SP.
++
+A reconfiguração pode resultar na atribuição de um endereço diferente ao SP, o que pode ter um impactos na configuração de DNS e na capacidade de resolver nomes de host do SP. Como resultado, você pode precisar atualizar sua configuração de DNS.
+
+* Um nó que se une ao cluster usa a sub-rede especificada para configurar sua rede SP automaticamente.
+* O `system service-processor network modify` comando não permite alterar o endereço IP do SP.
++
+Quando a configuração automática de rede SP está ativada, o comando permite-lhe ativar ou desativar a interface de rede SP.
+
++
+** Se a configuração automática de rede do SP tiver sido ativada anteriormente, a desativação da interface de rede do SP resulta na liberação do recurso de endereço atribuído e retornada à sub-rede.
+** Se você desabilitar a interface de rede SP e reativá-la, o SP poderá ser reconfigurado com um endereço diferente.
+
+
+
+
+Se a configuração automática de rede do SP estiver desativada (o padrão), os seguintes cenários e considerações serão aplicados:
+
+* Se o SP nunca tiver sido configurado, a configuração de rede do SP IPv4 é predefinida para utilizar DHCP IPv4 e IPv6 é desativada.
++
+Um nó que une o cluster também usa DHCP IPv4 para sua configuração de rede SP por padrão.
+
+* O `system service-processor network modify` comando permite configurar o endereço IP SP de um nó.
++
+É apresentada uma mensagem de aviso quando tenta configurar manualmente a rede SP com endereços atribuídos a uma sub-rede. Ignorar o aviso e prosseguir com a atribuição manual de endereços pode resultar em um cenário com endereços duplicados.
+
+
+
+Se a configuração automática de rede do SP for desativada depois de ter sido ativada anteriormente, aplicam-se os seguintes cenários e considerações:
+
+* Se a configuração automática de rede do SP tiver a família de endereços IPv4 desativada, a rede SP IPv4 é predefinida para utilizar DHCP e o `system service-processor network modify` comando permite modificar a configuração do SP IPv4 para nós individuais.
+* Se a configuração automática de rede do SP tiver a família de endereços IPv6 desativada, a rede do SP IPv6 também será desativada e o `system service-processor network modify` comando permitirá ativar e modificar a configuração do SP IPv6 para nós individuais.
+

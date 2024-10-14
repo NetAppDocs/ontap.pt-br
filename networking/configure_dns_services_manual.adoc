@@ -1,0 +1,145 @@
+---
+sidebar: sidebar 
+permalink: networking/configure_dns_services_manual.html 
+keywords: dns, service, services, configuration, configure, configuring, set, up, setup, nfs, smb, cifs, active, directory, statistics, configure dns services, files, dns, hosts, , vserver services name-service dns create, configure dynamic dns on the svm, vserver-fqdn 
+summary: Configure os serviços DNS para o SVM antes de criar um servidor NFS ou SMB 
+---
+= Configurar serviços DNS (ONTAP 9.7 e anteriores)
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você deve configurar serviços DNS para o SVM antes de criar um servidor NFS ou SMB. Geralmente, os servidores de nomes DNS são os servidores DNS integrados ao ative Directory para o domínio em que o servidor NFS ou SMB se juntará.
+
+.Sobre esta tarefa
+Os servidores DNS integrados ao ative Directory contêm os registos de localização de serviço (SRV) para os servidores LDAP de domínio e controlador de domínio. Se o SVM não conseguir localizar os servidores LDAP e os controladores de domínio do ative Directory, a configuração do servidor NFS ou SMB falhará.
+
+Os SVMs usam o banco de dados ns-switch de serviços de nome de hosts para determinar quais serviços de nome usar e em qual ordem ao procurar informações sobre hosts. Os dois serviços de nomes suportados para o banco de dados hosts são `files` e `dns`.
+
+Você deve garantir `dns` que seja uma das fontes antes de criar o servidor SMB.
+
+
+NOTE: Para exibir as estatísticas dos serviços de nome DNS para o processo mgwd e o processo SecD, use a IU Estatística.
+
+.Passos
+. Determine qual é a configuração atual para o `hosts` banco de dados de serviços de nome.
++
+Neste exemplo, o banco de dados do serviço de nomes de hosts usa as configurações padrão.
+
++
+`vserver services name-service _ns-switch_ show -vserver _vs1_ -database _hosts_`
+
++
+....
+                     Vserver: vs1
+Name Service Switch Database: hosts
+   Name Service Source Order: files, dns
+....
+. Execute as seguintes ações, se necessário.
++
+.. Adicione o serviço de nomes DNS ao banco de dados do serviço de nomes hosts na ordem desejada ou reordene as fontes.
++
+Neste exemplo, o banco de dados hosts é configurado para usar arquivos DNS e locais nessa ordem.
+
++
+`vserver services name-service _ns-switch_ modify -vserver _vs1_ -database _hosts_ -sources _dns,files_`
+
+.. Verifique se a configuração dos serviços de nome está correta.
++
+`vserver services name-service _ns-switch_ show -vserver _vs1_ -database _hosts_`
+
+
+
+. Configurar serviços DNS.
++
+`vserver services name-service dns create -vserver _vs1_ -domains _example.com,example2.com_ -name-servers _10.0.0.50,10.0.0.51_`
+
++
+
+NOTE: O comando vserver services `name-service dns create` executa uma validação automática de configuração e relata uma mensagem de erro se o ONTAP não conseguir entrar em Contato com o servidor de nomes.
+
+. Verifique se a configuração DNS está correta e se o serviço está ativado.
++
+....
+           Vserver: vs1
+           Domains: example.com, example2.com Name
+           Servers: 10.0.0.50, 10.0.0.51
+Enable/Disable DNS: enabled Timeout (secs): 2
+  Maximum Attempts: 1
+....
+. Valide o status dos servidores de nomes.
++
+`vserver services name-service dns check -vserver _vs1_`
+
++
+....
+Vserver  Name Server  Status  Status Details
+-------  -----------  ------  -----------------------
+vs1      10.0.0.50    up      Response time (msec): 2
+vs1      10.0.0.51    up      Response time (msec): 2
+....
+
+
+
+
+== Configurar DNS dinâmico na SVM
+
+Se desejar que o servidor DNS integrado ao ative Directory Registre dinamicamente os Registros DNS de um servidor NFS ou SMB no DNS, você deverá configurar o DNS dinâmico (DDNS) no SVM.
+
+.Antes de começar
+Os serviços de nomes DNS devem ser configurados no SVM. Se você estiver usando o DDNS seguro, use servidores de nomes DNS integrados ao ative Directory e crie um servidor NFS ou SMB ou uma conta do ative Directory para o SVM.
+
+.Sobre esta tarefa
+O nome de domínio totalmente qualificado (FQDN) especificado deve ser exclusivo:
+
+* Para NFS, o valor especificado em `-vserver-fqdn` como parte `vserver services name-service dns dynamic-update` do comando torna-se o FQDN registrado para os LIFs.
+* Para SMB, os valores especificados como o nome NetBIOS do servidor CIFS e o nome de domínio totalmente qualificado do servidor CIFS tornam-se o FQDN registrado para os LIFs. Isso não é configurável no ONTAP. No cenário a seguir, o FQDN de LIF é "CIFS_VS1.EXAMPLE.COM":
++
+....
+cluster1::> cifs server show -vserver vs1
+
+                                          Vserver: vs1
+                         CIFS Server NetBIOS Name: CIFS_VS1
+                    NetBIOS Domain/Workgroup Name: EXAMPLE
+                      Fully Qualified Domain Name: EXAMPLE.COM
+                              Organizational Unit: CN=Computers
+Default Site Used by LIFs Without Site Membership:
+                                   Workgroup Name: -
+                                   Kerberos Realm: -
+                             Authentication Style: domain
+                CIFS Server Administrative Status: up
+                          CIFS Server Description:
+                          List of NetBIOS Aliases: -
+....
+
+
+
+NOTE: Para evitar uma falha de configuração de um FQDN SVM que não esteja em conformidade com as regras RFC para atualizações DDNS, use um nome FQDN compatível com RFC. Para obter mais informações, link:https://tools.ietf.org/html/rfc1123["RFC 1123"]consulte .
+
+.Passos
+. Configurar o DDNS na SVM:
++
+`vserver services name-service dns dynamic-update modify -vserver _vserver_name_ -is- enabled _true_ [-use-secure {true|false} -vserver-fqdn _FQDN_used_for_DNS_updates_`
+
++
+`vserver services name-service dns dynamic-update modify -vserver _vs1_ -is-enabled _true_ - use-secure _true_ -vserver-fqdn _vs1.example.com_`
+
++
+Asteriscos não podem ser usados como parte do FQDN personalizado. Por exemplo, `{asterisk}.netapp.com` não é válido.
+
+. Verifique se a configuração DDNS está correta:
++
+`vserver services name-service dns dynamic-update show`
+
++
+....
+Vserver  Is-Enabled Use-Secure Vserver FQDN      TTL
+-------- ---------- ---------- ----------------- -------
+vs1      true       true       vs1.example.com   24h
+....
+

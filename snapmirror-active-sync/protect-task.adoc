@@ -1,0 +1,196 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/protect-task.html 
+keywords: SM-BC, snapmirror business continuity, consistency group, remote protection, destination 
+summary: A configuração da proteção para a continuidade dos negócios envolve a seleção de LUNs no cluster de origem ONTAP e a adição deles a um grupo de consistência. 
+---
+= Proteja com a sincronização ativa do SnapMirror
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+O SnapMirror ative Sync oferece proteção assimétrica e, a partir do ONTAP 9.15,1, proteção ativa/ativa simétrica.
+
+
+
+== Configurar a proteção assimétrica
+
+A configuração de proteção assimétrica usando a sincronização ativa do SnapMirror envolve a seleção de LUNs no cluster de origem do ONTAP e a adição a um grupo de consistência.
+
+.Antes de começar
+* Você precisa ter uma licença síncrona do SnapMirror.
+* Você deve ser um administrador de cluster ou VM de storage.
+* Todos os volumes constituintes de um grupo de consistência precisam estar em uma única VM de storage (SVM).
++
+** Os LUNs podem residir em volumes diferentes.
+
+
+* O cluster de origem e destino não pode ser o mesmo.
+* Não é possível estabelecer relações de grupo de consistência de sincronização ativa do SnapMirror entre clusters do ASA e clusters que não sejam do ASA.
+* O espaço IPspace padrão é exigido pela sincronização ativa do SnapMirror para relacionamentos de pares de cluster. IPspace personalizado não é suportado.
+* O nome do grupo de consistência deve ser único.
+* Os volumes no cluster secundário (destino) devem ser do tipo DP.
+* Os SVMs primário e secundário devem estar em uma relação de Contato.
+
+
+.Passos
+Você pode configurar um grupo de consistência usando a CLI do ONTAP ou o Gerenciador do sistema.
+
+A partir do ONTAP 9.10,1, o ONTAP oferece um endpoint de grupo de consistência e um menu no Gerenciador de sistemas, oferecendo utilitários de gerenciamento adicionais. Se estiver a utilizar o ONTAP 9.10,1 ou posterior, consulte link:../consistency-groups/configure-task.html["Configurar um grupo de consistência"] link:../consistency-groups/protect-task.html["configurar a proteção"]para criar uma relação de sincronização ativa do SnapMirror.
+
+
+IMPORTANT: Do ONTAP 9.8 ao 9.14.1, a sincronização ativa do SnapMirror é chamada de continuidade de negócios do SnapMirror (SM-BC).
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. No cluster principal, navegue até *proteção > Visão geral > proteger para continuidade de negócios > proteger LUNs*.
+. Selecione os LUNs que pretende proteger e adicione-os a um grupo de proteçãoão.
+. Selecione o cluster de destino e o SVM.
+. *Initialize Relationship* é selecionado por padrão. Clique em *Save* para iniciar a proteção.
+. Vá para *Dashboard > Performance* para verificar a atividade de IOPS dos LUNs.
+. No cluster de destino, use o System Manager para verificar se a proteção para o relacionamento de continuidade de negócios está em sincronia: *Proteção > relacionamentos*.
+
+
+--
+.CLI
+--
+. Crie uma relação de grupo de consistência a partir do cluster de destino.
+`destination::> snapmirror create -source-path _source-path_ -destination-path _destination-path_ -cg-item-mappings _volume-paths_ -policy _policy-name_`
++
+Você pode mapear até 12 volumes constituintes usando o `cg-item-mappings` parâmetro no `snapmirror create` comando.
+
++
+O exemplo a seguir cria dois grupos de consistência: `cg_src_ on the source with `vol1` E `vol2` um grupo de consistência de destino espelhado `cg_dst`, .
+
++
+`destination::> snapmirror create -source-path vs1_src:/cg/cg_src -destination-path vs1_dst:/cg/cg_dst -cg-item-mappings vol_src1:@vol_dst1,vol_src2:@vol_dst2 -policy AutomatedFailOver`
+
+. No cluster de destino, inicialize o grupo de consistência.
++
+`destination::>snapmirror initialize -destination-path _destination-consistency-group_`
+
+. Confirme se a operação de inicialização foi concluída com êxito. O estado deve ser `InSync`.
++
+`snapmirror show`
+
+. Em cada cluster, crie um grupo para que você possa mapear LUNs para o iniciador no host do aplicativo.
+`lun igroup create -igroup _name_ -protocol _fcp|iscsi_ -ostype _os_ -initiator _initiator_name_`
+. Em cada cluster, mapeie LUNs para o grupo:
++
+`lun map -path _path_name_ -igroup _igroup_name_`
+
+. Verifique se o mapeamento LUN foi concluído com êxito com o `lun map` comando. Depois, você pode descobrir os novos LUNs no host de aplicativos.
+
+
+--
+====
+
+
+== Configurar a proteção ativo-ativo simétrica
+
+Você pode estabelecer proteção simétrica usando o Gerenciador do sistema ou a CLI do ONTAP. Em ambas as interfaces, existem diferentes etapas para xref:index.html#key-concepts[configurações uniformes e não uniformes].
+
+.Antes de começar
+* Ambos os clusters devem estar executando o ONTAP 9.15,1 ou posterior.
+* Configurações ativo-ativo simétricas exigem a `AutomatedFailoverDuplex` política de proteção. Como alternativa, você pode xref:../data-protection/create-custom-replication-policy-concept.html[Crie uma política de SnapMirror personalizada] fornecer o `-type` is `automated-failover-duplex`.
+
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos para uma configuração uniforme
+. No local principal, link:../consistency-groups/configure-task.html#create-a-consistency-group-with-new-luns-or-volumes["Crie um grupo de consistência usando novos LUNs."^]
++
+.. Ao criar o grupo de consistência, especifique iniciadores de host para criar grupos.
+.. Marque a caixa de seleção para **Ativar SnapMirror** e escolha a `AutomatedFailoverDuplex` política.
+.. Na caixa de diálogo exibida, marque a caixa de seleção **Replique grupos de iniciadores** para replicar grupos de iniciadores. Em **Editar configurações proximais**, defina SVMs proximais para seus hosts.
+.. Selecione **Guardar**.
+
+
+
+
+.Passos para uma configuração não uniforme
+. No local principal, link:../consistency-groups/configure-task.html#create-a-consistency-group-with-new-luns-or-volumes["Crie um grupo de consistência usando novos LUNs."^]
++
+.. Ao criar o grupo de consistência, especifique iniciadores de host para criar grupos.
+.. Marque a caixa de seleção para **Ativar SnapMirror** e escolha a `AutomatedFailoverDuplex` política.
+.. Selecione **Salvar** para criar os LUNs, o grupo de consistência, o grupo igrop, a relação SnapMirror e o mapeamento do grupo igrop.
+
+
+. No site secundário, crie um igrop e mapeie os LUNs.
++
+.. Navegue até **hosts** > **grupos de iniciadores SAN**.
+.. Selecione ** Adicionar ** para criar um novo grupo.
+.. Forneça um ** Nome**, selecione **sistema operacional anfitrião** e, em seguida, escolha **Membros do Grupo Iniciador**.
+.. Selecione **Guardar**.
+
+
+. Mapeie o novo grupo para os LUNs de destino.
++
+.. Navegue até **armazenamento** > **LUNs**.
+.. Selecione todos os LUNs para mapear para o grupo.
+.. Selecione **More** (mais) e depois **Map to Initiator Groups (mapa para grupos de iniciadores)**.
+
+
+
+
+--
+.CLI
+--
+.Passos para uma configuração uniforme
+. Crie uma nova relação do SnapMirror agrupando todos os volumes na aplicação. Certifique-se de designar a `AutomatedFailOverDuplex` política para estabelecer replicação de sincronização bidirecional.
++
+`snapmirror create -source-path _source_path_ -destination-path _destination_path_ -cg-item-mappings _source_volume:@destination_volume_ -policy AutomatedFailOverDuplex`
+
+. Confirme se a operação foi bem-sucedida, aguardando que o `Mirrored State` mostre como `SnapMirrored` e `Relationship Status` as `Insync`.
++
+`snapmirror show -destination-path _destination_path_`
+
+. No seu host, configure a conectividade de host com acesso a cada cluster de acordo com suas necessidades.
+. Estabeleça a configuração do grupo. Defina os caminhos preferidos para iniciadores no cluster local. Especifique a opção para replicar a configuração para a afinidade inversa do cluster de pares.
++
+`SiteA::> igroup create -vserver _svm_name_  -os-type _os_type_ -igroup _igroup_name_ -replication-peer _peer_svm_name_ -initiator _host_`
+
++
+`SiteA::> igroup add -vserver _svm_name_ -igroup _igroup_name_ -os-type _os_type_ -initiator _host_`
+
+. A partir do host, descubra os caminhos e verifique se os hosts têm um caminho ativo/otimizado para o LUN de storage a partir do cluster preferido.
+. Implante o aplicativo e distribua as cargas de trabalho da VM entre clusters para alcançar o balanceamento de carga necessário.
+
+
+.Passos para uma configuração não uniforme
+. Crie uma nova relação do SnapMirror agrupando todos os volumes na aplicação. Certifique-se de designar a política "AutomatedFailOverDuplex" para estabelecer replicação de sincronização bidirecional.
++
+`snapmirror create -source-path _source_path_ -destination-path _destination_path_ -cg-item-mappings _source_volume:@destination_volume_ -policy AutomatedFailOverDuplex`
+
+. Confirme se a operação foi bem-sucedida, aguardando que o `Mirrored State` mostre como `SnapMirrored` e `Relationship Status` as `Insync`.
++
+`snapmirror show -destination-path _destination_path_`
+
+. No seu host, configure a conectividade de host com acesso a cada cluster de acordo com suas necessidades.
+. Estabeleça as configurações do igrupo nos clusters de origem e destino.
++
+`# primary site
+SiteA::> igroup create -vserver _svm_name_ -igroup _igroup_name_ -initiator _host_1_name_`
+
++
+`# secondary site
+SiteB::> igroup create -vserver _svm_name_ -igroup _igroup_name_ -initiator _host_2_name_`
+
+. A partir do host, descubra os caminhos e verifique se os hosts têm um caminho ativo/otimizado para o LUN de storage a partir do cluster preferido.
+. Implante o aplicativo e distribua as cargas de trabalho da VM entre clusters para alcançar o balanceamento de carga necessário.
+
+
+--
+====

@@ -1,0 +1,86 @@
+---
+permalink: data-protection/restore-svm-root-volume-promote-mirror-task.html 
+sidebar: sidebar 
+keywords: promote, load-sharing, mirror 
+summary: 'Se um volume raiz estiver permanentemente indisponível, você poderá promover o volume de espelhamento de carga (LSM) para fornecer acesso de gravação aos dados de volume raiz.' 
+---
+= Promova um espelho de compartilhamento de carga
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se um volume raiz estiver permanentemente indisponível, você poderá promover o volume de espelhamento de carga (LSM) para fornecer acesso de gravação aos dados de volume raiz.
+
+.O que você vai precisar
+Tem de utilizar comandos avançados de nível de privilégio para esta tarefa.
+
+.Passos
+. Alterar para nível de privilégio avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Promover um volume LSM:
++
+Você deve substituir as variáveis entre parênteses angulares pelos valores necessários antes de executar este comando.
+
++
+[source, cli]
+----
+snapmirror promote -destination-path <SVM:volume>
+----
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir promove o volume `svm1_m2` como o novo volume raiz da SVM:
+
++
+[listing]
+----
+cluster_src::*> snapmirror promote -destination-path svm1:svm1_m2
+
+Warning: Promote will delete the offline read-write volume
+         cluster_src://svm1/svm1_root and replace it with
+         cluster_src://svm1/svm1_m2. Because the volume is offline,
+         it is not possible to determine whether this promote will
+         affect other relationships associated with this source.
+Do you want to continue? {y|n}: y
+----
++
+Introduza `y`. O ONTAP torna o volume LSM um volume de leitura/gravação e exclui o volume raiz original se ele estiver acessível.
+
++
+[NOTE]
+====
+O volume raiz promovido pode não ter todos os dados que estavam no volume raiz original se a última atualização não ocorrer recentemente.
+
+====
+. Voltar ao nível de privilégio de administrador:
++
+[source, cli]
+----
+set -privilege admin
+----
+. Renomeie o volume promovido seguindo a convenção de nomenclatura usada para o volume raiz:
++
+Você deve substituir as variáveis entre parênteses angulares pelos valores necessários antes de executar este comando.
+
++
+[source, cli]
+----
+volume rename -vserver <SVM> -volume <volume> -newname <new_name>
+----
++
+O exemplo a seguir renomeia o volume promovido `svm1_m2` com o nome `svm1_root`:
+
++
+[listing]
+----
+cluster_src::> volume rename -vserver svm11 -volume svm1_m2 -newname svm1_root
+----
+. Proteja o volume raiz renomeado, conforme descrito na etapa 3 até a etapa 4 em link:create-load-sharing-mirror-task.html["Criando e inicializando relações de espelhamento de compartilhamento de carga"].
+

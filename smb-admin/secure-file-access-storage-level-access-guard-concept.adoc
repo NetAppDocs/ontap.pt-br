@@ -1,0 +1,74 @@
+---
+permalink: smb-admin/secure-file-access-storage-level-access-guard-concept.html 
+sidebar: sidebar 
+keywords: addition, securing, secure, access, native, file-level, export, share, security, storage-level, guard, apply, applied, secure file access by using storage-level access guard 
+summary: Além de proteger o acesso usando a segurança nativa em nível de arquivo e exportar e compartilhar, você pode configurar o Storage-Level Access Guard, uma terceira camada de segurança aplicada pelo ONTAP no nível de volume. O Storage-Level Access Guard se aplica ao acesso de todos os protocolos nas ao objeto de storage ao qual ele é aplicado. 
+---
+= Proteja o acesso aos arquivos usando o Storage-Level Access Guard
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Além de proteger o acesso usando a segurança nativa em nível de arquivo e exportar e compartilhar, você pode configurar o Storage-Level Access Guard, uma terceira camada de segurança aplicada pelo ONTAP no nível de volume. O Storage-Level Access Guard se aplica ao acesso de todos os protocolos nas ao objeto de storage ao qual ele é aplicado.
+
+Apenas as permissões de acesso NTFS são suportadas. Para que o ONTAP execute verificações de segurança em usuários UNIX para obter acesso a dados em volumes para os quais o Guarda de Acesso em nível de storage foi aplicado, o usuário do UNIX deve mapear para um usuário do Windows na SVM que possua o volume.
+
+
+
+== Comportamento do Access Guard no nível de storage
+
+* O Storage-Level Access Guard aplica-se a todos os arquivos ou a todos os diretórios em um objeto de armazenamento.
++
+Como todos os arquivos ou diretórios em um volume estão sujeitos às configurações do Storage-Level Access Guard, a herança através da propagação não é necessária.
+
+* Você pode configurar o Storage-Level Access Guard para se aplicar apenas a arquivos, apenas a diretórios ou a arquivos e diretórios dentro de um volume.
++
+** Segurança de arquivos e diretórios
++
+Aplica-se a cada diretório e arquivo dentro do objeto de armazenamento. Esta é a configuração padrão.
+
+** Segurança de arquivos
++
+Aplica-se a todos os arquivos dentro do objeto de armazenamento. A aplicação dessa segurança não afeta o acesso ou a auditoria de diretórios.
+
+** Segurança do diretório
++
+Aplica-se a todos os diretórios dentro do objeto de armazenamento. A aplicação dessa segurança não afeta o acesso ou a auditoria de arquivos.
+
+
+
+* O Access Guard no nível de storage é usado para restringir permissões.
++
+Ele nunca dará permissões de acesso extra.
+
+* Se você exibir as configurações de segurança em um arquivo ou diretório de um cliente NFS ou SMB, não verá a segurança Storage-Level Access Guard.
++
+Ele é aplicado no nível do objeto de armazenamento e armazenado nos metadados usados para determinar as permissões efetivas.
+
+* A segurança no nível do storage não pode ser revogada de um cliente, mesmo por um administrador do sistema (Windows ou UNIX).
++
+Ele foi desenvolvido para ser modificado apenas por administradores de storage.
+
+* Você pode aplicar o Storage-Level Access Guard a volumes com NTFS ou estilo de segurança misto.
+* Você pode aplicar o Storage-Level Access Guard a volumes com estilo de segurança UNIX, desde que o SVM que contém o volume tenha um servidor CIFS configurado.
+* Quando os volumes são montados sob um caminho de junção de volume e se o Storage-Level Access Guard estiver presente nesse caminho, ele não será propagado para volumes montados sob ele.
+* O descritor de segurança do Access Guard em nível de storage é replicado com a replicação de dados do SnapMirror e com replicação SVM.
+* Há dispensação especial para scanners de vírus.
++
+Acesso excecional é permitido a esses servidores para exibir arquivos e diretórios, mesmo que o Storage-Level Access Guard negue acesso ao objeto.
+
+* As notificações FPolicy não são enviadas se o acesso for negado devido ao Storage-Level Access Guard.
+
+
+
+
+== Verificações de ordem de acesso
+
+O acesso a um arquivo ou diretório é determinado pelo efeito combinado das permissões de exportação ou compartilhamento, as permissões de guarda de acesso em nível de armazenamento definidas em volumes e as permissões de arquivo nativo aplicadas a arquivos e/ou diretórios. Todos os níveis de segurança são avaliados para determinar quais as permissões efetivas de um arquivo ou diretório. As verificações de acesso de segurança são realizadas na seguinte ordem:
+
+. Permissões de compartilhamento SMB ou nível de exportação NFS
+. Proteção de acesso no nível de storage
+. Listas de controle de acesso (ACLs) de arquivos/pastas NTFS, ACLs NFSv4 ou bits de modo UNIX
+

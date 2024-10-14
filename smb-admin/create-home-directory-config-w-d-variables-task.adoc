@@ -1,0 +1,102 @@
+---
+permalink: smb-admin/create-home-directory-config-w-d-variables-task.html 
+sidebar: sidebar 
+keywords: 'create, home, directory, configuration, variable, user, connect, share, dynamic, create, share, %w, %d, create a home directory configuration using the %w and %d variables' 
+summary: 'Você pode criar uma configuração de diretório base usando as variáveis %W e %d. Os usuários podem então se conetar ao compartilhamento doméstico usando compartilhamentos criados dinamicamente.' 
+---
+= Crie uma configuração de diretório base usando as variáveis %W e %d
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar uma configuração de diretório base usando as `%w` variáveis e. `%d` Os usuários podem então se conetar ao compartilhamento doméstico usando compartilhamentos criados dinamicamente.
+
+.Passos
+. Crie uma qtree para conter os diretórios iniciais do usuário: `volume qtree create -vserver vserver_name -qtree-path qtree_path`
+. Verifique se a qtree está usando o estilo de segurança correto: `volume qtree show`
+. Se a qtree não estiver usando o estilo de segurança desejado, altere o estilo de segurança usando o `volume qtree security` comando.
+. Adicionar uma partilha de diretório base: `+vserver cifs share create -vserver vserver -share-name %w -path %d/%w -share-properties homedirectory\[,...\]+`
++
+`-vserver` `vserver` Especifica a máquina virtual de storage (SVM) habilitada para CIFS na qual adicionar o caminho de pesquisa.
+
++
+`-share-name` `%w` especifica o nome de compartilhamento do diretório base. O ONTAP cria dinamicamente o nome do compartilhamento à medida que cada usuário se coneta ao seu diretório inicial. O nome da partilha será do formulário _Windows_user_name_.
+
++
+`-path` `%d/%w` especifica o caminho relativo para o diretório home. O caminho relativo é criado dinamicamente à medida que cada usuário se coneta ao seu diretório inicial e será do formulário _domain/Windows_user_name_.
+
++
+`-share-properties homedirectory[,...]+` especifica as propriedades de compartilhamento para esse compartilhamento. Você deve especificar o `homedirectory` valor. Você pode especificar propriedades de compartilhamento adicionais usando uma lista delimitada por vírgulas.
+
+. Verifique se o compartilhamento tem a configuração desejada usando o `vserver cifs share show` comando.
+. Adicionar um caminho de pesquisa de diretório base: `vserver cifs home-directory search-path add -vserver vserver -path path`
++
+`-vserver _vserver-name_` Especifica o SVM habilitado para CIFS no qual adicionar o caminho de pesquisa.
+
++
+`-path _path_` especifica o caminho absoluto do diretório para o caminho de pesquisa.
+
+. Verifique se você adicionou com êxito o caminho de pesquisa usando o `vserver cifs home-directory search-path show` comando.
+. Para usuários com um diretório home, crie um diretório correspondente na qtree ou volume designado para conter diretórios home.
++
+Por exemplo, se você criou uma qtree com o caminho `/vol/vol1/users` e o nome de usuário cujo diretório você deseja criar é mydomain.user1, você criará um diretório com o seguinte caminho: `/vol/vol1/users/mydomain/user1`.
+
++
+Se você criou um volume chamado "'home1" montado no `/home1`, você criará um diretório com o seguinte caminho: `/home1/mydomain/user1`.
+
+. Verifique se um usuário pode se conetar com êxito ao compartilhamento doméstico mapeando uma unidade ou conetando-se usando o caminho UNC.
++
+Por exemplo, se o usuário mydomain/user1 quiser se conetar ao diretório criado na Etapa 8 que está localizado na SVM VS1, o user1 se conetaria usando o caminho UNC `\\vs1\user1` .
+
+
+
+.Exemplo
+Os comandos no exemplo a seguir criam uma configuração de diretório base com as seguintes configurações:
+
+* O nome da partilha é %w.
+* O caminho do diretório home relativo é %d/%w.
+* O caminho de pesquisa usado para conter os diretórios base `/home1` , é um volume configurado com estilo de segurança NTFS.
+* A configuração é criada no SVM VS1.
+
+
+Você pode usar esse tipo de configuração de diretório base quando os usuários acessam seus diretórios base a partir de hosts do Windows. Você também pode usar esse tipo de configuração quando os usuários acessam seus diretórios base a partir de hosts Windows e UNIX e o administrador do sistema de arquivos usa usuários e grupos baseados no Windows para controlar o acesso ao sistema de arquivos.
+
+[listing]
+----
+cluster::> vserver cifs share create -vserver vs1 -share-name %w -path %d/%w -share-properties oplocks,browsable,changenotify,homedirectory
+
+cluster::> vserver cifs share show -vserver vs1 -share-name %w
+
+                      Vserver: vs1
+                        Share: %w
+     CIFS Server NetBIOS Name: VS1
+                         Path: %d/%w
+             Share Properties: oplocks
+                               browsable
+                               changenotify
+                               homedirectory
+           Symlink Properties: enable
+      File Mode Creation Mask: -
+ Directory Mode Creation Mask: -
+                Share Comment: -
+                    Share ACL: Everyone / Full Control
+File Attribute Cache Lifetime: -
+                  Volume Name: -
+                Offline Files: manual
+Vscan File-Operations Profile: standard
+
+cluster::> vserver cifs home-directory search-path add -vserver vs1 ‑path /home1
+
+cluster::> vserver cifs home-directory search-path show
+Vserver     Position Path
+----------- -------- -----------------
+vs1         1        /home1
+----
+.Informações relacionadas
+xref:configure-home-directories-u-variable-task.adoc[Configurando diretórios base usando a variável %u]
+
+xref:home-directory-config-concept.adoc[Configurações adicionais do diretório base]
+
+xref:display-user-home-directory-path-task.adoc[Exibindo informações sobre o caminho do diretório inicial de um usuário SMB]

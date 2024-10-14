@@ -1,0 +1,68 @@
+---
+sidebar: sidebar 
+permalink: high-availability/ha_how_hardware-assisted_takeover_works.html 
+keywords: ontap, high, availability, hwassist, hardware-assisted, hardware, assisted, takeovers 
+summary: 'Habilitado por padrão, o recurso de aquisição assistida por hardware pode acelerar o processo de aquisição usando o dispositivo de gerenciamento remoto de um nó (processador de serviço).' 
+---
+= Como funciona a aquisição assistida por hardware
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Habilitado por padrão, o recurso de aquisição assistida por hardware pode acelerar o processo de aquisição usando o dispositivo de gerenciamento remoto de um nó (processador de serviço).
+
+Quando o dispositivo de gerenciamento remoto deteta uma falha, ele inicia rapidamente o takeover em vez de esperar que o ONTAP reconheça que o batimento cardíaco do parceiro parou. Se ocorrer uma falha sem esse recurso ativado, o parceiro espera até que perceba que o nó não está mais dando um heartbeat, confirme a perda de heartbeat e, em seguida, inicie o controle.
+
+O recurso de aquisição assistida por hardware usa o seguinte processo para evitar essa espera:
+
+. O dispositivo de gerenciamento remoto monitora o sistema local para certos tipos de falhas.
+. Se for detetada uma falha, o dispositivo de gerenciamento remoto enviará imediatamente um alerta ao nó do parceiro.
+. Ao receber o alerta, o parceiro inicia a aquisição.
+
+
+
+
+== Eventos do sistema que acionam a aquisição assistida por hardware
+
+O nó do parceiro pode gerar um takeover dependendo do tipo de alerta que recebe do dispositivo de gerenciamento remoto (processador de serviço).
+
+[cols="30,20,50"]
+|===
+
+
+| Alerta | Aquisição iniciada após receção? | Descrição 
+
+
+| anómala_reboot | Não | Ocorreu uma reinicialização anormal do nó. 
+
+
+| l2_watchdog_reset | Sim | O hardware de monitorização do sistema detetou uma reposição L2D. O dispositivo de gerenciamento remoto detetou uma falta de resposta da CPU do sistema e redefiniu o sistema. 
+
+
+| loss_of_heartbeat | Não | O dispositivo de gerenciamento remoto não está mais recebendo a mensagem de heartbeat do nó. Este alerta não se refere às mensagens de heartbeat entre os nós no par de HA; refere-se ao heartbeat entre o nó e seu dispositivo de gerenciamento remoto local. 
+
+
+| mensagem_periódica | Não | Uma mensagem periódica é enviada durante uma operação normal de aquisição assistida por hardware. 
+
+
+| power_cycle_via_SP | Sim | O dispositivo de gerenciamento remoto desligou e ligou o sistema. 
+
+
+| power_loss | Sim | Ocorreu uma perda de energia no nó. O dispositivo de gerenciamento remoto possui uma fonte de alimentação que mantém a energia por um curto período após uma perda de energia, permitindo que ele comunique a perda de energia ao parceiro. 
+
+
+| power_off_via_SP | Sim | O dispositivo de gerenciamento remoto desligou o sistema. 
+
+
+| reset_via_SP | Sim | O dispositivo de gestão remota repõe o sistema. 
+
+
+| teste | Não | Uma mensagem de teste é enviada para verificar uma operação de aquisição assistida por hardware. 
+|===
+.Informações relacionadas
+https://kb.netapp.com/on-prem/ontap/Ontap_OS/OS-KBs/Hardware-assisted_%28HWassist%29_takeover_-_Resolution_guide["Aquisição assistida por hardware (HWassist) - Guia de resolução"^]

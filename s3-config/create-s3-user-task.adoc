@@ -1,0 +1,69 @@
+---
+permalink: s3-config/create-s3-user-task.html 
+sidebar: sidebar 
+keywords: ontap, s3, user, authorization, auth 
+summary: Crie um usuário S3 com permissões e períodos de acesso específicos. 
+---
+= Crie um usuário S3
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Crie um usuário S3 com permissões específicas. A autorização do usuário é necessária em todos os armazenamentos de objetos ONTAP para restringir a conetividade a clientes autorizados.
+
+.Antes de começar.
+Uma VM de storage habilitada para S3 já deve existir.
+
+.Sobre esta tarefa
+Um usuário S3 pode ter acesso a qualquer bucket em uma VM de armazenamento. Quando você cria um usuário S3, uma chave de acesso e uma chave secreta também são gerados para o usuário. Eles devem ser compartilhados com o usuário juntamente com o FQDN do armazenamento de objetos e o nome do bucket.
+
+Para maior segurança, a partir de ONTAP 9.15,1, as chaves de acesso e as chaves secretas só são exibidas no momento em que o usuário S3 é criado e não podem ser exibidas novamente. Se as chaves forem perdidas, novas chaves devem ser geradas recriando o usuário.
+
+Você pode conceder permissões de acesso específicas a usuários do S3 em uma política de bucket ou uma diretiva de servidor de objetos.
+
+[NOTE]
+====
+Quando você cria um novo servidor de armazenamento de objetos, o ONTAP cria um usuário raiz (UID 0), que é um usuário privilegiado com acesso a todos os buckets. Em vez de administrar o ONTAP S3 como usuário raiz, o NetApp recomenda que uma função de usuário de administrador seja criada com Privileges específicos.
+
+====
+[role="tabbed-block"]
+====
+.CLI
+--
+. Criar um usuário S3:
+`vserver object-store-server user create -vserver svm_name -user user_name -comment [-comment text] -key-time-to-live time`
++
+** Adicionar um comentário é opcional.
+** A partir de ONTAP 9.14,1, pode definir o período de tempo para o qual a chave será válida no `-key-time-to-live` parâmetro. Você pode adicionar o período de retenção neste formato para indicar o período após o qual a chave de acesso expira: `P[<integer>D]T[<integer>H][<integer>M][<integer>S] | P<integer>W` Por exemplo, se você quiser inserir um período de retenção de um dia, duas horas, três minutos e quatro segundos, digite o valor como `P1DT2H3M4S`. A menos que especificado, a chave é válida por um período de tempo indefinido.
++
+O exemplo abaixo cria um usuário com nome `sm_user1` na VM de armazenamento `vs0` , com um período de retenção de chave de uma semana.
+
++
+[listing]
+----
+vserver object-store-server user create -vserver vs0 -user sm_user1 -key-time-to-live P1W
+----
+
+
+. Certifique-se de salvar a chave de acesso e a chave secreta. Eles serão necessários para acesso de clientes S3.
+
+
+--
+.System Manager
+--
+. Clique em *Storage > Storage VMs*. Selecione a VM de armazenamento à qual você precisa adicionar um usuário, selecione *Configurações* e clique image:icon_pencil.gif["Ícone de edição"] em S3.
+. Para adicionar um usuário, clique em *usuários > Adicionar*.
+. Introduza um nome para o utilizador.
+. A partir do ONTAP 9.14,1, você pode especificar o período de retenção das chaves de acesso que são criadas para o usuário. Você pode especificar o período de retenção em dias, horas, minutos ou segundos, após o qual as chaves expiram automaticamente. Por padrão, o valor é definido como `0` que indica que a chave é válida indefinidamente.
+. Clique em *Salvar*. O usuário é criado e uma chave de acesso e uma chave secreta são geradas para o usuário.
+. Transfira ou guarde a chave de acesso e a chave secreta. Eles serão necessários para acesso de clientes S3.
+
+
+--
+====
+.Próximas etapas
+* xref:create-modify-groups-task.html[Criar ou modificar grupos S3]
+

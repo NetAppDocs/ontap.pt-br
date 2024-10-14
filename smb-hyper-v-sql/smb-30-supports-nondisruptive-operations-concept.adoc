@@ -1,0 +1,20 @@
+---
+permalink: smb-hyper-v-sql/smb-30-supports-nondisruptive-operations-concept.html 
+sidebar: sidebar 
+keywords: smb, functionality, support, nondisruptive, operations, shares, clients, hyper, v, sql, server 
+summary: O SMB 3,0 fornece funcionalidade crucial que permite o suporte a operações ininterruptas para compartilhamentos Hyper-V e SQL Server em SMB. Isso inclui a propriedade de compartilhamento continuamente disponível e um tipo de identificador de arquivo conhecido como identificador persistente que permite que os clientes SMB recuperem o estado aberto do arquivo e restabeleçam conexões SMB de forma transparente. 
+---
+= Como a funcionalidade SMB 3,0 dá suporte a operações ininterruptas por compartilhamentos SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O SMB 3,0 fornece funcionalidade crucial que permite o suporte a operações ininterruptas para compartilhamentos Hyper-V e SQL Server em SMB. Isso inclui a `continuously-available` propriedade compartilhar e um tipo de identificador de arquivo conhecido como _identificador persistente_ que permite que os clientes SMB recuperem o estado aberto do arquivo e restabeleçam conexões SMB de forma transparente.
+
+Identificadores persistentes podem ser concedidos a clientes compatíveis com SMB 3,0 que se conetam a um compartilhamento com o conjunto de propriedades de compartilhamento continuamente disponível. Se a sessão SMB for desconetada, o servidor CIFS retém informações sobre o estado de identificador persistente. O servidor CIFS bloqueia outras solicitações de cliente durante o período de 60 segundos em que o cliente pode se reconetar, permitindo assim que o cliente com o identificador persistente recupere o identificador após uma desconexão da rede. Os clientes com alças persistentes podem se reconetar usando uma das LIFs de dados na máquina virtual de storage (SVM), seja reconetando pelo mesmo LIF ou por meio de um LIF diferente.
+
+A realocação agregada, a aquisição e a giveback ocorrem entre pares de SFO. Para gerenciar de forma otimizada a desconexão e a reconexão de sessões com arquivos com alças persistentes, o nó do parceiro mantém uma cópia de todas as informações de bloqueio de identificador persistente. Independentemente de o evento ser planejado ou não planejado, o parceiro SFO pode gerenciar as reconexões de identificador persistente sem interrupções. Com essa nova funcionalidade, as conexões SMB 3,0 ao servidor CIFS podem fazer failover de forma transparente e sem interrupções para outro LIF de dados atribuído à SVM em eventos que tradicionalmente têm sido disruptivos.
+
+Embora o uso de alças persistentes permita que o servidor CIFS faça failover transparente em conexões SMB 3,0, se uma falha fizer com que o aplicativo Hyper-V faça failover para outro nó no cluster do Windows Server, o cliente não terá como recuperar as alças de arquivo dessas alças desconetadas. Nesse cenário, os manipuladores de arquivos no estado desconetado podem potencialmente bloquear o acesso do aplicativo Hyper-V se ele for reiniciado em um nó diferente. "'Cluster de failover'" é uma parte do SMB 3,0 que aborda esse cenário fornecendo um mecanismo para invalidar manipulações obsoletas e conflitantes. Usando esse mecanismo, um cluster Hyper-V pode se recuperar rapidamente quando os nós de cluster Hyper-V falham.

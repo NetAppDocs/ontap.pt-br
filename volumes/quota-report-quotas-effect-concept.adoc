@@ -1,0 +1,128 @@
+---
+permalink: volumes/quota-report-quotas-effect-concept.html 
+sidebar: sidebar 
+keywords: how, use, quota report, see, quotas in effect 
+summary: Visualize o relatório de cotas para ver quais cotas estão em vigor além das que você criou explicitamente. 
+---
+= Veja quais cotas estão em vigor usando o relatório de cotas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Por causa das várias maneiras pelas quais as cotas interagem, mais cotas estão em vigor do que apenas as que você criou explicitamente. Para ver quais cotas estão em vigor, você pode visualizar o relatório de cota.
+
+Os exemplos a seguir mostram relatórios de cotas para diferentes tipos de cotas aplicadas em um FlexVol volume vol1 e uma qtree Q1 contida nesse volume:
+
+.Exemplo sem cotas de usuário especificadas para a qtree
+Neste exemplo, há uma qtree, Q1, que é contido pelo volume vol1. O administrador criou três cotas:
+
+* Um limite de cota de árvore padrão em vol1 de 400MB
+* Um limite de cota de usuário padrão em vol1 de 100MB
+* Um limite de quota de utilizador explícito em vol1 de 200MB para o utilizador jsmith
+
+
+As regras de quota para estas quotas são semelhantes ao seguinte exemplo:
+
+[listing]
+----
+cluster1::*> volume quota policy rule show -vserver vs1 -volume vol1
+
+Vserver: vs1               Policy: default           Volume: vol1
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+tree   ""        ""      -           400MB        -       -        -          -
+user   ""        ""      off         100MB        -       -        -          -
+user   jsmith    ""      off         200MB        -       -        -          -
+----
+O relatório de quota para estas quotas é semelhante ao seguinte exemplo:
+
+[listing]
+----
+cluster1::> volume quota report
+Vserver: vs1
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol1     -          tree   *           0B  400MB       0       -   *
+vol1     -          user   *           0B  100MB       0       -   *
+vol1     -          user   jsmith    150B  200MB       7       -   jsmith
+vol1     q1         tree   1           0B  400MB       6       -   q1
+vol1     q1         user   *           0B  100MB       0       -
+vol1     q1         user   jsmith      0B  100MB       5       -
+vol1     -          user   root        0B    0MB       1       -
+vol1     q1         user   root        0B    0MB       8       -
+----
+As três primeiras linhas do relatório de cota exibem as três cotas especificadas pelo administrador. Como duas dessas cotas são cotas padrão, o ONTAP cria automaticamente cotas derivadas.
+
+A quarta linha exibe a cota de árvore derivada da cota de árvore padrão para cada qtree em vol1 (neste exemplo, apenas Q1).
+
+A quinta linha exibe a cota de usuário padrão criada para a qtree como resultado da existência da cota de usuário padrão no volume e na cota de qtree.
+
+A sexta linha exibe a cota de usuário derivada que é criada para jsmith na qtree porque há uma cota de usuário padrão para a qtree (linha 5) e o jsmith do usuário possui arquivos nessa qtree. Observe que o limite aplicado ao jsmith do usuário na qtree Q1 não é determinado pelo limite explícito de cota de usuário (200MB). Isso ocorre porque o limite explícito de cota de usuário está no volume, portanto, não afeta os limites para a qtree. Em vez disso, o limite de cota de usuário derivado para a qtree é determinado pela cota de usuário padrão para a qtree (100MB).
+
+As duas últimas linhas exibem mais cotas de usuário que são derivadas das cotas de usuário padrão no volume e na qtree. Uma cota de usuário derivada foi criada para o usuário raiz no volume e na qtree porque o usuário raiz possuía arquivos no volume e na qtree. Como o usuário raiz recebe tratamento especial em termos de cotas, suas cotas derivadas estão rastreando somente cotas.
+
+.Exemplo com cotas de usuário especificadas para a qtree
+Este exemplo é semelhante ao anterior, exceto que o administrador adicionou duas cotas na qtree.
+
+Ainda há um volume, vol1 e uma qtree, Q1. O administrador criou as seguintes cotas:
+
+* Um limite de cota de árvore padrão em vol1 de 400MB
+* Um limite de cota de usuário padrão em vol1 de 100MB
+* Um limite de quota de utilizador explícito em vol1 para o utilizador jsmith de 200MB
+* Um limite de cota de usuário padrão na qtree Q1 de 50MB
+* Um limite de cota de usuário explícito na qtree Q1 para o jsmith de usuário de 75MB
+
+
+As regras de quota para estas quotas são assim:
+
+[listing]
+----
+cluster1::> volume quota policy rule show -vserver vs1 -volume vol1
+
+Vserver: vs1               Policy: default           Volume: vol1
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+tree   ""        ""      -           400MB        -       -        -          -
+user   ""        ""      off         100MB        -       -        -          -
+user   ""        q1      off          50MB        -       -        -          -
+user   jsmith    ""      off         200MB        -       -        -          -
+user   jsmith    q1      off          75MB        -       -        -          -
+----
+O relatório de quotas para estas quotas é assim:
+
+[listing]
+----
+
+cluster1::> volume quota report
+Vserver: vs1
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol1     -          tree   *           0B  400MB       0       -   *
+vol1     -          user   *           0B  100MB       0       -   *
+vol1     -          user   jsmith   2000B  200MB       7       -   jsmith
+vol1     q1         user   *           0B   50MB       0       -   *
+vol1     q1         user   jsmith      0B   75MB       5       -   jsmith
+vol1     q1         tree   1           0B  400MB       6       -   q1
+vol1     -          user   root        0B    0MB       2       -
+vol1     q1         user   root        0B    0MB       1       -
+----
+As primeiras cinco linhas do relatório de cota exibem as cinco cotas criadas pelo administrador. Como algumas dessas cotas são cotas padrão, o ONTAP cria automaticamente cotas derivadas.
+
+A sexta linha exibe a cota de árvore derivada da cota de árvore padrão para cada qtree em vol1 (neste exemplo, apenas Q1).
+
+As duas últimas linhas exibem as cotas de usuário que são derivadas das cotas de usuário padrão no volume e na qtree. Uma cota de usuário derivada foi criada para o usuário raiz no volume e na qtree porque o usuário raiz possuía arquivos no volume e na qtree. Como o usuário raiz recebe tratamento especial em termos de cotas, suas cotas derivadas estão rastreando somente cotas.
+
+Não foram criadas outras quotas de incumprimento ou quotas derivadas pelas seguintes razões:
+
+* Uma cota de usuário derivada não foi criada para o usuário jsmith, embora o usuário possua arquivos no volume e na qtree, porque o usuário já tem cotas explícitas em ambos os níveis.
+* Não foram criadas quotas de utilizador derivadas para outros utilizadores porque nenhum outro utilizador possui ficheiros no volume ou na qtree.
+* A cota de usuário padrão no volume não criou uma cota de usuário padrão na qtree porque a qtree já tinha uma cota de usuário padrão.
+

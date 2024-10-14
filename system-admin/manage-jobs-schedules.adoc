@@ -1,0 +1,285 @@
+---
+permalink: system-admin/manage-jobs-schedules.html 
+sidebar: sidebar 
+keywords: job, categories, server, cluster, affiliated, private, commands, managing, show jobs, job schedule, stop a job, delete a job, pause a job, display private jobs, modify, cron, interval, delete, interval schedule, manage jobs and schedule, manage jobs, manage schedule 
+summary: Os trabalhos são colocados em uma fila de trabalhos e executados em segundo plano quando os recursos estão disponíveis. Se uma tarefa estiver consumindo muitos recursos de cluster, você pode pará-la ou pausar até que haja menos demanda no cluster. Também pode monitorizar e reiniciar trabalhos. 
+---
+= Gerenciar trabalhos e agendar
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os trabalhos são colocados em uma fila de trabalhos e executados em segundo plano quando os recursos estão disponíveis. Se uma tarefa estiver consumindo muitos recursos de cluster, você pode pará-la ou pausar até que haja menos demanda no cluster. Também pode monitorizar e reiniciar trabalhos.
+
+
+
+== Categorias de trabalho
+
+Existem três categorias de trabalhos que você pode gerenciar: Afiliados ao servidor, afiliados a cluster e privados.
+
+Um trabalho pode estar em qualquer uma das seguintes categorias:
+
+* *Empregos afiliados ao servidor*
++
+Esses trabalhos são enfileirados pela estrutura de gerenciamento para um nó específico a ser executado.
+
+* *Empregos afiliados a cluster*
++
+Esses trabalhos são enfileirados pela estrutura de gerenciamento para qualquer nó no cluster a ser executado.
+
+* *Empregos privados*
++
+Essas tarefas são específicas para um nó e não usam o banco de dados replicado (RDB) ou qualquer outro mecanismo de cluster. Os comandos que gerem trabalhos privados requerem o nível de privilégio avançado ou superior.
+
+
+
+
+
+== Comandos para gerir trabalhos
+
+Quando você insere um comando que invoca uma tarefa, normalmente, o comando informa que a tarefa foi enfileirada e retorna ao prompt de comando CLI. No entanto, alguns comandos reportam o progresso da tarefa e não retornam ao prompt de comando da CLI até que a tarefa seja concluída. Nesses casos, você pode pressionar Ctrl-C para mover o trabalho para o fundo.
+
+|===
+| Se você quiser... | Use este comando... 
+
+
+ a| 
+Exibir informações sobre todos os trabalhos
+ a| 
+`job show`
+
+
+
+ a| 
+Exibir informações sobre trabalhos por nó
+ a| 
+`job show bynode`
+
+
+
+ a| 
+Exibir informações sobre trabalhos afiliados ao cluster
+ a| 
+`job show-cluster`
+
+
+
+ a| 
+Exibir informações sobre os trabalhos concluídos
+ a| 
+`job show-completed`
+
+
+
+ a| 
+Apresentar informações sobre o histórico de trabalhos
+ a| 
+`job history show`
+
+São armazenados até 25.000 registos de trabalho para cada nó no cluster. Consequentemente, tentar exibir o histórico completo do trabalho pode levar muito tempo. Para evitar tempos de espera potencialmente longos, você deve exibir tarefas por nó, máquina virtual de armazenamento (SVM) ou ID de Registro.
+
+
+
+ a| 
+Apresentar a lista de trabalhos privados
+ a| 
+`job private show` (nível de privilégio avançado)
+
+
+
+ a| 
+Exibir informações sobre trabalhos privados concluídos
+ a| 
+`job private show-completed` (nível de privilégio avançado)
+
+
+
+ a| 
+Exibir informações sobre o estado de inicialização para gerentes de tarefas
+ a| 
+`job initstate show` (nível de privilégio avançado)
+
+
+
+ a| 
+Monitorize o progresso de um trabalho
+ a| 
+`job watch-progress`
+
+
+
+ a| 
+Monitore o progresso de um trabalho privado
+ a| 
+`job private watch-progress` (nível de privilégio avançado)
+
+
+
+ a| 
+Pausar um trabalho
+ a| 
+`job pause`
+
+
+
+ a| 
+Pausar um trabalho privado
+ a| 
+`job private pause` (nível de privilégio avançado)
+
+
+
+ a| 
+Retomar um trabalho em pausa
+ a| 
+`job resume`
+
+
+
+ a| 
+Retomar um trabalho privado em pausa
+ a| 
+`job private resume` (nível de privilégio avançado)
+
+
+
+ a| 
+Parar um trabalho
+ a| 
+`job stop`
+
+
+
+ a| 
+Parar um trabalho privado
+ a| 
+`job private stop` (nível de privilégio avançado)
+
+
+
+ a| 
+Eliminar um trabalho
+ a| 
+`job delete`
+
+
+
+ a| 
+Eliminar um trabalho privado
+ a| 
+`job private delete` (nível de privilégio avançado)
+
+
+
+ a| 
+Desassocie uma tarefa afiliada ao cluster a um nó não disponível que o possua, para que outro nó possa assumir a propriedade dessa tarefa
+ a| 
+`job unclaim` (nível de privilégio avançado)
+
+|===
+[NOTE]
+====
+Você pode usar o `event log show` comando para determinar o resultado de uma tarefa concluída.
+
+====
+.Informações relacionadas
+link:../concepts/manual-pages.html["Referência do comando ONTAP"]
+
+
+
+== Comandos para gerir agendas de trabalhos
+
+Muitas tarefas - por exemplo, cópias Snapshot de volume - podem ser configuradas para serem executadas em programações especificadas.os horários que são executados em momentos específicos são chamados de programações _cron_ (semelhantes às programações UNIX `cron`). As programações que são executadas em intervalos são chamadas _interval_ programações. Utilize os `job schedule` comandos para gerir agendas de trabalhos.
+
+As programações de trabalhos não se ajustam às alterações manuais da data e hora do cluster. Esses trabalhos são programados para serem executados com base na hora atual do cluster quando o trabalho foi criado ou quando o trabalho foi executado mais recentemente. Portanto, se você alterar manualmente a data ou a hora do cluster, use os `job show` comandos e `job history show` para verificar se todos os trabalhos agendados estão na fila e concluídos de acordo com seus requisitos.
+
+Se o cluster fizer parte de uma configuração do MetroCluster, as programações de tarefas em ambos os clusters devem ser idênticas. Portanto, se você criar, modificar ou excluir um agendamento de trabalhos, deverá executar a mesma operação no cluster remoto.
+
+|===
+| Se você quiser... | Use este comando... 
+
+
+ a| 
+Exibir informações sobre todas as programações
+ a| 
+`job schedule show`
+
+
+
+ a| 
+Exibir a lista de trabalhos por agendamento
+ a| 
+`job schedule show-jobs`
+
+
+
+ a| 
+Exibir informações sobre cronogramas do cron
+ a| 
+`job schedule cron show`
+
+
+
+ a| 
+Exibir informações sobre programações de intervalos
+ a| 
+`job schedule interval show`
+
+
+
+ a| 
+Crie um cronograma cron
+ a| 
+`job schedule cron create`
+
+A partir do ONTAP 9.10,1, você pode incluir o SVM para sua agenda de trabalho.
+
+
+
+ a| 
+Crie um agendamento de intervalos
+ a| 
+`job schedule interval create`
+
+É necessário especificar pelo menos um dos seguintes parâmetros: `-days`, `-hours`, `-minutes`, `-seconds` Ou .
+
+
+
+ a| 
+Modifique um cronograma do cron
+ a| 
+`job schedule cron modify`
+
+
+
+ a| 
+Modificar um agendamento de intervalos
+ a| 
+`job schedule interval modify`
+
+
+
+ a| 
+Eliminar uma agenda
+ a| 
+`job schedule delete`
+
+
+
+ a| 
+Exclua um cronograma do cron
+ a| 
+`job schedule cron delete`
+
+
+
+ a| 
+Eliminar um agendamento de intervalos
+ a| 
+`job schedule interval delete`
+
+|===
+.Informações relacionadas
+link:../concepts/manual-pages.html["Referência do comando ONTAP"]

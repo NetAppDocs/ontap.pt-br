@@ -1,0 +1,82 @@
+---
+permalink: smb-admin/display-nfsv4-audit-policies-flexvol-volumes-task.html 
+sidebar: sidebar 
+keywords: display, information, nfsv4, audit, policies, policy, flexvol, volume, ontap, cli, security, style, permission, applied, apply, system, access, control, lists, sacl, result, validate, security, display information about nfsv4 audit policies on flexvol volumes using cli 
+summary: 'Você pode exibir informações sobre as políticas de auditoria do NFSv4 em volumes do FlexVol usando a CLI do ONTAP, incluindo quais são os estilos de segurança e estilos de segurança eficazes, quais permissões são aplicadas e informações sobre as listas de controle de acesso do sistema (SACLs). Você pode usar os resultados para validar sua configuração de segurança ou para solucionar problemas de auditoria.' 
+---
+= Exiba informações sobre as políticas de auditoria do NFSv4 em volumes do FlexVol usando a CLI
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode exibir informações sobre as políticas de auditoria do NFSv4 em volumes do FlexVol usando a CLI do ONTAP, incluindo quais são os estilos de segurança e estilos de segurança eficazes, quais permissões são aplicadas e informações sobre as listas de controle de acesso do sistema (SACLs). Você pode usar os resultados para validar sua configuração de segurança ou para solucionar problemas de auditoria.
+
+.Sobre esta tarefa
+Você deve fornecer o nome da máquina virtual de armazenamento (SVM) e o caminho para os arquivos ou diretórios cujas informações de auditoria você deseja exibir. Você pode exibir a saída em forma de resumo ou como uma lista detalhada.
+
+* Os volumes e qtrees de estilo de segurança UNIX usam apenas SACLs NFSv4 para políticas de auditoria.
+* Arquivos e diretórios em um volume misto de estilo de segurança que são de estilo de segurança UNIX podem ter políticas de auditoria NFSv4 aplicadas a eles.
++
+Volumes mistos de estilo de segurança e qtrees podem conter alguns arquivos e diretórios que usam permissões de arquivo UNIX, bits de modo ou ACLs NFSv4 e alguns arquivos e diretórios que usam permissões de arquivo NTFS.
+
+* O nível superior de um volume de estilo de segurança misto pode ter segurança efetiva UNIX ou NTFS e pode ou não conter SACLs NFSv4.
+* A saída ACL é exibida apenas para arquivos e pastas com segurança NTFS ou NFSv4.
++
+Este campo está vazio para arquivos e pastas que usam segurança UNIX que têm apenas permissões de bits de modo aplicadas (sem ACLs NFSv4).
+
+* Os campos de saída do proprietário e do grupo na saída da ACL aplicam-se apenas no caso de descritores de segurança NTFS.
+* Como a segurança do Storage-Level Access Guard pode ser configurada em um volume ou qtree misto de estilo de segurança, mesmo que o estilo de segurança efetivo da raiz de volume ou qtree seja UNIX, a saída para um caminho de volume ou qtree em que o Storage-Level Access Guard esteja configurado pode exibir tanto SACLs de arquivo NFSv4 regulares como de diretório e SACLs de acesso no nível de armazenamento NTFS SACLs.
+* Como a segurança do Storage-Level Access Guard é suportada em um volume ou qtree UNIX se um servidor CIFS estiver configurado no SVM, a saída pode conter informações sobre a segurança do Storage-Level Access Guard aplicada ao volume ou qtree especificado no `-path` parâmetro.
+
+
+.Passos
+. Exiba as configurações de segurança de arquivo e diretório com o nível de detalhes desejado:
++
+|===
+| Se você quiser exibir informações... | Digite o seguinte comando... 
+
+
+ a| 
+Em forma de resumo
+ a| 
+`vserver security file-directory show -vserver vserver_name -path path`
+
+
+
+ a| 
+Com detalhes expandidos
+ a| 
+`vserver security file-directory show -vserver vserver_name -path path -expand-mask true`
+
+|===
+
+
+.Exemplos
+O exemplo a seguir exibe as informações de segurança sobre o caminho `/lab` no SVM VS1. Este caminho de estilo de segurança UNIX tem um SACL NFSv4.
+
+[listing]
+----
+cluster::> vserver security file-directory show -vserver vs1 -path /lab
+
+                Vserver: vs1
+              File Path: /lab
+      File Inode Number: 288
+         Security Style: unix
+        Effective Style: unix
+         DOS Attributes: 11
+ DOS Attributes in Text: ----D--R
+Expanded Dos Attributes: -
+           Unix User Id: 0
+          Unix Group Id: 0
+         Unix Mode Bits: 0
+ Unix Mode Bits in Text: ---------
+                   ACLs: NFSV4 Security Descriptor
+                         Control:0x8014
+                         SACL - ACEs
+                           SUCCESSFUL-S-1-520-0-0xf01ff-SA
+                           FAILED-S-1-520-0-0xf01ff-FA
+                         DACL - ACEs
+                           ALLOW-S-1-520-1-0xf01ff
+----

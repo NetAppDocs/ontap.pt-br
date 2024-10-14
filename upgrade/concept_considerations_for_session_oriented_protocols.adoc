@@ -1,0 +1,48 @@
+---
+permalink: upgrade/concept_considerations_for_session_oriented_protocols.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, update, considerations, session-oriented, protocols, impact, io, client, session, disruption, disrupted, smb, hyper-v, sql, server, ndo, nondisruptive, continuous availability, nfsv4.x, ndmp, backup, restores 
+summary: Clusters e protocolos orientados para sessões podem causar efeitos adversos a clientes e aplicações em determinadas áreas, como serviço de e/S durante as atualizações. 
+---
+= Considerações para protocolos orientados para sessão
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Clusters e protocolos orientados para sessões podem causar efeitos adversos a clientes e aplicações em determinadas áreas, como serviço de e/S durante as atualizações.
+
+Se você estiver usando protocolos orientados para sessão, considere o seguinte:
+
+* SMB
++
+Se você fornecer compartilhamentos de CA (continuamente disponíveis) com o SMBv3, poderá usar o método de atualização sem interrupções automatizado (com o System Manager ou a CLI) e não haverá interrupção pelo cliente.
+
++
+Se você estiver fornecendo compartilhamentos com SMBv1 ou SMBv2 ou compartilhamentos não CA com SMBv3, as sessões do cliente serão interrompidas durante as operações de aquisição e reinicialização de atualização. Você deve direcionar os usuários para terminar suas sessões antes de atualizar.
+
++
+O Hyper-V e o SQL Server sobre SMB são compatíveis com operações ininterruptas (NDOs). Se você configurou uma solução Hyper-V ou SQL Server em SMB, os servidores de aplicativos e as máquinas virtuais ou bancos de dados contidos permanecem on-line e fornecem disponibilidade contínua durante a atualização do ONTAP.
+
+* NFSv4.x
++
+Os clientes NFSv4.x recuperarão automaticamente de perdas de conexão experimentadas durante a atualização usando procedimentos normais de recuperação NFSv4.x. Os aplicativos podem sofrer um atraso temporário de e/S durante esse processo.
+
+* NDMP
++
+O estado é perdido e o usuário do cliente deve tentar novamente a operação.
+
+* Backups e restaurações
++
+O estado é perdido e o usuário do cliente deve tentar novamente a operação.
+
++
+
+IMPORTANT: Não inicie um backup ou restauração durante ou imediatamente antes de uma atualização. Isso pode resultar em perda de dados.
+
+* Aplicativos (por exemplo, Oracle ou Exchange)
++
+Os efeitos dependem das aplicações. Para aplicativos baseados em tempo limite, você pode ser capaz de alterar a configuração de tempo limite para mais tempo do que o tempo de reinicialização do ONTAP para minimizar os efeitos adversos.
+
+

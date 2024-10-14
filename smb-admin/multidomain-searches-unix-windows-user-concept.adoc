@@ -1,0 +1,94 @@
+---
+permalink: smb-admin/multidomain-searches-unix-windows-user-concept.html 
+sidebar: sidebar 
+keywords: ontap, support, multidomain, search, map, unix, user, windows, discover, trust, domain, match, replacement, alternative, replacement, prefer, multidomain searches for unix user to windows user name mappings 
+summary: O ONTAP oferece suporte a pesquisas de vários domínios ao mapear usuários UNIX para usuários do Windows. Todos os domínios confiáveis descobertos são pesquisados por correspondências ao padrão de substituição até que um resultado correspondente seja retornado. Como alternativa, você pode configurar uma lista de domínios confiáveis preferenciais, que é usada em vez da lista de domínios confiáveis descobertos e é pesquisada em ordem até que um resultado correspondente seja retornado. 
+---
+= Procura multidomínio para mapeamentos de nome de usuário do UNIX para o Windows
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP oferece suporte a pesquisas de vários domínios ao mapear usuários UNIX para usuários do Windows. Todos os domínios confiáveis descobertos são pesquisados por correspondências ao padrão de substituição até que um resultado correspondente seja retornado. Como alternativa, você pode configurar uma lista de domínios confiáveis preferenciais, que é usada em vez da lista de domínios confiáveis descobertos e é pesquisada em ordem até que um resultado correspondente seja retornado.
+
+
+
+== Como as relações de confiança de domínio afetam as pesquisas de mapeamento de nomes de usuário do Windows
+
+Para entender como o mapeamento de nomes de usuário de vários domínios funciona, você deve entender como as relações de confiança de domínio funcionam com o ONTAP. As relações de confiança do ative Directory com o domínio home do servidor CIFS podem ser uma confiança bidirecional ou podem ser um dos dois tipos de confiança unidirecionais, uma confiança de entrada ou uma confiança de saída. O domínio inicial é o domínio ao qual pertence o servidor CIFS na SVM.
+
+* _Confiança bidirecional_
++
+Com trusts bidirecionais, ambos os domínios confiam uns nos outros. Se o domínio home do servidor CIFS tiver uma confiança bidirecional com outro domínio, o domínio home pode autenticar e autorizar um usuário pertencente ao domínio confiável e vice-versa.
+
++
+As pesquisas de mapeamento de nome de usuário do UNIX para o Windows podem ser realizadas apenas em domínios com confiança bidirecional entre o domínio inicial e o outro domínio.
+
+* _Outbound Trust_
++
+Com uma confiança de saída, o domínio home confia no outro domínio. Nesse caso, o domínio home pode autenticar e autorizar um usuário pertencente ao domínio confiável de saída.
+
++
+Um domínio com uma confiança de saída com o domínio inicial é _not_ pesquisado ao executar pesquisas de mapeamento de nomes de usuário do UNIX para o Windows.
+
+* _Confiança inbound_
++
+Com uma confiança de entrada, o outro domínio confia no domínio home do servidor CIFS. Neste caso, o domínio inicial não pode autenticar ou autorizar um usuário pertencente ao domínio confiável de entrada.
+
++
+Um domínio com uma confiança de entrada com o domínio inicial é _not_ pesquisado ao executar pesquisas de mapeamento de nomes de usuário do UNIX para o Windows.
+
+
+
+
+
+== Como os curingas (*) são usados para configurar pesquisas de vários domínios para mapeamento de nomes
+
+As pesquisas de mapeamento de nomes de vários domínios são facilitadas pelo uso de curingas na seção domínio do nome de usuário do Windows. A tabela a seguir ilustra como usar curingas na parte de domínio de uma entrada de mapeamento de nomes para habilitar pesquisas de vários domínios:
+
+|===
+| Padrão | Substituição | Resultado 
+
+
+ a| 
+raiz
+ a| 
+* administrador
+ a| 
+O usuário UNIX "'root'" é mapeado para o usuário chamado "'administrador'". Todos os domínios confiáveis são pesquisados em ordem até que o primeiro usuário correspondente chamado "administrador" seja encontrado.
+
+
+
+ a| 
+*
+ a| 
+* *
+ a| 
+Os usuários UNIX válidos são mapeados para os usuários do Windows correspondentes. Todos os domínios confiáveis são pesquisados em ordem até que o primeiro usuário correspondente com esse nome seja encontrado.
+
+[NOTE]
+====
+O padrão* é válido apenas para mapeamento de nomes do UNIX para o Windows, e não para o contrário.
+
+====
+|===
+
+
+== Como as pesquisas de nomes de vários domínios são realizadas
+
+Você pode escolher um dos dois métodos para determinar a lista de domínios confiáveis usados para pesquisas de nomes de vários domínios:
+
+* Use a lista de confiança bidirecional descoberta automaticamente compilada pelo ONTAP
+* Use a lista de domínio confiável preferida que você compila
+
+
+Se um usuário UNIX for mapeado para um usuário do Windows com um curinga usado para a seção de domínio do nome de usuário, o usuário do Windows será pesquisado em todos os domínios confiáveis da seguinte forma:
+
+* Se uma lista de domínio confiável preferencial estiver configurada, o usuário mapeado do Windows será pesquisado somente nesta lista de pesquisa, em ordem.
+* Se uma lista preferencial de domínios confiáveis não estiver configurada, o usuário do Windows será pesquisado em todos os domínios confiáveis bidirecionais do domínio doméstico.
+* Se não houver domínios bidirecionalmente confiáveis para o domínio home, o usuário será pesquisado no domínio home.
+
+
+Se um usuário UNIX for mapeado para um usuário do Windows sem uma seção de domínio no nome de usuário, o usuário do Windows será pesquisado no domínio inicial.

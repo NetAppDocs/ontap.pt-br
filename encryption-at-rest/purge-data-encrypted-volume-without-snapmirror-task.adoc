@@ -1,0 +1,58 @@
+---
+permalink: encryption-at-rest/purge-data-encrypted-volume-without-snapmirror-task.html 
+sidebar: sidebar 
+keywords: secure, purge, scrub, data, encrypted, volume, nve, netapp, volume, encryption, snapmirror 
+summary: 'A partir do ONTAP 9.4, você usa a limpeza segura para "limpeza" de dados em volumes habilitados para NVE sem interrupções.' 
+---
+= Limpe os dados com segurança em um volume criptografado sem uma relação com o SnapMirror
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.4, você pode usar a limpeza segura para dados "crostas" sem interrupções em volumes habilitados para NVE.
+
+.Sobre esta tarefa
+A limpeza segura pode levar de vários minutos a muitas horas para ser concluída, dependendo da quantidade de dados nos arquivos excluídos. Pode utilizar o `volume encryption secure-purge show` comando para visualizar o estado da operação. Você pode usar o `volume encryption secure-purge abort` comando para encerrar a operação.
+
+
+NOTE: Para fazer uma limpeza segura em um host SAN, você deve excluir todo o LUN que contém os arquivos que deseja limpar, ou você deve ser capaz de perfurar buracos no LUN para os blocos que pertencem aos arquivos que deseja limpar. Se você não puder excluir o LUN ou o sistema operacional do host não suportar furos no LUN, não será possível executar uma limpeza segura.
+
+.Antes de começar
+* Você deve ser um administrador de cluster para executar esta tarefa.
+* São necessários Privileges avançados para esta tarefa.
+
+
+.Passos
+. Exclua os arquivos ou o LUN que você deseja limpar com segurança.
++
+** Em um cliente nas, exclua os arquivos que você deseja limpar com segurança.
+** Em um host SAN, exclua o LUN que você deseja limpar com segurança ou perfurar buracos no LUN para os blocos que pertencem aos arquivos que deseja limpar.
+
+
+. No sistema de armazenamento, altere para nível de privilégio avançado:
++
+`set -privilege advanced`
+
+. Se os arquivos que você deseja limpar com segurança estiverem em snapshots, exclua os snapshots:
++
+`snapshot delete -vserver _SVM_name_ -volume _volume_name_ -snapshot`
+
+. Limpe com segurança os arquivos excluídos:
++
+`volume encryption secure-purge start -vserver _SVM_name_ -volume _volume_name_`
+
++
+O comando a seguir limpa com segurança os arquivos excluídos `vol1` no SVM``vs1``:
+
++
+[listing]
+----
+cluster1::> volume encryption secure-purge start -vserver vs1 -volume vol1
+----
+. Verifique o estado da operação de purga segura:
++
+`volume encryption secure-purge show`
+
+

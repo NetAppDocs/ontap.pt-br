@@ -1,0 +1,79 @@
+---
+permalink: nas-audit/create-fpolicy-policy-task.html 
+sidebar: sidebar 
+keywords: create, fpolicy, policy 
+summary: 'Ao criar a política FPolicy, você associa um mecanismo externo e um ou mais eventos à política. A política também especifica se a triagem obrigatória é necessária, se os servidores FPolicy têm acesso privilegiado aos dados na máquina virtual de armazenamento (SVM) e se a leitura de passagem para arquivos off-line está ativada.' 
+---
+= Crie a política FPolicy
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Ao criar a política FPolicy, você associa um mecanismo externo e um ou mais eventos à política. A política também especifica se a triagem obrigatória é necessária, se os servidores FPolicy têm acesso privilegiado aos dados na máquina virtual de armazenamento (SVM) e se a leitura de passagem para arquivos off-line está ativada.
+
+.O que você vai precisar
+* A Planilha de política FPolicy deve ser concluída.
+* Se você planeja configurar a política para usar servidores FPolicy, o mecanismo externo deve existir.
+* Deve existir pelo menos um evento FPolicy que pretende associar à política FPolicy.
+* Se você quiser configurar o acesso a dados privilegiados, um servidor SMB deve existir na SVM.
+* Para configurar um armazenamento persistente para uma política, o tipo de mecanismo deve ser *assíncrono* e a política deve ser *não obrigatória*.
++
+Para obter mais informações, link:create-persistent-stores.html["Crie armazenamentos persistentes"]consulte .
+
+
+
+.Passos
+. Crie a política FPolicy:
++
+`vserver fpolicy policy create -vserver-name vserver_name -policy-name policy_name -engine engine_name -events event_name, [-persistent-store PS_name] [-is-mandatory {true|false}] [-allow-privileged-access {yes|no}] [-privileged-user-name domain\user_name] [-is-passthrough-read-enabled {true|false}]`
+
++
+** Você pode adicionar um ou mais eventos à política FPolicy.
+** Por predefinição, a seleção obrigatória está ativada.
+** Se você quiser permitir acesso privilegiado definindo o `-allow-privileged-access` parâmetro como `yes`, você também deve configurar um nome de usuário privilegiado para acesso privilegiado.
+** Se você quiser configurar a passagem-leitura definindo o `-is-passthrough-read-enabled` parâmetro como `true`, você também deve configurar o acesso privilegiado a dados.
++
+O comando a seguir cria uma política chamada "policy1" que tem o evento chamado ""event1"" e o motor externo chamado ""Engine1"" associado a ele. Esta política usa valores padrão na configuração da política:
+`vserver fpolicy policy create -vserver vs1.example.com -policy-name policy1 -events event1 -engine engine1`
+
++
+O comando a seguir cria uma política chamada "policy2" que tem o evento chamado ""event2"" e o motor externo chamado ""engine2"" associado a ele. Esta política é configurada para usar o acesso privilegiado usando o nome de usuário especificado. A passagem-leitura está ativada:
+
++
+`vserver fpolicy policy create -vserver vs1.example.com -policy-name policy2 -events event2 -engine engine2 -allow-privileged-access yes ‑privileged-user-name example\archive_acct -is-passthrough-read-enabled true`
+
++
+O comando a seguir cria uma política chamada "'native1" que tem o evento chamado "'event3" associado a ele. Esta política usa o mecanismo nativo e usa valores padrão na configuração da política:
+
++
+`vserver fpolicy policy create -vserver vs1.example.com -policy-name native1 -events event3 -engine native`
+
+
+
+. Verifique a configuração da diretiva FPolicy usando o `vserver fpolicy policy show` comando.
++
+O comando a seguir exibe informações sobre as três políticas FPolicy configuradas, incluindo as seguintes informações:
+
++
+** O SVM associado à política
+** O motor externo associado à política
+** Os eventos associados à política
+** Se é necessária uma triagem obrigatória
+** Se o acesso privilegiado é necessário
+`vserver fpolicy policy show`
+
+
++
+[listing]
+----
+
+   Vserver       Policy     Events    Engine    Is Mandatory  Privileged
+                 Name                                         Access
+--------------   ---------  --------- --------- ------------  -----------
+vs1.example.com  policy1    event1    engine1   true          no
+vs1.example.com  policy2    event2    engine2   true          yes
+vs1.example.com  native1    event3    native    true          no
+----
+

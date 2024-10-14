@@ -1,0 +1,108 @@
+---
+permalink: nfs-admin/config-options-ldap-directory-searches-concept.html 
+sidebar: sidebar 
+keywords: LDAP referral chasing 
+summary: Você pode otimizar as pesquisas de diretório LDAP, incluindo informações de usuário, grupo e netgroup, configurando o cliente LDAP do ONTAP para se conetar a servidores LDAP da maneira mais apropriada para o seu ambiente. Você precisa entender quando os valores padrão de pesquisa base LDAP e escopo são suficientes e quais parâmetros especificar quando os valores personalizados são mais apropriados. 
+---
+= Opções de configuração para pesquisas de diretório LDAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode otimizar as pesquisas de diretório LDAP, incluindo informações de usuário, grupo e netgroup, configurando o cliente LDAP do ONTAP para se conetar a servidores LDAP da maneira mais apropriada para o seu ambiente. Você precisa entender quando os valores padrão de pesquisa base LDAP e escopo são suficientes e quais parâmetros especificar quando os valores personalizados são mais apropriados.
+
+As opções de pesquisa de cliente LDAP para informações de usuário, grupo e netgroup podem ajudar a evitar consultas LDAP com falha e, portanto, falha no acesso de cliente aos sistemas de armazenamento. Eles também ajudam a garantir que as pesquisas sejam o mais eficientes possível para evitar problemas de desempenho do cliente.
+
+
+
+== Valores de pesquisa padrão base e escopo
+
+A base LDAP é o DN base padrão que o cliente LDAP usa para executar consultas LDAP. Todas as pesquisas, incluindo pesquisas de usuário, grupo e netgroup, são feitas usando o DN base. Essa opção é apropriada quando o diretório LDAP é relativamente pequeno e todas as entradas relevantes estão localizadas no mesmo DN.
+
+Se você não especificar um DN base personalizado, o padrão será `root`. Isso significa que cada consulta pesquisa o diretório inteiro. Embora isso maximize as chances de sucesso da consulta LDAP, ela pode ser ineficiente e resultar em desempenho significativamente menor com grandes diretórios LDAP.
+
+O escopo base LDAP é o escopo de pesquisa padrão que o cliente LDAP usa para executar consultas LDAP. Todas as pesquisas, incluindo pesquisas de usuário, grupo e netgroup, são feitas usando o escopo base. Ele determina se a consulta LDAP pesquisa somente a entrada nomeada, as entradas um nível abaixo do DN ou toda a subárvore abaixo do DN.
+
+Se você não especificar um escopo base personalizado, o padrão será `subtree`. Isso significa que cada consulta pesquisa a subárvore inteira abaixo do DN. Embora isso maximize as chances de sucesso da consulta LDAP, ela pode ser ineficiente e resultar em desempenho significativamente menor com grandes diretórios LDAP.
+
+
+
+== Valores de pesquisa de base e escopo personalizados
+
+Opcionalmente, você pode especificar valores de base e escopo separados para pesquisas de usuário, grupo e netgroup. Limitar a base de pesquisa e o escopo das consultas dessa forma pode melhorar significativamente o desempenho, pois limita a pesquisa a uma subseção menor do diretório LDAP.
+
+Se você especificar valores de base e escopo personalizados, eles substituirão a base de pesquisa padrão geral e o escopo para pesquisas de usuário, grupo e netgroup. Os parâmetros para especificar valores de base e escopo personalizados estão disponíveis no nível de privilégio avançado.
+
+[cols="35,65"]
+|===
+
+
+| Parâmetro cliente LDAP... | Especifica personalizado... 
+
+
+ a| 
+`-base-dn`
+ a| 
+DN base para todas as pesquisas LDAP os valores múltiplos podem ser inseridos se necessário (por exemplo, se a busca por referência LDAP estiver ativada no ONTAP 9.5 e versões posteriores).
+
+
+
+ a| 
+`-base-scope`
+ a| 
+Escopo base para todas as pesquisas LDAP
+
+
+
+ a| 
+`-user-dn`
+ a| 
+DNS base para todas as pesquisas de usuário LDAP este parâmetro também se aplica a pesquisas de mapeamento de nome de usuário.
+
+
+
+ a| 
+`-user-scope`
+ a| 
+Escopo base para todas as pesquisas de usuário LDAP este parâmetro também se aplica a pesquisas de mapeamento de nome de usuário.
+
+
+
+ a| 
+`-group-dn`
+ a| 
+DNS base para todas as pesquisas de grupo LDAP
+
+
+
+ a| 
+`-group-scope`
+ a| 
+Escopo base para todas as pesquisas de grupo LDAP
+
+
+
+ a| 
+`-netgroup-dn`
+ a| 
+DNS base para todas as pesquisas de netgroup LDAP
+
+
+
+ a| 
+`-netgroup-scope`
+ a| 
+Escopo base para todas as pesquisas de netgroup LDAP
+
+|===
+
+
+== Vários valores DN base personalizados
+
+Se a estrutura de diretórios LDAP for mais complexa, poderá ser necessário especificar vários DNS base para procurar determinadas informações em várias partes do diretório LDAP. Você pode especificar vários DNS para os parâmetros DN de usuário, grupo e netgroup separando-os com um ponto e vírgula (;) e anexando toda a lista de pesquisa DN com aspas duplas ("). Se um DN contiver um ponto-e-vírgula, você deve adicionar um caractere de escape imediatamente antes do ponto-e-vírgula no DN.
+
+Observe que o escopo se aplica a toda a lista de DNS especificada para o parâmetro correspondente. Por exemplo, se você especificar uma lista de três DNS de usuário e subárvore diferentes para o escopo do usuário, o usuário LDAP pesquisará toda a subárvore para cada um dos três DNS especificados.
+
+A partir do ONTAP 9.5, você também pode especificar LDAP _referral chasing_, o que permite que o cliente LDAP ONTAP consulte solicitações de pesquisa para outros servidores LDAP se uma resposta de referência LDAP não for retornada pelo servidor LDAP primário. O cliente usa esses dados de referência para recuperar o objeto de destino do servidor descrito nos dados de referência. Para procurar objetos presentes nos servidores LDAP referidos, o base-DN dos objetos referidos pode ser adicionado ao base-DN como parte da configuração do cliente LDAP. No entanto, os objetos referidos só são procurados quando a busca por referência está ativada (usando a `-referral-enabled true` opção) durante a criação ou modificação do cliente LDAP.

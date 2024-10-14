@@ -1,0 +1,192 @@
+---
+permalink: nfs-admin/troubleshoot-name-service-issues-task.html 
+sidebar: sidebar 
+keywords: troubleshoot, name, service, issue 
+summary: Quando os clientes experimentam falhas de acesso devido a problemas de serviço de nomes, você pode usar a família de comandos do serviço de nomes getxxbyyy de serviços vserver para executar manualmente várias pesquisas de serviços de nomes e examinar os detalhes e resultados da pesquisa para ajudar na solução de problemas. 
+---
+= Solucionar problemas do serviço de nomes
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando os clientes experimentam falhas de acesso devido a problemas de serviço de nome, você pode usar a `vserver services name-service getxxbyyy` família de comandos para executar manualmente várias pesquisas de serviço de nome e examinar os detalhes e resultados da pesquisa para ajudar na solução de problemas.
+
+.Sobre esta tarefa
+* Para cada comando, você pode especificar o seguinte:
++
+** Nome do nó ou da máquina virtual de storage (SVM) para realizar a pesquisa.
++
+Isso permite testar pesquisas de serviços de nomes para um nó específico ou SVM para restringir a pesquisa de um possível problema de configuração de serviço de nomes.
+
+** Se deve mostrar a fonte usada para a pesquisa.
++
+Isso permite verificar se a fonte correta foi usada.
+
+
+
+* O ONTAP seleciona o serviço para realizar a pesquisa com base na ordem configurada do switch do serviço de nomes.
+* Esses comandos estão disponíveis no nível avançado de privilégio.
+
+
+.Passos
+. Execute uma das seguintes ações:
+
+
+|===
+
+
+| Para recuperar... | Use o comando... 
+
+
+ a| 
+Endereço IP de um nome de host
+ a| 
+`vserver services name-service getxxbyyy getaddrinfo`  `vserver services name-service getxxbyyy gethostbyname` (Apenas endereços IPv4)
+
+
+
+ a| 
+Membros de um grupo por ID de grupo
+ a| 
+`vserver services name-service getxxbyyy getgrbygid`
+
+
+
+ a| 
+Membros de um grupo por nome de grupo
+ a| 
+`vserver services name-service getxxbyyy getgrbyname`
+
+
+
+ a| 
+Lista de grupos aos quais um usuário pertence
+ a| 
+`vserver services name-service getxxbyyy getgrlist`
+
+
+
+ a| 
+Nome do host de um endereço IP
+ a| 
+`vserver services name-service getxxbyyy getnameinfo`  `vserver services name-service getxxbyyy gethostbyaddr` (Apenas endereços IPv4)
+
+
+
+ a| 
+Informações do usuário por nome de usuário
+ a| 
+`vserver services name-service getxxbyyy getpwbyname` É possível testar a resolução de nomes de usuários do RBAC especificando o `-use-rbac` parâmetro como `true`.
+
+
+
+ a| 
+Informações do usuário por ID do usuário
+ a| 
+`vserver services name-service getxxbyyy getpwbyuid` É possível testar a resolução de nomes de usuários do RBAC especificando o `-use-rbac` parâmetro como `true`.
+
+
+
+ a| 
+A associação netgroup de um cliente
+ a| 
+`vserver services name-service getxxbyyy netgrp`
+
+
+
+ a| 
+A associação netgroup de um cliente usando a pesquisa netgroup-by-host
+ a| 
+`vserver services name-service getxxbyyy netgrpbyhost`
+
+|===
+O exemplo a seguir mostra um teste de pesquisa de DNS para o SVM VS1 ao tentar obter o endereço IP do host acast1.eng.example.com:
+
+[listing]
+----
+cluster1::*> vserver services name-service getxxbyyy getaddrinfo -vserver vs1 -hostname acast1.eng.example.com -address-family all -show-source true
+Source used for lookup: DNS
+Host name: acast1.eng.example.com
+Canonical Name: acast1.eng.example.com
+IPv4: 10.72.8.29
+----
+O exemplo a seguir mostra um teste de pesquisa NIS para o SVM VS1 ao tentar recuperar informações de usuário para um usuário com o UID 501768:
+
+[listing]
+----
+cluster1::*> vserver services name-service getxxbyyy getpwbyuid -vserver vs1 -userID 501768 -show-source true
+Source used for lookup: NIS
+pw_name: jsmith
+pw_passwd: $1$y8rA4XX7$/DDOXAvc2PC/IsNFozfIN0
+pw_uid: 501768
+pw_gid: 501768
+pw_gecos:
+pw_dir: /home/jsmith
+pw_shell: /bin/bash
+----
+O exemplo a seguir mostra um teste de pesquisa LDAP para o SVM VS1 ao tentar recuperar informações de usuário para um usuário com o nome ldap1:
+
+[listing]
+----
+cluster1::*> vserver services name-service getxxbyyy getpwbyname -vserver vs1 -username ldap1 -use-rbac false -show-source true
+Source used for lookup: LDAP
+pw_name: ldap1
+pw_passwd: {crypt}JSPM6yc/ilIX6
+pw_uid: 10001
+pw_gid: 3333
+pw_gecos: ldap1 user
+pw_dir: /u/ldap1
+pw_shell: /bin/csh
+----
+O exemplo a seguir mostra um teste de pesquisa de netgroup para o SVM VS1 ao tentar descobrir se o cliente dnshost0 é membro do netgroup lnetgroup136:
+
+[listing]
+----
+cluster1::*> vserver services name-service getxxbyyy netgrp -vserver vs1 -netgroup lnetgroup136 -client dnshost0 -show-source true
+Source used for lookup: LDAP
+dnshost0 is a member of lnetgroup136
+----
+. Analise os resultados do teste realizado e tome a ação necessária.
++
+[cols="2*"]
+|===
+| Se o... | Veja o... 
+
+
+ a| 
+A pesquisa de nome de host ou endereço IP falhou ou gerou resultados incorretos
+ a| 
+Configuração DNS
+
+
+
+ a| 
+A pesquisa consultou uma fonte incorreta
+ a| 
+Configuração do switch do serviço de nomes
+
+
+
+ a| 
+A pesquisa de usuário ou grupo falhou ou produziu resultados incorretos
+ a| 
+** Configuração do switch do serviço de nomes
+** Configuração de origem (arquivos locais, domínio NIS, cliente LDAP)
+** Configuração de rede (por exemplo, LIFs e rotas)
+
+
+
+
+ a| 
+A pesquisa de nomes de host falhou ou expirou, e o servidor DNS não resolve nomes curtos de DNS (por exemplo, host1)
+ a| 
+Configuração de DNS para consultas de domínio de topo (TLD). Você pode desabilitar consultas TLD usando a `-is-tld-query-enabled false` opção para o `vserver services name-service dns modify` comando.
+
+|===
+
+
+.Informações relacionadas
+https://www.netapp.com/pdf.html?item=/media/16328-tr-4668pdf.pdf["Relatório técnico da NetApp 4668: Guia de práticas recomendadas para serviços de nomes"^]

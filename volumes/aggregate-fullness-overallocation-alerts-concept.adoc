@@ -1,0 +1,101 @@
+---
+permalink: volumes/aggregate-fullness-overallocation-alerts-concept.html 
+sidebar: sidebar 
+keywords: how to, address, aggregate, fullness, overallocation, alerts 
+summary: O ONTAP emite mensagens EMS quando os agregados estão ficando sem espaço para que você possa tomar medidas corretivas fornecendo mais espaço para o agregado total. Conhecer os tipos de alertas e como resolvê-los ajuda a garantir a disponibilidade dos dados. 
+---
+= Endereça alertas de preenchimento agregado e sobrealocação
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP emite mensagens EMS quando os agregados estão ficando sem espaço para que você possa tomar medidas corretivas fornecendo mais espaço para o agregado total. Conhecer os tipos de alertas e como resolvê-los ajuda a garantir a disponibilidade dos dados.
+
+Quando um agregado é descrito como _full_, significa que a porcentagem do espaço no agregado disponível para uso por volumes caiu abaixo de um limite predefinido. Quando um agregado se torna _superalocado_, o espaço usado pelo ONTAP para metadados e para suportar o acesso básico a dados foi esgotado. Às vezes, o espaço normalmente reservado para outros fins pode ser usado para manter o funcionamento agregado, mas as garantias de volume para volumes associados com o agregado ou a disponibilidade de dados podem estar em risco.
+
+A sobrealocação pode ser lógica ou física. _Sobrealocação lógica_ significa que o espaço reservado para honrar futuros compromissos espaciais, como garantias de volume, foi usado para outro propósito. _Superalocação física_ significa que o agregado está ficando sem blocos físicos para usar. Os agregados nesse estado correm o risco de recusar gravações, ficar offline ou potencialmente causar interrupção de uma controladora.
+
+A tabela a seguir descreve os alertas de preenchimento agregado e sobrealocação, as ações que você pode tomar para resolver o problema e os riscos de não tomar medidas.
+
+[cols="5%,5%,5%,35%,25%,25%"]
+|===
+| Tipo de alerta | Nível EMS | Configurável? | Definição | Formas de abordar | Risco se nenhuma ação for tomada 
+
+
+ a| 
+Quase cheio
+ a| 
+Depurar
+ a| 
+N
+ a| 
+A quantidade de espaço atribuído aos volumes, incluindo as suas garantias, excedeu o limiar fixado para este alerta (95%). A porcentagem é o `Used` total menos o tamanho da reserva Snapshot.
+ a| 
+* Adicionando armazenamento ao agregado
+* Redução ou exclusão de volumes
+* Mover volumes para outro agregado com mais espaço
+* Remoção das garantias de volume (definindo-as para `none`)
+
+ a| 
+Não há risco de gravar operações ou disponibilidade de dados ainda.
+
+
+
+ a| 
+Cheio
+ a| 
+Depurar
+ a| 
+N
+ a| 
+O sistema de ficheiros excedeu o limite definido para este alerta (98%). A porcentagem é o `Used` total menos o tamanho da reserva Snapshot.
+ a| 
+* Adicionando armazenamento ao agregado
+* Redução ou exclusão de volumes
+* Mover volumes para outro agregado com mais espaço
+* Remoção das garantias de volume (definindo-as para `none`)
+
+ a| 
+As garantias de volume para volumes no agregado podem estar em risco, bem como as operações de gravação nesses volumes.
+
+
+
+ a| 
+Logicamente sobralocada
+ a| 
+Erro SVC
+ a| 
+N
+ a| 
+Além do espaço reservado para os volumes estarem cheios, o espaço no agregado usado para metadados foi esgotado.
+ a| 
+* Adicionando armazenamento ao agregado
+* Redução ou exclusão de volumes
+* Mover volumes para outro agregado com mais espaço
+* Remoção das garantias de volume (definindo-as para `none`)
+
+ a| 
+As garantias de volume para volumes no agregado estão em risco, bem como as operações de gravação nesses volumes.
+
+
+
+ a| 
+Fisicamente sobrealocado
+ a| 
+Erro nó
+ a| 
+N
+ a| 
+O agregado está ficando sem blocos físicos nos quais pode escrever.
+ a| 
+* Adicionando armazenamento ao agregado
+* Redução ou exclusão de volumes
+* Mover volumes para outro agregado com mais espaço
+
+ a| 
+As operações de gravação em volumes no agregado estão em risco, bem como a disponibilidade de dados; o agregado pode ficar offline. Em casos extremos, o nó pode sofrer uma interrupção.
+
+|===
+Toda vez que um limite é cruzado para um agregado, quer a porcentagem de plenitude esteja aumentando ou caindo, uma mensagem EMS é gerada. Quando o nível de plenitude do agregado cai abaixo de um limite, uma `aggregate ok` mensagem EMS é gerada.

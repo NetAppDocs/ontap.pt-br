@@ -1,0 +1,110 @@
+---
+permalink: s3-multiprotocol/enable-access-nas-data-task.html 
+sidebar: sidebar 
+keywords: tr-4814, s3, svm, nfs, smb, dns, authentication, protocol, configuration, nas, certificate, authority, installation, lifs 
+summary: A habilitação do acesso ao protocolo S3 consiste em garantir que um SVM habilitado para nas atenda aos mesmos requisitos que um servidor habilitado para S3, incluindo a adição de um servidor de armazenamento de objetos e a verificação dos requisitos de rede e autenticação. 
+---
+= Habilite o acesso de protocolo S3 a dados nas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A habilitação do acesso ao protocolo S3 consiste em garantir que um SVM habilitado para nas atenda aos mesmos requisitos que um servidor habilitado para S3, incluindo a adição de um servidor de armazenamento de objetos e a verificação dos requisitos de rede e autenticação.
+
+Para novas instalações do ONTAP, é recomendável habilitar o acesso de protocolo S3 a um SVM depois de configurá-lo para fornecer dados nas aos clientes. Para saber mais sobre a configuração do protocolo nas, consulte:
+
+* link:../nfs-config/index.html["Configuração NFS"]
+* link:../smb-config/index.html["Configuração SMB"]
+
+
+.Antes de começar
+É necessário configurar o seguinte antes de ativar o protocolo S3:
+
+* O protocolo S3 e os protocolos nas desejados - NFS, SMB ou ambos - são licenciados.
+* Um SVM é configurado para os protocolos nas desejados.
+* Existem servidores NFS e/ou SMB.
+* DNS e quaisquer outros serviços necessários estão configurados.
+* Os dados nas estão sendo exportados ou compartilhados para sistemas cliente.
+
+
+.Sobre esta tarefa
+Um certificado de autoridade de certificação (CA) é necessário para habilitar o tráfego HTTPS de clientes S3 para o SVM habilitado para S3. Os certificados CA de três fontes podem ser usados:
+
+* Um novo certificado auto-assinado da ONTAP no SVM.
+* Certificado auto-assinado existente do ONTAP no SVM.
+* Um certificado de terceiros.
+
+
+Você pode usar os mesmos LIFs de dados para o bucket do S3/nas que você usa para fornecer dados nas. Se forem necessários endereços IP específicos, link:../s3-config/create-data-lifs-task.html["Crie LIFs de dados"]consulte . Uma política de dados de serviço do S3 é necessária para habilitar o tráfego de dados do S3 nos LIFs. Você pode modificar a política de serviços existente da SVM para incluir o S3.
+
+Quando você cria o servidor de objetos S3, você deve estar preparado para inserir o nome do servidor S3 como um nome de domínio totalmente qualificado (FQDN), que os clientes usarão para o acesso S3. O FQDN do servidor S3 não deve começar com um nome de bucket.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Habilite o S3 em uma VM de storage com protocolos nas configurados.
++
+.. Clique em *armazenamento > armazenamento VMs*, selecione uma VM de armazenamento pronta para nas, clique em Configurações e, em seguida, clique image:icon_gear.gif["Ícone ações"] em S3.
+.. Selecione o tipo de certificado. Se você selecionar um certificado gerado pelo sistema ou um de seu, ele será necessário para acesso ao cliente.
+.. Introduza as interfaces de rede.
+
+
+. Se você selecionou o certificado gerado pelo sistema, as informações do certificado serão exibidas quando a nova criação da VM de armazenamento for confirmada. Clique em *Download* e salve-o para acesso ao cliente.
++
+** A chave secreta não será exibida novamente.
+** Se você precisar das informações do certificado novamente: Clique em *armazenamento > armazenamento de VMs*, selecione a VM de armazenamento e clique em *Configurações*.
+
+
+
+
+--
+.CLI
+--
+. Verifique se o protocolo S3 é permitido no SVM
+`vserver show -fields allowed-protocols`
+. Registre o certificado de chave pública deste SVM. Se for necessário um novo certificado auto-assinado do ONTAP, link:../s3-config/create-install-ca-certificate-svm-task.html["Crie e instale um certificado de CA no SVM"]consulte .
+. Atualize a política de dados de serviço
++
+.. Exibir a política de dados de serviço do SVM
+`network interface service-policy show -vserver _svm_name_`
+.. Adicione o `data-core` e `data-s3-server services` se não estiverem presentes. E
+`network interface service-policy add-service -vserver _svm_name_ -policy _policy_name_ -service data-core,data-s3-server`
+
+
+. Verifique se as LIFs de dados no SVM atendem aos seus requisitos
+`network interface show -vserver _svm_name_`
+. Crie o servidor S3
+`vserver object-store-server create -vserver _svm_name_ -object-store-server _s3_server_fqdn_ -certificate-name _ca_cert_name_ -comment text [additional_options]`
+
+
+Você pode especificar opções adicionais ao criar o servidor S3 ou a qualquer momento mais tarde.
+
+* O HTTPS é ativado por padrão na porta 443. Você pode alterar o número da porta com a opção -secure-listener-port. Quando o HTTPS está ativado, os certificados de CA são necessários para uma integração adequada com SSL/TLS. A partir do ONTAP 9.15,1, o TLS 1,3 é compatível com armazenamento de objetos S3.
+* O HTTP está desativado por padrão; quando ativado, o servidor escuta na porta 80. Você pode ativá-lo com a opção -is-http-enabled ou alterar o número da porta com a opção -listener-port. Quando o HTTP está ativado, todas as solicitações e respostas são enviadas pela rede em texto não criptografado.
+
+
+. Verifique se S3 está configurado como desejado
+`vserver object-store-server show`
+
+
+O seguinte comando verifica os valores de configuração de todos os servidores de armazenamento de objetos
+`cluster1::> vserver object-store-server show`
+
+[listing]
+----
+Vserver: vs1
+
+                      Object Store Server Name: s3.example.com
+                          Administrative State: up
+                        Listener Port For HTTP: 80
+                Secure Listener Port For HTTPS: 443
+                                  HTTP Enabled: false
+                                 HTTPS Enabled: true
+             Certificate for HTTPS Connections: svm1_ca
+                                       Comment: Server comment
+----
+--
+====

@@ -1,0 +1,34 @@
+---
+permalink: concepts/san-path-failover-concept.html 
+sidebar: sidebar 
+keywords: san path failover 
+summary: 'Um host SAN usa ALUA (Asymmetric Logical Unit Access) e MPIO (multipath I/o) para redirecionar o tráfego para um LIF sobrevivente após uma falha de link. Caminhos predefinidos determinam as possíveis rotas para o LUN servido pelo SVM.' 
+---
+= Failover de caminho SAN
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um host SAN usa ALUA (Asymmetric Logical Unit Access) e MPIO (multipath I/o) para redirecionar o tráfego para um LIF sobrevivente após uma falha de link. Caminhos predefinidos determinam as possíveis rotas para o LUN servido pelo SVM.
+
+Em um ambiente SAN, os hosts são considerados como _iniciadores_ de solicitações para LUN _destinos._ o MPIO habilita vários caminhos de iniciadores para destinos. ALUA identifica os caminhos mais diretos, chamados _caminhos otimizados._
+
+Normalmente, você configura vários caminhos otimizados para LIFs no nó proprietário do LUN e vários caminhos não otimizados para LIFs em seu parceiro de HA. Se uma porta falhar no nó proprietário, o host roteia o tráfego para as portas sobreviventes. Se todas as portas falharem, o host roteia o tráfego pelos caminhos não otimizados.
+
+Por padrão, o ONTAP Selective LUN Map (SLM) limita o número de caminhos do host para um LUN. Um LUN recém-criado só pode ser acessado por meio de caminhos para o nó que possui o LUN ou seu parceiro de HA. Você também pode limitar o acesso a um LUN configurando LIFs em um _conjunto de portas_ para o iniciador.
+
+image:san-host-rerouting.gif["exemplo de failover de caminho san"]
+
+|===
+
+
+ a| 
+*_movendo volumes em ambientes SAN_*
+
+Por padrão, o ONTAP _Selective LUN Map (SLM)_ limita o número de caminhos para um LUN de um host SAN. Um LUN recém-criado só pode ser acessado por meio de caminhos para o nó que possui o LUN ou seu parceiro de HA, os _nodos de relatórios_ para o LUN.
+
+Isso significa que, quando você move um volume para um nó em outro par de HA, você precisa adicionar nós de geração de relatórios para o par de HA de destino ao mapeamento de LUN. Em seguida, você pode especificar os novos caminhos na configuração do MPIO. Depois que a movimentação de volume estiver concluída, você poderá excluir os nós de relatório do par de HA de origem do mapeamento.
+
+|===

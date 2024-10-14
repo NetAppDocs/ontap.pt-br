@@ -1,0 +1,187 @@
+---
+permalink: s3-config/create-bucket-task.html 
+sidebar: sidebar 
+keywords: s3, bucket, system manager, 
+summary: S3 objetos são mantidos em _buckets_. Eles não são aninhados como arquivos dentro de um diretório dentro de outros diretórios. 
+---
+= Crie um bucket
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+S3 objetos são mantidos em _buckets_. Eles não são aninhados como arquivos dentro de um diretório dentro de outros diretórios.
+
+.Antes de começar
+Uma VM de armazenamento contendo um servidor S3 já deve existir.
+
+.Sobre esta tarefa
+* A partir do ONTAP 9.14,1, o redimensionamento automático foi ativado em volumes FlexGroup S3 quando os intervalos são criados neles. Isso elimina a alocação excessiva de capacidade durante a criação do bucket em volumes FlexGroup novos e existentes. Os volumes FlexGroup são redimensionados para um tamanho mínimo necessário com base nas diretrizes a seguir. O tamanho mínimo necessário é o tamanho total de todos os buckets do S3 em um volume FlexGroup.
++
+** A partir do ONTAP 9.14,1, se um volume S3 FlexGroup for criado como parte de uma nova criação de bucket, o volume FlexGroup será criado com o tamanho mínimo necessário.
+** Se um volume S3 FlexGroup foi criado antes do ONTAP 9.14,1, o primeiro bucket criado ou excluído após o ONTAP 9.14,1 redimensiona o volume FlexGroup para o tamanho mínimo necessário.
+** Se um volume S3 FlexGroup foi criado antes do ONTAP 9.14,1 e já tinha o tamanho mínimo necessário, a criação ou eliminação de um bucket subsequente ao ONTAP 9.14,1 mantém o tamanho do volume S3 FlexGroup.
+
+
+* Os níveis de serviço de storage são grupos de políticas de qualidade do serviço (QoS) adaptáveis predefinidos, com níveis padrão _value_, _performance_ e _extreme_. Em vez de um dos níveis de serviço de storage padrão, você também pode definir um grupo de políticas de QoS personalizadas e aplicá-lo a um bucket. Para obter mais informações sobre definições de serviço de armazenamento, link:storage-service-definitions-reference.html["Definições do serviço de armazenamento"]consulte . Para obter mais informações sobre gerenciamento de desempenho, link:../performance-admin/index.html["Gerenciamento de desempenho"]consulte . A partir do ONTAP 9.8, quando você provisiona o storage, a QoS é habilitada por padrão. Você pode desativar o QoS ou escolher uma política de QoS personalizada durante o processo de provisionamento ou posteriormente.
+
+
+* Se você estiver configurando a disposição em camadas de capacidade local, crie buckets e usuários em uma VM de storage de dados, não na VM de storage do sistema onde o servidor S3 está localizado.
+* Para acesso remoto ao cliente, você deve configurar buckets em uma VM de storage habilitada para S3. Se você criar um bucket em uma VM de storage que não esteja habilitada para S3, ele estará disponível somente para a disposição em categorias locais.
+* Começando com ONTAP 9.14,1, você pode link:create-bucket-mcc-task.html["Crie um bucket em um agregado espelhado ou sem espelhamento em uma configuração do MetroCluster"].
+* Para a CLI, quando você cria um bucket, você tem duas opções de provisionamento:
++
+** Deixe ONTAP Select os agregados subjacentes e componentes FlexGroup (padrão)
++
+*** O ONTAP cria e configura um volume FlexGroup para o primeiro bucket selecionando automaticamente os agregados. Ele selecionará automaticamente o nível de serviço mais alto disponível para sua plataforma ou você pode especificar o nível de serviço de storage. Quaisquer buckets adicionais adicionados posteriormente à VM de storage terão o mesmo volume FlexGroup subjacente.
+*** Como alternativa, você pode especificar se o bucket será usado para disposição em camadas, caso em que o ONTAP tenta selecionar Mídia de baixo custo com desempenho ideal para os dados em camadas.
+
+
+** Você seleciona os agregados subjacentes e componentes FlexGroup (requer opções de comando de privilégios avançados): Você tem a opção de selecionar manualmente os agregados nos quais o bucket e o volume FlexGroup contendo devem ser criados e, em seguida, especificar o número de constituintes em cada agregado. Ao adicionar baldes adicionais:
++
+*** Se você especificar agregados e componentes para um novo bucket, um novo FlexGroup será criado para o novo bucket.
+*** Se você não especificar agregados e componentes para um novo bucket, o novo bucket será adicionado a um FlexGroup existente. Consulte xref:../flexgroup/index.html[Gerenciamento de volumes do FlexGroup] para obter mais informações.
++
+Quando você especifica agregados e constituintes ao criar um bucket, nenhum grupo de política de QoS, padrão ou personalizado, é aplicado. Você pode fazê-lo mais tarde com o `vserver object-store-server bucket modify` comando.
+
++
+Consulte  para obter mais informações.
+
++
+*Observação:* se você estiver servindo buckets do Cloud Volumes ONTAP, você deve usar o procedimento CLI. É altamente recomendável que você selecione manualmente os agregados subjacentes para garantir que eles estejam usando apenas um nó. O uso de agregados de ambos os nós pode afetar o desempenho, porque os nós estarão em zonas de disponibilidade geograficamente separadas e, portanto, suscetíveis a problemas de latência.
+
+
+
+
+
+
+
+
+
+== Crie buckets do S3 com a CLI do ONTAP
+
+. Se você pretende selecionar agregados e componentes do FlexGroup você mesmo, defina o nível de privilégio como avançado (caso contrário, o nível de privilégio de administrador é suficiente): `set -privilege advanced`
+. Criar um bucket:
++
+`vserver object-store-server bucket create -vserver _svm_name_ -bucket _bucket_name_ [-size integer[KB|MB|GB|TB|PB]] [-comment text] [additional_options]`
+
++
+O nome da VM de storage pode ser uma VM de storage de dados ou `Cluster` (o nome da VM de storage do sistema) se você estiver configurando a disposição em camadas local.
+
++
+Se você não especificar nenhuma opção, o ONTAP criará um bucket do 800GB com o nível de serviço definido para o nível mais alto disponível para o sistema.
+
++
+Se você quiser que o ONTAP crie um bucket com base no desempenho ou no uso, use uma das seguintes opções:
+
++
+** nível de serviço
++
+Inclua a `-storage-service-level` opção com um dos seguintes valores: `value`, `performance`, Ou `extreme`.
+
+** disposição em camadas
++
+Inclua a `-used-as-capacity-tier true` opção.
+
+
+
++
+Se você quiser especificar os agregados nos quais criar o volume FlexGroup subjacente, use as seguintes opções:
+
++
+** O `-aggr-list` parâmetro especifica a lista de agregados a serem usados para componentes de volume FlexGroup.
++
+Cada entrada na lista cria um constituinte no agregado especificado. Você pode especificar um agregado várias vezes para ter vários constituintes criados no agregado.
+
++
+Para obter performance consistente em todo o volume FlexGroup, todos os agregados precisam usar o mesmo tipo de disco e configurações de grupo RAID.
+
+** O `-aggr-list-multiplier` parâmetro especifica o número de vezes a iterar sobre os agregados que são listados com o `-aggr-list` parâmetro ao criar um volume FlexGroup.
++
+O valor padrão do `-aggr-list-multiplier` parâmetro é 4.
+
+
+
+. Adicione um grupo de políticas de QoS, se necessário:
++
+`vserver object-store-server bucket modify -bucket _bucket_name_ -qos-policy-group _qos_policy_group_`
+
+. Verificar a criação do balde:
++
+`vserver object-store-server bucket show [-instance]`
+
+
+
+.Exemplo
+O exemplo a seguir cria um bucket para a VM de armazenamento de `vs1` tamanho `1TB` e especificando o agregado:
+
+[listing]
+----
+cluster-1::*> vserver object-store-server bucket create -vserver svm1.example.com -bucket testbucket -aggr-list aggr1 -size 1TB
+----
+
+
+== Crie buckets do S3 com o System Manager
+
+. Adicione um novo bucket em uma VM de storage habilitada para S3.
++
+.. Clique em *armazenamento > baldes* e, em seguida, clique em *Adicionar*.
+.. Insira um nome, selecione a VM de armazenamento e insira um tamanho.
++
+*** Se você clicar em *Salvar* neste ponto, um bucket será criado com as seguintes configurações padrão:
++
+**** Nenhum usuário tem acesso ao bucket, a menos que as políticas de grupo já estejam em vigor.
++
+
+NOTE: Você não deve usar o usuário raiz do S3 para gerenciar o armazenamento de objetos do ONTAP e compartilhar suas permissões, pois ele tem acesso ilimitado ao armazenamento de objetos. Em vez disso, crie um usuário ou grupo com Privileges administrativo que você atribuir.
+
+**** Um nível de qualidade de serviço (desempenho) que é o mais alto disponível para o seu sistema.
+
+
+*** Clique em *Salvar* para criar um bucket com esses valores padrão.
+
+
+
+
+
+
+
+
+=== Configurar permissões e restrições adicionais
+
+Você pode clicar em *mais Opções* para configurar as configurações de bloqueio de objetos, permissões de usuário e nível de desempenho ao configurar o bucket, ou você pode modificar essas configurações posteriormente.
+
+Se você pretende usar o armazenamento de objetos S3 para disposição em camadas do FabricPool, considere selecionar *usar para disposição em camadas* (usar Mídia de baixo custo com desempenho ideal para os dados em camadas) em vez de um nível de serviço de desempenho.
+
+Se você quiser habilitar o controle de versão para seus objetos para recuperação posterior, selecione *Ativar controle de versão*. O controle de versão é habilitado por padrão se você estiver habilitando o bloqueio de objetos no bucket. Para obter informações sobre o controle de versão de objetos, consulte https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html["Usando o controle de versão em buckets do S3 para Amazon"].
+
+A partir de 9.14.1, o bloqueio de objetos é suportado em buckets do S3. O bloqueio de objetos S3 requer uma licença SnapLock padrão. Esta licença está incluída no link:../system-admin/manage-licenses-concept.html["ONTAP One"]. Antes do ONTAP One, a licença SnapLock foi incluída no pacote Segurança e conformidade. O pacote de segurança e conformidade já não é oferecido, mas ainda é válido. Embora não seja necessário atualmente, os clientes existentes podem optar por https://docs.netapp.com/us-en/ontap/system-admin/download-nlf-task.html["Atualize para o ONTAP One"]. Se você estiver habilitando o bloqueio de objetos em um bucket, deverá https://docs.netapp.com/us-en/ontap/system-admin/manage-license-task.html["Verifique se uma licença SnapLock está instalada"]. Se uma licença do SnapLock não estiver instalada, você deve https://docs.netapp.com/us-en/ontap/system-admin/install-license-task.html["instale"] fazê-la antes de ativar o bloqueio de objetos. Quando tiver verificado que a licença SnapLock está instalada, para proteger os objetos no bucket de serem excluídos ou substituídos, selecione *Ativar bloqueio de objetos*. O bloqueio pode ser ativado em todas as versões específicas de objetos e apenas quando o relógio SnapLock Compliance é inicializado para os nós de cluster. Siga estes passos:
+
+. Se o relógio SnapLock Compliance não for inicializado em nenhum nó do cluster, o botão *Inicializar Relógio SnapLock Compliance* será exibido. Clique em *Inicializar Relógio SnapLock Compliance* para inicializar o relógio SnapLock Compliance nos nós do cluster.
+. Selecione o modo *Governance* para ativar um bloqueio baseado em tempo que permite permissões _Write Once, Read many (WORM)_ nos objetos. Mesmo no modo _Governance_, os objetos podem ser excluídos por usuários administradores com permissões específicas.
+. Selecione o modo *Compliance* se quiser atribuir regras mais rigorosas de exclusão e atualização nos objetos. Neste modo de bloqueio de objetos, os objetos podem ser expirados apenas na conclusão do período de retenção especificado. A menos que um período de retenção seja especificado, os objetos permanecem bloqueados indefinidamente.
+. Especifique o período de retenção para o bloqueio em dias ou anos se você quiser que o bloqueio seja efetivo por um determinado período.
++
+
+NOTE: O bloqueio é aplicável a baldes S3 com controle de versão e sem controle de versão. O bloqueio de objetos não é aplicável a objetos nas.
+
+
+
+Você pode configurar as configurações de proteção e permissão, bem como o nível de serviço de desempenho para o bucket.
+
+
+NOTE: Você já deve ter criado usuários e grupos antes de configurar as permissões.
+
+Para obter informações, link:../s3-snapmirror/create-remote-mirror-new-bucket-task.html["Criar espelho para um novo balde"]consulte .
+
+
+
+=== Verifique o acesso ao balde
+
+Em aplicativos cliente S3 (seja ONTAP S3 ou um aplicativo externo de terceiros), você pode verificar seu acesso ao bucket recém-criado digitando o seguinte:
+
+* O certificado da CA do servidor S3.
+* A chave de acesso e a chave secreta do usuário.
+* O nome do FQDN do servidor S3 e o nome do bucket.
+

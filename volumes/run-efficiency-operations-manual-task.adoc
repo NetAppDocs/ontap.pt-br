@@ -1,0 +1,63 @@
+---
+permalink: volumes/run-efficiency-operations-manual-task.html 
+sidebar: sidebar 
+keywords: starting deduplication manually, starting data compression manually, efficiency, run, sequential packing 
+summary: Você pode executar operações de eficiência em um volume manualmente. Você pode fazer isso quando agendar operações de eficiência não for apropriado. 
+---
+= Execute uma operação de eficiência manualmente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode executar operações de eficiência em um volume manualmente. Você pode fazer isso quando agendar operações de eficiência não for apropriado.
+
+.Antes de começar
+Dependendo da operação de eficiência que você deseja executar manualmente, você precisa ativar a deduplicação ou a compactação de dados e a deduplicação em um volume.
+
+.Sobre esta tarefa
+Esta operação é efetuada através do `volume efficiency start` comando. Quando a eficiência de storage sensível à temperatura é habilitada em um volume, a deduplicação é executada inicialmente, seguida da compactação de dados.
+
+A deduplicação é um processo em segundo plano que consome recursos do sistema enquanto está em execução. Se os dados não mudarem com frequência em um volume, é melhor executar a deduplicação com menos frequência. Várias operações de deduplicação simultâneas executadas em um sistema de storage levam a um maior consumo de recursos do sistema.
+
+Você pode executar um máximo de oito operações de deduplicação simultânea ou compressão de dados por nó. Se forem agendadas mais operações de eficiência, as operações serão enfileiradas.
+
+A partir do ONTAP 9.13,1, se a eficiência de storage sensível à temperatura estiver habilitada em um volume, você poderá executar a eficiência de volume nos dados existentes para aproveitar a embalagem sequencial para aprimorar ainda mais a eficiência de storage.
+
+
+
+== Execute a eficiência manualmente
+
+.Passos
+. Inicie a operação de eficiência em um volume: `volume efficiency start`
+
+
+.Exemplo
+O comando a seguir permite que você inicie manualmente apenas a deduplicação ou a deduplicação, seguida de compactação lógica e compactação de contentor no volume VolA
+
+E
+
+[listing]
+----
+volume efficiency start -vserver vs1 -volume VolA
+----
+
+
+== Reembalar dados existentes
+
+Para aproveitar o empacotamento de dados sequenciais introduzido no ONTAP 9.13,1 em volumes com eficiência de storage sensível à temperatura ativada, é possível reembalar os dados existentes. Você deve estar no modo de privilégio avançado para usar este comando.
+
+.Passos
+. Defina o nível de privilégio: `set -privilege advanced`
+. Reembalar dados existentes: `volume efficiency inactive-data-compression start -vserver _vserver_name_ -volume _volume_name_ -scan-mode extended_recompression`
+
+
+.Exemplo
+[listing]
+----
+volume efficiency inactive-data-compression start -vserver vs1 -volume vol1 -scan-mode extended_recompression
+----
+.Informações relacionadas
+* link:run-efficiency-operations-manual-existing-data-task.html["Execute operações de eficiência manualmente nos dados existentes"]
+

@@ -1,0 +1,72 @@
+---
+permalink: smb-admin/manage-local-group-membership-task.html 
+sidebar: sidebar 
+keywords: manage, local, group, membership, add, removing, remove, local, domain, user, domain, group, control, access, place, privilege, associate, manage local group membership 
+summary: Você pode gerenciar a associação de grupo local adicionando e removendo usuários locais ou de domínio ou adicionando e removendo grupos de domínio. Isso é útil se você quiser controlar o acesso a dados com base nos controles de acesso colocados no grupo ou se quiser que os usuários tenham o Privileges associado a esse grupo. 
+---
+= Gerenciar a associação ao grupo local
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode gerenciar a associação de grupo local adicionando e removendo usuários locais ou de domínio ou adicionando e removendo grupos de domínio. Isso é útil se você quiser controlar o acesso a dados com base nos controles de acesso colocados no grupo ou se quiser que os usuários tenham o Privileges associado a esse grupo.
+
+.Sobre esta tarefa
+Diretrizes para adicionar membros a um grupo local:
+
+* Você não pode adicionar usuários ao grupo especial _todos_.
+* O grupo local deve existir antes de poder adicionar um utilizador a ele.
+* O utilizador tem de existir antes de poder adicionar o utilizador a um grupo local.
+* Não é possível adicionar um grupo local a outro grupo local.
+* Para adicionar um usuário ou grupo de domínio a um grupo local, o Data ONTAP deve ser capaz de resolver o nome para um SID.
+
+
+Diretrizes para remover membros de um grupo local:
+
+* Você não pode remover membros do grupo especial _todos_.
+* O grupo do qual você deseja remover um membro deve existir.
+* O ONTAP deve ser capaz de resolver os nomes dos membros que você deseja remover do grupo para um SID correspondente.
+
+
+.Passo
+. Adicione ou remova um membro em um grupo.
++
+|===
+| Se você quiser... | Em seguida, use o comando... 
+
+
+ a| 
+Adicione um membro a um grupo
+ a| 
+`+vserver cifs users-and-groups local-group add-members -vserver _vserver_name_ -group-name _group_name_ -member-names name[,...]+` Você pode especificar uma lista delimitada por vírgulas de usuários locais, usuários de domínio ou grupos de domínio para adicionar ao grupo local especificado.
+
+
+
+ a| 
+Remova um membro de um grupo
+ a| 
+`+vserver cifs users-and-groups local-group remove-members -vserver _vserver_name_ -group-name _group_name_ -member-names name[,...]+` Você pode especificar uma lista delimitada por vírgulas de usuários locais, usuários de domínio ou grupos de domínio a serem removidos do grupo local especificado.
+
+|===
++
+O exemplo a seguir adiciona um usuário local "'SMB_SERVER'" e um grupo de domínio "'AD_Dom_eng'" ao grupo local "'SMB_SERVER' Engineering" no SVM VS1:
+
++
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-group add-members -vserver vs1 -group-name SMB_SERVER\engineering -member-names SMB_SERVER\sue,AD_DOMAIN\dom_eng
+----
++
+O exemplo a seguir remove os usuários locais "'SMB_SERVER'" e "'SMB_SERVER' james' do grupo local "'SMB_Server' Engineering" no SVM VS1:
+
++
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-group remove-members -vserver vs1 -group-name SMB_SERVER\engineering -member-names SMB_SERVER\sue,SMB_SERVER\james
+----
+
+
+.Informações relacionadas
+xref:display-members-local-groups-task.adoc[Exibindo informações sobre membros de grupos locais]

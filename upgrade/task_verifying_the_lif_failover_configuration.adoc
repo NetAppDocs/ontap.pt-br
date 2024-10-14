@@ -1,0 +1,81 @@
+---
+permalink: upgrade/task_verifying_the_lif_failover_configuration.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, verifying, verify, lif, failover, configuration 
+summary: Antes de executar uma atualização, verifique se as políticas de failover e os grupos de failover estão configurados corretamente. 
+---
+= Verifique a configuração de failover de LIF
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de atualizar o ONTAP, você deve verificar se as políticas de failover e os grupos de failover do cluster estão configurados corretamente.
+
+Durante o processo de atualização, os LIFs são migrados com base no método de atualização. Dependendo do método de atualização, a política de failover de LIF pode ou não ser usada.
+
+Se você tiver 8 ou mais nós no cluster, a atualização automatizada será realizada usando o método batch. O método de atualização em lote envolve dividir o cluster em vários lotes de atualização, atualizar o conjunto de nós no primeiro lote, atualizar seus parceiros de alta disponibilidade (HA) e repetir o processo para os lotes restantes. No ONTAP 9.7 e anteriores, se o método de lote for usado, os LIFs serão migrados para o parceiro de HA do nó que está sendo atualizado. No ONTAP 9.8 e posterior, se o método batch for usado, LIFs são migrados para o outro grupo batch.
+
+Se você tiver menos de 8 nós no cluster, a atualização automatizada será realizada usando o método contínuo. O método de atualização progressiva envolve iniciar uma operação de failover em cada nó em um par de HA, atualizar o nó que falhou, iniciar a giveback e repetir o processo para cada par de HA no cluster. Se o método contínuo for usado, os LIFs serão migrados para o nó de destino de failover conforme definido pela política de failover de LIF.
+
+.Passos
+. Exibir a política de failover para cada LIF de dados:
++
+[cols="2*"]
+|===
+| Se a sua versão do ONTAP for... | Use este comando 
+
+
+| 9,6 ou posterior  a| 
+`network interface show -service-policy \*data* -failover`
+
+
+
+| 9,5 ou anterior  a| 
+`network interface show -role data -failover`
+
+|===
++
+Este exemplo mostra a configuração de failover padrão para um cluster de dois nós com duas LIFs de dados:
+
++
+[listing]
+----
+cluster1::> network interface show -role data -failover
+         Logical         Home                  Failover        Failover
+Vserver  Interface       Node:Port             Policy          Group
+-------- --------------- --------------------- --------------- ---------------
+vs0
+         lif0            node0:e0b             nextavail       system-defined
+                         Failover Targets: node0:e0b, node0:e0c,
+                                           node0:e0d, node0:e0e,
+                                           node0:e0f, node1:e0b,
+                                           node1:e0c, node1:e0d,
+                                           node1:e0e, node1:e0f
+vs1
+         lif1            node1:e0b             nextavail       system-defined
+                         Failover Targets: node1:e0b, node1:e0c,
+                                           node1:e0d, node1:e0e,
+                                           node1:e0f, node0:e0b,
+                                           node0:e0c, node0:e0d,
+                                           node0:e0e, node0:e0f
+----
++
+O campo *Failover Targets* mostra uma lista priorizada de destinos de failover para cada LIF. Por exemplo, se o 'lif0' falhar em sua porta inicial (e0b em node0), ele primeiro tentará fazer failover para a porta e0c em node0. Se o lif0 não puder falhar para e0c, ele então tentará fazer failover para a porta e0d no node0, e assim por diante.
+
+. Se a política de failover estiver definida como *Disabled* para quaisquer LIFs, exceto SAN LIFs, use o `network interface modify` comando para habilitar o failover.
+. Para cada LIF, verifique se o campo *Failover Targets* inclui portas de dados de um nó diferente que permanecerá ativo enquanto o nó inicial do LIF estiver sendo atualizado.
++
+Você pode usar o `network interface failover-groups modify` comando para adicionar um destino de failover ao grupo de failover.
+
++
+.Exemplo
+[listing]
+----
+network interface failover-groups modify -vserver vs0 -failover-group fg1 -targets sti8-vsim-ucs572q:e0d,sti8-vsim-ucs572r:e0d
+----
+
+
+.Informações relacionadas
+link:../networking/networking_reference.html["Gerenciamento de rede e LIF"]

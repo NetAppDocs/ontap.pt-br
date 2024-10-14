@@ -1,0 +1,112 @@
+---
+sidebar: sidebar 
+permalink: networking/monitor_the_reachability_of_network_ports.html 
+keywords: monitor, monitoring, manage, managing, automatic, reachability, port, network, identify, determine, monitor the reachability of network ports in ontap 9.8 and later, ontap 9.8 and later, determine if the physical network topology does not match the ontap configuration 
+summary: ONTAP 9.8 e posterior, determine se a topologia de rede física não corresponde à configuração do ONTAP 
+---
+= Monitorar a acessibilidade das portas de rede (ONTAP 9.8 e posterior)
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+O monitoramento de acessibilidade é integrado ao ONTAP 9.8 e posterior. Use esse monitoramento para identificar quando a topologia de rede física não corresponde à configuração do ONTAP. Em alguns casos, o ONTAP pode reparar a acessibilidade da porta. Em outros casos, etapas adicionais são necessárias.
+
+.Sobre esta tarefa
+Use esses comandos para verificar, diagnosticar e reparar configurações incorretas de rede resultantes da configuração do ONTAP que não corresponde ao cabeamento físico ou à configuração do switch de rede.
+
+.Passo
+. Exibir acessibilidade da porta:
++
+....
+network port reachability show
+....
+. Use a seguinte árvore de decisão e tabela para determinar a próxima etapa, se houver.
+
+
+image:ontap_nm_image1.png["Reparar árvore de decisão de acessibilidade"]
+
+[cols="20,80"]
+|===
+
+
+| Status de acessibilidade | Descrição 
+
+
+ a| 
+ok
+ a| 
+A porta tem acessibilidade da camada 2 ao domínio de broadcast atribuído. Se o status de acessibilidade for "ok", mas houver "portas inesperadas", considere mesclar um ou mais domínios de broadcast. Para obter mais informações, consulte a seguinte linha _portas inesperadas_.
+
+Se o status de acessibilidade for "ok", mas houver "portas inalcançáveis", considere dividir um ou mais domínios de broadcast. Para obter mais informações, consulte a seguinte linha _portas inalcançáveis_.
+
+Se o status de acessibilidade for "ok" e não houver portas inesperadas ou inacessíveis, sua configuração está correta.
+
+
+
+ a| 
+Portas inesperadas
+ a| 
+A porta tem acessibilidade da camada 2 ao domínio de broadcast atribuído; no entanto, também tem acessibilidade da camada 2 para pelo menos um outro domínio de broadcast.
+
+Examine a conetividade física e a configuração do switch para determinar se está incorreta ou se o domínio de broadcast atribuído à porta precisa ser mesclado com um ou mais domínios de broadcast.
+
+Para obter mais informações, link:merge_broadcast_domains.html["Mesclar domínios de broadcast"]consulte .
+
+
+
+ a| 
+Portas inalcançáveis
+ a| 
+Se um único domínio de broadcast tiver sido particionado em dois conjuntos de acessibilidade diferentes, você poderá dividir um domínio de broadcast para sincronizar a configuração do ONTAP com a topologia de rede física.
+
+Normalmente, a lista de portas inalcançáveis define o conjunto de portas que devem ser divididas em outro domínio de broadcast depois de ter verificado que a configuração física e do switch é precisa.
+
+Para obter mais informações, link:split_broadcast_domains.html["Dividir domínios de broadcast"]consulte .
+
+
+
+ a| 
+acessibilidade mal configurada
+ a| 
+A porta não tem acessibilidade da camada 2 ao domínio de broadcast atribuído; no entanto, a porta tem acessibilidade da camada 2 para um domínio de broadcast diferente.
+
+Você pode reparar a acessibilidade da porta. Ao executar o seguinte comando, o sistema atribuirá a porta ao domínio de broadcast ao qual tem acessibilidade:
+
+`network port reachability repair -node -port` Para obter mais informações, link:repair_port_reachability.html["Acessibilidade da porta de reparo"]consulte .
+
+
+
+ a| 
+sem acessibilidade
+ a| 
+A porta não tem acessibilidade da camada 2 para qualquer domínio de broadcast existente.
+
+Você pode reparar a acessibilidade da porta. Quando você executa o seguinte comando, o sistema atribuirá a porta a um novo domínio de broadcast criado automaticamente no IPspace padrão:
+
+`network port reachability repair -node -port` Para obter mais informações, link:repair_port_reachability.html["Acessibilidade da porta de reparo"]consulte .
+
+
+
+ a| 
+multidomínio-acessibilidade
+ a| 
+A porta tem acessibilidade da camada 2 ao domínio de broadcast atribuído; no entanto, também tem acessibilidade da camada 2 para pelo menos um outro domínio de broadcast.
+
+Examine a conetividade física e a configuração do switch para determinar se está incorreta ou se o domínio de broadcast atribuído à porta precisa ser mesclado com um ou mais domínios de broadcast.
+
+Para obter mais informações, consulte link:merge_broadcast_domains.html["Mesclar domínios de broadcast"] ou link:repair_port_reachability.html["Acessibilidade da porta de reparo"].
+
+
+
+ a| 
+desconhecido
+ a| 
+Se o status de acessibilidade for "desconhecido", aguarde alguns minutos e tente o comando novamente.
+
+|===
+Depois de reparar uma porta, você precisa verificar e resolver LIFs e VLANs deslocados. Se a porta fazia parte de um grupo de interfaces, você também precisa entender o que aconteceu com esse grupo de interfaces. Para obter mais informações, link:repair_port_reachability.html["Acessibilidade da porta de reparo"]consulte .

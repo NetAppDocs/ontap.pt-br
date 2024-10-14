@@ -1,0 +1,166 @@
+---
+permalink: tape-backup/format-tape-config-file-concept.html 
+sidebar: sidebar 
+keywords: format, tape, configuration, file, vendor, id, product, compression, type, drive 
+summary: O formato do arquivo de configuração da fita consiste em campos como ID do fornecedor, ID do produto e detalhes dos tipos de compactação para uma unidade de fita. Este arquivo também consiste em campos opcionais para ativar o recurso de autoload de uma unidade de fita e alterar os valores de tempo limite do comando de uma unidade de fita. 
+---
+= Formato do ficheiro de configuração da cassete
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O formato do arquivo de configuração da fita consiste em campos como ID do fornecedor, ID do produto e detalhes dos tipos de compactação para uma unidade de fita. Este arquivo também consiste em campos opcionais para ativar o recurso de autoload de uma unidade de fita e alterar os valores de tempo limite do comando de uma unidade de fita.
+
+A tabela a seguir exibe o formato do arquivo de configuração da fita:
+
+|===
+| Item | Tamanho | Descrição 
+
+
+ a| 
+`vendor_id` (string)
+ a| 
+até 8 bytes
+ a| 
+O ID do fornecedor conforme relatado pelo `SCSI Inquiry` comando.
+
+
+
+ a| 
+`product_id`(string)
+ a| 
+até 16 bytes
+ a| 
+O ID do produto conforme relatado pelo `SCSI Inquiry` comando.
+
+
+
+ a| 
+`id_match_size`(número)
+ a| 
+ a| 
+O número de bytes do ID do produto a ser usado para correspondência para detetar a unidade de fita a ser identificada, começando com o primeiro caractere do ID do produto nos dados de consulta.
+
+
+
+ a| 
+`vendor_pretty` (string)
+ a| 
+até 16 bytes
+ a| 
+Se este parâmetro estiver presente, ele será especificado pela cadeia de carateres exibida pelo comando `storage tape show -device-names`; caso contrário, INQ_VENDOR_ID será exibido.
+
+
+
+ a| 
+`product_pretty`(string)
+ a| 
+até 16 bytes
+ a| 
+Se este parâmetro estiver presente, ele será especificado pela cadeia de carateres exibida pelo comando `storage tape show -device-names`; caso contrário, INQ_PRODUCT_ID será exibido.
+
+|===
+[NOTE]
+====
+Os `vendor_pretty` campos e `product_pretty` são opcionais, mas se um desses campos tiver um valor, o outro também deve ter um valor.
+
+====
+A tabela a seguir explica a descrição, o código de densidade e o algoritmo de compressão para os vários tipos de compactação, como `l`, `m`, `h` e `a`:
+
+|===
+| Item | Tamanho | Descrição 
+
+
+ a| 
+`{l | m | h | a}_description=(string)`
+ a| 
+até 24 bytes
+ a| 
+A cadeia de carateres a imprimir para o comando nodeshell , `sysconfig -t`, que descreve as caraterísticas da configuração de densidade específica.
+
+
+
+ a| 
+`{l | m | h | a}_density=(hex codes)`
+ a| 
+ a| 
+O código de densidade a ser definido no descritor de bloco de página do modo SCSI correspondente ao código de densidade desejado para l, m, h ou a.
+
+
+
+ a| 
+`{l | m | h | a}_algorithm=(hex codes)`
+ a| 
+ a| 
+O algoritmo de compressão a ser definido na página do modo de compressão SCSI correspondente ao código de densidade e à caraterística de densidade desejada.
+
+|===
+A tabela a seguir descreve os campos opcionais disponíveis no arquivo de configuração da fita:
+
+|===
+| Campo | Descrição 
+
+
+ a| 
+`autoload=(Boolean yes/no)`
+ a| 
+Este campo é definido como `yes` se a unidade de fita tiver um recurso de carregamento automático; ou seja, depois que o cartucho de fita é inserido, a unidade de fita fica pronta sem a necessidade de executar um `SCSI load` comando (unidade de inicialização/parada). A predefinição para este campo é `no`.
+
+
+
+ a| 
+`cmd_timeout_0x`
+ a| 
+Valor de tempo limite individual. Você deve usar este campo somente se quiser especificar um valor de tempo limite diferente daquele que está sendo usado como padrão pelo driver de fita. O arquivo de exemplo lista os valores padrão de tempo limite do comando SCSI usados pela unidade de fita. O valor de tempo limite pode ser expresso em minutos (m), segundos (s) ou milissegundos (ms).
+
+[NOTE]
+====
+Não deve alterar este campo.
+
+====
+|===
+Você pode baixar e exibir o arquivo de configuração de fita no site de suporte da NetApp.
+
+.Exemplo de um formato de arquivo de configuração de fita
+O formato de arquivo de configuração de fita para a unidade de fita HP LTO5 ULTRIUM é o seguinte:
+
+`vendor_id`"HP"
+
+`product_id`Ultrium 5-SCSI
+
+`id_match_size`9
+
+`vendor_pretty`Hewlett-Packard
+
+`product_pretty`"LTO-5"
+
+`l_description`LTO-3(ro)/4 4/800GB"
+
+`l_density`0x00
+
+`l_algorithm`0x00
+
+`m_description`LTO-3(ro)/4 8/1600GB cmp"
+
+`m_density`0x00
+
+`m_algorithm`0 x 01
+
+`h_description`"LTO-5 1600GB"
+
+`h_density`0 x 58
+
+`h_algorithm`0x00
+
+`a_description`LTO-5 3200GB cmp
+
+`a_density`0 x 58
+
+`a_algorithm`0 x 01
+
+`autoload`"sim"
+
+.Informações relacionadas
+https://mysupport.netapp.com/site/tools/tool-eula/5f4d322319c1ab1cf34fd063["Ferramentas do NetApp: Arquivos de configuração do dispositivo de fita"^]

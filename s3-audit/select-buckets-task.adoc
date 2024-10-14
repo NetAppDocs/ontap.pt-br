@@ -1,0 +1,37 @@
+---
+permalink: s3-audit/select-buckets-task.html 
+sidebar: sidebar 
+keywords: s3 audit, select, buckets 
+summary: Você precisa especificar quais buckets auditar em um SVM habilitado para auditoria. 
+---
+= Selecione buckets para auditoria S3
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa especificar quais buckets auditar em um SVM habilitado para auditoria.
+
+.O que você vai precisar
+* Um SVM foi habilitado para auditoria S3.
+
+
+.Sobre esta tarefa
+As configurações de auditoria do S3 são habilitadas por SVM, mas você precisa selecionar os buckets no SVMS que estão habilitados para auditoria. Se você adicionar buckets ao SVM e quiser que os novos buckets sejam auditados, selecione-os com este procedimento. Também é possível ter buckets não auditados em uma SVM habilitada para auditoria S3.
+
+As configurações de auditoria persistem para buckets até serem removidas pelo `vserver object-store-server audit object-select delete` comando.
+
+.Procedimento
+Selecione um bucket para a auditoria S3:
+
+`vserver object-store-server audit event-selector create -vserver _svm_name_ -bucket _bucket_name_ [[-access] {read-only|write-only|all}] [[-permission] {allow-only|deny-only|all}]`
+
+* `-access` - especifica o tipo de acesso a eventos a ser auditado: `read-only`, `write-only` ou `all` (o padrão é `all`).
+* `-permission` - especifica o tipo de permissão de evento a ser auditado: `allow-only`, `deny-only` ou `all` (o padrão é `all`).
+
+
+.Exemplo
+O exemplo a seguir cria uma configuração de auditoria de bucket que somente Registra eventos permitidos com acesso somente leitura:
+
+`cluster1::> vserver object-store-server audit event-selector create -vserver vs1 -bucket test-bucket -access read-only -permission allow-only`

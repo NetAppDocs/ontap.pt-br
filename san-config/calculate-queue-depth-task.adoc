@@ -1,0 +1,79 @@
+---
+permalink: san-config/calculate-queue-depth-task.html 
+sidebar: sidebar 
+keywords: calculate, queue depth 
+summary: Talvez seja necessário ajustar a profundidade da fila FC no host para alcançar os valores máximos de ITNs por nó e ventilador de porta FC. O número máximo de LUNs e o número de HBAs que podem se conetar a uma porta FC são limitados pela profundidade de fila disponível nas portas de destino FC. 
+---
+= Calcular a visão geral da profundidade da fila
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Talvez seja necessário ajustar a profundidade da fila FC no host para alcançar os valores máximos de ITNs por nó e ventilador de porta FC. O número máximo de LUNs e o número de HBAs que podem se conetar a uma porta FC são limitados pela profundidade de fila disponível nas portas de destino FC.
+
+.Sobre esta tarefa
+A profundidade da fila é o número de solicitações de e/S (comandos SCSI) que podem ser enfileiradas em uma controladora de armazenamento. Cada solicitação de e/S do HBA iniciador do host para o adaptador de destino do controlador de armazenamento consome uma entrada de fila. Normalmente, uma maior profundidade de fila equivale a um melhor desempenho. No entanto, se a profundidade máxima da fila do controlador de armazenamento for atingida, esse controlador de armazenamento rejeita os comandos de entrada retornando uma resposta QFULL a eles. Se um grande número de hosts estiver acessando um controlador de armazenamento, você deve Planejar cuidadosamente para evitar condições QFULL, que degradam significativamente o desempenho do sistema e podem levar a erros em alguns sistemas.
+
+Em uma configuração com vários iniciadores (hosts), todos os hosts devem ter profundidades de fila semelhantes. Devido à desigualdade na profundidade da fila entre os hosts conetados ao controlador de armazenamento através da mesma porta de destino, os hosts com menores profundidades de fila estão sendo privados de acesso a recursos por hosts com maiores profundidades de fila.
+
+As seguintes recomendações gerais podem ser feitas sobre as profundidades da fila "sintonização":
+
+* Para sistemas de tamanho pequeno a médio, utilize uma profundidade de fila HBA de 32 mm.
+* Para sistemas grandes, utilize uma profundidade de fila HBA de 128 mm.
+* Para casos de exceção ou teste de desempenho, use uma profundidade de fila de 256 mm para evitar possíveis problemas de enfileiramento.
+* Todos os hosts devem ter as profundidades da fila definidas para valores semelhantes para dar acesso igual a todos os hosts.
+* Para evitar penalidades ou erros de desempenho, a profundidade da fila da porta FC de destino do controlador de storage não deve ser excedida.
+
+
+.Passos
+. Conte o número total de iniciadores FC em todos os hosts que se conetam a uma porta de destino FC.
+. Multiplique por 128.
++
+** Se o resultado for inferior a 2.048, defina a profundidade da fila para todos os iniciadores como 128. Você tem 15 hosts com um iniciador conetado a cada uma das duas portas de destino no controlador de storage. 15 x 128: 1.920. Como 1.920 é menor do que o limite total de profundidade de fila de 2.048, você pode definir a profundidade de fila para todos os iniciadores como 128.
+** Se o resultado for superior a 2.048, avance para o passo 3. Você tem 30 hosts com um iniciador conetado a cada uma das duas portas de destino no controlador de storage. 30 x 128: 3.840. Como o 3.840 é maior do que o limite total de profundidade de fila de 2.048, você deve escolher uma das opções na etapa 3 para correção.
+
+
+. Escolha uma das opções a seguir para adicionar mais hosts ao controlador de storage.
++
+** Opção 1:
++
+... Adicione mais portas de destino FC.
+... Redistribua seus iniciadores FC.
+... Repita os passos 1 e 2. A profundidade de fila desejada de 3.840 mm excede a profundidade de fila disponível por porta. Para remediar isso, você pode adicionar um adaptador de destino FC de duas portas a cada controlador e, em seguida, rezonear seus switches FC para que 15 dos seus hosts 30 se conetem a um conjunto de portas e os 15 hosts restantes se conetem a um segundo conjunto de portas. A profundidade da fila por porta é então reduzida para 15 x 128, ou seja, 1.920.
+
+
+** Opção 2:
++
+... Designe cada host como "grande" ou "shopping" com base em sua necessidade de e/S esperada.
+... Multiplique o número de grandes iniciadores por 128.
+... Multiplique o número de pequenos iniciadores por 32.
+... Adicione os dois resultados juntos.
+... Se o resultado for inferior a 2.048, defina a profundidade da fila para hosts grandes para 128 e a profundidade da fila para hosts pequenos para 32.
+... Se o resultado ainda for superior a 2.048 por porta, reduza a profundidade da fila por iniciador até que a profundidade total da fila seja inferior ou igual a 2.048.
++
+[NOTE]
+====
+Para estimar a profundidade da fila necessária para obter uma determinada taxa de transferência de e/S por segundo, use esta fórmula:
+
+Profundidade da fila necessária (número de e/S por segundo) x (tempo de resposta)
+
+Por exemplo, se você precisar de 40.000 I/o por segundo com um tempo de resposta de 3 milissegundos, a profundidade de fila necessária é de 40.000 x (.003), ou seja, 120.
+
+====
+
+
+
+
+
+
+O número máximo de hosts que você pode se conetar a uma porta de destino é 64, se você decidir limitar a profundidade da fila à recomendação básica de 32. No entanto, se você decidir ter uma profundidade de fila de 128, então você pode ter um máximo de 16 hosts conetados a uma porta de destino. Quanto maior a profundidade da fila, menos hosts que uma única porta de destino pode suportar. Se sua exigência for tal que você não pode comprometer a profundidade da fila, então você deve obter mais portas de destino.
+
+A profundidade de fila pretendida de 3.840 mm excede a profundidade de fila disponível por porta. Você tem 10 hosts grandes que têm altas necessidades de e/S de armazenamento e 20 hosts "shopping" que têm baixas necessidades de e/S. Defina a profundidade da fila do iniciador nos hosts grandes para 128 e a profundidade da fila do iniciador nos hosts pequenos para 32.
+
+A profundidade total da fila resultante é de (10 x 128) (20 x 32) 1.920.
+
+Você pode espalhar a profundidade da fila disponível igualmente em cada iniciador.
+
+A profundidade da fila resultante por iniciador é de 2.048 ÷ 30 68.

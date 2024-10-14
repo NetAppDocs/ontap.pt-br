@@ -1,0 +1,80 @@
+---
+permalink: nfs-admin/display-dns-statistics-task.html 
+sidebar: sidebar 
+keywords: display, dns, statistics 
+summary: 'Você pode exibir estatísticas de DNS para máquinas virtuais de armazenamento (SVMs) no sistema de armazenamento para monitorar o desempenho e diagnosticar problemas.' 
+---
+= Exibir estatísticas de DNS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode exibir estatísticas de DNS para máquinas virtuais de armazenamento (SVMs) no sistema de armazenamento para monitorar o desempenho e diagnosticar problemas.
+
+.Passos
+. Use o `statistics catalog object show` comando para identificar os objetos DNS a partir dos quais você pode exibir dados.
++
+`statistics catalog object show -object external_service_op*`
+
+. Use os `statistics start` comandos e `statistics stop` para coletar uma amostra de dados de um ou mais objetos.
+. Use o `statistics show` comando para exibir os dados de amostra.
+
+
+
+
+== Monitoramento de estatísticas de DNS
+
+Os exemplos a seguir mostram dados de desempenho para consultas DNS. Os seguintes comandos iniciam a coleta de dados para uma nova amostra:
+
+[listing]
+----
+vs1::*> statistics start -object external_service_op -sample-id dns_sample1
+vs1::*> statistics start -object external_service_op_error -sample-id dns_sample2
+----
+O comando a seguir exibe dados da amostra especificando contadores que exibem o número de consultas DNS enviadas versus o número de consultas DNS recebidas, com falha ou com tempo limite:
+
+[listing]
+----
+vs1::*> statistics show -sample-id dns_sample1 -counter num_requests_sent|num_responses_received|num_successful_responses|num_timeouts|num_request_failures|num_not_found_responses
+
+Object: external_service_op
+Instance: vs1:DNS:Query:10.72.219.109
+Start-time: 3/8/2016 11:15:21
+End-time: 3/8/2016 11:16:52
+Elapsed-time: 91s
+Scope: vs1
+
+    Counter                                                     Value
+    -------------------------------- --------------------------------
+    num_not_found_responses                                         0
+    num_request_failures                                            0
+    num_requests_sent                                               1
+    num_responses_received                                          1
+    num_successful_responses                                        1
+    num_timeouts                                                    0
+6 entries were displayed.
+----
+O comando a seguir exibe dados da amostra especificando contadores que exibem o número de vezes que um erro específico foi recebido para uma consulta DNS no servidor específico:
+
+[listing]
+----
+vs1::*> statistics show -sample-id dns_sample2 -counter server_ip_address|error_string|count
+
+Object: external_service_op_error
+Instance: vs1:DNS:Query:NXDOMAIN:10.72.219.109
+Start-time: 3/8/2016 11:23:21
+End-time: 3/8/2016 11:24:25
+Elapsed-time: 64s
+Scope: vs1
+
+    Counter                                                     Value
+    -------------------------------- --------------------------------
+    count                                                           1
+    error_string                                             NXDOMAIN
+    server_ip_address                                   10.72.219.109
+3 entries were displayed.
+----
+.Informações relacionadas
+link:../performance-config/index.html["Configuração do monitoramento de desempenho"]

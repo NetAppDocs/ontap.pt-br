@@ -1,0 +1,302 @@
+---
+permalink: nas-audit/requirements-best-practices-fpolicy-concept.html 
+sidebar: sidebar 
+keywords: requirements, considerations, best practices, configure, fpolicy 
+summary: Antes de criar e configurar configurações FPolicy em seus SVMs, você precisa estar ciente de certos requisitos, considerações e práticas recomendadas. 
+---
+= Requisitos, considerações e práticas recomendadas para configurar o FPolicy
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de criar e configurar configurações FPolicy em suas máquinas virtuais de armazenamento (SVMs), você precisa estar ciente de certos requisitos, considerações e práticas recomendadas para configurar o FPolicy.
+
+Os recursos de FPolicy são configurados por meio da interface de linha de comando (CLI) ou por meio de APIs REST.
+
+
+
+== Requisitos para configurar FPolicy
+
+Antes de configurar e ativar o FPolicy na máquina virtual de storage (SVM), você precisa estar ciente de certos requisitos.
+
+* Todos os nós no cluster devem estar executando uma versão do ONTAP que suporte FPolicy.
+* Se você não estiver usando o mecanismo FPolicy nativo do ONTAP, você deve ter servidores FPolicy externos instalados.
+* Os servidores FPolicy devem ser instalados em um servidor acessível a partir das LIFs de dados do SVM onde as políticas FPolicy estão ativadas.
++
+
+NOTE: A partir do ONTAP 9.8, o ONTAP fornece um serviço de LIF cliente para conexões FPolicy de saída com a adição `data-fpolicy-client` do serviço. link:../networking/lifs_and_service_policies96.html["Saiba mais sobre LIFs e políticas de serviço"].
+
+* O endereço IP do servidor FPolicy deve ser configurado como um servidor primário ou secundário na configuração do mecanismo externo da política FPolicy.
+* Se os servidores FPolicy acessarem dados em um canal de dados privilegiado, os seguintes requisitos adicionais devem ser atendidos:
++
+** O SMB deve ser licenciado no cluster.
++
+O acesso privilegiado a dados é realizado usando conexões SMB.
+
+** Uma credencial de usuário deve ser configurada para acessar arquivos pelo canal de dados privilegiado.
+** O servidor FPolicy deve ser executado sob as credenciais configuradas na configuração FPolicy.
+** Todos os LIFs de dados usados para se comunicar com os servidores FPolicy devem ser configurados para ter `cifs` como um dos protocolos permitidos.
++
+Isso inclui os LIFs usados para conexões de passagem-leitura.
+
+
+
+
+
+
+
+== Práticas recomendadas e recomendações ao configurar o FPolicy
+
+Ao configurar o FPolicy em máquinas virtuais de armazenamento (SVMs), familiarize-se com as práticas recomendadas e recomendações gerais de configuração para garantir que sua configuração do FPolicy forneça desempenho de monitoramento robusto e resultados que atendam aos seus requisitos.
+
+Para diretrizes específicas relacionadas a desempenho, dimensionamento e configuração, trabalhe com seu aplicativo de parceiro FPolicy.
+
+
+
+=== Armazenamentos persistentes
+
+A partir do ONTAP 9.14,1, o FPolicy permite configurar um armazenamento persistente para capturar eventos de acesso a arquivos para políticas assíncronas não obrigatórias no SVM. Armazenamentos persistentes podem ajudar a desacoplar o processamento de e/S do cliente do processamento de notificações FPolicy para reduzir a latência do cliente. Configurações síncronas (obrigatórias ou não obrigatórias) e assíncronas obrigatórias não são suportadas.
+
+* Antes de usar a funcionalidade de armazenamento persistente, certifique-se de que as aplicações de parceiros suportem esta configuração.
+* Você precisa de um armazenamento persistente para cada SVM em que o FPolicy esteja ativado.
++
+** Apenas um armazenamento persistente pode ser configurado em cada SVM. Esse único armazenamento persistente precisa ser usado em todas as configurações de FPolicy nesse SVM, mesmo que as políticas sejam de parceiros diferentes.
+
+
+* ONTAP 9.15,1 ou posterior:
++
+** O armazenamento persistente, seu volume e sua configuração de volume são tratados automaticamente quando você cria o armazenamento persistente.
+
+
+* ONTAP 9.14,1:
++
+** O armazenamento persistente, seu volume e sua configuração de volume são manipulados manualmente.
+
+
+* Crie o volume de armazenamento persistente no nó com LIFs que esperam que o tráfego máximo seja monitorado pelo FPolicy.
++
+** ONTAP 9.15,1 ou posterior: Os volumes são criados e configurados automaticamente durante a criação do armazenamento persistente.
+** ONTAP 9.14,1: Os administradores de cluster precisam criar e configurar um volume para o armazenamento persistente em cada SVM em que o FPolicy está ativado.
+
+
+* Se as notificações acumuladas no armazenamento persistente excederem o tamanho do volume provisionado, o FPolicy começa a deixar cair a notificação recebida com mensagens EMS apropriadas.
++
+** ONTAP 9.15,1 ou posterior: Além do `size` parâmetro, o `autosize-mode` parâmetro pode ajudar o volume a crescer ou diminuir em resposta à quantidade de espaço usado.
+** ONTAP 9.14,1: O `size` parâmetro é configurado durante a criação do volume para fornecer um limite máximo.
+
+
+* Defina a política de instantâneos como `none` para o volume de armazenamento persistente em vez `default` de . Isso serve para garantir que não haja restauração acidental do snapshot levando à perda de eventos atuais e para evitar possível processamento de eventos duplicados.
++
+** ONTAP 9.15,1 ou posterior: O `snapshot-policy` parâmetro é configurado automaticamente como nenhum durante a criação de armazenamento persistente.
+** ONTAP 9.14,1: O `snapshot-policy` parâmetro é configurado `none` durante a criação do volume.
+
+
+* Torne o volume de armazenamento persistente inacessível para acesso de protocolo de usuário externo (CIFS/NFS) para evitar corrupção acidental ou exclusão dos Registros de eventos persistentes.
++
+** ONTAP 9.15,1 ou posterior: O ONTAP bloqueia automaticamente o volume do acesso de protocolo de usuário externo (CIFS/NFS) durante a criação do armazenamento persistente.
+** ONTAP 9.14,1: Depois de ativar o FPolicy, desmonte o volume no ONTAP para remover o caminho de junção. Isso o torna inacessível para acesso de protocolo de usuário externo (CIFS/NFS).
+
+
+
+
+Para obter mais informações, link:persistent-stores.html["Armazenamentos persistentes de FPolicy"]consulte e link:create-persistent-stores.html["Crie armazenamentos persistentes"].
+
+
+
+==== Failover de armazenamento persistente e giveback
+
+O armazenamento persistente permanece como era quando o último evento foi recebido, quando há uma reinicialização inesperada ou FPolicy é desativado e ativado novamente. Após uma operação de takeover, novos eventos são armazenados e processados pelo nó do parceiro. Após uma operação de giveback, o armazenamento persistente retoma o processamento de quaisquer eventos não processados que possam permanecer de quando a aquisição do nó ocorreu. Os eventos ao vivo teriam prioridade sobre eventos não processados.
+
+Se o volume de armazenamento persistente passar de um nó para outro no mesmo SVM, as notificações que ainda não foram processadas também serão movidas para o novo nó. Você precisa executar novamente `fpolicy persistent-store create` o comando em qualquer nó após o volume ser movido para garantir que as notificações pendentes sejam entregues ao servidor externo.
+
+
+
+=== Configuração da política
+
+A configuração do mecanismo externo FPolicy, eventos e escopo para SVMs pode melhorar sua experiência e segurança geral.
+
+* Configuração do mecanismo externo FPolicy para SVMs:
++
+** Fornecer segurança adicional vem com um custo de desempenho. Ativar a comunicação SSL (Secure Sockets Layer) tem um efeito de desempenho no acesso a compartilhamentos.
+** O mecanismo externo FPolicy deve ser configurado com mais de um servidor FPolicy para fornecer resiliência e alta disponibilidade de processamento de notificações do servidor FPolicy.
+
+
+* Configuração de eventos FPolicy para SVMs:
++
+O monitoramento das operações de arquivos influencia sua experiência geral. Por exemplo, filtrar as operações de arquivos indesejados no lado do armazenamento melhora sua experiência. A NetApp recomenda configurar a seguinte configuração:
+
++
+** Monitorar os tipos mínimos de operações de arquivos e permitir o número máximo de filtros sem quebrar o caso de uso.
+** Usando filtros para operações getattr, ler, escrever, abrir e fechar. Os ambientes de diretório base SMB e NFS têm uma alta porcentagem dessas operações.
+
+
+* Configuração do escopo de FPolicy para SVMs:
++
+Restrinja o escopo das políticas aos objetos de storage relevantes, como compartilhamentos, volumes e exportações, em vez de habilitá-los em todo o SVM. O NetApp recomenda verificar as extensões do diretório. Se o `is-file-extension-check-on-directories-enabled` parâmetro estiver definido como `true`, os objetos de diretório serão submetidos às mesmas verificações de extensão que os arquivos normais.
+
+
+
+
+
+=== Configuração de rede
+
+A conetividade de rede entre o servidor FPolicy e o controlador deve ser de baixa latência. A NetApp recomenda separar o tráfego FPolicy do tráfego do cliente usando uma rede privada.
+
+Além disso, você deve colocar servidores FPolicy externos (servidores FPolicy) próximo ao cluster com conetividade de alta largura de banda para fornecer latência mínima e conetividade de alta largura de banda.
+
+
+NOTE: Para um cenário em que o LIF para tráfego FPolicy é configurado em uma porta diferente para o LIF para tráfego de cliente, o FPolicy LIF pode falhar para o outro nó devido a uma falha de porta. Como resultado, o servidor FPolicy torna-se inacessível a partir do nó, o que faz com que as notificações FPolicy para operações de arquivo no nó falhem. Para evitar esse problema, verifique se o servidor FPolicy pode ser acessado por pelo menos um LIF no nó para processar solicitações FPolicy para as operações de arquivo executadas nesse nó.
+
+
+
+=== Configuração de hardware
+
+Você pode ter o servidor FPolicy em um servidor físico ou virtual. Se o servidor FPolicy estiver em um ambiente virtual, você deverá alocar recursos dedicados (CPU, rede e memória) ao servidor virtual.
+
+A taxa de servidor nó para FPolicy do cluster deve ser otimizada para garantir que os servidores FPolicy não estejam sobrecarregados, o que pode introduzir latências quando o SVM responder às solicitações do cliente. A proporção ideal depende do aplicativo parceiro para o qual o servidor FPolicy está sendo usado. A NetApp recomenda trabalhar com parceiros para determinar o valor apropriado.
+
+
+
+=== Configuração de várias políticas
+
+A política de FPolicy para bloqueio nativo tem a prioridade mais alta, independentemente do número de sequência, e as políticas de alteração de decisões têm uma prioridade mais alta do que outras. A prioridade da política depende do caso de uso. A NetApp recomenda trabalhar com parceiros para determinar a prioridade apropriada.
+
+
+
+=== Considerações de tamanho
+
+O FPolicy executa monitoramento em linha de operações SMB e NFS, envia notificações para o servidor externo e aguarda uma resposta, dependendo do modo de comunicação do motor externo (síncrono ou assíncrono). Esse processo afeta o desempenho dos recursos de CPU e acesso SMB e NFS.
+
+Para mitigar quaisquer problemas, a NetApp recomenda trabalhar com parceiros para avaliar e dimensionar o ambiente antes de habilitar o FPolicy. O desempenho é afetado por vários fatores, incluindo o número de usuários, caraterísticas da carga de trabalho, como operações por usuário e tamanho de dados, latência de rede e falha ou lentidão do servidor.
+
+
+
+== Monitorar o desempenho
+
+FPolicy é um sistema baseado em notificações. As notificações são enviadas para um servidor externo para processamento e para gerar uma resposta de volta ao ONTAP. Esse processo de ida e volta aumenta a latência para o acesso do cliente.
+
+O monitoramento dos contadores de desempenho no servidor FPolicy e no ONTAP oferece a capacidade de identificar gargalos na solução e ajustar os parâmetros conforme necessário para uma solução ideal. Por exemplo, um aumento na latência de FPolicy tem um efeito em cascata na latência de acesso SMB e NFS. Portanto, você deve monitorar a carga de trabalho (SMB e NFS) e a latência do FPolicy. Além disso, você pode usar políticas de qualidade do serviço no ONTAP para configurar um workload para cada volume ou SVM habilitado para FPolicy.
+
+O NetApp recomenda executar o `statistics show –object workload` comando para exibir estatísticas de carga de trabalho. Além disso, você deve monitorar os seguintes parâmetros:
+
+* Latências médias, de leitura e de gravação
+* Número total de operações
+* Contadores de leitura e escrita
+
+
+Você pode monitorar o desempenho dos subsistemas FPolicy usando os seguintes contadores FPolicy.
+
+
+NOTE: Você deve estar no modo de diagnóstico para coletar estatísticas relacionadas ao FPolicy.
+
+.Passos
+. Recolher contadores FPolicy:
++
+.. `statistics start -object fpolicy -instance _instance_name_ -sample-id _ID_`
+.. `statistics start -object fpolicy_policy -instance _instance_name_ -sample-id _ID_`
+
+
+. Visualizar contadores FPolicy:
++
+.. `statistics show -object fpolicy –instance _instance_name_ -sample-id _ID_`
+.. `statistics show -object fpolicy_server –instance _instance_name_ -sample-id _ID_`
+
+
++
+--
+Os `fpolicy` contadores e `fpolicy_server` fornecem informações sobre vários parâmetros de desempenho descritos na tabela a seguir.
+
+[cols="25,75"]
+|===
+| Contadores | Descrição 
+
+
+ a| 
+* contadores de "fpolicy"*
+
+
+
+| aborted_requests | Número de solicitações de tela para as quais o processamento é abortado no SVM 
+
+
+| event_count | Lista de eventos que resultam em notificação 
+
+
+| max_request_latency | Latência máxima de solicitações de tela 
+
+
+| pedidos_pendentes | Número total de solicitações de tela em andamento 
+
+
+| processed_requests | Número total de solicitações de tela que passaram pelo processamento de fpolicy no SVM 
+
+
+| request_latency_hist | Histograma de latência para solicitações de tela 
+
+
+| requests_despached_rate | Número de solicitações de tela enviadas por segundo 
+
+
+| requests_received_rate | Número de solicitações de tela recebidas por segundo 
+
+
+ a| 
+* contadores de "fpolicy_server"*
+
+
+
+| max_request_latency | Latência máxima para uma solicitação de tela 
+
+
+| pedidos_pendentes | Número total de solicitações de tela aguardando resposta 
+
+
+| request_latency (latência_de | Latência média para solicitação de tela 
+
+
+| request_latency_hist | Histograma de latência para solicitações de tela 
+
+
+| request_sent_rate | Número de solicitações de tela enviadas ao servidor FPolicy por segundo 
+
+
+| taxa de resposta_recebida | Número de respostas de tela recebidas do servidor FPolicy por segundo 
+|===
+--
+
+
+
+
+=== Gerencie o fluxo de trabalho FPolicy e a dependência de outras tecnologias
+
+A NetApp recomenda desativar uma política de FPolicy antes de fazer quaisquer alterações de configuração. Por exemplo, se você quiser adicionar ou modificar um endereço IP no mecanismo externo configurado para a política ativada, desative primeiro a política.
+
+Se você configurar o FPolicy para monitorar volumes do NetApp FlexCache, o NetApp recomenda que você não configure o FPolicy para monitorar as operações de arquivos de leitura e getattr. O monitoramento dessas operações no ONTAP requer a recuperação de dados inode-to-path (I2P). Como os dados I2P não podem ser recuperados de volumes FlexCache, eles devem ser recuperados do volume de origem. Portanto, o monitoramento dessas operações elimina os benefícios de desempenho que o FlexCache pode oferecer.
+
+Quando o FPolicy e uma solução antivírus off-box são implantados, a solução antivírus recebe notificações primeiro. O processamento de FPolicy é iniciado somente após a verificação antivírus estar concluída. É importante que você dimensione as soluções antivírus corretamente porque um scanner antivírus lento pode afetar o desempenho geral.
+
+
+
+== Considerações de atualização e reversão de passagem-leitura
+
+Há certas considerações de atualização e reversão que você deve saber antes de atualizar para uma versão do ONTAP que suporta passagem-leitura ou antes de reverter para uma versão que não suporta passagem-leitura.
+
+
+
+=== A atualizar
+
+Depois que todos os nós são atualizados para uma versão do ONTAP que suporte a passagem-leitura FPolicy, o cluster é capaz de usar a funcionalidade de leitura de passagem; no entanto, a leitura de passagem é desativada por padrão nas configurações FPolicy existentes. Para usar a leitura de passagem em configurações FPolicy existentes, você deve desativar a política FPolicy e modificar a configuração e, em seguida, reativar a configuração.
+
+
+
+=== Reverter
+
+Antes de reverter para uma versão do ONTAP que não suporte a passagem-leitura de FPolicy, você deve atender às seguintes condições:
+
+* Desative todas as políticas usando passthrough-read e, em seguida, modifique as configurações afetadas para que elas não usem passthrough-read.
+* Desative a funcionalidade FPolicy no cluster desativando todas as políticas FPolicy no cluster.
+
+
+Antes de reverter para uma versão do ONTAP que não ofereça suporte a armazenamentos persistentes, certifique-se de que nenhuma das diretivas FPolicy tenha um armazenamento persistente configurado. Se um armazenamento persistente estiver configurado, a reversão falhará.

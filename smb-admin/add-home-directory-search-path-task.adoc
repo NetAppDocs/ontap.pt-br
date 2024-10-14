@@ -1,0 +1,48 @@
+---
+permalink: smb-admin/add-home-directory-search-path-task.html 
+sidebar: sidebar 
+keywords: ontap, smb, directories, directory, add, path, add a home directory search path 
+summary: Se você quiser usar diretórios home do ONTAP SMB, você deve adicionar pelo menos um caminho de pesquisa de diretório base. 
+---
+= Adicione um caminho de pesquisa de diretório base
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você quiser usar diretórios home do ONTAP SMB, você deve adicionar pelo menos um caminho de pesquisa de diretório base.
+
+.Sobre esta tarefa
+Você pode adicionar um caminho de pesquisa de diretório base usando o `vserver cifs home-directory search-path add` comando.
+
+O `vserver cifs home-directory search-path add` comando verifica o caminho especificado na `-path` opção durante a execução do comando. Se o caminho especificado não existir, o comando gera uma mensagem solicitando se deseja continuar. Você escolhe `y` ou `n`. Se você optar `y` por continuar, o ONTAP criará o caminho de pesquisa. No entanto, você deve criar a estrutura do diretório antes de usar o caminho de pesquisa na configuração do diretório base. Se você optar por não continuar, o comando falhará; o caminho de pesquisa não será criado. Em seguida, você pode criar a estrutura de diretório de caminho e executar novamente o `vserver cifs home-directory search-path add` comando.
+
+.Passos
+. Adicionar um caminho de pesquisa de diretório base: `vserver cifs home-directory search-path add -vserver vserver -path path`
+. Verifique se você adicionou com êxito o caminho de pesquisa usando o `vserver cifs home-directory search-path show` comando.
+
+
+.Exemplo
+O exemplo a seguir adiciona o caminho `/home1` à configuração do diretório base no SVM VS1.
+
+[listing]
+----
+cluster::> vserver cifs home-directory search-path add -vserver vs1 -path /home1
+
+vs1::> vserver cifs home-directory search-path show
+Vserver     Position Path
+----------- -------- -----------------
+vs1         1        /home1
+----
+O exemplo a seguir tenta adicionar o caminho `/home2` à configuração do diretório base no SVM VS1. O caminho não existe. A escolha é feita para não continuar.
+
+[listing]
+----
+cluster::> vserver cifs home-directory search-path add -vserver vs1 -path /home2
+Warning: The specified path "/home2" does not exist in the namespace
+         belonging to Vserver "vs1".
+Do you want to continue? {y|n}: n
+----
+.Informações relacionadas
+xref:add-home-directory-share-task.adoc[Adicionando um compartilhamento de diretório inicial]

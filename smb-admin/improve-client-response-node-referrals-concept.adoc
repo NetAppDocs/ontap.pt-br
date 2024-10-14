@@ -1,0 +1,41 @@
+---
+permalink: smb-admin/improve-client-response-node-referrals-concept.html 
+sidebar: sidebar 
+keywords: auto, location, smb, automatic, node, referral, increase, client, performance, storage, virtual, machine, svm, request, host, response, improve, improve client response time by providing smb automatic node referrals with auto location 
+summary: 'A localização automática usa referências de nó automáticas SMB para aumentar a performance do cliente SMB em máquinas virtuais de armazenamento (SVMs). As referências automáticas de nós redirecionam automaticamente o cliente solicitante para um LIF no SVM do nó que hospeda o volume no qual os dados residem, o que pode levar a tempos de resposta aprimorados do cliente.' 
+---
+= Melhore o tempo de resposta do cliente fornecendo referências de nó automáticas SMB com visão geral de localização automática
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A localização automática usa referências de nó automáticas SMB para aumentar a performance do cliente SMB em máquinas virtuais de armazenamento (SVMs). As referências automáticas de nós redirecionam automaticamente o cliente solicitante para um LIF no SVM do nó que hospeda o volume no qual os dados residem, o que pode levar a tempos de resposta aprimorados do cliente.
+
+Quando um cliente SMB se coneta a um compartilhamento SMB hospedado no SVM, ele pode se conetar usando um LIF que está em um nó que não possui os dados solicitados. O nó ao qual o cliente está conetado acessa dados de propriedade de outro nó usando a rede do cluster. O cliente pode ter tempos de resposta mais rápidos se a conexão SMB usar um LIF localizado no nó que contém os dados solicitados:
+
+* O ONTAP fornece essa funcionalidade usando referências do Microsoft DFS para informar clientes SMB que um arquivo ou pasta solicitado no namespace está hospedado em outro lugar.
++
+Um nó faz uma referência quando determina que há um LIF SVM no nó que contém os dados.
+
+* As referências automáticas de nós são suportadas para endereços IP IPv4 e IPv6 LIF.
+* As referências são feitas com base na localização da raiz da partilha através da qual o cliente está ligado.
+* A referência ocorre durante a negociação SMB.
++
+A referência é feita antes da conexão ser estabelecida. Depois que o ONTAP refere o cliente SMB ao nó de destino, a conexão é feita e o cliente acessa os dados através do caminho LIF referido a partir desse ponto. Isso permite que os clientes tenham acesso mais rápido aos dados e evite a comunicação de cluster adicional.
+
++
+[NOTE]
+====
+Se um compartilhamento abranger vários pontos de junção e algumas das junções forem para volumes contidos em outros nós, os dados dentro do compartilhamento serão espalhados por vários nós. Como o ONTAP fornece referências locais à raiz do compartilhamento, o ONTAP deve usar a rede de cluster para recuperar os dados contidos nesses volumes não locais. Com esse tipo de arquitetura de namespace, as referências de nó automáticas podem não fornecer benefícios significativos de desempenho.
+
+====
+
+
+Se o nó que hospeda os dados não tiver um LIF disponível, o ONTAP estabelece a conexão usando o LIF escolhido pelo cliente. Depois que um arquivo é aberto por um cliente SMB, ele continua a acessar o arquivo através da mesma conexão referida.
+
+Se, por qualquer motivo, o servidor CIFS não puder fazer uma referência, não haverá interrupção no serviço SMB. A conexão SMB é estabelecida como se as referências de nó automáticas não estivessem ativadas.
+
+.Informações relacionadas
+xref:improve-microsoft-remote-copy-performance-concept.adoc[Melhorando o desempenho de cópia remota da Microsoft]

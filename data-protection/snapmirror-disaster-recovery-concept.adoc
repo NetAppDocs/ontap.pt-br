@@ -1,0 +1,106 @@
+---
+permalink: data-protection/snapmirror-disaster-recovery-concept.html 
+sidebar: sidebar 
+keywords: asynchronous, snapmirror, disaster, recovery basics 
+summary: O SnapMirror é uma tecnologia de recuperação de desastres projetada para failover de armazenamento primário para armazenamento secundário em um local remoto geograficamente. Como o nome indica, o SnapMirror cria uma réplica, ou espelho, de seus dados de trabalho em armazenamento secundário a partir do qual você pode continuar a servir dados em caso de uma catástrofe no local principal. 
+---
+= Noções básicas de recuperação de desastres assíncrona do SnapMirror
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+_SnapMirror_ é uma tecnologia de recuperação de desastres, projetada para failover de armazenamento primário para armazenamento secundário em um local geograficamente remoto. Como o nome indica, o SnapMirror cria uma réplica, ou _mirror,_ dos seus dados de trabalho em armazenamento secundário a partir do qual você pode continuar a servir dados em caso de uma catástrofe no local principal.
+
+Se o site principal ainda estiver disponível para fornecer dados, você pode simplesmente transferir quaisquer dados necessários de volta para ele e não atender clientes do espelho. Como o caso de uso de failover indica, as controladoras no sistema secundário devem ser equivalentes ou quase equivalentes às controladoras no sistema primário para atender dados com eficiência do storage espelhado.
+
+
+
+== Relações de proteção de dados
+
+Os dados são espelhados no nível do volume. A relação entre o volume de origem no armazenamento primário e o volume de destino no armazenamento secundário é chamada de _relação de proteção de dados._ os clusters nos quais os volumes residem e os SVMs que servem dados dos volumes devem ser _peered._ Uma relação de mesmo nível permite que clusters e SVMs troquem dados com segurança.
+
+https://docs.netapp.com/us-en/ontap-system-manager-classic/peering/index.html["Peering de cluster e SVM"^]
+
+A figura abaixo ilustra as relações de proteção de dados da SnapMirror.
+
+image:snapmirror-for-dp-pg.gif["Ilustração de relacionamentos de proteção de dados da SnapMirror"]
+
+
+
+== Escopo das relações de proteção de dados
+
+Você pode criar uma relação de proteção de dados diretamente entre volumes ou entre as SVMs que possuem os volumes. Em uma relação de proteção de dados _SVM,_ toda ou parte da configuração SVM, de exportações de NFS e compartilhamentos de SMB para RBAC, são replicados, bem como os dados nos volumes proprietários do SVM.
+
+Você também pode usar o SnapMirror para aplicativos especiais de proteção de dados:
+
+* Uma cópia do volume raiz do SVM garante que os dados permaneçam acessíveis em caso de interrupção ou failover de nó.
+* Uma relação de proteção de dados entre o _SnapLock volumes_ permite replicar arquivos WORM para um storage secundário.
++
+link:../snaplock/index.html["Arquivamento e conformidade com a tecnologia SnapLock"]
+
+* A partir do ONTAP 9.13,1, você pode usar o SnapMirror assíncrono para proteger xref:../consistency-groups/index.html[grupos de consistência]. A partir do ONTAP 9.14,1, você pode usar o SnapMirror assíncrono para replicar snapshots granular de volume para o cluster de destino usando a relação de grupo de consistência. Para obter mais informações, xref:../consistency-groups/protect-task.html#configure-snapmirror-asynchronous[Configurar a proteção assíncrona do SnapMirror]consulte .
+
+
+
+
+== Como as relações de proteção de dados do SnapMirror são inicializadas
+
+Na primeira vez que você invocar o SnapMirror, ele executa uma _transferência de linha de base_ do volume de origem para o volume de destino. A política _SnapMirror_ da relação define o conteúdo da linha de base e quaisquer atualizações.
+
+Uma transferência de linha de base sob a política SnapMirror padrão `MirrorAllSnapshots` envolve as seguintes etapas:
+
+* Faça uma cópia Snapshot do volume de origem.
+* Transfira a cópia Snapshot e todos os blocos de dados que ela faz referência ao volume de destino.
+* Transfira as cópias Snapshot restantes e menos recentes no volume de origem para o volume de destino para o caso de o espelhamento "ativo" estar corrompido.
+
+
+
+
+== Como os relacionamentos de proteção de dados da SnapMirror são atualizados
+
+As atualizações são assíncronas, seguindo a programação configurada. A retenção espelha a política do Snapshot na origem.
+
+Em cada atualização sob `MirrorAllSnapshots` a política, o SnapMirror cria uma cópia Snapshot do volume de origem e transfere essa cópia Snapshot e todas as cópias Snapshot feitas desde a última atualização. Na saída a seguir do `snapmirror policy show` comando para a `MirrorAllSnapshots` política, observe o seguinte:
+
+* `Create Snapshot` É "verdadeiro", indicando que `MirrorAllSnapshots` cria uma cópia Snapshot quando o SnapMirror atualiza o relacionamento.
+* `MirrorAllSnapshots` Tem regras "sm_created" e "all_source_snapshots", indicando que tanto a cópia Snapshot criada pelo SnapMirror quanto todas as cópias snapshot que foram feitas desde a última atualização são transferidas quando o SnapMirror atualiza a relação.
+
+
+[listing]
+----
+cluster_dst::> snapmirror policy show -policy MirrorAllSnapshots -instance
+
+                     Vserver: vs0
+      SnapMirror Policy Name: MirrorAllSnapshots
+      SnapMirror Policy Type: async-mirror
+                Policy Owner: cluster-admin
+                 Tries Limit: 8
+           Transfer Priority: normal
+   Ignore accesstime Enabled: false
+     Transfer Restartability: always
+ Network Compression Enabled: false
+             Create Snapshot: true
+                     Comment: SnapMirror asynchronous policy for mirroring all snapshots
+                              and the latest active file system.
+       Total Number of Rules: 2
+                  Total Keep: 2
+                       Rules: SnapMirror Label     Keep  Preserve Warn Schedule Prefix
+                              ----------------     ----  -------- ---- -------- ------
+                              sm_created              1  false       0 -        -
+                              all_source_snapshots    1  false       0 -        -
+----
+
+
+== Política MirrorLatest
+
+A política pré-configurada `MirrorLatest` funciona exatamente da mesma forma que `MirrorAllSnapshots`, exceto que apenas a cópia Snapshot criada pelo SnapMirror é transferida na inicialização e atualização.
+
+[listing]
+----
+
+                       Rules: SnapMirror Label     Keep  Preserve Warn Schedule Prefix
+                              ----------------     ----  -------- ---- -------- ------
+                              sm_created              1  false       0 -        -
+----

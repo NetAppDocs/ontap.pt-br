@@ -1,0 +1,90 @@
+---
+permalink: san-admin/improve-vmware-vaai-performance-esx-hosts-concept.html 
+sidebar: sidebar 
+keywords: improve, vmware, vaai, performance, esx, hosts 
+summary: 'O ONTAP oferece suporte a determinados recursos de VMware vStorage APIs para integração de storage (VAAI) quando o host ESX estiver executando o ESX 4,1 ou posterior. Esses recursos ajudam a descarregar as operações do host ESX para o sistema de storage e a aumentar a taxa de transferência da rede. O host ESX habilita os recursos automaticamente no ambiente correto.' 
+---
+= Melhorar o desempenho do VMware VAAI para hosts ESX
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP oferece suporte a determinados recursos de VMware vStorage APIs para integração de storage (VAAI) quando o host ESX estiver executando o ESX 4,1 ou posterior. Esses recursos ajudam a descarregar as operações do host ESX para o sistema de storage e a aumentar a taxa de transferência da rede. O host ESX habilita os recursos automaticamente no ambiente correto.
+
+O recurso VAAI suporta os seguintes comandos SCSI:
+
+* `EXTENDED_COPY`
++
+Esse recurso permite que o host inicie a transferência de dados entre os LUNs ou em um LUN sem envolver o host na transferência de dados. Isso resulta em salvar ciclos de CPU ESX e aumentar a taxa de transferência da rede. O recurso de cópia estendida, também conhecido como "descarga de cópia", é usado em cenários como clonagem de uma máquina virtual. Quando invocado pelo host ESX, o recurso de descarga de cópia copia os dados dentro do sistema de storage em vez de passar pela rede do host. A descarga de cópia transfere dados das seguintes maneiras:
+
++
+** Dentro de um LUN
+** Entre LUNs em um volume
+** Entre LUNs em diferentes volumes em uma máquina virtual de storage (SVM)
+** Entre LUNs em diferentes SVMs dentro de um cluster se esse recurso não puder ser invocado, o host ESX usa automaticamente os comandos padrão DE LEITURA e GRAVAÇÃO para a operação de cópia.
+
+
+* `WRITE_SAME`
++
+Esse recurso descarrega o trabalho de escrever um padrão repetido, como todos os zeros, para um storage array. O host ESX usa esse recurso em operações como o preenchimento zero de um arquivo.
+
+* `COMPARE_AND_WRITE`
++
+Esse recurso ignora certos limites de simultaneidade de acesso a arquivos, o que acelera operações como inicializar máquinas virtuais.
+
+
+
+
+
+== Requisitos para usar o ambiente VAAI
+
+Os recursos VAAI fazem parte do sistema operacional ESX e são invocados automaticamente pelo host ESX quando você configurou o ambiente correto.
+
+Os requisitos ambientais são os seguintes:
+
+* O host ESX deve estar executando o ESX 4,1 ou posterior.
+* O sistema de storage NetApp que hospeda o armazenamento de dados VMware deve estar executando o ONTAP.
+* (Somente descarga de cópia) a origem e o destino da operação de cópia VMware devem ser hospedados no mesmo sistema de storage no mesmo cluster.
++
+[NOTE]
+====
+O recurso de descarga de cópia atualmente não oferece suporte à cópia de dados entre datastores VMware hospedados em diferentes sistemas de storage.
+
+====
+
+
+
+
+== Determine se os recursos VAAI são suportados pelo ESX
+
+Para confirmar se o sistema operacional ESX suporta os recursos VAAI, você pode verificar o vSphere Client ou usar qualquer outro meio de acessar o host. O ONTAP suporta os comandos SCSI por padrão.
+
+Você pode verificar as configurações avançadas do host ESX para determinar se os recursos do VAAI estão ativados. A tabela indica quais comandos SCSI correspondem aos nomes de controle ESX.
+
+[cols="2*"]
+|===
+| Comando SCSI | Nome do controle ESX (recurso VAAI) 
+
+
+ a| 
+EXTENDED_COPY (CÓPIA_ESTENDIDA)
+ a| 
+`HardwareAcceleratedMove`
+
+
+
+ a| 
+WRITE_SAME
+ a| 
+`HardwareAcceleratedInit`
+
+
+
+ a| 
+COMPARE_E_ESCREVA
+ a| 
+`HardwareAcceleratedLocking`
+
+|===

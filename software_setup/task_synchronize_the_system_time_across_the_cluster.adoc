@@ -1,0 +1,79 @@
+---
+permalink: software_setup/task_synchronize_the_system_time_across_the_cluster.html 
+sidebar: sidebar 
+keywords: ontap, software, setup, synchronize, system, time, across, cluster 
+summary: A sincronização do tempo garante que cada nó no cluster tenha o mesmo tempo e evita falhas CIFS e Kerberos. 
+---
+= Sincronize a hora do sistema no cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A sincronização do tempo garante que cada nó no cluster tenha o mesmo tempo e evita falhas CIFS e Kerberos.
+
+Um servidor NTP (Network Time Protocol) deve ser configurado no seu site. A partir do ONTAP 9.5, você pode configurar seu servidor NTP com autenticação simétrica. Para obter mais informações, consulte a documentação para link:../system-admin/manage-cluster-time-concept.html["gerenciamento do tempo do cluster (somente administradores de cluster)"].
+
+Você sincroniza a hora no cluster associando o cluster a um ou mais servidores NTP.
+
+. Verifique se a hora e o fuso horário do sistema estão definidos corretamente para cada nó.
++
+Todos os nós no cluster devem ser definidos para o mesmo fuso horário.
+
++
+.. Use o comando de exibição de data do cluster para exibir a data, hora e fuso horário atuais para cada nó.
++
+[listing]
+----
+cluster1::> cluster date show
+Node         Date                Time zone
+------------ ------------------- -----------------
+cluster1-01  01/06/2015 09:35:15 America/New_York
+cluster1-02  01/06/2015 09:35:15 America/New_York
+cluster1-03  01/06/2015 09:35:15 America/New_York
+cluster1-04  01/06/2015 09:35:15 America/New_York
+4 entries were displayed.
+----
+.. Use o comando de modificação de data do cluster para alterar a data ou o fuso horário de todos os nós.
++
+Este exemplo altera o fuso horário do cluster para ser GMT:
+
++
+[listing]
+----
+cluster1::> cluster date modify -timezone GMT
+----
+
+
+. Use o comando cluster time-service ntp Server Create para associar o cluster ao servidor ntp.
++
+** Para configurar seu servidor NTP sem autenticação simétrica, digite o seguinte comando: `cluster time-service ntp server create -server server_name`
+** Para configurar seu servidor NTP com autenticação simétrica, digite o seguinte comando: `cluster time-service ntp server create -server server_ip_address -key-id key_id`
++
+
+NOTE: A autenticação simétrica está disponível a partir do ONTAP 9.5. Ele não está disponível no ONTAP 9.4 ou anterior.
+
++
+Este exemplo pressupõe que o DNS foi configurado para o cluster. Se não tiver configurado o DNS, tem de especificar o endereço IP do servidor NTP:
+
++
+[listing]
+----
+cluster1::> cluster time-service ntp server create -server ntp1.example.com
+----
+
+
+. Verifique se o cluster está associado a um servidor NTP: `cluster time-service ntp server show`
++
+[listing]
+----
+cluster1::> cluster time-service ntp server show
+Server               Version
+-------------------- -----------
+ntp1.example.com     auto
+----
+
+
+.Informações relacionadas
+link:../system-admin/index.html["Administração do sistema"]

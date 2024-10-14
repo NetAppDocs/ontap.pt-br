@@ -1,0 +1,113 @@
+---
+permalink: san-admin/create-nvme-namespace-subsystem-task.html 
+sidebar: sidebar 
+keywords: create, nvme, namespace, subsystem 
+summary: Para sistemas que usam o protocolo NVMe, é necessário criar um ou mais namespaces e subsistemas NVMe. Cada namespace pode ser mapeado para um subsistema NVMe a fim de permitir acesso aos dados do sistema host. 
+---
+= Provisionamento de storage NVMe
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Use estas etapas para criar namespaces e provisionar storage para qualquer host compatível com NVMe em uma VM de storage existente.
+
+.Sobre esta tarefa
+Este procedimento aplica-se aos sistemas FAS, AFF e ASA atuais. Se você tiver um sistema ASA R2 (ASA A1K, ASA A70 ou ASA A90), siga link:https://docs.netapp.com/us-en/asa-r2/manage-data/provision-san-storage.html["estes passos"^] para provisionar seu storage. Os sistemas ASA R2 fornecem uma experiência de ONTAP simplificada específica para clientes somente SAN.
+
+A partir do ONTAP 9.8, quando você provisiona o storage, a QoS é habilitada por padrão. Você pode desativar o QoS ou escolher uma política de QoS personalizada durante o processo de provisionamento ou posteriormente.
+
+.Antes de começar
+Sua VM de storage deve estar configurada para NVMe, e seu transporte FC ou TCP já deve estar configurado.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+Usando o Gerenciador de sistemas do ONTAP (9,7 e posterior), crie namespaces para fornecer storage usando o protocolo NVMe.
+
+.Passos
+. No System Manager, clique em *Storage > NVMe Namespaces* e, em seguida, clique em *Add*.
++
+Se precisar criar um novo subsistema, clique em *mais Opções*.
+
+. Se você estiver executando o ONTAP 9.8 ou posterior e quiser desativar o QoS ou escolher uma política de QoS personalizada, clique em *mais opções* e, em *armazenamento e otimização*, selecione *nível de serviço de desempenho*.
+. Coloque as suas centrais FC por WWPN. Use uma zona por iniciador e inclua todas as portas de destino em cada zona.
+. No seu host, descubra os novos namespaces.
+. Inicialize o namespace e formate-o com um sistema de arquivos.
+. Verifique se o host pode gravar e ler dados no namespace.
+
+
+--
+.CLI
+--
+Com a CLI do ONTAP, crie namespaces para fornecer storage usando o protocolo NVMe.
+
+Esse procedimento cria um namespace e um subsistema NVMe em uma VM de storage existente que já foi configurada para o protocolo NVMe e, em seguida, mapeia o namespace para o subsistema para permitir acesso a dados do sistema host.
+
+Se precisar configurar a VM de storage para NVMe, link:configure-svm-nvme-task.html["Configurar um SVM para NVMe"]consulte .
+
+.Passos
+. Verifique se o SVM está configurado para NVMe:
++
+[source, cli]
+----
+vserver show -vserver <svm_name> -fields allowed-protocols
+----
++
+`NVMe` deve ser exibido sob a `allowed-protocols` coluna.
+
+. Crie o namespace NVMe:
++
+[source, cli]
+----
+vserver nvme namespace create -vserver <svm_name> -path <path> -size <size_of_namespace> -ostype <OS_type>
+----
+. Crie o subsistema NVMe:
++
+[source, cli]
+----
+vserver nvme subsystem create -vserver <svm_name> -subsystem <name_of_subsystem> -ostype <OS_type>
+----
++
+O nome do subsistema NVMe diferencia maiúsculas de minúsculas. Deve conter 1 a 96 carateres. Carateres especiais são permitidos.
+
+. Verifique se o subsistema foi criado:
++
+[source, cli]
+----
+vserver nvme subsystem show -vserver <svm_name>
+----
++
+O `nvme` subsistema deve ser exibido sob a `Subsystem` coluna.
+
+. Obtenha o NQN do host.
+. Adicione o NQN do host ao subsistema:
++
+[source, cli]
+----
+vserver nvme subsystem host add -vserver <svm_name> -subsystem <subsystem_name> -host-nqn <Host_NQN>
+----
+. Mapeie o namespace para o subsistema:
++
+[source, cli]
+----
+vserver nvme subsystem map add -vserver <svm_name> -subsystem <subsystem_name> -path <path>
+----
++
+Um namespace só pode ser mapeado para um único subsistema.
+
+. Verifique se o namespace está mapeado para o subsistema:
++
+[source, cli]
+----
+vserver nvme namespace show -vserver <svm_name> -instance
+----
++
+O subsistema deve ser listado como `Attached subsystem` .
+
+
+
+--
+====

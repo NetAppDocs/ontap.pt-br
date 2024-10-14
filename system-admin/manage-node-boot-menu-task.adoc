@@ -1,0 +1,145 @@
+---
+permalink: system-admin/manage-node-boot-menu-task.html 
+sidebar: sidebar 
+keywords: system, manager, manage, node, boot, menu, configuration, problems, password, reset, initialize, disks, restore, device 
+summary: Você pode usar o menu de inicialização para corrigir problemas de configuração em um nó, redefinir a senha de administrador, inicializar discos, redefinir a configuração do nó e restaurar as informações de configuração do nó de volta para o dispositivo de inicialização. 
+---
+= Gerencie um nó usando o menu de inicialização
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o menu de inicialização para corrigir problemas de configuração em um nó, redefinir a senha de administrador, inicializar discos, redefinir a configuração do nó e restaurar as informações de configuração do nó de volta para o dispositivo de inicialização.
+
+
+NOTE: Se um par de HA estiver usando link:https://docs.netapp.com/us-en/ontap/encryption-at-rest/support-storage-encryption-concept.html["Criptografia de unidades SAS ou NVMe (SED, NSE, FIPS)"], siga as instruções no link:https://docs.netapp.com/us-en/ontap/encryption-at-rest/return-seds-unprotected-mode-task.html["Retornar uma unidade FIPS ou SED para o modo desprotegido"]tópico para todas as unidades do par de HA antes de inicializar o sistema (opções de inicialização 4 ou 9). Se não fizer isso, poderá resultar em perda de dados futura se as unidades forem reaproveitadas.
+
+.Passos
+. Reinicie o nó para acessar o menu de inicialização usando o `system node reboot` comando no prompt do sistema.
++
+O nó inicia o processo de reinicialização.
+
+. Durante o processo de reinicialização, pressione Ctrl-C para exibir o menu de inicialização quando solicitado a fazê-lo.
++
+O nó exibe as seguintes opções para o menu de inicialização:
+
++
+[listing]
+----
+(1) Normal Boot.
+(2) Boot without /etc/rc.
+(3) Change password.
+(4) Clean configuration and initialize all disks.
+(5) Maintenance mode boot.
+(6) Update flash from backup config.
+(7) Install new software first.
+(8) Reboot node.
+(9) Configure Advanced Drive Partitioning.
+(10) Set onboard key management recovery secrets.
+(11) Configure node for external key management.
+Selection (1-11)?
+----
++
+[NOTE]
+====
+Opção de menu de inicialização (2) a inicialização sem /etc/rc é obsoleta e não tem efeito no sistema.
+
+====
+. Selecione uma das seguintes opções inserindo o número correspondente:
++
+[cols="35,65"]
+|===
+| Para... | Selecione... 
+
+
+ a| 
+Continue a inicializar o nó no modo normal
+ a| 
+1) bota normal
+
+
+
+ a| 
+Altere a senha do nó, que também é a senha da conta "admin"
+ a| 
+3) altere a senha
+
+
+
+ a| 
+Inicialize os discos do nó e crie um volume raiz para o nó
+ a| 
+4) limpe a configuração e inicialize todos os discos
+
+[NOTE]
+====
+Esta opção de menu apaga todos os dados nos discos do nó e redefine a configuração do nó para as configurações padrão de fábrica.
+
+====
+Selecione este item de menu apenas depois de o nó ter sido removido de um cluster (não associado) e não ser Unido a outro cluster.
+
+Para um nó com compartimentos de disco internos ou externos, o volume raiz nos discos internos é inicializado. Se não houver compartimentos de disco internos, o volume raiz nos discos externos será inicializado.
+
+Para um sistema que executa a virtualização FlexArray com compartimentos de disco internos ou externos, os LUNs do array não são inicializados. Todos os discos nativos em compartimentos internos ou externos são inicializados.
+
+Para um sistema que executa a virtualização FlexArray apenas com LUNS de array e sem compartimentos de disco internos ou externos, o volume raiz nos LUNS de storage array é inicializado, consulte link:https://docs.netapp.com/us-en/ontap-flexarray/pdfs/sidebar/Installing_FlexArray.pdf["A instalar o FlexArray"].
+
+Se o nó que você deseja inicializar tiver discos particionados para particionamento de dados raiz, os discos devem ser desparticionados antes que o nó possa ser inicializado, consulte *9) Configurar particionamento de unidade avançado* e link:../disks-aggregates/index.html["Gerenciamento de discos e agregados"].
+
+
+
+ a| 
+Execute operações de manutenção de disco e agregado e obtenha informações detalhadas sobre o agregado e o disco.
+ a| 
+5) Inicialização do modo de manutenção
+
+Você sai do modo Manutenção usando o `halt` comando.
+
+
+
+ a| 
+Restaure as informações de configuração do volume raiz do nó para o dispositivo de inicialização, como um cartão CompactFlash do PC
+ a| 
+6) Atualizar flash a partir da configuração de backup
+
+O ONTAP armazena algumas informações de configuração de nós no dispositivo de inicialização. Quando o nó é reiniciado, as informações no dispositivo de inicialização são automaticamente gravadas no volume raiz do nó. Se o dispositivo de inicialização ficar corrompido ou precisar ser substituído, você deve usar essa opção de menu para restaurar as informações de configuração do volume raiz do nó de volta para o dispositivo de inicialização.
+
+
+
+ a| 
+Instale um novo software no nó
+ a| 
+7) instale primeiro novo software
+
+Se o software ONTAP no dispositivo de inicialização não incluir suporte para o storage array que você deseja usar para o volume raiz, você poderá usar essa opção de menu para obter uma versão do software compatível com seu storage array e instalá-lo no nó.
+
+Esta opção de menu é apenas para instalar uma versão mais recente do software ONTAP em um nó que não tem volume raiz instalado. _Não_ Use esta opção de menu para atualizar o ONTAP.
+
+
+
+ a| 
+Reinicie o nó
+ a| 
+8) nó de reinicialização
+
+
+
+ a| 
+Desparticionar todos os discos e remover suas informações de propriedade ou limpar a configuração e inicializar o sistema com discos inteiros ou particionados
+ a| 
+9) Configurar particionamento de unidade avançado
+
+A partir do ONTAP 9.2, a opção particionamento de unidade avançado fornece recursos de gerenciamento adicionais para discos que são configurados para particionamento de dados raiz ou dados raiz. As seguintes opções estão disponíveis na opção de inicialização 9:
+
+[listing]
+----
+(9a) Unpartition all disks and remove their ownership information.
+(9b) Clean configuration and initialize system with partitioned disks.
+(9c) Clean configuration and initialize system with whole disks.
+(9d) Reboot the node.
+(9e) Return to main boot menu.
+----
+|===
+

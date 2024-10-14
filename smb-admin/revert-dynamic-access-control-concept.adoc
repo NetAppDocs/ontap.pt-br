@@ -1,0 +1,39 @@
+---
+permalink: smb-admin/revert-dynamic-access-control-concept.html 
+sidebar: sidebar 
+keywords: aware, revert, version, ontap, support, dynamic, access, control, dac, revert considerations for dynamic access control 
+summary: 'Você deve estar ciente do que acontece ao reverter para uma versão do ONTAP que não suporta o controle de acesso dinâmico (DAC) e o que você deve fazer antes e depois de reverter.' 
+---
+= Considerações de reversão para o Controle de Acesso Dinâmico
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve estar ciente do que acontece ao reverter para uma versão do ONTAP que não suporta o controle de acesso dinâmico (DAC) e o que você deve fazer antes e depois de reverter.
+
+Se você quiser reverter o cluster para uma versão do ONTAP que não suporte o Controle de Acesso Dinâmico e o Controle de Acesso Dinâmico estiver ativado em uma ou mais máquinas virtuais de armazenamento (SVMs), faça o seguinte antes de reverter:
+
+* Você deve desativar o Controle de Acesso Dinâmico em todos os SVMs que o tenham ativado no cluster.
+* É necessário modificar qualquer configuração de auditoria no cluster que contenha o `cap-staging` tipo de evento para usar somente o `file-op` tipo de evento.
+
+
+Você deve entender e agir sobre algumas considerações importantes de reversão para arquivos e pastas com ACEs de Controle de Acesso Dinâmico:
+
+* Se o cluster for revertido, os ACEs de Controle de Acesso Dinâmico existentes não serão removidos; no entanto, eles serão ignorados nas verificações de acesso ao arquivo.
+* Uma vez que os ACEs do controlo de Acesso Dinâmico são ignorados após a reversão, o acesso aos ficheiros será alterado nos ficheiros com ACEs do controlo de Acesso Dinâmico.
++
+Isso poderia permitir que os usuários acessem arquivos que eles anteriormente não podiam, ou não poderiam acessar arquivos que anteriormente poderiam.
+
+* Você deve aplicar ACEs não-Dynamic Access Control aos arquivos afetados para restaurar seu nível anterior de segurança.
++
+Isso pode ser feito antes de reverter ou imediatamente após a reversão ser concluída.
+
+
+
+[NOTE]
+====
+Uma vez que os ACEs do controlo de Acesso Dinâmico são ignorados após a reversão, não é necessário removê-los ao aplicar ACEs do controlo de Acesso não Dinâmico aos ficheiros afetados. No entanto, se desejado, você pode removê-los manualmente.
+
+====

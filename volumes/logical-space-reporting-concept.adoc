@@ -1,0 +1,80 @@
+---
+permalink: volumes/logical-space-reporting-concept.html 
+sidebar: sidebar 
+keywords: what, logical, space, reporting, shows 
+summary: Quando você ativa a geração de relatórios de espaço lógico em um volume, o sistema exibe o espaço lógico usado e disponível, além do espaço total em um volume. 
+---
+= Relatórios de espaço lógico
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando você ativa o relatório de espaço lógico em um volume, seu sistema pode exibir a quantidade de espaço lógico usado e disponível, além do espaço total em um volume. Além disso, os usuários em sistemas cliente Linux e Windows podem ver espaço lógico usado e disponível em vez de espaço físico usado e físico disponível.
+
+Definições:
+
+* O espaço físico refere-se aos blocos físicos de armazenamento disponíveis ou usados no volume.
+* O espaço lógico refere-se ao espaço utilizável em um volume.
+* O espaço lógico usado é o espaço físico usado, além de economia com recursos de eficiência de storage (como deduplicação e compactação) configurados.
+
+
+A partir do ONTAP 9.5, você pode ativar a aplicação de espaço lógico juntamente com relatórios de espaço.
+
+Quando ativado, o relatório de espaço lógico exibe os seguintes parâmetros com o `volume show` comando:
+
+[cols="25%,75%"]
+|===
+| Parâmetro | Significado 
+
+
+ a| 
+`-logical-used`
+ a| 
+Exibe informações somente sobre o volume ou volumes que têm o tamanho lógico usado especificado. Esse valor inclui todo o espaço economizado pelos recursos de eficiência de storage, juntamente com o espaço usado fisicamente. Isso não inclui a reserva Snapshot, mas considera o derramamento de Snapshot.
+
+
+
+ a| 
+`-logical-used-by-afs`
+ a| 
+Exibe informações apenas sobre o volume ou volumes que têm o tamanho lógico especificado usado pelo sistema de arquivos ativo. Esse valor difere do``-logical-used`` valor pela quantidade de derramamento de Snapshot que excede a reserva de snapshot.
+
+
+
+ a| 
+`-logical-available`
+ a| 
+Quando apenas o relatório de espaço lógico está ativado, apenas o espaço físico disponível é exibido. Quando o relatório de espaço e a imposição estão ativados, ele exibe a quantidade de espaço livre atualmente disponível considerando o espaço economizado pelos recursos de eficiência de storage como sendo usado. Isso não inclui a reserva Snapshot.
+
+
+
+ a| 
+`-logical-used-percent`
+ a| 
+Exibe a porcentagem do valor atual `-logical-used` com o tamanho provisionado, excluindo a reserva Snapshot do volume.
+
+Esse valor pode ser superior a 100%, pois o `-logical-used-by-afs` valor inclui economia de eficiência no volume.  `-logical-used-by-afs`O valor de um volume não inclui derramamento de Snapshot como espaço usado.  `-physical-used`O valor de um volume inclui derramamento de Snapshot como espaço usado.
+
+
+
+ a| 
+`-used`
+ a| 
+Exibe a quantidade de espaço ocupado pelos dados do usuário e metadados do sistema de arquivos. Ele difere `physical-used` do espaço pela soma do espaço reservado para gravações futuras e do espaço economizado pela eficiência de storage agregado. Isso inclui derramamento de Snapshot (a quantidade de espaço em que as cópias Snapshot excedem a reserva Snapshot). Ele não inclui a reserva Snapshot.
+
+|===
+A ativação de relatórios de espaço lógico na CLI também permite que os valores de espaço lógico usado (%) e espaço lógico sejam exibidos no System Manager
+
+Os sistemas clientes veem o espaço lógico exibido como espaço "usado" nas seguintes telas do sistema:
+
+* Saída *DF* em sistemas Linux
+* Detalhes do espaço em Propriedades usando o Windows Explorer em sistemas Windows.
+
+
+[NOTE]
+====
+Se o relatório de espaço lógico estiver ativado sem imposição de espaço lógico, o total exibido nos sistemas cliente pode ser maior do que o espaço provisionado.
+
+====

@@ -1,0 +1,84 @@
+---
+permalink: san-admin/san-provisioning-fc-concept.html 
+sidebar: sidebar 
+keywords:  
+summary: Você deve estar ciente dos conceitos importantes que são necessários para entender como o ONTAP implementa uma SAN FC. 
+---
+= Provisionamento DE SAN com FC
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve estar ciente dos conceitos importantes que são necessários para entender como o ONTAP implementa uma SAN FC.
+
+
+
+== Como os nós de destino FC se conetam à rede
+
+Os sistemas de storage e os hosts têm adaptadores para que possam ser conectados a switches FC com cabos.
+
+Quando um nó é conetado à SAN FC, cada SVM Registra o World Wide Port Name (WWPN) de seu LIF com o switch Fabric Name Service. O WWNN do SVM e o WWPN de cada LIF é atribuído automaticamente pelo ONTAP.
+
+[NOTE]
+====
+A conexão direta com nós de hosts com FC não é suportada, NPIV é necessária e isso requer que um switch seja usado. Com sessões iSCSI, a comunicação funciona com conexões roteadas ou conetadas diretamente à rede. No entanto, ambos os métodos são suportados com o ONTAP.
+
+====
+
+
+== Como os nós FC são identificados
+
+Cada SVM configurado com FC é identificado por um nome de nó mundial (WWNN).
+
+
+
+== Como WWPNs são usados
+
+As WWPNs identificam cada LIF em uma SVM configurada para dar suporte ao FC. Essas LIFs utilizam as portas FC físicas em cada nó do cluster, que podem ser placas de destino FC, UTA ou UTA2 configuradas como FC ou FCoE nos nós.
+
+* Criando um grupo de iniciadores
++
+Os WWPNs dos HBAs do host são usados para criar um grupo de iniciadores (iggroup). Um iggroup é usado para controlar o acesso do host a LUNs específicos. Você pode criar um grupo de iniciadores especificando uma coleção de WWPNs de iniciadores em uma rede FC. Quando você mapeia um LUN em um sistema de armazenamento para um grupo, você pode conceder a todos os iniciadores nesse grupo acesso a esse LUN. Se o WWPN de um host não estiver em um grupo que é mapeado para um LUN, esse host não terá acesso ao LUN. Isso significa que os LUNs não aparecem como discos nesse host.
+
++
+Você também pode criar conjuntos de portas para tornar um LUN visível apenas em portas de destino específicas. Um conjunto de portas consiste em um grupo de portas de destino FC. Você pode vincular um iggroup a um conjunto de portas. Qualquer host no grupo pode acessar os LUNs somente conetando-se às portas de destino no conjunto de portas.
+
+* Identificação única de FC LIFs
++
+WWPNs identificam de forma exclusiva cada interface lógica FC. O sistema operacional host usa a combinação de WWNN e WWPN para identificar SVMs e FC LIFs. Alguns sistemas operacionais exigem vinculação persistente para garantir que o LUN seja exibido no mesmo ID de destino no host.
+
+
+
+
+
+== Como as atribuições de nomes em todo o mundo funcionam
+
+Nomes mundiais são criados sequencialmente em ONTAP. No entanto, devido à forma como o ONTAP os atribui, eles podem parecer atribuídos em uma ordem não sequencial.
+
+Cada adaptador tem um WWPN e WWNN pré-configurados, mas o ONTAP não usa esses valores pré-configurados. Em vez disso, o ONTAP atribui seus próprios WWPNs ou WWNNs, com base nos endereços MAC das portas Ethernet integradas.
+
+Os nomes mundiais podem parecer não sequenciais quando atribuídos pelas seguintes razões:
+
+* Nomes mundiais são atribuídos em todos os nós e máquinas virtuais de storage (SVMs) no cluster.
+* Os nomes do mundo livre são reciclados e adicionados de volta ao conjunto de nomes disponíveis.
+
+
+
+
+== Como os switches FC são identificados
+
+Os switches Fibre Channel têm um nome de nó mundial (WWNN) para o próprio dispositivo e um nome de porta mundial (WWPN) para cada uma de suas portas.
+
+Por exemplo, o diagrama a seguir mostra como os WWPNs são atribuídos a cada uma das portas em um switch Brocade de 16 portas. Para obter detalhes sobre como as portas são numeradas para um switch específico, consulte a documentação fornecida pelo fornecedor para esse switch.
+
+image:drw-fcswitch-scrn-en-noscale.gif["Portas de switch de canal de fibra Brocade"]
+
+Porta *0*, WWPN 20:**00**:00:60:69:51:06:B4
+
+Porta *1*, WWPN 20:**01**:00:60:69:51:06:B4
+
+Porta *14*, WWPN 20:**0e**:00:60:69:51:06:B4
+
+Porta *15*, WWPN 20:**0f**:00:60:69:51:06:B4

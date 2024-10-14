@@ -1,0 +1,125 @@
+---
+permalink: nfs-admin/handle-clients-unlisted-security-type-concept.html 
+sidebar: sidebar 
+keywords: handle, client, unlist, security, type 
+summary: Quando um cliente se apresenta com um tipo de segurança que não está listado em um parâmetro de acesso de uma regra de exportação, você tem a opção de negar acesso ao cliente ou mapeá-lo para o ID de usuário anônimo usando a opção nenhum no parâmetro de acesso. 
+---
+= Gerencie clientes com um tipo de segurança não listado
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando um cliente se apresenta com um tipo de segurança que não está listado em um parâmetro de acesso de uma regra de exportação, você tem a opção de negar acesso ao cliente ou mapeá-lo para o ID de usuário anônimo usando a opção `none` no parâmetro de acesso.
+
+Um cliente pode apresentar-se com um tipo de segurança que não está listado em um parâmetro de acesso porque foi autenticado com um tipo de segurança diferente ou não foi autenticado de todo (tipo de segurança AUTH_NONE). Por padrão, o cliente é automaticamente negado o acesso a esse nível. No entanto, você pode adicionar a opção `none` ao parâmetro Access. Como resultado, os clientes com um estilo de segurança não listado são mapeados para o ID de usuário anônimo. O `-anon` parâmetro determina qual ID de usuário é atribuído a esses clientes. O ID de usuário especificado para o `-anon` parâmetro deve ser um usuário válido que esteja configurado com permissões que você considere apropriadas para o usuário anônimo.
+
+Valores válidos para o `-anon` intervalo de parâmetros `0` de a `65535`.
+
+[cols="2*"]
+|===
+| ID de utilizador atribuída a `-anon` | Processamento resultante de solicitações de acesso do cliente 
+
+
+ a| 
+`0` - `65533`
+ a| 
+A solicitação de acesso do cliente é mapeada para o ID de usuário anônimo e obtém acesso dependendo das permissões configuradas para esse usuário.
+
+
+
+ a| 
+`65534`
+ a| 
+A solicitação de acesso do cliente é mapeada para o usuário ninguém e obtém acesso dependendo das permissões configuradas para esse usuário. Este é o padrão.
+
+
+
+ a| 
+`65535`
+ a| 
+A solicitação de acesso de qualquer cliente é negada quando mapeada para essa ID e o cliente se apresenta com o tipo de segurança AUTH_NONE. A solicitação de acesso de clientes com ID de usuário 0 é negada quando mapeada para essa ID e o cliente se apresenta com qualquer outro tipo de segurança.
+
+|===
+Ao usar a opção `none`, é importante lembrar que o parâmetro somente leitura é processado primeiro. Considere as seguintes diretrizes ao configurar regras de exportação para clientes com tipos de segurança não listados:
+
+[cols="3*"]
+|===
+| Somente leitura inclui `none` | A leitura-gravação inclui `none` | Acesso resultante para clientes com tipos de segurança não listados 
+
+
+ a| 
+Não
+ a| 
+Não
+ a| 
+Negado
+
+
+
+ a| 
+Não
+ a| 
+Sim
+ a| 
+Negado porque somente leitura é processada primeiro
+
+
+
+ a| 
+Sim
+ a| 
+Não
+ a| 
+Somente leitura como anônima
+
+
+
+ a| 
+Sim
+ a| 
+Sim
+ a| 
+Leia-escreva como anônimo
+
+|===
+.Exemplo
+A política de exportação contém uma regra de exportação com os seguintes parâmetros:
+
+* `-protocol` `nfs3`
+* `-clientmatch` `10.1.16.0/255.255.255.0`
+* `-rorule` `sys,none`
+* `-rwrule` `any`
+* `-anon` `70`
+
+
+O cliente nº 1 tem o endereço IP 10,1.16,207, envia uma solicitação de acesso usando o protocolo NFSv3 e autenticado com Kerberos v5.
+
+O cliente nº 2 tem o endereço IP 10,1.16,211, envia uma solicitação de acesso usando o protocolo NFSv3 e autenticado com AUTH_SYS.
+
+O cliente nº 3 tem o endereço IP 10,1.16,234, envia uma solicitação de acesso usando o protocolo NFSv3 e não autenticou (ou seja, o tipo de segurança AUTH_NONE).
+
+O protocolo de acesso do cliente e o endereço IP correspondem aos três clientes. O parâmetro somente leitura permite o acesso somente leitura a clientes com seu próprio ID de usuário autenticado com AUTH_SYS. O parâmetro somente leitura permite o acesso somente leitura como usuário anônimo com ID de usuário 70 para clientes autenticados usando qualquer outro tipo de segurança. O parâmetro read-write permite o acesso de leitura-gravação a qualquer tipo de segurança, mas neste caso só se aplica a clientes já filtrados pela regra somente leitura.
+
+Portanto, os clientes nº 1 e nº 3 recebem acesso de leitura e gravação apenas como usuário anônimo com ID de usuário 70. O cliente nº 2 obtém acesso de leitura e gravação com seu próprio ID de usuário.
+
+.Exemplo
+A política de exportação contém uma regra de exportação com os seguintes parâmetros:
+
+* `-protocol` `nfs3`
+* `-clientmatch` `10.1.16.0/255.255.255.0`
+* `-rorule` `sys,none`
+* `-rwrule` `none`
+* `-anon` `70`
+
+
+O cliente nº 1 tem o endereço IP 10,1.16,207, envia uma solicitação de acesso usando o protocolo NFSv3 e autenticado com Kerberos v5.
+
+O cliente nº 2 tem o endereço IP 10,1.16,211, envia uma solicitação de acesso usando o protocolo NFSv3 e autenticado com AUTH_SYS.
+
+O cliente nº 3 tem o endereço IP 10,1.16,234, envia uma solicitação de acesso usando o protocolo NFSv3 e não autenticou (ou seja, o tipo de segurança AUTH_NONE).
+
+O protocolo de acesso do cliente e o endereço IP correspondem aos três clientes. O parâmetro somente leitura permite o acesso somente leitura a clientes com seu próprio ID de usuário autenticado com AUTH_SYS. O parâmetro somente leitura permite o acesso somente leitura como usuário anônimo com ID de usuário 70 para clientes autenticados usando qualquer outro tipo de segurança. O parâmetro read-write permite o acesso de leitura-gravação somente como usuário anônimo.
+
+Portanto, o cliente nº 1 e o cliente nº 3 recebem acesso de leitura e gravação somente como usuário anônimo com ID de usuário 70. O cliente nº 2 obtém acesso somente leitura com seu próprio ID de usuário, mas é negado o acesso de leitura e gravação.

@@ -1,0 +1,385 @@
+---
+permalink: svm-migrate/index.html 
+sidebar: sidebar 
+keywords: svm, migrate, workflow, relocate, prerequisites, data mobility 
+summary: A partir do ONTAP 9.10,1, os administradores de cluster podem realocar, sem interrupções, uma SVM de um cluster de origem para um cluster de destino para gerenciar o balanceamento de capacidade e carga, ou para permitir atualizações de equipamentos ou consolidações de data center. A partir do ONTAP 9.12,1, esse recurso é compatível com plataformas FAS e AFF e agregados híbridos. 
+---
+= Visão geral da mobilidade de dados do SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.10,1, os administradores de cluster podem realocar um SVM de um cluster de origem para um cluster de destino para gerenciar a capacidade e o balanceamento de carga ou para habilitar upgrades de equipamentos ou consolidações de data center usando a CLI do ONTAP.
+
+Essa funcionalidade de realocação contínua da SVM é compatível com plataformas AFF no ONTAP 9.10,1 e 9.11.1. A partir do ONTAP 9.12,1, essa funcionalidade é suportada nas plataformas FAS e AFF e em agregados híbridos.
+
+O nome do SVM e UUID permanecem inalterados após a migração, bem como o nome do LIF de dados, endereço IP e nomes de objetos, como o nome do volume. A UUID dos objetos no SVM será diferente.
+
+
+
+== Fluxo de trabalho de migração da SVM
+
+O diagrama mostra o fluxo de trabalho típico para uma migração SVM. Inicie uma migração para SVM a partir do cluster de destino. Pode monitorizar a migração a partir da origem ou do destino. Você pode fazer uma transferência manual ou uma transferência automática. Uma transição automática é realizada por padrão.
+
+image:workflow_svm_migrate.gif["Fluxo de trabalho da migração da SVM. Isso resume os passos que o seguem."]
+
+
+
+== Compatibilidade com a plataforma de migração SVM
+
+[cols="1,1"]
+|===
+
+
+| Família de controladores | Versões do ONTAP suportadas 
+
+
+| AFF Série A. | ONTAP 9.10,1 e posterior 
+
+
+| Série C AFF | ONTAP 9.12,1 patch 4 e posterior 
+
+
+| FAS | ONTAP 9.12,1 e posterior 
+|===
+
+NOTE: Ao migrar de um cluster AFF para um cluster FAS com agregados híbridos, o posicionamento automático de volume tentará executar uma correspondência de agregados semelhante a essa. Por exemplo, se o cluster de origem tiver 60 volumes, o posicionamento do volume tentará encontrar um agregado AFF no destino para colocar os volumes. Quando não houver espaço suficiente nos agregados AFF, os volumes serão colocados em agregados com discos não flash.
+
+
+
+== Suporte à escalabilidade pela versão ONTAP
+
+[cols="1,1"]
+|===
+
+
+| Versão de ONTAP | Pares HA na origem e no destino 
+
+
+| ONTAP 9.14,1 | 12 
+
+
+| ONTAP 9.13,1 | 6 
+
+
+| ONTAP 9.11,1 | 3 
+
+
+| ONTAP 9.10,1 | 1 
+|===
+
+
+== Requisitos de desempenho da infraestrutura de rede para o tempo de ida e volta (RTT) TCP entre a origem e o cluster de destino
+
+Dependendo da versão do ONTAP instalada no cluster, a rede que coneta os clusters de origem e destino deve ter um tempo máximo de ida e volta, conforme indicado:
+
+|===
+
+
+| Versão de ONTAP | RTT máximo 
+
+
+| ONTAP 9.12,1 e posterior | 10ms 
+
+
+| ONTAP 9.11,1 e anteriores | 2ms 
+|===
+
+
+== Máximo de volumes compatíveis por SVM
+
+[cols="1,1,1,1,1,1"]
+|===
+
+
+| Fonte | Destino | ONTAP 9.14,1 | ONTAP 9.13,1 | ONTAP 9.12,1 | ONTAP 9.11,1 e anteriores 
+
+
+| AFF | AFF | 400 | 200 | 100 | 100 
+
+
+| FAS | FAS | 80 | 80 | 80 | N/A. 
+
+
+| FAS | AFF | 80 | 80 | 80 | N/A. 
+
+
+| AFF | FAS | 80 | 80 | 80 | N/A. 
+|===
+
+
+== Pré-requisitos
+
+Antes de iniciar uma migração SVM, você deve atender aos seguintes pré-requisitos:
+
+* Você deve ser um administrador de cluster.
+* link:../peering/create-cluster-relationship-93-later-task.html["Os clusters de origem e destino devem ser direcionados um para o outro"].
+* Os clusters de origem e destino devem ter o SnapMirror síncrono link:../system-admin/install-license-task.html["licença instalada"]. Esta licença está incluída no link:../system-admin/manage-licenses-concept.html#licenses-included-with-ontap-one["ONTAP One"].
+* Todos os nós no cluster de origem devem estar executando o ONTAP 9.10,1 ou posterior. Para obter suporte específico ao controlador de array ONTAP, link:https://hwu.netapp.com/["Hardware Universe"^]consulte .
+* Todos os nós no cluster de origem devem estar executando a mesma versão do ONTAP.
+* Todos os nós no cluster de destino devem estar executando a mesma versão do ONTAP.
+* O cluster de destino deve estar no mesmo ou não mais do que duas versões mais recentes do cluster de origem (ECV).
+* Os clusters de origem e destino devem suportar a mesma sub-rede IP para acesso a LIF de dados.
+* O SVM de origem deve conter menos do que o xref:Maximum supported volumes per SVM[número máximo de volumes de dados suportados para a versão].
+* Espaço suficiente para a colocação do volume deve estar disponível no destino
+* O Onboard Key Manager deve ser configurado no destino se o SVM de origem tiver volumes criptografados
+
+
+
+
+== Prática recomendada
+
+Ao executar uma migração para SVM, é uma prática recomendada deixar 30% de espaço livre de CPU no cluster de origem e no cluster de destino para permitir a execução do workload da CPU.
+
+
+
+== Operações da SVM
+
+Você deve verificar se há operações que podem entrar em conflito com a migração da SVM:
+
+* Nenhuma operação de failover está em andamento
+* WAFLIRON não pode estar em funcionamento
+* A impressão digital não está em andamento
+* A movimentação de volume, o rehost, o clone, a criação, a conversão ou a análise não estão em execução
+
+
+
+
+== Recursos suportados e não suportados
+
+A tabela indica os recursos do ONTAP compatíveis com mobilidade de dados do SVM e as versões do ONTAP em que o suporte está disponível.
+
+Para obter informações sobre a interoperabilidade da versão do ONTAP entre uma origem e um destino em uma migração SVM, link:../data-protection/compatible-ontap-versions-snapmirror-concept.html#snapmirror-svm-disaster-recovery-relationships["Versões compatíveis do ONTAP para relacionamentos do SnapMirror"]consulte .
+
+[cols="3,1,4"]
+|===
+
+
+| Recurso | Lançamento primeiro suportado | Comentários 
+
+
+| Proteção autônoma contra ransomware | ONTAP 9.12,1 |  
+
+
+| Cloud Volumes ONTAP | Não suportado |  
+
+
+| Gerenciador de chaves externo | ONTAP 9.11,1 |  
+
+
+| FabricPool | ONTAP 9.11,1  a| 
+A migração do SVM é compatível com volumes no FabricPools para as plataformas a seguir:
+
+* Plataforma Azure NetApp Files. Todas as políticas de disposição em categorias são compatíveis (somente snapshot, automático, all e nenhum).
+
+
+
+
+| Relação de fanout (a origem migrante tem um volume de origem SnapMirror com mais de um destino) | ONTAP 9.11,1 |  
+
+
+| FC SAN | Não suportado |  
+
+
+| Flash Pool | ONTAP 9.12,1 |  
+
+
+| Volumes FlexCache | Não suportado |  
+
+
+| FlexGroup | Não suportado |  
+
+
+| Diretivas IPsec | Não suportado |  
+
+
+| IPv6 LIFs | Não suportado |  
+
+
+| San iSCSI | Não suportado |  
+
+
+| Replicação do agendamento de trabalhos | ONTAP 9.11,1 | No ONTAP 9.10,1, as programações de trabalhos não são replicadas durante a migração e devem ser criadas manualmente no destino. A partir do ONTAP 9.11,1, as programações de tarefas usadas pela origem são replicadas automaticamente durante a migração. 
+
+
+| Espelhos de partilha de carga | Não suportado |  
+
+
+| SVMs MetroCluster | Não suportado | Embora a migração do SVM não seja compatível com a migração do MetroCluster SVM, você pode usar a replicação assíncrona do SnapMirror para link:https://www.netapp.com/media/83785-tr-4966.pdf["Migrar um SVM em uma configuração do MetroCluster"]o . Você deve estar ciente de que o processo descrito para migrar um SVM em uma configuração do MetroCluster é _não_ um método sem interrupções. 
+
+
+| Criptografia de agregados NetApp (NAE) | Não suportado | A migração não é suportada de uma fonte não encriptada para um destino encriptado. 
+
+
+| Configurações NDMP | Não suportado |  
+
+
+| Criptografia de volume NetApp (NVE) | ONTAP 9.10,1 |  
+
+
+| Logs de auditoria NFS e SMB | ONTAP 9.13,1  a| 
+[NOTE]
+====
+O redirecionamento de log de auditoria só está disponível no modo de nuvem. Para a migração SVM no local com auditoria habilitada, você deve desativar a auditoria na SVM de origem e, em seguida, executar a migração.
+
+====
+Antes da migração para o SVM:
+
+* link:../nas-audit/enable-disable-auditing-svms-task.html["O redirecionamento do log de auditoria deve estar ativado no cluster de destino"].
+* link:../nas-audit/commands-modify-auditing-config-reference.html?q=audit+log+destination+path["O caminho de destino do log de auditoria da SVM de origem deve ser criado no cluster de destino"].
+
+
+
+
+| NFS v3, NFS v4,1 e NFS v4,2 | ONTAP 9.10,1 |  
+
+
+| NFS v4.0 | ONTAP 9.12,1 |  
+
+
+| NFSv4,1 com pNFS | ONTAP 9.14,1 |  
+
+
+| NVMe sobre Fabric | Não suportado |  
+
+
+| Gerenciador de chaves integrado (OKM) com o modo critérios comuns ativado no cluster de origem | Não suportado |  
+
+
+| Qtrees | ONTAP 9.14,1 |  
+
+
+| Quotas | ONTAP 9.14,1 |  
+
+
+| S3 | Não suportado |  
+
+
+| Protocolo SMB | ONTAP 9.12,1  a| 
+As migrações SMB são disruptivas e exigem uma atualização do cliente após a migração.
+
+
+
+| Relacionamentos de nuvem da SnapMirror | ONTAP 9.12,1 | A partir do ONTAP 9.12,1, quando você migra um SVM com relacionamentos de nuvem SnapMirror, o cluster de destino precisa ter o link:../data-protection/snapmirror-licensing-concept.html#snapmirror-cloud-license["Licença de nuvem da SnapMirror"] instalado e a capacidade suficiente disponível para dar suporte à migração de capacidade nos volumes espelhados para a nuvem. 
+
+
+| Destino assíncrono SnapMirror | ONTAP 9.12,1 |  
+
+
+| Fonte assíncrona do SnapMirror | ONTAP 9.11,1  a| 
+* As transferências podem continuar normalmente nas relações FlexVol SnapMirror durante a maior parte da migração.
+* Quaisquer transferências contínuas são canceladas durante a transição e novas transferências falham durante a transição e não podem ser reiniciadas até que a migração seja concluída.
+* As transferências agendadas que foram canceladas ou perdidas durante a migração não são iniciadas automaticamente após a conclusão da migração.
++
+[NOTE]
+====
+Quando uma fonte SnapMirror é migrada, o ONTAP não impede a exclusão do volume após a migração até que a atualização do SnapMirror ocorra. Isso acontece porque as informações relacionadas ao SnapMirror para volumes de origem SnapMirror migrados estão disponíveis somente após a conclusão da migração e após a primeira atualização.
+
+====
+
+
+
+
+| Definições de SMTape | Não suportado |  
+
+
+| SnapLock | Não suportado |  
+
+
+| Sincronização ativa do SnapMirror | Não suportado |  
+
+
+| Relacionamentos de pares SVM do SnapMirror | ONTAP 9.12,1 |  
+
+
+| Recuperação de desastres do SnapMirror SVM | Não suportado |  
+
+
+| SnapMirror síncrono | Não suportado |  
+
+
+| Cópia Snapshot | ONTAP 9.10,1 |  
+
+
+| Bloqueio de cópias Snapshot à prova de violações | ONTAP 9.14,1 | O bloqueio de cópias Snapshot à prova de violações não é equivalente ao SnapLock. O SnapLock permanece sem suporte. 
+
+
+| Virtual IP LIFs/BGP | Não suportado |  
+
+
+| Console de armazenamento virtual 7,0 e posterior | Não suportado | O VSC faz parte https://docs.netapp.com/us-en/ontap-tools-vmware-vsphere/index.html["Ferramentas do ONTAP para o dispositivo virtual VMware vSphere"^] do início com o VSC 7,0. 
+
+
+| Clones de volume | Não suportado |  
+
+
+| VStorage | Não suportado | A migração não é permitida quando o vStorage está ativado. Para executar uma migração, desative a opção vStorage e, em seguida, reative-a após a conclusão da migração. 
+|===
+
+
+== Operações compatíveis durante a migração
+
+A tabela a seguir indica operações de volume com suporte à migração do SVM com base no estado de migração:
+
+[cols="2,1,1,1"]
+|===
+
+
+| Operação de volume 3+| Estado de migração do SVM 
+
+
+|  | *Em andamento* | *Em pausa* | * Redução* 
+
+
+| Criar | Não é permitido | Permitido | Não suportado 
+
+
+| Eliminar | Não é permitido | Permitido | Não suportado 
+
+
+| Desativar a análise do sistema de ficheiros | Permitido | Permitido | Não suportado 
+
+
+| Análise do sistema de arquivos ativada | Não é permitido | Permitido | Não suportado 
+
+
+| Modificar | Permitido | Permitido | Não suportado 
+
+
+| Offline/Online | Não é permitido | Permitido | Não suportado 
+
+
+| Mover/realojar | Não é permitido | Permitido | Não suportado 
+
+
+| Qtree criar/modificar | Não é permitido | Permitido | Não suportado 
+
+
+| Quota criar/modificar | Não é permitido | Permitido | Não suportado 
+
+
+| Mudar o nome | Não é permitido | Permitido | Não suportado 
+
+
+| Redimensionar | Permitido | Permitido | Não suportado 
+
+
+| Restringir | Não é permitido | Permitido | Não suportado 
+
+
+| Os atributos de cópia Snapshot modificam | Permitido | Permitido | Não suportado 
+
+
+| Cópia snapshot autodelete Modificar | Permitido | Permitido | Não suportado 
+
+
+| Cópia Snapshot criar | Permitido | Permitido | Não suportado 
+
+
+| Eliminar cópia Snapshot | Permitido | Permitido | Não suportado 
+
+
+| Restaure o arquivo a partir da cópia Snapshot | Permitido | Permitido | Não suportado 
+|===

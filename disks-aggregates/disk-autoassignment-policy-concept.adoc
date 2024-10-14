@@ -1,0 +1,119 @@
+---
+permalink: disks-aggregates/disk-autoassignment-policy-concept.html 
+sidebar: sidebar 
+keywords: disk, auto-assign, spare, policy, automatic, assignment, disk ownership 
+summary: A atribuição automática de discos não possuídos é ativada por padrão. As atribuições de propriedade automática de disco ocorrem 10 minutos após a inicialização do par de HA e a cada cinco minutos durante a operação normal do sistema. 
+---
+= Sobre a atribuição automática de propriedade de disco
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A atribuição automática de discos não possuídos é ativada por padrão. As atribuições de propriedade automática de disco ocorrem 10 minutos após a inicialização do par de HA e a cada cinco minutos durante a operação normal do sistema.
+
+Quando você adiciona um novo disco a um par de HA, por exemplo, ao substituir um disco com falha, ao responder a uma mensagem de "peças sobressalentes baixas" ou à adição de capacidade, a política de atribuição automática padrão atribui a propriedade do disco a um nó como sobressalente.
+
+A política de atribuição automática padrão é baseada em características específicas da plataforma ou no compartimento DS460C se o seu par de HA tiver apenas essas gavetas e usar um dos seguintes métodos (políticas) para atribuir a propriedade do disco:
+
+|===
+
+
+| Método de atribuição | Efeito nas atribuições de nós | Configurações de plataforma que padrão para o método de atribuição 
+
+
+ a| 
+baía
+ a| 
+Baias de números pares são atribuídas ao nó A e baias de números ímpares ao nó B.
+ a| 
+Sistemas de nível de entrada em uma configuração de par de HA com um único compartimento compartilhado.
+
+
+
+ a| 
+gaveta
+ a| 
+Todos os discos na gaveta são atribuídos ao nó A.
+ a| 
+Sistemas de nível básico em uma configuração de par de HA com uma stack de duas ou mais gavetas e configurações de MetroCluster com uma stack por nó, duas ou mais gavetas.
+
+
+
+ a| 
+prateleira dividida
+
+Esta política está sob o valor "defeito" para o `-autoassign-policy` parâmetro `storage disk option` do comando para configurações de plataforma e prateleira aplicáveis.
+ a| 
+Os discos no lado esquerdo da gaveta são atribuídos ao nó A e do lado direito ao nó B. as gavetas parciais em pares de HA são enviadas de fábrica com discos preenchidos da borda do compartimento em direção ao centro.
+ a| 
+A maioria das plataformas AFF e algumas configurações do MetroCluster.
+
+
+
+ a| 
+pilha
+ a| 
+Todos os discos na pilha são atribuídos ao nó A.
+ a| 
+Sistemas de nível de entrada independentes e todas as outras configurações.
+
+
+
+ a| 
+meia gaveta
+
+Esta política está sob o valor "defeito" para o `-autoassign-policy` parâmetro `storage disk option` do comando para configurações de plataforma e prateleira aplicáveis.
+ a| 
+Todas as unidades na metade esquerda de uma gaveta DS460C (compartimentos de unidades 0 a 5) são atribuídas ao nó A; todas as unidades na metade direita de uma gaveta (compartimentos de unidades 6 a 11) são atribuídas ao nó B.
+
+Ao inicializar um par de HA com apenas DS460C gavetas, a atribuição automática de propriedade de disco não é suportada. Você deve atribuir manualmente a propriedade para unidades que contêm unidades raiz/contentor que têm a partição raiz, de acordo com a política de meia gaveta.
+ a| 
+Pares DE HA com apenas DS460C gavetas, após a inicialização do par de HA (inicialização).
+
+Depois que um par de HA é inicializado, a atribuição automática de propriedade de disco é ativada automaticamente e usa a política de meia gaveta para atribuir propriedade às unidades restantes (exceto as unidades raiz/unidades de contentor que têm a partição raiz) e quaisquer unidades adicionadas no futuro.
+
+Se o seu par de HA tiver DS460C gavetas além de outros modelos de gaveta, a política de meia gaveta não será usada. A política padrão usada é ditada por caraterísticas específicas da plataforma.
+
+|===
+Definições e modificações de atribuição automática:
+
+* Pode apresentar as definições de atribuição automática atuais (ligado/desligado) com o `storage disk option show` comando.
+* Você pode desativar a atribuição automática usando o `storage disk option modify` comando.
+* Se a política de atribuição automática padrão não for desejável em seu ambiente, você poderá especificar (alterar) o método de atribuição de compartimento, compartimento ou pilha usando o `-autoassign-policy` parâmetro no `storage disk option modify` comando.
++
+Aprenda a link:configure-auto-assignment-disk-ownership-task.html["Altere as configurações para atribuição automática de propriedade de disco"].
+
++
+[NOTE]
+====
+As políticas de atribuição automática padrão de meia gaveta e prateleira dividida são exclusivas porque não podem ser definidas por usuários como as diretivas de compartimento, compartimento e pilha podem.
+
+====
+
+
+Em sistemas de particionamento avançado de unidade (ADP), para fazer com que a atribuição automática funcione em compartimentos com meia densidade, as unidades devem ser instaladas nos compartimentos de gaveta corretos com base no tipo de gaveta que você tem:
+
+* Se a gaveta não for uma gaveta de DS460C TB, instale as unidades igualmente no lado esquerdo e no lado direito, movendo-se em direção ao meio. Por exemplo, seis unidades nos compartimentos 0-5 e seis unidades nos compartimentos 18-23 de uma gaveta de DS224C U.
+* Se a gaveta for uma gaveta de DS460C TB, instale as unidades na linha da frente (compartimentos de unidades 0, 3, 6 e 9) de cada gaveta. Para as unidades restantes, distribua-as uniformemente em cada gaveta preenchendo as linhas da gaveta da frente para trás. Se você não tiver unidades suficientes para preencher linhas, instale-as em pares para que as unidades ocupem o lado esquerdo e direito de uma gaveta uniformemente.
++
+A instalação de acionamentos na fila dianteira de cada gaveta permite um fluxo de ar adequado e evita o superaquecimento.
+
+
+
+[NOTE]
+====
+Se as unidades não estiverem instaladas nos compartimentos de gaveta corretos nas gavetas com meia densidade, quando uma unidade de contêiner falhar e for substituída, o ONTAP não atribuirá propriedade automaticamente. Neste caso, a atribuição da nova unidade de contentor precisa ser feita manualmente. Depois de ter atribuído a propriedade para a unidade de contentor, o ONTAP manipula automaticamente todas as atribuições de particionamento e particionamento de unidades necessárias.
+
+====
+Em algumas situações em que a atribuição automática não funcionará, você precisa atribuir manualmente a propriedade do disco usando o `storage disk assign` comando:
+
+* Se você desativar a atribuição automática, os novos discos não estarão disponíveis como sobressalentes até que sejam atribuídos manualmente a um nó.
+* Se você quiser que os discos sejam atribuídos automaticamente e tiver várias pilhas ou gavetas que precisam ter propriedade diferente, um disco deve ter sido atribuído manualmente em cada pilha ou compartimento para que a atribuição automática de propriedade funcione em cada pilha ou compartimento.
+* Se a atribuição automática estiver ativada e você atribuir manualmente uma única unidade a um nó que não esteja especificado na política ativa, a atribuição automática pára de funcionar e uma mensagem EMS será exibida.
+
+
+Aprenda a link:manual-assign-disks-ownership-manage-task.html["Atribua manualmente a propriedade do disco de discos não particionados"].
+
+Aprenda a link:manual-assign-ownership-partitioned-disks-task.html["Atribua manualmente a propriedade do disco de discos particionados"].

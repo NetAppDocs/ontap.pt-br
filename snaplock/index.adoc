@@ -1,0 +1,396 @@
+---
+permalink: snaplock/index.html 
+sidebar: sidebar 
+keywords: decide, about, archive, compliance, snaplock, unmodified, file, worm, storage, snap lock, mirror, unmirror. license, compliance clock, regulatory, governance, rules, govern, MAV, multi-admin verification, supported, unsupported 
+summary: Você pode usar a tecnologia NetApp SnapLock para reter arquivos de forma não modificada para fins regulatórios e de governança. 
+---
+= O que é SnapLock
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O SnapLock é uma solução de conformidade de alto desempenho para organizações que usam storage WORM para reter arquivos de forma não modificada para fins regulatórios e de governança.
+
+O SnapLock ajuda a impedir a exclusão, alteração ou renomeação de dados para atender a regulamentações como SEC 17aa-4(f), HIPAA, FINRA, CFTC e GDPR. Com o SnapLock, você pode criar volumes de propósito especial nos quais arquivos podem ser armazenados e comprometidos com um estado não apagável e não gravável por um período de retenção designado ou indefinidamente. O SnapLock permite que essa retenção seja realizada no nível do arquivo por meio de protocolos padrão de arquivo aberto, como CIFS e NFS. Os protocolos de arquivos abertos compatíveis com o SnapLock são NFS (versões 2, 3 e 4) e CIFS (SMB 1,0, 2,0 e 3,0).
+
+Com o SnapLock, você envia arquivos e cópias Snapshot para storage WORM e define períodos de retenção para dados protegidos WORM. O storage WORM do SnapLock usa a tecnologia NetApp Snapshot e pode utilizar a replicação SnapMirror e os backups SnapVault como a tecnologia base para fornecer proteção de recuperação de backup para dados. Saiba mais sobre o armazenamento WORMlink:https://www.netapp.com/pdf.html?item=/media/6158-tr4526pdf.pdf["Armazenamento WORM em conformidade com NetApp SnapLock - TR-4526"^]: .
+
+Você pode usar uma aplicação para comprometer arquivos WORM em NFS ou CIFS, ou usar o recurso de auto-commit do SnapLock para comprometer arquivos para WORM automaticamente. Você pode usar um arquivo anexado _WORM_ para reter dados gravados de forma incremental, como informações de log. Para obter mais informações, link:commit-files-worm-state-manual-task.html#create-a-worm-appendable-file["Use o modo de adição de volume para criar arquivos anexados WORM"]consulte .
+
+O SnapLock é compatível com métodos de proteção de dados que devem atender à maioria dos requisitos de conformidade:
+
+* Você pode usar o SnapLock for SnapVault para proteger cópias Snapshot WORM no storage secundário. link:commit-snapshot-copies-worm-concept.html["Armazene cópias Snapshot no WORM"]Consulte .
+* Você pode usar o SnapMirror para replicar arquivos WORM para outro local geográfico para recuperação de desastres. link:mirror-worm-files-task.html["Espelhar arquivos WORM"]Consulte .
+
+
+SnapLock é um recurso baseado em licença do NetApp ONTAP. Uma única licença permite que você use o SnapLock em modo de conformidade estrita, para satisfazer mandatos externos, como a regra SEC 17a-4(f), e um modo empresarial mais solto, para atender aos regulamentos internos exigidos para a proteção de ativos digitais. As licenças SnapLock fazem parte do link:../system-admin/manage-licenses-concept.html#licenses-included-with-ontap-one["ONTAP One"]pacote de software.
+
+O SnapLock é compatível com todos os sistemas AFF e FAS, bem como com o ONTAP Select. O SnapLock não é uma solução somente de software; é uma solução integrada de hardware e software. Essa distinção é importante para regulamentações WORM rígidas, como a SEC 17a-4(f), que requer uma solução integrada de hardware e software. Para obter mais informações, link:https://www.sec.gov/rules/interp/34-47806.htm["SEC Orientação aos corretores-concessionários sobre a utilização de suportes de armazenamento eletrónicos"^]consulte .
+
+
+
+== O que você pode fazer com o SnapLock
+
+Depois de configurar o SnapLock, você pode concluir as seguintes tarefas:
+
+* link:commit-files-worm-state-manual-task.html["Armazene dados no WORM"]
+* link:commit-snapshot-copies-worm-concept.html["Armazene cópias Snapshot no WORM para storage secundário"]
+* link:mirror-worm-files-task.html["Espelhar arquivos WORM para recuperação de desastres"]
+* link:hold-tamper-proof-files-indefinite-period-task.html["Retenha arquivos WORM durante o litígio usando retenção legal"]
+* link:delete-worm-files-concept.html["Exclua arquivos WORM usando o recurso de exclusão privilegiada"]
+* link:set-retention-period-task.html["Defina o período de retenção do arquivo"]
+* link:move-snaplock-volume-concept.html["Mover um volume SnapLock"]
+* link:snapshot-lock-concept.html["Bloqueie uma cópia Snapshot para proteção contra ataques de ransomware"]
+* link:create-audit-log-task.html["Reveja a utilização do SnapLock com o Registo de Auditoria"]
+* link:snaplock-apis-reference.html["Use APIs do SnapLock"]
+
+
+
+
+== Modos SnapLock Compliance e Enterprise
+
+Os modos SnapLock Compliance e Enterprise diferem principalmente no nível em que cada modo protege arquivos WORM:
+
+|===
+
+
+| Modo SnapLock | Nível de proteção | Exclusão de arquivo WORM durante a retenção 
+
+
+ a| 
+Modo de conformidade
+ a| 
+No nível do disco
+ a| 
+Não pode ser eliminado
+
+
+
+ a| 
+Modo empresarial
+ a| 
+No nível do ficheiro
+ a| 
+Pode ser excluído pelo administrador de conformidade usando um procedimento auditado de "exclusão privilegiada"
+
+|===
+Após o período de retenção ter terminado, você é responsável por excluir quaisquer arquivos que você não precisa mais. Uma vez que um arquivo tenha sido comprometido com WORM, esteja em conformidade ou no modo Enterprise, ele não poderá ser modificado, mesmo depois que o período de retenção expirou.
+
+Não é possível mover um arquivo WORM durante ou após o período de retenção. Você pode copiar um arquivo WORM, mas a cópia não reterá suas características WORM.
+
+A tabela a seguir mostra as diferenças nos recursos suportados pelos modos SnapLock Compliance e Enterprise:
+
+|===
+
+
+| Capacidade | SnapLock Compliance | SnapLock Enterprise 
+
+
+ a| 
+Ative e exclua arquivos usando exclusão privilegiada
+ a| 
+Não
+ a| 
+Sim
+
+
+
+ a| 
+Reinicializar os discos
+ a| 
+Não
+ a| 
+Sim
+
+
+
+ a| 
+Destruir agregados e volumes SnapLock durante o período de retenção
+ a| 
+Não
+ a| 
+Sim, com exceção do volume de log de auditoria do SnapLock
+
+
+
+ a| 
+Renomeie agregados ou volumes
+ a| 
+Não
+ a| 
+Sim
+
+
+
+ a| 
+Use discos que não sejam NetApp
+ a| 
+Não
+ a| 
+Sim (com link:https://docs.netapp.com/us-en/ontap-flexarray/index.html["Virtualização FlexArray"^])
+
+
+
+ a| 
+Use o volume SnapLock para o log de auditoria
+ a| 
+Sim
+ a| 
+Sim, começando com ONTAP 9.5
+
+|===
+
+
+== Recursos suportados e não suportados com o SnapLock
+
+A tabela a seguir mostra os recursos compatíveis com o modo SnapLock Compliance, o modo SnapLock Enterprise ou ambos:
+
+|===
+
+
+| Recurso | Compatível com SnapLock Compliance | Compatível com SnapLock Enterprise 
+
+
+ a| 
+Grupos de consistência
+ a| 
+Não
+ a| 
+Não
+
+
+
+ a| 
+Volumes criptografados
+ a| 
+Sim, começando com ONTAP 9.2. Saiba mais xref:Encryption[Criptografia e SnapLock]sobre o .
+ a| 
+Sim, começando com ONTAP 9.2. Saiba mais xref:Encryption[Criptografia e SnapLock]sobre o .
+
+
+
+ a| 
+FabricPools em agregados SnapLock
+ a| 
+Não
+ a| 
+Sim, começando com ONTAP 9.8. Saiba mais xref:FabricPool on SnapLock Enterprise aggregates[FabricPool em agregados SnapLock Enterprise]sobre o .
+
+
+
+ a| 
+Agregados Flash Pool
+ a| 
+Sim, começando com ONTAP 9.1.
+ a| 
+Sim, começando com ONTAP 9.1.
+
+
+
+ a| 
+FlexClone
+ a| 
+Você pode clonar volumes do SnapLock, mas não pode clonar arquivos em um volume do SnapLock.
+ a| 
+Você pode clonar volumes do SnapLock, mas não pode clonar arquivos em um volume do SnapLock.
+
+
+
+ a| 
+Volumes FlexGroup
+ a| 
+Sim, começando com ONTAP 9.11,1. Saiba mais <<flexgroup>>sobre o .
+ a| 
+Sim, começando com ONTAP 9.11,1. Saiba mais <<flexgroup>>sobre o .
+
+
+
+ a| 
+LUNs
+ a| 
+Não. Saiba mais sobre xref:LUN support[Suporte LUN] o SnapLock.
+ a| 
+Não. Saiba mais sobre xref:LUN support[Suporte LUN] o SnapLock.
+
+
+
+ a| 
+Configurações do MetroCluster
+ a| 
+Sim, começando com ONTAP 9.3. Saiba mais xref:MetroCluster support[Suporte à MetroCluster]sobre o .
+ a| 
+Sim, começando com ONTAP 9.3. Saiba mais xref:MetroCluster support[Suporte à MetroCluster]sobre o .
+
+
+
+ a| 
+Verificação multi-admin (MAV)
+ a| 
+Sim, começando com ONTAP 9.13,1. Saiba mais xref:Multi-admin verification (MAV) support[Suporte MAV]sobre o .
+ a| 
+Sim, começando com ONTAP 9.13,1. Saiba mais xref:Multi-admin verification (MAV) support[Suporte MAV]sobre o .
+
+
+
+ a| 
+SAN
+ a| 
+Não
+ a| 
+Não
+
+
+
+ a| 
+Single-file SnapRestore
+ a| 
+Não
+ a| 
+Sim
+
+
+
+ a| 
+Sincronização ativa do SnapMirror
+ a| 
+Não
+ a| 
+Não
+
+
+
+ a| 
+SnapRestore
+ a| 
+Não
+ a| 
+Sim
+
+
+
+ a| 
+SMTape
+ a| 
+Não
+ a| 
+Não
+
+
+
+ a| 
+SnapMirror síncrono
+ a| 
+Não
+ a| 
+Não
+
+
+
+ a| 
+SSDs
+ a| 
+Sim, começando com ONTAP 9.1.
+ a| 
+Sim, começando com ONTAP 9.1.
+
+
+
+ a| 
+Recursos de eficiência de storage
+ a| 
+Sim, começando com ONTAP 9.9,1. Saiba mais xref:Storage efficiency[suporte à eficiência de storage]sobre o .
+ a| 
+Sim, começando com ONTAP 9.9,1. Saiba mais xref:Storage efficiency[suporte à eficiência de storage]sobre o .
+
+|===
+
+
+== FabricPool em agregados SnapLock Enterprise
+
+FabricPools são compatíveis com agregados SnapLock Enterprise a partir de ONTAP 9.8. No entanto, sua equipe de conta precisa abrir uma solicitação de variação de produto, documentando que você entende que os dados do FabricPool dispostos em camadas em uma nuvem pública ou privada não são mais protegidos pelo SnapLock porque um administrador da nuvem pode excluir esses dados.
+
+[NOTE]
+====
+Todos os dados categorizados pelo FabricPool em uma nuvem pública ou privada não são mais protegidos pelo SnapLock porque eles podem ser excluídos por um administrador de nuvem.
+
+====
+
+
+== Volumes FlexGroup
+
+O SnapLock suporta volumes FlexGroup a partir do ONTAP 9.11,1; no entanto, os seguintes recursos não são suportados:
+
+* Guarda legal
+* Retenção baseada em evento
+* SnapLock para SnapVault (suportado a partir do ONTAP 9.12,1)
+
+
+Você também deve estar ciente dos seguintes comportamentos:
+
+* O relógio de conformidade de volume (VCC) de um volume FlexGroup é determinado pelo VCC do componente raiz. Todos os constituintes não-raiz terão seu VCC estreitamente sincronizado com o VCC raiz.
+* As propriedades de configuração do SnapLock são definidas apenas no FlexGroup como um todo. Os constituintes individuais não podem ter propriedades de configuração diferentes, como o tempo de retenção padrão e o período de confirmação automática.
+
+
+
+
+== Suporte LUN
+
+Os LUNs são compatíveis com volumes SnapLock somente em cenários em que as cópias Snapshot criadas em um volume que não seja SnapLock são transferidas para um volume SnapLock para proteção como parte da relação de cofre do SnapLock. LUNs não são compatíveis com volumes SnapLock de leitura/gravação. No entanto, as cópias Snapshot à prova de violações são compatíveis com volumes de origem e volumes de destino do SnapMirror que contêm LUNs.
+
+
+
+== Suporte à MetroCluster
+
+O suporte a SnapLock nas configurações do MetroCluster difere entre o modo SnapLock Compliance e o modo SnapLock Enterprise.
+
+.SnapLock Compliance
+* A partir do ONTAP 9.3, o SnapLock Compliance é compatível com agregados MetroCluster sem espelhamento.
+* A partir do ONTAP 9.3, o SnapLock Compliance é compatível com agregados espelhados, mas somente se o agregado for usado para hospedar volumes de log de auditoria do SnapLock.
+* As configurações de SnapLock específicas do SVM podem ser replicadas para locais primários e secundários usando o MetroCluster.
+
+
+.SnapLock Enterprise
+* A partir do ONTAP 9, os agregados SnapLock Enterprise são compatíveis.
+* A partir do ONTAP 9.3, os agregados SnapLock Enterprise com exclusão privilegiada são suportados.
+* As configurações de SnapLock específicas da SVM podem ser replicadas para ambos os locais usando o MetroCluster.
+
+
+.Configurações do MetroCluster e relógios de conformidade
+As configurações do MetroCluster usam dois mecanismos de relógio de conformidade, o Relógio de conformidade de volume (VCC) e o Relógio de conformidade do sistema (SCC). O VCC e o SCC estão disponíveis para todas as configurações do SnapLock. Quando você cria um novo volume em um nó, seu VCC é inicializado com o valor atual do SCC nesse nó. Depois que o volume é criado, o volume e o tempo de retenção do arquivo são sempre rastreados com o VCC.
+
+Quando um volume é replicado para outro local, seu VCC também é replicado. Quando ocorre uma mudança de volume, do local A ao local B, por exemplo, o VCC continua a ser atualizado no local B, enquanto o SCC no local A pára quando o local A fica offline.
+
+Quando o local A é colocado de volta online e o retorno de volume é executado, o relógio do local A SCC é reiniciado enquanto o VCC do volume continua a ser atualizado. Como o VCC é atualizado continuamente, independentemente das operações de comutação e switchback, os tempos de retenção de arquivos não dependem dos relógios SCC e não se esticam.
+
+
+
+== Suporte a verificação multi-admin (MAV)
+
+A partir do ONTAP 9.13,1, um administrador de cluster pode ativar explicitamente a verificação de vários administradores em um cluster para exigir aprovação de quorum antes de algumas operações do SnapLock serem executadas. Quando o MAV está ativado, as propriedades de volume do SnapLock, como tempo de retenção padrão, tempo de retenção mínimo, tempo de retenção máximo, modo de adição de volume, período de confirmação automática e exclusão privilegiada, exigirão aprovação de quorum. Saiba mais link:../multi-admin-verify/index.html#how-multi-admin-verification-works["MAV"]sobre o .
+
+
+
+== Eficiência de storage
+
+A partir do ONTAP 9.9,1, o SnapLock é compatível com recursos de eficiência de storage, como compactação de dados, deduplicação entre volumes e compressão adaptável para volumes e agregados SnapLock. Para obter mais informações sobre eficiência de storage, link:../concepts/storage-efficiency-overview.html["Visão geral da eficiência de storage da ONTAP"]consulte .
+
+
+
+== Criptografia
+
+A ONTAP oferece tecnologias de criptografia baseadas em software e hardware para garantir que os dados em repouso não possam ser lidos se o meio de storage for reutilizado, devolvido, extraviado ou roubado.
+
+*Isenção de responsabilidade:* a NetApp não pode garantir que arquivos WORM protegidos por SnapLock em unidades ou volumes de criptografia automática serão recuperáveis se a chave de autenticação for perdida ou se o número de tentativas de autenticação falhadas exceder o limite especificado e resultar em que a unidade seja permanentemente bloqueada. Você é responsável por garantir contra falhas de autenticação.
+
+[NOTE]
+====
+A partir do ONTAP 9.2, os volumes criptografados são compatíveis com agregados SnapLock.
+
+====
+
+
+== Transição de 7 modos
+
+Você pode migrar volumes SnapLock do modo 7 para o ONTAP usando o recurso transição baseada em cópia (CBT) da ferramenta de transição de modo 7D. O modo SnapLock do volume de destino, conformidade ou empresa deve corresponder ao modo SnapLock do volume de origem. Não é possível usar a transição livre de cópias (CFT) para migrar volumes do SnapLock.

@@ -1,0 +1,214 @@
+---
+sidebar: sidebar 
+permalink: networking/repair_port_reachability.html 
+keywords: port, reachability, repair, fix, error, switch, configuration, cable, cabling, wiring, wire, wired, re-cabled, layer 2, repair port reachability, network port reachability show -detail -node -port, repair reachability decision tree, unexpected ports, unreachable ports, lifs and repaired ports, vlans and repaired ports, interface groups and repaired ports 
+summary: Se uma porta for recabeada ou a configuração do switch mudar, uma porta pode precisar ser reparada em um domínio de broadcast diferente, novo ou existente 
+---
+= Acessibilidade da porta de reparo
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Domínios de broadcast são criados automaticamente. No entanto, se uma porta for recarregada ou a configuração do switch mudar, uma porta pode precisar ser reparada em um domínio de broadcast diferente (novo ou existente).
+
+O ONTAP pode detetar e recomendar automaticamente soluções para problemas de fiação de rede com base na acessibilidade da camada 2 de um componente de domínio de transmissão (portas ethernet).
+
+A fiação incorreta durante pode causar uma atribuição inesperada da porta do domínio de broadcast. A partir do ONTAP 9.10,1, o cluster verifica automaticamente problemas de fiação de rede verificando a acessibilidade da porta após a configuração do cluster ou quando um novo nó se junta a um cluster existente.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+Se for detetado um problema de acessibilidade da porta, o System Manager recomenda uma operação de reparo para resolver o problema.
+
+Depois de configurar o cluster, os problemas de fiação de rede são relatados no Dashboard.
+
+Depois de unir um novo nó a um cluster, os problemas de fiação de rede aparecem na página nós.
+
+Também pode ver o estado da cablagem da rede no diagrama da rede. Os problemas de acessibilidade da porta são indicados no diagrama de rede por um ícone de erro vermelho.
+
+.Configuração pós-cluster
+Depois de configurar o cluster, se o sistema detetar um problema de fiação de rede, uma mensagem será exibida no Dashboard.
+
+image:auto-detect-01.png["Mensagem de configuração pós-cluster"]
+
+.Passos
+. Corrija a fiação conforme sugerido na mensagem.
+. Clique no link para iniciar a caixa de diálogo Atualizar domínios de transmissão. A caixa de diálogo Atualizar domínios de transmissão é aberta. image:auto-detect-02.png["Caixa de diálogo Atualizar domínios de transmissão"]
+. Revise as informações sobre a porta, incluindo o nó, os problemas, o domínio de broadcast atual e o domínio de broadcast esperado.
+. Selecione as portas que deseja reparar e clique em *Fix*. O sistema moverá as portas do domínio de broadcast atual para o domínio de broadcast esperado.
+
+
+.Post node join
+Depois de unir um novo nó a um cluster, se o sistema detetar um problema de fiação de rede, uma mensagem será exibida na página nós.
+
+image:auto-detect-03.png["Post node join message"]
+
+.Passos
+. Corrija a fiação conforme sugerido na mensagem.
+. Clique no link para iniciar a caixa de diálogo Atualizar domínios de transmissão. A caixa de diálogo Atualizar domínios de transmissão é aberta. image:auto-detect-02.png["Caixa de diálogo Atualizar domínios de transmissão"]
+. Revise as informações sobre a porta, incluindo o nó, os problemas, o domínio de broadcast atual e o domínio de broadcast esperado.
+. Selecione as portas que deseja reparar e clique em *Fix*. O sistema moverá as portas do domínio de broadcast atual para o domínio de broadcast esperado.
+
+
+--
+.CLI
+--
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa.
+
+.Sobre esta tarefa
+Um comando está disponível para reparar automaticamente a configuração do domínio de broadcast para uma porta baseada na acessibilidade da camada 2 detetada pelo ONTAP.
+
+.Passos
+. Verifique a configuração e o cabeamento do switch.
+. Verifique a acessibilidade da porta:
++
+`network port reachability show -detail -node -port`
+
++
+O comando output contém resultados de acessibilidade.
+
+. Use a tabela e a árvore de decisão a seguir para entender os resultados de acessibilidade e determinar o que, se alguma coisa, fazer a seguir.
++
+image:ontap_nm_image1.png["Reparar árvore de decisão de acessibilidade"]
+
+
+
+[cols="20,80"]
+|===
+
+
+| Status de acessibilidade | Descrição 
+
+
+ a| 
+ok
+ a| 
+A porta tem acessibilidade da camada 2 ao domínio de broadcast atribuído. Se o status de acessibilidade for "ok", mas houver "portas inesperadas", considere mesclar um ou mais domínios de broadcast. Para obter mais informações, consulte a seguinte linha _portas inesperadas_.
+
+Se o status de acessibilidade for "ok", mas houver "portas inalcançáveis", considere dividir um ou mais domínios de broadcast. Para obter mais informações, consulte a seguinte linha _portas inalcançáveis_.
+
+Se o status de acessibilidade for "ok" e não houver portas inesperadas ou inacessíveis, sua configuração está correta.
+
+
+
+ a| 
+Portas inesperadas
+ a| 
+A porta tem acessibilidade da camada 2 ao domínio de broadcast atribuído; no entanto, também tem acessibilidade da camada 2 para pelo menos um outro domínio de broadcast.
+
+Examine a conetividade física e a configuração do switch para determinar se está incorreta ou se o domínio de broadcast atribuído à porta precisa ser mesclado com um ou mais domínios de broadcast.
+
+Para obter mais informações, link:merge_broadcast_domains.html["Mesclar domínios de broadcast"]consulte .
+
+
+
+ a| 
+Portas inalcançáveis
+ a| 
+Se um único domínio de broadcast tiver sido particionado em dois conjuntos de acessibilidade diferentes, você poderá dividir um domínio de broadcast para sincronizar a configuração do ONTAP com a topologia de rede física.
+
+Normalmente, a lista de portas inalcançáveis define o conjunto de portas que devem ser divididas em outro domínio de broadcast depois de ter verificado que a configuração física e do switch é precisa.
+
+Para obter mais informações, link:split_broadcast_domains.html["Dividir domínios de broadcast"]consulte .
+
+
+
+ a| 
+acessibilidade mal configurada
+ a| 
+A porta não tem acessibilidade da camada 2 ao domínio de broadcast atribuído; no entanto, a porta tem acessibilidade da camada 2 para um domínio de broadcast diferente.
+
+Você pode reparar a acessibilidade da porta. Ao executar o seguinte comando, o sistema atribuirá a porta ao domínio de broadcast ao qual tem acessibilidade:
+
+`network port reachability repair -node -port`
+
+
+
+ a| 
+sem acessibilidade
+ a| 
+A porta não tem acessibilidade da camada 2 para qualquer domínio de broadcast existente.
+
+Você pode reparar a acessibilidade da porta. Quando você executa o seguinte comando, o sistema atribuirá a porta a um novo domínio de broadcast criado automaticamente no IPspace padrão:
+
+`network port reachability repair -node -port`
+
+*Nota:* se todas as portas membros do grupo de interfaces (ifgrp) reportarem `no-reachability`, executar o `network port reachability repair` comando em cada porta membro faria com que cada uma fosse removida do ifgrp e colocada em um novo domínio de broadcast, eventualmente fazendo com que o próprio ifgrp fosse removido. Antes de executar o `network port reachability repair` comando, verifique se o domínio de broadcast acessível da porta é o que você espera com base na topologia física da rede.
+
+
+
+ a| 
+multidomínio-acessibilidade
+ a| 
+A porta tem acessibilidade da camada 2 ao domínio de broadcast atribuído; no entanto, também tem acessibilidade da camada 2 para pelo menos um outro domínio de broadcast.
+
+Examine a conetividade física e a configuração do switch para determinar se está incorreta ou se o domínio de broadcast atribuído à porta precisa ser mesclado com um ou mais domínios de broadcast.
+
+Para obter mais informações, link:merge_broadcast_domains.html["Mesclar domínios de broadcast"]consulte .
+
+
+
+ a| 
+desconhecido
+ a| 
+Se o status de acessibilidade for "desconhecido", aguarde alguns minutos e tente o comando novamente.
+
+|===
+Depois de reparar uma porta, verifique se há LIFs e VLANs deslocados. Se a porta fazia parte de um grupo de interfaces, você também precisa entender o que aconteceu com esse grupo de interfaces.
+
+.LIFs
+Quando uma porta é reparada e movida para um domínio de broadcast diferente, todos os LIFs que foram configurados na porta reparada receberão automaticamente uma nova porta inicial. Essa porta inicial é selecionada a partir do mesmo domínio de broadcast no mesmo nó, se possível. Alternativamente, uma porta inicial de outro nó é selecionada ou, se não existirem portas residenciais adequadas, a porta inicial será limpa.
+
+Se a porta inicial de um LIF for movida para outro nó ou for limpa, então o LIF é considerado como "deslocado". Você pode visualizar esses LIFs deslocados com o seguinte comando:
+
+`displaced-interface show`
+
+Se houver LIFs deslocados, você deve:
+
+* Restaure a casa do LIF deslocado:
++
+`displaced-interface restore`
+
+* Defina a casa do LIF manualmente:
++
+`network interface modify -home-port -home-node`
+
+* Remova a entrada da tabela "interface deslocada" se estiver satisfeito com a página inicial atualmente configurada do LIF:
++
+`displaced-interface delete`
+
+
+
+.VLANs
+Se a porta reparada tivesse VLANs, essas VLANs serão excluídas automaticamente, mas também serão registradas como tendo sido "deslocadas". Você pode exibir essas VLANs deslocadas:
+
+`displaced-vlans show`
+
+Se houver quaisquer VLANs deslocadas, você deve:
+
+* Restaure as VLANs para outra porta:
++
+`displaced-vlans restore`
+
+* Remova a entrada da tabela "Displaced-vlans":
++
+`displaced-vlans delete`
+
+
+
+.Grupos de interfaces
+Se a porta reparada fizer parte de um grupo de interfaces, ela será removida desse grupo de interfaces. Se fosse a única porta membro atribuída ao grupo de interfaces, o próprio grupo de interfaces será removido.
+
+--
+====
+.Tópicos relacionados
+link:verify_your_network_configuration.html["Verifique a configuração da rede após a atualização"]
+
+link:monitor_the_reachability_of_network_ports.html["Monitore a acessibilidade das portas de rede"]

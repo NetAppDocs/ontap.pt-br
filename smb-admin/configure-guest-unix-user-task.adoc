@@ -1,0 +1,70 @@
+---
+permalink: smb-admin/configure-guest-unix-user-task.html 
+sidebar: sidebar 
+keywords: configuring, configure, guest, unix, user, untrusted, domain, map, connect, cifs, server, configure the guest unix user 
+summary: 'Configurar a opção de usuário UNIX convidado significa que os usuários que fazem login de domínios não confiáveis são mapeados para o usuário UNIX convidado e podem se conetar ao servidor CIFS. Alternativamente, se você quiser que a autenticação de usuários de domínios não confiáveis falhe, você não deve configurar o usuário UNIX convidado. O padrão é não permitir que usuários de domínios não confiáveis se conetem ao servidor CIFS (a conta UNIX convidada não está configurada).' 
+---
+= Configure o usuário UNIX convidado
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Configurar a opção de usuário UNIX convidado significa que os usuários que fazem login de domínios não confiáveis são mapeados para o usuário UNIX convidado e podem se conetar ao servidor CIFS. Alternativamente, se você quiser que a autenticação de usuários de domínios não confiáveis falhe, você não deve configurar o usuário UNIX convidado. O padrão é não permitir que usuários de domínios não confiáveis se conetem ao servidor CIFS (a conta UNIX convidada não está configurada).
+
+.Sobre esta tarefa
+Você deve ter em mente o seguinte ao configurar a conta UNIX Guest:
+
+* Se o servidor CIFS não puder autenticar o usuário em um controlador de domínio para o domínio doméstico ou um domínio confiável ou o banco de dados local e essa opção estiver ativada, o servidor CIFS considera o usuário como um usuário convidado e mapeia o usuário para o usuário UNIX especificado.
+* Se essa opção for definida como uma cadeia de carateres nula, o usuário UNIX convidado será desativado.
+* Você deve criar um usuário UNIX para usar como usuário UNIX convidado em um dos bancos de dados do serviço de nomes de máquina virtual de armazenamento (SVM).
+* Um usuário conetado como um usuário convidado é automaticamente membro do grupo BUILTIN/convidados no servidor CIFS.
+* A opção 'homedirs-public' aplica-se apenas a utilizadores autenticados. Um usuário conetado como um usuário convidado não tem um diretório home e não pode acessar os diretórios home de outros usuários.
+
+
+.Passos
+. Execute uma das seguintes ações:
++
+|===
+| Se você quiser... | Digite... 
+
+
+ a| 
+Configure o usuário UNIX convidado
+ a| 
+`vserver cifs options modify -guest-unix-user _unix_name_`
+
+
+
+ a| 
+Desative o usuário UNIX convidado
+ a| 
+`vserver cifs options modify -guest-unix-user ""`
+
+|===
++
+`vserver cifs options modify -guest-unix-user pcuser`
+
+. Verifique se o usuário UNIX convidado está configurado corretamente: `vserver cifs options show -vserver _vserver_name_`
++
+No exemplo a seguir, tanto o usuário UNIX padrão quanto o usuário UNIX convidado no SVM VS1 são configurados para usar o usuário UNIX "'pcuser'":
+
++
+`vserver cifs options show -vserver vs1`
+
++
+[listing]
+----
+
+Vserver: vs1
+
+  Client Session Timeout : 900
+  Default Unix Group     : -
+  Default Unix User      : pcuser
+  Guest Unix User        : pcuser
+  Read Grants Exec       : disabled
+  Read Only Delete       : disabled
+  WINS Servers           : -
+----
+

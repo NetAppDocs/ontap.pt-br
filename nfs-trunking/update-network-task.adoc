@@ -1,0 +1,105 @@
+---
+permalink: nfs-trunking/update-network-task.html 
+sidebar: sidebar 
+keywords: NFS, servers, network, prepare, NFS trunking, LIF, trunking group, NIC 
+summary: Para aproveitar o entroncamento de NFS, você precisa ter vários LIFs residentes em duas ou mais NICs para cada conexão truncada. 
+---
+= Atualize sua rede para entroncamento
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O entroncamento NFSv4,1 exige que os LIFs em um grupo de entroncamento residam no mesmo nó e tenham portas iniciais no mesmo nó. Todas as LIFs devem ser configuradas em um grupo de failover no mesmo nó.
+
+.Sobre esta tarefa
+Um mapeamento individual de LIFs e NICs produz o maior ganho de desempenho, mas não é necessário para habilitar o entroncamento.
+
+Você pode ter vários grupos de failover, mas o grupo de failover para o entroncamento deve incluir apenas os LIFS no grupo de entroncamento.
+
+Você deve ajustar o grupo de failover do entroncamento sempre que adicionar ou remover conexões (e NICs subjacentes) de um grupo de failover.
+
+.Antes de começar
+* Você deve saber os nomes das portas associadas às placas de rede para criar um grupo de failover.
+* Todas as portas devem estar no mesmo nó.
+
+
+.Passos
+. Verifique os nomes e o status das portas de rede que você planeja usar:
++
+`network port show`
+
+. Crie um grupo de failover de entroncamento ou modifique um grupo existente para entroncamento:
++
+`network interface failover-groups create -vserver _svm_name_ -failover-group _failover_group_name_ -targets _ports_list_`
+
++
+`network interface failover-groups modify -vserver _svm_name_ -failover-group _failover_group_name_ -targets _ports_list_`
+
++
+
+NOTE: Não é um requisito ter um grupo de failover, mas é altamente recomendável.
+
++
+** `_svm_name_` É o nome do SVM que contém o servidor NFS.
+** `_ports_list_` é a lista de portas que serão adicionadas ao grupo failover.
++
+As portas são adicionadas no formato `_node_name:port_number_`, por exemplo `node1:e0c`, .
+
++
+O comando a seguir cria um grupo de failover `fg3` para o SVM VS1 e adiciona três portas:
+
++
+`network interface failover-groups create -vserver vs1 -failover-group fg3 -targets cluster1-01:e0c,cluster1-01:e0d,cluster1-01:e0e`
+
++
+Saiba mais sobre link:../networking/configure_failover_groups_and_policies_for_lifs_overview.html["grupos de failover."]
+
+
+
+. Crie LIFs adicionais para membros do grupo de entroncamento conforme necessário:
++
+`network interface create -vserver _svm_name_ -lif _lif_name_ -home-node _node_name_ -home-port _port_name_ -address _IP_address_ -netmask _IP_address_ [-service-policy _policy_] [-auto-revert {true|false}]`
+
++
+** `-home-node` - O nó para o qual o LIF retorna quando o comando de reversão de interface de rede é executado no LIF.
++
+Você pode especificar se o LIF deve reverter automaticamente para o nó inicial e porta inicial com a `-auto-revert` opção.
+
+** `-home-port` É a porta física ou lógica à qual o LIF retorna quando o comando de reversão da interface de rede é executado no LIF.
+** Pode especificar um endereço IP com `-address` as opções e. `-netmask`
+** Quando você atribui endereços IP manualmente (sem usar uma sub-rede), talvez seja necessário configurar uma rota padrão para um gateway se houver clientes ou controladores de domínio em uma sub-rede IP diferente. A página de manual de criação de rota de rede contém informações sobre a criação de uma rota estática em um SVM.
+** `-service-policy` - A política de serviços para o LIF. Se nenhuma política for especificada, uma política padrão será atribuída automaticamente. Use o `network interface service-policy show` comando para revisar as políticas de serviço disponíveis.
+** `-auto-revert` - Especificar se um LIF de dados é automaticamente revertido para o seu nó inicial em circunstâncias como inicialização, alterações no status do banco de dados de gerenciamento ou quando a conexão de rede é feita. *A configuração padrão é FALSE*, mas você pode configurá-la como verdadeira dependendo das políticas de gerenciamento de rede em seu ambiente.
++
+Repita esta etapa para cada LIF adicional necessário no grupo de entroncamento.
+
++
+O comando a seguir cria lif-A para o SVM VS1, na porta e0c do nó cluster1_01:
+
++
+`network interface create -vserver vs1 -lif lif-A -service-policy default-intercluster -home-node cluster1_01 -home-port e0c -address 192.0.2.0`
+
++
+Saiba mais sobre link:../networking/create_lifs.html["Criação de LIF."]
+
+
+
+. Verifique se os LIFs foram criados:
++
+`network interface show`
+
+. Verifique se o endereço IP configurado está acessível:
++
+[cols="25,75"]
+|===
+| Para verificar um... | Utilizar... 
+
+
+| Endereço IPv4 | `network ping` 
+
+
+| Endereço IPv6 | `network ping6` 
+|===
+

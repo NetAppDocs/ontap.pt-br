@@ -1,0 +1,46 @@
+---
+permalink: system-admin/install-ca-signed-server-certificate-cluster-task.html 
+sidebar: sidebar 
+keywords: install, ca, signed, server, certificate, cluster, ssl, svm, sotrage, virtual, machine, administrator 
+summary: 'Para permitir que um servidor SSL autentique o cluster ou a máquina virtual de armazenamento (SVM) como um cliente SSL, instale um certificado digital com o tipo de cliente no cluster ou SVM. Em seguida, você fornece o certificado cliente-CA ao administrador do servidor SSL para instalação no servidor.' 
+---
+= Instale um certificado de servidor assinado pela CA para o cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para permitir que um servidor SSL autentique o cluster ou a máquina virtual de armazenamento (SVM) como um cliente SSL, instale um certificado digital com o tipo de cliente no cluster ou SVM. Em seguida, você fornece o certificado cliente-CA ao administrador do servidor SSL para instalação no servidor.
+
+.O que você vai precisar
+Você já deve ter instalado o certificado raiz do servidor SSL no cluster ou SVM com o `server-ca` tipo de certificado.
+
+.Passos
+. Para usar um certificado digital autoassinado para autenticação de cliente, use o `security certificate create` comando com o `type client` parâmetro.
+. Para usar um certificado digital assinado pela CA para autenticação de cliente, execute as seguintes etapas:
++
+.. Gere uma solicitação de assinatura de certificado digital (CSR) usando o comando de certificado de segurança `generate-csr`.
++
+O ONTAP exibe a saída CSR, que inclui uma solicitação de certificado e uma chave privada, e lembra que você deve copiar a saída para um arquivo para referência futura.
+
+.. Envie a solicitação de certificado da saída CSR em um formulário eletrônico (como e-mail) para uma CA confiável para assinatura.
++
+Você deve manter uma cópia da chave privada e do certificado assinado pela CA para referência futura.
+
++
+Após processar sua solicitação, a CA envia o certificado digital assinado.
+
+.. Instale o certificado assinado pela CA usando o `security certificate install` comando com o `-type client` parâmetro.
+.. Digite o certificado e a chave privada quando você for solicitado e pressione *Enter*.
+.. Insira quaisquer certificados raiz ou intermediários adicionais quando for solicitado e pressione *Enter*.
++
+Você instala um certificado intermediário no cluster ou SVM se uma cadeia de certificados que começa na CA raiz confiável e termina com o certificado SSL emitido para você estiver faltando os certificados intermediários. Um certificado intermediário é um certificado subordinado emitido pela raiz confiável especificamente para emitir certificados de servidor de entidade final. O resultado é uma cadeia de certificados que começa na CA raiz confiável, passa pelo certificado intermediário e termina com o certificado SSL emitido para você.
+
+
+
+. Forneça o `client-ca` certificado do cluster ou SVM ao administrador do servidor SSL para instalação no servidor.
++
+O comando show do certificado de segurança com os `-instance` parâmetros e `-type client-ca` exibe as `client-ca` informações do certificado.
+
+

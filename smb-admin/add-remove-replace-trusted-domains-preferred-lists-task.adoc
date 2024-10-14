@@ -1,0 +1,76 @@
+---
+permalink: smb-admin/add-remove-replace-trusted-domains-preferred-lists-task.html 
+sidebar: sidebar 
+keywords: add, remove, trust, domain, prefer, cifs, server, modify, list, configure, bidirectional, multidomain, name, mapping, search, add remove or replace trusted domains in preferred trusted domain list, replace 
+summary: Pode adicionar ou remover domínios fidedignos da lista de domínios fidedignos preferidos para o servidor CIFS ou pode modificar a lista atual. Se você configurar uma lista de domínio confiável preferencial, essa lista será usada em vez dos domínios confiáveis bidirecionais descobertos ao executar pesquisas de mapeamento de nomes de vários domínios. 
+---
+= Adicione, remova ou substitua domínios confiáveis em listas de domínios confiáveis preferenciais
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Pode adicionar ou remover domínios fidedignos da lista de domínios fidedignos preferidos para o servidor SMB ou pode modificar a lista atual. Se você configurar uma lista de domínio confiável preferencial, essa lista será usada em vez dos domínios confiáveis bidirecionais descobertos ao executar pesquisas de mapeamento de nomes de vários domínios.
+
+.Sobre esta tarefa
+* Se você estiver adicionando domínios confiáveis a uma lista existente, a nova lista será mesclada com a lista existente com as novas entradas colocadas no final Os domínios confiáveis são pesquisados na ordem em que aparecem na lista de domínios confiáveis.
+* Se você estiver removendo domínios confiáveis da lista existente e não especificar uma lista, toda a lista de domínio confiável para a máquina virtual de armazenamento especificada (SVM) será removida.
+* Se você modificar a lista existente de domínios confiáveis, a nova lista substituirá a lista existente.
+
+
+[NOTE]
+====
+Você deve inserir apenas domínios bidirecionalmente confiáveis na lista de domínios confiáveis preferidos. Mesmo que você possa inserir domínios confiáveis de saída ou entrada na lista de domínios preferidos, eles não são usados ao realizar pesquisas de mapeamento de nomes de vários domínios. O ONTAP pula a entrada do domínio unidirecional e passa para o próximo domínio confiável bidirecional na lista.
+
+====
+.Passo
+. Execute uma das seguintes ações:
++
+|===
+| Se você quiser fazer o seguinte com a lista de domínios confiáveis preferenciais... | Use o comando... 
+
+
+ a| 
+Adicione domínios confiáveis à lista
+ a| 
+`+vserver cifs domain name-mapping-search add -vserver _vserver_name_ -trusted-domains FQDN, ...+`
+
+
+
+ a| 
+Remova domínios confiáveis da lista
+ a| 
+`+vserver cifs domain name-mapping-search remove -vserver _vserver_name_ [-trusted-domains FQDN, ...]+`
+
+
+
+ a| 
+Modifique a lista existente
+ a| 
+`+vserver cifs domain name-mapping-search modify -vserver _vserver_name_ -trusted-domains FQDN, ...+`
+
+|===
+
+
+.Exemplos
+O comando a seguir adiciona dois domínios confiáveis (cifs1.example.com e cifs2.example.com) à lista de domínios confiáveis preferida usada pelo SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs domain name-mapping-search add -vserver vs1 -trusted-domains cifs1.example.com, cifs2.example.com
+----
+O comando a seguir remove dois domínios confiáveis da lista usada pelo SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs domain name-mapping-search remove -vserver vs1 -trusted-domains cifs1.example.com, cifs2.example.com
+----
+O comando a seguir modifica a lista de domínio confiável usada pelo SVM VS1. A nova lista substitui a lista original:
+
+[listing]
+----
+cluster1::> vserver cifs domain name-mapping-search modify -vserver vs1 -trusted-domains cifs3.example.com
+----
+.Informações relacionadas
+xref:display-preferred-trusted-domain-list-task.adoc[Exibindo informações sobre a lista de domínio confiável preferencial]

@@ -1,0 +1,61 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/site-b-mediator-troubleshoot-task.html 
+keywords: SM-BC, SMBC, troubleshooting, link down, Mediator, snapmirror active sync 
+summary: A conetividade do mediador do local B é apresentada como inalcançável. 
+---
+= Link entre o Site B e o Mediator Down e o Site A Down
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para verificar a conexão do Mediador ONTAP, use o `snapmirror mediator show` comando. Se o status da conexão for inalcançável e o local B não conseguir alcançar o local A, você terá uma saída semelhante à abaixo. Siga as etapas da solução para restaurar a conexão
+
+....
+cluster::*> snapmirror mediator show
+Mediator Address Peer Cluster     Connection Status Quorum Status
+---------------- ---------------- ----------------- -------------
+10.237.86.17     C1_cluster       unreachable       true
+SnapMirror consistency group relationship status is out of sync.
+
+C2_cluster::*> snapmirror show -expand
+Source            Destination Mirror  Relationship   Total             Last
+Path        Type  Path        State   Status         Progress  Healthy Updated
+----------- ---- ------------ ------- -------------- --------- ------- --------
+vs0:/cg/src_cg_1 XDP vs1:/cg/dst_cg_1 Snapmirrored OutOfSync - false   -
+vs0:zrto_cg_655724_188a_RW1 XDP vs1:zrto_cg_655755_188c_DP1 Snapmirrored OutOfSync - false -
+vs0:zrto_cg_655733_188a_RW2 XDP vs1:zrto_cg_655762_188c_DP2 Snapmirrored OutOfSync - false -
+vs0:zrto_cg_655739_188b_RW1 XDP vs1:zrto_cg_655768_188d_DP1 Snapmirrored OutOfSync - false -
+vs0:zrto_cg_655748_188b_RW2 XDP vs1:zrto_cg_655776_188d_DP2 Snapmirrored OutOfSync - false -
+5 entries were displayed.
+
+Site B cluster is unable to reach Site A.
+C2_cluster::*> cluster peer show
+Peer Cluster Name         Cluster Serial Number Availability   Authentication
+------------------------- --------------------- -------------- --------------
+C1_cluster 			  1-80-000011           Unavailable    ok
+....
+.Solução
+Forçar um failover para habilitar a e/S do local B e, em seguida, estabelecer uma relação rto zero do local B para o local A. conclua as etapas a seguir para executar um failover forçado no local B.
+
+. Desmapear todos os LUNs pertencentes ao grupo de consistência do Site B..
+. Exclua a relação do grupo de consistência do SnapMirror usando a opção forçar.
+. Digite o comando SnapMirror Break (`snapmirror break -destination_path _svm_:_volume_`) nos volumes constituintes do grupo de consistência para converter volumes de DP para RW, para ativar e/S do local B.
++
+Você deve emitir o comando SnapMirror Break para cada relacionamento no grupo consistência. Por exemplo, se houver três volumes no grupo consistência, você emitirá o comando para cada volume.
+
+. Inicialize os nós do local A para criar uma relação rto zero do local B para o local A..
+. Libere o grupo de consistência com somente informações de relacionamento no Site A para reter a cópia Snapshot comum e desmapear os LUNs pertencentes ao grupo de consistência.
+. Converta volumes no local A de RW para DP configurando uma relação de nível de volume usando a política de sincronização ou a política de sincronização.
+. Emita o `snapmirror resync` comando para sincronizar as relações.
+. Excluir as relações SnapMirror com a política de sincronização no local A..
+. Libere as relações do SnapMirror com a política de sincronização usando somente relacionamento verdadeiro no local B..
+. Crie uma relação de grupo de consistência entre o local B e o local A..
+. No cluster de origem, ressincronize o grupo de consistência. Verifique se o estado do grupo de consistência está em sincronia.
+. Reescaneie os caminhos de e/S LUN do host para restaurar todos os caminhos para os LUNs.
+

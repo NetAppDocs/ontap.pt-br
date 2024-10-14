@@ -1,0 +1,42 @@
+---
+permalink: volumes/run-efficiency-operations-manual-existing-data-task.html 
+sidebar: sidebar 
+keywords: run, efficiency, operations, manually, existing, data 
+summary: Execute operações de eficiência manualmente nos dados que existem em volumes de eficiência de storage sensíveis à temperatura antes de ativar a deduplicação, compressão de dados ou compactação de dados. 
+---
+= Execute uma operação de eficiência manualmente nos dados existentes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É possível executar as operações de eficiência manualmente nos dados que existem em volumes de eficiência de storage sensíveis a temperatura antes de permitir a deduplicação, compressão de dados ou compactação de dados. Você pode executar essas operações com versões do ONTAP anteriores ao ONTAP 9.8.
+
+.Sobre esta tarefa
+Esta operação é efetuada através do `volume efficiency start` comando com o `-scan-old-data` parâmetro. A `-compression` opção não funciona com `-scan-old-data` volumes de eficiência de storage sensíveis à temperatura. A compactação de dados inativos é executada automaticamente em dados pré-existentes para volumes de eficiência de storage sensíveis à temperatura no ONTAP 9.8 e versões posteriores.
+
+Se você ativar apenas a deduplicação em um volume, a deduplicação será executada nos dados. Se você habilitar a deduplicação, a compressão e a compactação de dados em um volume, a compressão de dados será executada primeiro, seguida de deduplicação e compactação de dados.
+
+Quando você executa compactação de dados em dados existentes, por padrão, a operação de compactação de dados ignora os blocos de dados compartilhados por deduplicação e os blocos de dados bloqueados por cópias Snapshot. Se você optar por executar a compactação de dados em blocos compartilhados, a otimização será desativada e as informações de impressão digital serão capturadas e usadas para compartilhamento novamente. Você pode alterar o comportamento padrão da compactação de dados ao compactar dados existentes.
+
+É possível executar um máximo de oito operações de deduplicação, compressão de dados ou compactação de dados simultaneamente por nó. As operações restantes são enfileiradas.
+
+[NOTE]
+====
+A compactação pós-processo não é executada em plataformas AFF. É gerada uma mensagem EMS para informá-lo de que esta operação foi ignorada.
+
+====
+.Passos
+. Use o `volume efficiency start -scan-old-data` comando para executar manualmente a deduplicação, a compressão de dados ou a compactação de dados nos dados existentes.
++
+O comando a seguir permite executar essas operações manualmente nos dados existentes no volume VolA:
+
++
+`volume efficiency start -vserver vs1 -volume VolA -scan-old-data true [-compression | -dedupe | -compaction ] true`
+
+
+
+.Informações relacionadas
+* link:run-efficiency-operations-manual-task.html["Execute operações de eficiência manualmente"]
+

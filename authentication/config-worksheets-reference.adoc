@@ -1,0 +1,835 @@
+---
+permalink: authentication/config-worksheets-reference.html 
+sidebar: sidebar 
+keywords: worksheets, administrator authentication, rbac configuration 
+summary: 'Antes de criar contas de login e configurar o controle de acesso baseado em funções (RBAC), você deve coletar informações para cada item nas planilhas de configuração.' 
+---
+= Planilhas para autenticação de administrador e configuração RBAC
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de criar contas de login e configurar o controle de acesso baseado em funções (RBAC), você deve coletar informações para cada item nas planilhas de configuração.
+
+
+
+== Criar ou modificar contas de login
+
+Você fornece esses valores com o `security login create` comando ao habilitar contas de login para acessar uma VM de armazenamento. Você fornece os mesmos valores com o `security login modify` comando quando modifica como uma conta acessa uma VM de armazenamento.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+O nome da VM de armazenamento que a conta acessa. O valor padrão é o nome da VM de armazenamento de administrador para o cluster.
+ a| 
+
+
+
+ a| 
+`-user-or-group-name`
+ a| 
+O nome de usuário ou nome de grupo da conta. Especificar um nome de grupo permite o acesso a cada usuário no grupo. Você pode associar um nome de usuário ou nome de grupo a vários aplicativos.
+ a| 
+
+
+
+ a| 
+`-application`
+ a| 
+O aplicativo usado para acessar a VM de storage:
+
+* `http`
+* `ontapi`
+* `snmp`
+* `ssh`
+
+ a| 
+
+
+
+ a| 
+`-authmethod`
+ a| 
+O método utilizado para autenticar a conta:
+
+* `cert` Para autenticação de certificado SSL
+* `domain` Para autenticação do ative Directory
+* `nsswitch` Para autenticação LDAP ou NIS
+* `password` para autenticação de senha do usuário
+* `publickey` para autenticação de chave pública
+* `community` Para strings de comunidade SNMP
+* `usm` Para o modelo de segurança do utilizador SNMP
+* `saml` Para autenticação SAML (Security Assertion Markup Language)
+
+ a| 
+
+
+
+ a| 
+`-remote-switch-ipaddress`
+ a| 
+O endereço IP do interrutor remoto. O switch remoto pode ser um switch de cluster monitorado pelo monitor de integridade do switch de cluster (CSHM) ou um switch Fibre Channel (FC) monitorado pelo monitor de integridade do MetroCluster (MCC-HM). Esta opção é aplicável apenas quando a aplicação é `snmp` e o método de autenticação é `usm`.
+ a| 
+
+
+
+ a| 
+`-role`
+ a| 
+A função de controle de acesso atribuída à conta:
+
+* Para o cluster (a VM de armazenamento de administrador), o valor padrão é `admin`.
+* Para uma VM de armazenamento de dados, o valor padrão é `vsadmin`.
+
+ a| 
+
+
+
+ a| 
+`-comment`
+ a| 
+(Opcional) texto descritivo para a conta. Você deve incluir o texto entre aspas duplas (").
+ a| 
+
+
+
+ a| 
+`-is-ns-switch-group`
+ a| 
+Se a conta é uma conta de grupo LDAP ou uma conta de grupo NIS (`yes`ou `no`).
+ a| 
+
+
+
+ a| 
+`-second-authentication-method`
+ a| 
+Segundo método de autenticação no caso de autenticação multifator:
+
+* `none` se não estiver usando autenticação multifator, o valor padrão
+* `publickey` para autenticação de chave pública quando o `authmethod` é senha ou nsswitch
+* `password` para autenticação de senha do usuário quando a `authmethod` é chave pública
+* `nsswitch` para autenticação de senha do usuário quando o authmethod é publikey
+
+
+A ordem de autenticação é sempre a chave pública seguida pela senha.
+ a| 
+
+
+
+ a| 
+`-is-ldap-fastbind`
+ a| 
+A partir do ONTAP 9.11,1, quando definido como verdadeiro, ativa a vinculação rápida LDAP para autenticação nsswitch; o padrão é falso. Para utilizar a ligação rápida LDAP, o `-authentication-method` valor tem de ser definido como `nsswitch`. link:../nfs-admin/ldap-fast-bind-nsswitch-authentication-task.html["Saiba mais sobre LDAP fastbind para autenticação nsswitch."]
+ a| 
+
+|===
+
+
+== Configure as informações de segurança do Cisco Duo
+
+Você fornece esses valores com o `security login duo create` comando quando ativa a autenticação de dois fatores do Cisco Duo com logins SSH para uma VM de armazenamento.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+A VM de armazenamento (referida como vserver na CLI do ONTAP) à qual as configurações de autenticação Duo se aplicam.
+ a| 
+
+
+
+ a| 
+`-integration-key`
+ a| 
+Sua chave de integração, obtida ao Registrar seu aplicativo SSH com Duo.
+ a| 
+
+
+
+ a| 
+`-secret-key`
+ a| 
+Sua chave secreta, obtida ao Registrar seu aplicativo SSH com Duo.
+ a| 
+
+
+
+ a| 
+`-api-host`
+ a| 
+O nome de host da API, obtido ao Registrar seu aplicativo SSH com Duo. Por exemplo:
+
+[listing]
+----
+api-<HOSTNAME>.duosecurity.com
+---- a| 
+
+
+
+ a| 
+`-fail-mode`
+ a| 
+Em erros de serviço ou configuração que impedem a autenticação Duo, `safe` falha (permitir acesso) ou `secure` (negar acesso). O padrão é `safe`, o que significa que a autenticação Duo é ignorada se falhar devido a erros como o servidor de API Duo ficar inacessível.
+ a| 
+
+
+
+ a| 
+`-http-proxy`
+ a| 
+Use o proxy HTTP especificado. Se o proxy HTTP exigir autenticação, inclua as credenciais no URL do proxy. Por exemplo:
+
+[listing]
+----
+http-proxy=http://username:password@proxy.example.org:8080
+---- a| 
+
+
+
+ a| 
+`-autopush`
+ a| 
+ `true` `false`Ou . A predefinição é `false`. Se `true`o , o Duo enviar automaticamente uma solicitação de login por push para o telefone do usuário, revertendo para uma chamada telefônica se o push não estiver disponível. Observe que isso desabilita efetivamente a autenticação por senha. Se `false`, o usuário for solicitado a escolher um método de autenticação.
+
+Quando configurado com `autopush = true`, recomendamos a configuração `max-prompts = 1`.
+ a| 
+
+
+
+ a| 
+`-max-prompts`
+ a| 
+Se um usuário não conseguir autenticar com um segundo fator, o Duo solicitará que ele se autentique novamente. Esta opção define o número máximo de prompts que o Duo exibe antes de negar acesso. Deve ser `1`, `2`, `3` ou . O valor padrão é `1`.
+
+Por exemplo, quando `max-prompts = 1`o , o usuário precisa se autenticar com êxito no primeiro prompt, enquanto se , se `max-prompts = 2` o usuário inserir informações incorretas no prompt inicial, ele será solicitado a autenticar novamente.
+
+Quando configurado com `autopush = true`, recomendamos a configuração `max-prompts = 1`.
+
+Para obter a melhor experiência, um usuário com apenas autenticação publickey sempre terá `max-prompts` definido como `1`.
+ a| 
+
+
+
+ a| 
+`-enabled`
+ a| 
+Ative a autenticação de dois fatores Duo. Defina como `true` por padrão. Quando ativada, a autenticação de dois fatores Duo é aplicada durante o login SSH de acordo com os parâmetros configurados. Quando Duo está desativado (definido para `false`), a autenticação Duo é ignorada.
+ a| 
+
+
+
+ a| 
+`-pushinfo`
+ a| 
+Esta opção fornece informações adicionais na notificação push, como o nome do aplicativo ou serviço que está sendo acessado. Isso ajuda os usuários a verificar se estão fazendo login no serviço correto e fornece uma camada adicional de segurança.
+ a| 
+
+|===
+
+
+== Definir funções personalizadas
+
+Você fornece esses valores com o `security login role create` comando quando define uma função personalizada.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+(Opcional) o nome da VM de armazenamento (referida como vserver na CLI do ONTAP) que está associado à função.
+ a| 
+
+
+
+ a| 
+`-role`
+ a| 
+O nome da função.
+ a| 
+
+
+
+ a| 
+`-cmddirname`
+ a| 
+O diretório de comando ou comando ao qual a função dá acesso. Você deve incluir nomes de subdiretório de comando em aspas duplas ("). Por exemplo, `"volume snapshot"`. Você deve digitar `DEFAULT` para especificar todos os diretórios de comando.
+ a| 
+
+
+
+ a| 
+`-access`
+ a| 
+(Opcional) o nível de acesso para a função. Para diretórios de comando:
+
+* `none` (o valor padrão para funções personalizadas) nega o acesso aos comandos no diretório de comandos
+* `readonly` concede acesso aos `show` comandos no diretório de comandos e seus subdiretórios
+* `all` concede acesso a todos os comandos no diretório de comandos e seus subdiretórios
+
+
+Para _comandos não intrínsecos_ (comandos que não terminam em `create`, `modify`, , `delete` ou `show`):
+
+* `none` (o valor padrão para funções personalizadas) nega o acesso ao comando
+* `readonly` não é aplicável
+* `all` concede acesso ao comando
+
+
+Para conceder ou negar acesso a comandos intrínsecos, você deve especificar o diretório de comandos.
+ a| 
+
+
+
+ a| 
+`-query`
+ a| 
+(Opcional) o objeto de consulta que é usado para filtrar o nível de acesso, que é especificado na forma de uma opção válida para o comando ou para um comando no diretório de comandos. Você deve incluir o objeto de consulta em aspas duplas ("). Por exemplo, se o diretório de comando for `volume`, o objeto query `"-aggr aggr0"` ativará o acesso somente para `aggr0` o agregado.
+ a| 
+
+|===
+
+
+== Associar uma chave pública a uma conta de utilizador
+
+Você fornece esses valores com o `security login publickey create` comando ao associar uma chave pública SSH a uma conta de usuário.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+(Opcional) o nome da VM de armazenamento que a conta acessa.
+ a| 
+
+
+
+ a| 
+`-username`
+ a| 
+O nome de utilizador da conta. O valor padrão, `admin`, que é o nome padrão do administrador do cluster.
+ a| 
+
+
+
+ a| 
+`-index`
+ a| 
+O número de índice da chave pública. O valor padrão é 0 se a chave for a primeira chave criada para a conta; caso contrário, o valor padrão é mais um do que o número de índice mais alto existente para a conta.
+ a| 
+
+
+
+ a| 
+`-publickey`
+ a| 
+A chave pública OpenSSH. Você deve incluir a chave entre aspas duplas (").
+ a| 
+
+
+
+ a| 
+`-role`
+ a| 
+A função de controle de acesso atribuída à conta.
+ a| 
+
+
+
+ a| 
+`-comment`
+ a| 
+(Opcional) texto descritivo para a chave pública. Você deve incluir o texto entre aspas duplas (").
+ a| 
+
+
+
+ a| 
+`-x509-certificate`
+ a| 
+(Opcional) começando com ONTAP 9.13,1, permite gerenciar a associação de certificados X,509 com a chave pública SSH.
+
+Quando você associa um certificado X,509 à chave pública SSH, o ONTAP verifica o login SSH para ver se esse certificado é válido. Se tiver expirado ou tiver sido revogado, o início de sessão é proibido e a chave pública SSH associada está desativada. Valores possíveis:
+
+* `install`: Instale o certificado X,509 codificado PEM especificado e associe-o à chave pública SSH. Inclua o texto completo do certificado que deseja instalar.
+* `modify`: Atualize o certificado X,509 codificado PEM existente com o certificado especificado e associe-o à chave pública SSH. Inclua o texto completo do novo certificado.
+* `delete`: Remova a associação de certificado X,509 existente com a chave pública SSH.
+
+ a| 
+
+|===
+
+
+== Configure as definições globais de autorização dinâmica
+
+Começando com ONTAP 9.15,1, você fornece esses valores com o `security dynamic-authorization modify` comando. Para obter mais informações sobre a configuração de autorização dinâmica, link:dynamic-authorization-overview.html["descrição geral da autorização dinâmica"]consulte .
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+O nome da VM de armazenamento para a qual a configuração de pontuação de confiança deve ser modificada. Se você omitir esse parâmetro, a configuração de nível do cluster será usada.
+ a| 
+
+
+
+ a| 
+`-state`
+ a| 
+O modo de autorização dinâmica. Valores possíveis:
+
+* `disabled`: (Predefinição) a autorização dinâmica está desativada.
+* `visibility`: Este modo é útil para testar a autorização dinâmica. Neste modo, a pontuação de confiança é verificada em todas as atividades restritas, mas não aplicada. No entanto, qualquer atividade que tenha sido negada ou sujeita a desafios de autenticação adicionais é registrada.
+* `enforced`: Destinado a ser utilizado depois de ter concluído o teste com `visibility` o modo. Neste modo, a pontuação de confiança é verificada em todas as atividades restritas e as restrições de atividade são aplicadas se as condições de restrição forem cumpridas. O intervalo de supressão também é aplicado, impedindo desafios de autenticação adicionais dentro do intervalo especificado.
+
+ a| 
+
+
+
+ a| 
+`-suppression-interval`
+ a| 
+Impede desafios de autenticação adicionais dentro do intervalo especificado. O intervalo está no formato ISO-8601 e aceita valores de 1 minuto a 1 hora inclusive. Se definido como 0, o intervalo de supressão será desativado e o usuário sempre será solicitado a um desafio de autenticação, se for necessário.
+ a| 
+
+
+
+ a| 
+`-lower-challenge-boundary`
+ a| 
+O limite inferior da porcentagem de desafio de autenticação multifator (MFA). O intervalo válido é de 0 a 99. O valor 100 é inválido, pois isso faz com que todas as solicitações sejam negadas. O valor padrão é 0.
+ a| 
+
+
+
+ a| 
+`-upper-challenge-boundary`
+ a| 
+O limite superior da porcentagem de desafio do MFA. O intervalo válido é de 0 a 100. Isto deve ser igual ou superior ao valor do limite inferior. Um valor de 100 significa que cada solicitação será negada ou sujeita a um desafio de autenticação adicional; não há solicitações que sejam permitidas sem um desafio. O valor padrão é 90.
+ a| 
+
+|===
+
+
+== Instale um certificado digital de servidor assinado pela CA
+
+Você fornece esses valores com o `security certificate generate-csr` comando ao gerar uma solicitação de assinatura de certificado digital (CSR) para uso na autenticação de uma VM de armazenamento como um servidor SSL.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-common-name`
+ a| 
+O nome do certificado, que é um nome de domínio totalmente qualificado (FQDN) ou um nome comum personalizado.
+ a| 
+
+
+
+ a| 
+`-size`
+ a| 
+O número de bits na chave privada. Quanto maior o valor, mais segura a chave. O valor padrão é `2048`. Os valores possíveis são `512`, `1024`, `1536` `2048` e .
+ a| 
+
+
+
+ a| 
+`-country`
+ a| 
+O país da VM de armazenamento, em um código de duas letras. O valor padrão é `US`. Consulte as páginas de manual para obter uma lista de códigos.
+ a| 
+
+
+
+ a| 
+`-state`
+ a| 
+O estado ou a província da VM de armazenamento.
+ a| 
+
+
+
+ a| 
+`-locality`
+ a| 
+A localidade da VM de armazenamento.
+ a| 
+
+
+
+ a| 
+`-organization`
+ a| 
+A organização da VM de storage.
+ a| 
+
+
+
+ a| 
+`-unit`
+ a| 
+A unidade na organização da VM de armazenamento.
+ a| 
+
+
+
+ a| 
+`-email-addr`
+ a| 
+O endereço de e-mail do administrador do Contato para a VM de armazenamento.
+ a| 
+
+
+
+ a| 
+`-hash-function`
+ a| 
+A função de hash criptográfico para assinar o certificado. O valor padrão é `SHA256`. Os valores possíveis são `SHA1`, `SHA256`, e `MD5`.
+ a| 
+
+|===
+Você fornece esses valores com o `security certificate install` comando ao instalar um certificado digital assinado pela CA para uso na autenticação do cluster ou da VM de armazenamento como um servidor SSL. Apenas as opções relevantes para a configuração da conta são mostradas na tabela a seguir.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+O nome da VM de armazenamento na qual o certificado deve ser instalado.
+ a| 
+
+
+
+ a| 
+`-type`
+ a| 
+O tipo de certificado:
+
+* `server` para certificados de servidor e certificados intermediários
+* `client-ca` Para o certificado de chave pública da CA raiz do cliente SSL
+* `server-ca` Para o certificado de chave pública da CA raiz do servidor SSL do qual o ONTAP é um cliente
+* `client` Para um certificado digital autoassinado ou CA-assinado e chave privada para o ONTAP como cliente SSL
+
+ a| 
+
+|===
+
+
+== Configurar o acesso do controlador de domínio do ative Directory
+
+Você fornece esses valores com o `security login domain-tunnel create` comando quando já configurou um servidor SMB para uma VM de armazenamento de dados e deseja configurar a VM de armazenamento como gateway ou _tunnel_ para acesso ao controlador de domínio do ative Directory ao cluster.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+O nome da VM de armazenamento para a qual o servidor SMB foi configurado.
+ a| 
+
+|===
+Você fornece esses valores com o `vserver active-directory create` comando quando não configurou um servidor SMB e deseja criar uma conta de computador VM de armazenamento no domínio do ative Directory.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+O nome da VM de armazenamento para a qual você deseja criar uma conta de computador do ative Directory.
+ a| 
+
+
+
+ a| 
+`-account-name`
+ a| 
+O nome NetBIOS da conta do computador.
+ a| 
+
+
+
+ a| 
+`-domain`
+ a| 
+O nome de domínio totalmente qualificado (FQDN).
+ a| 
+
+
+
+ a| 
+`-ou`
+ a| 
+A unidade organizacional no domínio. O valor padrão é `CN=Computers`. O ONTAP anexa esse valor ao nome de domínio para produzir o nome distinto do ative Directory.
+ a| 
+
+|===
+
+
+== Configurar o acesso ao servidor LDAP ou NIS
+
+Você fornece esses valores com o `vserver services name-service ldap client create` comando ao criar uma configuração de cliente LDAP para a VM de armazenamento.
+
+Apenas as opções relevantes para a configuração da conta são mostradas na tabela a seguir:
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+O nome da VM de armazenamento para a configuração do cliente.
+ a| 
+
+
+
+ a| 
+`-client-config`
+ a| 
+O nome da configuração do cliente.
+ a| 
+
+
+
+ a| 
+`-ldap-servers`
+ a| 
+Uma lista separada por vírgulas de endereços IP e nomes de host para os servidores LDAP aos quais o cliente se coneta.
+ a| 
+
+
+
+ a| 
+`-schema`
+ a| 
+O esquema que o cliente usa para fazer consultas LDAP.
+ a| 
+
+
+
+ a| 
+`-use-start-tls`
+ a| 
+Se o cliente usa Iniciar TLS para criptografar a comunicação com o servidor LDAP (`true`ou `false`).
+
+[NOTE]
+====
+Iniciar TLS é compatível apenas para acesso a VMs de armazenamento de dados. Ele não é compatível com acesso a VMs de storage admin.
+
+==== a| 
+
+|===
+Você fornece esses valores com o `vserver services name-service ldap create` comando ao associar uma configuração de cliente LDAP à VM de armazenamento.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+O nome da VM de armazenamento com a qual a configuração do cliente deve ser associada.
+ a| 
+
+
+
+ a| 
+`-client-config`
+ a| 
+O nome da configuração do cliente.
+ a| 
+
+
+
+ a| 
+`-client-enabled`
+ a| 
+Se a VM de armazenamento pode usar a configuração do cliente LDAP (`true`ou `false`).
+ a| 
+
+|===
+Você fornece esses valores com o `vserver services name-service nis-domain create` comando ao criar uma configuração de domínio NIS em uma VM de armazenamento.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+O nome da VM de armazenamento na qual a configuração do domínio deve ser criada.
+ a| 
+
+
+
+ a| 
+`-domain`
+ a| 
+O nome do domínio.
+ a| 
+
+
+
+ a| 
+`-servers`
+ a| 
+*ONTAP 9.0, 9,1*: Uma lista separada por vírgulas de endereços IP para os servidores NIS usados pela configuração do domínio.
+ a| 
+
+
+
+ a| 
+`-nis-servers`
+ a| 
+Uma lista separada por vírgulas de endereços IP e nomes de host para os servidores NIS que são usados pela configuração de domínio.
+ a| 
+
+|===
+Você fornece esses valores com o `vserver services name-service ns-switch create` comando quando especifica a ordem de pesquisa para fontes de serviço de nome.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-vserver`
+ a| 
+O nome da VM de armazenamento na qual a ordem de consulta do serviço de nomes deve ser configurada.
+ a| 
+
+
+
+ a| 
+`-database`
+ a| 
+O banco de dados do serviço de nomes:
+
+* `hosts` Para ficheiros e serviços de nomes DNS
+* `group` Para arquivos, LDAP e serviços de nomes NIS
+* `passwd` Para arquivos, LDAP e serviços de nomes NIS
+* `netgroup` Para arquivos, LDAP e serviços de nomes NIS
+* `namemap` Para ficheiros e serviços de nomes LDAP
+
+ a| 
+
+
+
+ a| 
+`-sources`
+ a| 
+A ordem pela qual procurar fontes do serviço de nomes (em uma lista separada por vírgulas):
+
+* `files`
+* `dns`
+* `ldap`
+* `nis`
+
+ a| 
+
+|===
+
+
+== Configurar o acesso SAML
+
+A partir do ONTAP 9.3, você fornece esses valores com o `security saml-sp create` comando para configurar a autenticação SAML.
+
+[cols="3*"]
+|===
+
+
+| Campo | Descrição | O seu valor 
+
+
+ a| 
+`-idp-uri`
+ a| 
+O endereço FTP ou o endereço HTTP do host do provedor de identidade (IDP) de onde os metadados de IDP podem ser baixados.
+ a| 
+
+
+
+ a| 
+`-sp-host`
+ a| 
+O nome do host ou o endereço IP do host do provedor de serviços SAML (sistema ONTAP). Por padrão, o endereço IP do LIF de gerenciamento de cluster é usado.
+ a| 
+
+
+
+ a| 
+`-cert-ca` e `-cert-serial`, ou `-cert-common-name`
+ a| 
+Os detalhes do certificado do servidor do host do provedor de serviços (sistema ONTAP). Você pode inserir a autoridade de certificação de emissão de certificado do provedor de serviços (CA) e o número de série do certificado ou o Nome Comum do certificado do servidor.
+ a| 
+
+
+
+ a| 
+`-verify-metadata-server`
+ a| 
+Se a identidade do servidor de metadados IDP deve ser validada  `true` ou `false`). A melhor prática é sempre definir este valor para `true`.
+ a| 
+
+|===

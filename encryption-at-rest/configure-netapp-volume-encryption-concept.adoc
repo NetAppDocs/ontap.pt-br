@@ -1,0 +1,210 @@
+---
+permalink: encryption-at-rest/configure-netapp-volume-encryption-concept.html 
+sidebar: sidebar 
+keywords: volume encryption, nve, aggregate-level, support details, data encryption, encrypt data at rest, storage encryption, key 
+summary: 'O NetApp volume Encryption (NVE) é uma tecnologia baseada em software para criptografar dados em repouso, um volume de cada vez. Uma chave de criptografia acessível somente ao sistema de storage garante que os dados de volume não possam ser lidos se o dispositivo subjacente for reutilizado, retornado, extraviado ou roubado.' 
+---
+= Configurar a visão geral da encriptação de volume do NetApp
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O NetApp volume Encryption (NVE) é uma tecnologia baseada em software para criptografar dados em repouso, um volume de cada vez. Uma chave de criptografia acessível somente ao sistema de storage garante que os dados de volume não possam ser lidos se o dispositivo subjacente for reutilizado, retornado, extraviado ou roubado.
+
+
+
+== Compreender o NVE
+
+Com o NVE, os metadados e os dados (incluindo cópias Snapshot) são criptografados. O acesso aos dados é dado por uma chave exclusiva XTS-AES-256, uma por volume. Um servidor de gerenciamento de chaves externo ou OKM (Onboard Key Manager) serve chaves para nós:
+
+* O servidor de gerenciamento de chaves externo é um sistema de terceiros em seu ambiente de storage que serve chaves para nós que usam o Key Management Interoperability Protocol (KMIP). É uma prática recomendada configurar servidores de gerenciamento de chaves externos em um sistema de armazenamento diferente dos seus dados.
+* O Gerenciador de chaves integrado é uma ferramenta integrada que serve chaves para nós do mesmo sistema de storage que seus dados.
+
+
+A partir do ONTAP 9.7, a criptografia de volume e agregado é ativada por padrão se você tiver uma licença de criptografia de volume (VE) e usar um gerenciador de chaves integrado ou externo. A licença VE está incluída no link:../system-admin/manage-licenses-concept.html#licenses-included-with-ontap-one["ONTAP One"]. Sempre que um gerenciador de chaves externo ou integrado é configurado, há uma alteração na forma como a criptografia de dados em repouso é configurada para agregados novos e volumes novos. Agregados novos terão a encriptação agregada NetApp (NAE) ativada por predefinição. Volumes novos que não fazem parte de um agregado NAE terão a criptografia de volume NetApp (NVE) ativada por padrão. Se uma máquina virtual de storage de dados (SVM) for configurada com seu próprio gerenciador de chaves usando o gerenciamento de chaves multilocatário, o volume criado para esse SVM será configurado automaticamente com NVE.
+
+Pode ativar a encriptação num volume novo ou existente. O NVE dá suporte a uma variedade completa de recursos de eficiência de storage, incluindo deduplicação e compactação. Começando com ONTAP 9.14,1, você pode xref:configure-nve-svm-root-task.html[Habilite o NVE em volumes raiz do SVM atual].
+
+
+NOTE: Se estiver usando o SnapLock, você poderá habilitar a criptografia somente em volumes SnapLock novos e vazios. Não é possível ativar a encriptação num volume SnapLock existente.
+
+Você pode usar o NVE em qualquer tipo de agregado (HDD, SSD, híbrido, LUN de array), com qualquer tipo de RAID e em qualquer implementação de ONTAP com suporte, incluindo ONTAP Select. Você também pode usar o NVE com criptografia baseada em hardware para "criptografar dados" em unidades com autocriptografia.
+
+Quando o NVE está ativado, o despejo de memória também é criptografado.
+
+
+
+== Criptografia em nível de agregado
+
+Normalmente, cada volume criptografado recebe uma chave exclusiva. Quando o volume é excluído, a chave é excluída com ele.
+
+A partir do ONTAP 9.6, você pode usar _NetApp Aggregate Encryption (NAE)_ para atribuir chaves ao agregado que contém para que os volumes sejam criptografados. Quando um volume criptografado é excluído, as chaves do agregado são preservadas. As chaves são excluídas se todo o agregado for excluído.
+
+Você deve usar criptografia em nível de agregado se planeja executar deduplicação in-line ou em segundo plano. De outra forma, a deduplicação em nível de agregado não é compatível com NVE.
+
+A partir do ONTAP 9.7, a criptografia de volume e agregado é ativada por padrão se você tiver uma licença de criptografia de volume (VE) e usar um gerenciador de chaves integrado ou externo.
+
+Os volumes NVE e NAE podem coexistir no mesmo agregado. Os volumes encriptados em encriptação de nível agregado são volumes NAE por predefinição. Você pode substituir o padrão quando criptografar o volume.
+
+Você pode usar o `volume move` comando para converter um volume NVE em um volume NAE e vice-versa. É possível replicar um volume NAE para um volume NVE.
+
+Você não pode usar `secure purge` comandos em um volume NAE.
+
+
+
+== Quando usar servidores de gerenciamento de chaves externos
+
+Embora seja menos caro e normalmente mais conveniente usar o gerenciador de chaves integrado, você deve configurar servidores KMIP se alguma das seguintes situações for verdadeira:
+
+* Sua solução de gerenciamento de chaves de criptografia precisa estar em conformidade com Federal Information Processing Standards (FIPS) 140-2 ou com o padrão OASIS KMIP.
+* Você precisa de uma solução de vários clusters, com gerenciamento centralizado de chaves de criptografia.
+* Sua empresa requer a segurança adicional de armazenar chaves de autenticação em um sistema ou em um local diferente dos dados.
+
+
+
+
+== Escopo do gerenciamento de chaves externas
+
+O escopo do gerenciamento de chaves externas determina se os servidores de gerenciamento de chaves protegem todos os SVMs no cluster ou somente SVMs selecionadas:
+
+* Você pode usar um _cluster scope_ para configurar o gerenciamento de chaves externas para todos os SVMs no cluster. O administrador do cluster tem acesso a todas as chaves armazenadas nos servidores.
+* A partir do ONTAP 9.6, você pode usar um _escopo SVM_ para configurar o gerenciamento de chaves externas para um SVM nomeado no cluster. Isso é melhor para ambientes com alocação a vários clientes nos quais cada locatário usa um SVM diferente (ou conjunto de SVMs) para fornecer dados. Somente o administrador do SVM de um determinado locatário tem acesso às chaves desse locatário.
+* A partir do ONTAP 9.10,1, você pode usar o xref:manage-keys-azure-google-task.html[Azure Key Vault e Google Cloud KMS] para proteger chaves NVE somente para SVMs de dados. Isso está disponível para o KMS da AWS a partir de 9.12.0.
+
+
+Você pode usar ambos os escopos no mesmo cluster. Se os servidores de gerenciamento de chaves tiverem sido configurados para um SVM, o ONTAP usará apenas esses servidores para proteger chaves. Caso contrário, o ONTAP protege as chaves com os servidores de gerenciamento de chaves configurados para o cluster.
+
+Uma lista de gerenciadores de chaves externos validados está disponível no link:http://mysupport.netapp.com/matrix/["Ferramenta de Matriz de interoperabilidade NetApp (IMT)"^]. Você pode encontrar esta lista inserindo o termo "key managers" no recurso de pesquisa do IMT.
+
+
+
+== Detalhes do suporte
+
+A tabela a seguir mostra os detalhes de suporte do NVE:
+
+[cols="25,75"]
+|===
+
+
+| Recurso ou recurso | Detalhes do suporte 
+
+
+ a| 
+Plataformas
+ a| 
+Capacidade de descarga AES-NI necessária. Consulte o Hardware Universe (HWU) para verificar se o NVE e o NAE são compatíveis com sua plataforma.
+
+
+
+ a| 
+Criptografia
+ a| 
+A partir do ONTAP 9.7, agregados e volumes recém-criados são criptografados por padrão quando você adiciona uma licença de criptografia de volume (VE) e tem um gerenciador de chaves integrado ou externo configurado. Se você precisar criar um agregado não criptografado, use o seguinte comando:
+
+`storage aggregate create -encrypt-with-aggr-key false`
+
+Se você precisar criar um volume de texto simples, use o seguinte comando:
+
+`volume create -encrypt false`
+
+A encriptação não está ativada por predefinição quando:
+
+* A licença VE não está instalada.
+* O gerenciador de chaves não está configurado.
+* Plataforma ou software não suporta criptografia.
+* A criptografia de hardware está ativada.
+
+
+
+
+ a| 
+ONTAP
+ a| 
+Todas as implementações do ONTAP. O suporte para ONTAP Cloud está disponível no ONTAP 9.5 e posterior.
+
+
+
+ a| 
+Dispositivos
+ a| 
+HDD, SSD, híbrido, array LUN.
+
+
+
+ a| 
+RAID
+ a| 
+RAID0, RAID4, RAID-DP, RAID-TEC.
+
+
+
+ a| 
+Volumes
+ a| 
+Volumes de dados e volumes raiz atuais do SVM. Não é possível criptografar dados em volumes de metadados do MetroCluster. Em versões do ONTAP anteriores a 9.14.1, não é possível criptografar dados no volume raiz da SVM com NVE. A partir do ONTAP 9.14,1, o ONTAP suporta xref:configure-nve-svm-root-task.html[NVE em volumes raiz do SVM].
+
+
+
+ a| 
+Criptografia em nível de agregado
+ a| 
+A partir do ONTAP 9.6, o NVE é compatível com criptografia no nível de agregado (NAE):
+
+* Você deve usar criptografia em nível de agregado se planeja executar deduplicação in-line ou em segundo plano.
+* Você não pode rechavear um volume de criptografia de nível agregado.
+* A limpeza segura não é suportada em volumes de criptografia no nível de agregado.
+* Além dos volumes de dados, o NAE é compatível com a criptografia dos volumes raiz da SVM e do volume de metadados do MetroCluster. O NAE não suporta criptografia do volume raiz.
+
+
+
+
+ a| 
+Escopo da SVM
+ a| 
+A partir do ONTAP 9.6, o NVE é compatível com o escopo SVM somente para gerenciamento de chaves externas, e não para Gerenciador de chaves integrado. O MetroCluster é suportado a partir do ONTAP 9.8.
+
+
+
+ a| 
+Eficiência de storage
+ a| 
+Deduplicação, compressão, compactação, FlexClone.
+
+Os clones usam a mesma chave que o pai, mesmo depois de dividir o clone do pai. Você deve executar um `volume move` em um clone dividido, após o qual o clone dividido terá uma chave diferente.
+
+
+
+ a| 
+Replicação
+ a| 
+* Para replicação de volume, os volumes de origem e destino podem ter configurações de criptografia diferentes. A criptografia pode ser configurada para a origem e não configurada para o destino e vice-versa.
+* Para a replicação SVM, o volume de destino é criptografado automaticamente, a menos que o destino não contenha um nó compatível com criptografia de volume. Nesse caso, a replicação seja bem-sucedida, mas o volume de destino não seja criptografado.
+* Para configurações do MetroCluster, cada cluster puxa chaves de gerenciamento de chaves externas de seus servidores de chaves configurados. As chaves OKM são replicadas para o site do parceiro pelo serviço de replicação de configuração.
+
+
+
+
+ a| 
+Conformidade
+ a| 
+A partir do ONTAP 9.2, o SnapLock tem suporte nos modos conformidade e empresa, apenas para novos volumes. Não é possível ativar a encriptação num volume SnapLock existente.
+
+
+
+ a| 
+FlexGroups
+ a| 
+A partir do ONTAP 9.2, os grupos flexíveis são suportados. Os agregados de destino devem ser do mesmo tipo que os agregados de origem, tanto em nível de volume como em nível de agregado. A partir do ONTAP 9.5, é suportada a rechavear no local de volumes FlexGroup.
+
+
+
+ a| 
+Transição de 7 modos
+ a| 
+A partir da ferramenta de transição de 7 modos 3,3, você pode usar a CLI da ferramenta de transição de 7 modos para realizar a transição baseada em cópia para volumes de destino habilitados para NVE no sistema em cluster.
+
+|===
+.Informações relacionadas
+link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/FAQ%3A_NetApp_Volume_Encryption_and_NetApp_Aggregate_Encryption["Perguntas frequentes - encriptação de volume NetApp e encriptação agregada NetApp"^]

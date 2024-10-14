@@ -1,0 +1,37 @@
+---
+permalink: system-admin/receive-system-health-alerts-automatic-task.html 
+sidebar: sidebar 
+keywords: receive, system, health, alert, automatically, system, show, command, ems, event, management, monito 
+summary: 'Você pode visualizar manualmente os alertas de integridade do sistema usando o comando show de alerta de integridade do sistema. No entanto, você deve assinar mensagens específicas do sistema de Gerenciamento de Eventos (EMS) para receber notificações automaticamente quando um monitor de integridade gera um alerta.' 
+---
+= Receba alertas de integridade do sistema automaticamente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode visualizar manualmente os alertas de integridade do sistema usando o `system health alert show` comando. No entanto, você deve assinar mensagens específicas do sistema de Gerenciamento de Eventos (EMS) para receber notificações automaticamente quando um monitor de integridade gera um alerta.
+
+.Sobre esta tarefa
+O procedimento a seguir mostra como configurar notificações para todas as mensagens hm.alert.raised e todas as mensagens hm.alert.cleared.
+
+Todas as mensagens hm.alert.raised e todas as mensagens hm.alert.cleared incluem um trap SNMP. Os nomes dos traps SNMP são `HealthMonitorAlertRaised` e `HealthMonitorAlertCleared`. Para obter informações sobre traps SNMP, consulte o _Network Management Guide_.
+
+.Passos
+. Utilize o `event destination create` comando para definir o destino para o qual pretende enviar as mensagens EMS.
++
+[listing]
+----
+cluster1::> event destination create -name health_alerts -mail admin@example.com
+----
+. Utilize o `event route add-destinations` comando para encaminhar a `hm.alert.raised` mensagem e a `hm.alert.cleared` mensagem para um destino.
++
+[listing]
+----
+cluster1::> event route add-destinations -messagename hm.alert* -destinations health_alerts
+----
+
+
+.Informações relacionadas
+link:../networking/networking_reference.html["Gerenciamento de rede"]

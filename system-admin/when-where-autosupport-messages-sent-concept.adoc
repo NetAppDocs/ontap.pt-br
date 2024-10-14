@@ -1,0 +1,156 @@
+---
+permalink: system-admin/when-where-autosupport-messages-sent-concept.html 
+sidebar: sidebar 
+keywords: active, iq, digital advisor, active iq, autosupport, messages, email, manual, scheduled, event, triggered 
+summary: O AutoSupport envia mensagens para diferentes destinatários, dependendo do tipo de mensagem. Aprender quando e onde o AutoSupport envia mensagens pode ajudá-lo a entender as mensagens que você recebe por e-mail ou exibição no site do consultor digital. 
+---
+= Quando e onde as mensagens AutoSupport são enviadas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O AutoSupport envia mensagens para diferentes destinatários, dependendo do tipo de mensagem. Aprender quando e onde o AutoSupport envia mensagens pode ajudá-lo a entender as mensagens que você recebe por e-mail ou exibição no site do consultor digital.
+
+Salvo especificação em contrário, as configurações nas tabelas a seguir são parâmetros do `system node autosupport modify` comando.
+
+
+
+== Mensagens acionadas por eventos
+
+Quando ocorrem eventos no sistema que exigem ação corretiva, o AutoSupport envia automaticamente uma mensagem acionada por evento.
+
+|===
+| Quando a mensagem é enviada | Onde a mensagem é enviada 
+
+
+ a| 
+O AutoSupport responde a um evento de ativação no EMS
+ a| 
+Endereços especificados em `-to` e `-noteto`. (Apenas eventos críticos que afetam o serviço são enviados.)
+
+Endereços especificados em `-partner-address`
+
+Suporte técnico, se `-support` estiver definido como `enable`
+
+|===
+
+
+== Mensagens agendadas
+
+O AutoSupport envia automaticamente várias mensagens em um horário regular.
+
+|===
+| Quando a mensagem é enviada | Onde a mensagem é enviada 
+
+
+ a| 
+Diariamente (por padrão, enviado entre as 12:00h e as 1:00h como uma mensagem de log)
+ a| 
+Endereços especificados em `-partner-address`
+
+Suporte técnico, se `-support` estiver definido como `enable`
+
+
+
+ a| 
+Diariamente (por padrão, enviado entre 12:00 e 1:00 como uma mensagem de desempenho), se o `-perf` parâmetro estiver definido como `true`
+ a| 
+Endereços especificados no endereço -parceiro»
+
+Suporte técnico, se `-support` estiver definido como `enable`
+
+
+
+ a| 
+Semanal (por padrão, enviado domingo entre as 12:00h e as 1:00h)
+ a| 
+Endereços especificados em `-partner-address`
+
+Suporte técnico, se `-support` estiver definido como `enable`
+
+|===
+
+
+== Mensagens acionadas manualmente
+
+Você pode iniciar ou reenviar manualmente uma mensagem do AutoSupport.
+
+|===
+| Quando a mensagem é enviada | Onde a mensagem é enviada 
+
+
+ a| 
+Você inicia manualmente uma mensagem usando o `system node autosupport invoke` comando
+ a| 
+Se um URI for especificado usando o `-uri` parâmetro no `system node autosupport invoke` comando, a mensagem será enviada para esse URI.
+
+Se `-uri` for omitido, a mensagem é enviada para os endereços especificados em `-to` e `-partner-address`. A mensagem também é enviada para o suporte técnico se `-support` estiver definido como `enable`.
+
+
+
+ a| 
+Você inicia manualmente uma mensagem usando o `system node autosupport invoke-core-upload` comando
+ a| 
+Se um URI é especificado usando o `-uri` parâmetro no `system node autosupport invoke-core-upload` comando, a mensagem é enviada para esse URI, e o arquivo de despejo do núcleo é carregado para o URI.
+
+Se `-uri` for omitido `system node autosupport invoke-core-upload` no comando, a mensagem é enviada para o suporte técnico e o arquivo de despejo do núcleo é enviado para o site de suporte técnico.
+
+Ambos os cenários requerem que `-support` esteja definido como `enable` e `-transport` definido como `https` ou `http`.
+
+Devido ao grande tamanho dos arquivos de despejo de núcleo, a mensagem não é enviada para os endereços especificados nos `-to` parâmetros e. `-partner-addresses`
+
+
+
+ a| 
+Você inicia manualmente uma mensagem usando o `system node autosupport invoke-performance-archive` comando
+ a| 
+Se um URI for especificado usando o `-uri` parâmetro no `system node autosupport invoke-performance-archive` comando, a mensagem será enviada para esse URI e o arquivo de arquivo de desempenho será carregado para o URI.
+
+Se `-uri` for omitido `system node autosupport invoke-performance-archive` no , a mensagem será enviada para o suporte técnico e o arquivo de arquivo de desempenho será carregado no site de suporte técnico.
+
+Ambos os cenários requerem que `-support` esteja definido como `enable` e `-transport` definido como `https` ou `http`.
+
+Devido ao grande tamanho dos arquivos de arquivamento de desempenho, a mensagem não é enviada para os endereços especificados nos `-to` parâmetros e. `-partner-addresses`
+
+
+
+ a| 
+Você reenvia manualmente uma mensagem passada usando o `system node autosupport history retransmit` comando
+ a| 
+Apenas para o URI que você especificar no `-uri` parâmetro do `system node autosupport history retransmit` comando
+
+|===
+
+
+== Mensagens acionadas pelo suporte técnico
+
+O suporte técnico pode solicitar mensagens do AutoSupport usando o recurso AutoSupport OnDemand.
+
+|===
+| Quando a mensagem é enviada | Onde a mensagem é enviada 
+
+
+ a| 
+Quando o AutoSupport obtém instruções de entrega para gerar novas mensagens AutoSupport
+ a| 
+Endereços especificados em `-partner-address`
+
+Suporte técnico, se `-support` estiver definido como `enable` e `-transport` estiver definido como `https`
+
+
+
+ a| 
+Quando o AutoSupport obtém instruções de entrega para reenviar mensagens passadas do AutoSupport
+ a| 
+Suporte técnico, se `-support` estiver definido como `enable` e `-transport` estiver definido como `https`
+
+
+
+ a| 
+Quando o AutoSupport obtém instruções de entrega para gerar novas mensagens AutoSupport que carregam arquivos de despejo de memória ou arquivo de desempenho
+ a| 
+Suporte técnico, se `-support` estiver definido como `enable` e `-transport` estiver definido como `https`. O despejo de memória ou arquivo de desempenho é carregado para o site de suporte técnico.
+
+|===

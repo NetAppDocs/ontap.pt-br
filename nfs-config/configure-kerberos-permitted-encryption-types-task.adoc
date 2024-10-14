@@ -1,0 +1,70 @@
+---
+permalink: nfs-config/configure-kerberos-permitted-encryption-types-task.html 
+sidebar: sidebar 
+keywords: configure, nfs, kerberos, permitted, encryption, types 
+summary: 'Por padrão, o ONTAP oferece suporte aos seguintes tipos de criptografia para o Kerberos NFS: DES, 3DES, AES-128 e AES-256. Você pode configurar os tipos de criptografia permitidos para cada SVM de acordo com os requisitos de segurança do seu ambiente específico usando o comando vserver nfs Modify com o parâmetro -allowed-enc-types.' 
+---
+= Configurar os tipos de criptografia permitidos do NFS Kerberos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Por padrão, o ONTAP oferece suporte aos seguintes tipos de criptografia para o Kerberos NFS: DES, 3DES, AES-128 e AES-256. Você pode configurar os tipos de criptografia permitidos para cada SVM de acordo com os requisitos de segurança do seu ambiente específico usando o `vserver nfs modify` comando com o `-permitted-enc-types` parâmetro.
+
+.Sobre esta tarefa
+Para maior compatibilidade com clientes, o ONTAP suporta criptografia DES fraca e AES forte por padrão. Isso significa, por exemplo, que se você quiser aumentar a segurança e seu ambiente a suportar, você pode usar este procedimento para desativar DES e 3DES e exigir que os clientes usem apenas criptografia AES.
+
+Você deve usar a criptografia mais forte disponível. Para ONTAP, isso é AES-256. Deve confirmar com o administrador do KDC que este nível de encriptação é suportado no seu ambiente.
+
+* Ativar ou desativar totalmente AES (AES-128 e AES-256) em SVMs é disruptivo porque destrói o arquivo DES principal/keytab original, exigindo assim que a configuração Kerberos seja desativada em todos os LIFs para o SVM.
++
+Antes de fazer essa alteração, você deve verificar se os clientes NFS não dependem da criptografia AES no SVM.
+
+* Ativar ou desativar DES ou 3DES não requer alterações na configuração Kerberos em LIFs.
+
+
+.Passo
+. Ative ou desative o tipo de encriptação permitido que pretende:
++
+|===
+| Se quiser ativar ou desativar... | Siga estes passos... 
+
+
+ a| 
+DES ou 3DES
+ a| 
+.. Configure os tipos de criptografia permitidos do NFS Kerberos da SVM
+`vserver nfs modify -vserver _vserver_name_ -permitted-enc-types _encryption_types_`
++
+Separe vários tipos de criptografia com uma vírgula.
+
+.. Verifique se a alteração foi bem-sucedida
+`vserver nfs show -vserver _vserver_name_ -fields permitted-enc-types`
+
+
+
+
+ a| 
+AES-128 ou AES-256
+ a| 
+.. Identifique em que SVM e LIF Kerberos estão ativados
+`vserver nfs kerberos interface show`
+.. Desative o Kerberos em todos os LIFs no SVM cujo tipo de criptografia NFS Kerberos permitido você deseja modificar
+`vserver nfs kerberos interface disable -lif _lif_name_`
+.. Configure os tipos de criptografia permitidos do NFS Kerberos da SVM
+`vserver nfs modify -vserver _vserver_name_ -permitted-enc-types _encryption_types_`
++
+Separe vários tipos de criptografia com uma vírgula.
+
+.. Verifique se a alteração foi bem-sucedida
+`vserver nfs show -vserver _vserver_name_ -fields permitted-enc-types`
+.. Reative o Kerberos em todos os LIFs na SVM
+`vserver nfs kerberos interface enable -lif _lif_name_ -spn _service_principal_name_`
+.. Verifique se o Kerberos está ativado em todos os LIFs
+`vserver nfs kerberos interface show`
+
+
+|===
+

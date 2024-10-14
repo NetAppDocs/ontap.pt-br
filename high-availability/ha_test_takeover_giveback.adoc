@@ -1,0 +1,164 @@
+---
+sidebar: sidebar 
+permalink: high-availability/ha_test_takeover_giveback.html 
+keywords: ontap, high, availability, ha, pair, test, testing, takeover, giveback 
+summary: Depois de configurar todos os aspectos do seu par de HA, você precisa verificar se ele está operando conforme o esperado para manter o acesso ininterrupto ao storage de ambos os nós durante as operações de takeover e giveback 
+---
+= Testando a aquisição e a giveback
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Depois de configurar todos os aspectos do seu par de HA, você precisa verificar se ele está operando conforme o esperado para manter o acesso ininterrupto ao storage de ambos os nós durante as operações de takeover e giveback. Durante o processo de takeover, o nó local (ou takeover) deve continuar fornecendo os dados normalmente fornecidos pelo nó do parceiro. Durante a giveback, o controle e a entrega do storage do parceiro devem retornar ao nó do parceiro.
+
+.Passos
+. Verifique o cabeamento dos cabos de interconexão HA para garantir que eles estejam seguros.
+. Verifique se você pode criar e recuperar arquivos em ambos os nós para cada protocolo licenciado.
+. Introduza o seguinte comando:
++
+`storage failover takeover -ofnode partnernode`
+
++
+Consulte a página man para obter detalhes do comando.
+
+. Digite um dos seguintes comandos para confirmar que ocorreu a aquisição:
++
+`storage failover show-takeover`
+
++
+`storage failover show`
+
++
+--
+Se você tiver `storage failover` a opção do comando `-auto-giveback` ativada:
+
+|===
+
+
+| Nó | Parceiro | Possibilidade de aquisição | Descrição do Estado 
+
+
+| nó 1 | nó 2 | - | À espera de giveback 
+
+
+| nó 2 | nó 1 | falso | Na aquisição, a Auto giveback será iniciada em número de segundos 
+|===
+Se você tiver `storage failover` a opção do comando `-auto-giveback` desativada:
+
+|===
+
+
+| Nó | Parceiro | Possibilidade de aquisição | Descrição do Estado 
+
+
+| nó 1 | nó 2 | - | À espera de giveback 
+
+
+| nó 2 | nó 1 | falso | Na aquisição 
+|===
+--
+. Exiba todos os discos que pertencem ao nó do parceiro (Node2) que o nó de takeover (Node1) pode detetar:
++
+`storage disk show -home node2 -ownership`
+
++
+--
+O comando a seguir exibe todos os discos pertencentes ao Node2 que o Node1 pode detetar:
+`cluster::> storage disk show -home node2 -ownership`
+
+|===
+
+
+| Disco | Agregado | Casa | Proprietário | DR Home | ID de início | ID do proprietário | ID inicial do DR | Reserver | Piscina 
+
+
+| 1.0.2 | - | node2 | node2 | - | 4078312453 | 4078312453 | - | 4078312452 | Pool0 
+
+
+| 1.0.3 | - | node2 | node2 | - | 4078312453 | 4078312453 | - | 4078312452 | Pool0 
+|===
+--
+. Confirme que o nó de takeover (Node1) controla os agregados dos nós de parceiro (Node2):
++
+`aggr show ‑fields home‑id,home‑name,is‑home`
+
++
+--
+|===
+
+
+| agregado | id de casa | casa-namuh | é-casa 
+
+
+ a| 
+aggr0_1
+ a| 
+2014942045
+ a| 
+node1
+ a| 
+verdadeiro
+
+
+
+ a| 
+aggr0_2
+ a| 
+4078312453
+ a| 
+node2
+ a| 
+falso
+
+
+
+ a| 
+aggr1_1
+ a| 
+2014942045
+ a| 
+node1
+ a| 
+verdadeiro
+
+
+
+| aggr1_2 | 4078312453 | node2  a| 
+falso
+
+|===
+Durante a aquisição, o valor "is-home" dos agregados do nó do parceiro é falso.
+
+--
+. Devolva o serviço de dados do nó do parceiro depois que ele exibe a mensagem "'esperando por giveback'":
++
+`storage failover giveback -ofnode partnernode`
+
+. Introduza um dos seguintes comandos para observar o progresso da operação de giveback:
++
+`storage failover show-giveback`
+
++
+`storage failover show`
+
+. Prossiga, dependendo se viu a mensagem de que a giveback foi concluída com sucesso:
++
+--
+|===
+
+
+| Se a aquisição e a giveback... | Então... 
+
+
+| Foram concluídas com êxito | Repita os passos 2 a 8 no nó do parceiro. 
+
+
+| Falha | Corrija a falha de aquisição ou de giveback e, em seguida, repita este procedimento. 
+|===
+--
+

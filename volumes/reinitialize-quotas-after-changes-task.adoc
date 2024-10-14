@@ -1,0 +1,76 @@
+---
+permalink: volumes/reinitialize-quotas-after-changes-task.html 
+sidebar: sidebar 
+keywords: reinitialize, quotas, after making, extensive, changes 
+summary: Depois de fazer alterações extensas nas definições de quota existentes, tem de reinicializar as quotas em todos os volumes afetados. 
+---
+= Reinicialize as cotas depois de fazer alterações extensas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois de fazer alterações extensas nas definições de quota existentes, tem de reinicializar as quotas em todos os volumes afetados. Um exemplo desse tipo de alteração é adicionar ou excluir cotas para alvos que não têm cotas impostas.
+
+.Sobre esta tarefa
+Você tem uma máquina virtual de storage (SVM) com cotas aplicadas e deseja fazer alterações que exijam uma reinicialização total das cotas.
+
+.Passos
+. Use o `vserver show` comando com o `-instance` parâmetro para determinar o nome da política atualmente atribuída ao SVM.
+. Modifique as regras de cota executando qualquer uma das seguintes ações:
++
+[cols="2*"]
+|===
+| Se você quiser... | Então... 
+
+
+ a| 
+Crie novas regras de quota
+ a| 
+Use o `volume quota policy rule create` comando
+
+
+
+ a| 
+Modifique as definições das regras de quota existentes
+ a| 
+Use o `volume quota policy rule modify` comando
+
+
+
+ a| 
+Eliminar regras de quota existentes
+ a| 
+Use o `volume quota policy rule delete` comando
+
+|===
+. Use o `volume quota policy rule show` comando para verificar se as regras de cota estão configuradas corretamente.
+. Reinicialize cotas em cada volume em que você alterou cotas desativando cotas e ativando cotas para esses volumes.
++
+.. Use o `volume quota off` comando em cada volume afetado para desativar cotas nesse volume.
+.. Use o `volume quota on` comando em cada volume afetado para ativar cotas nesse volume.
++
+[NOTE]
+====
+Você deve garantir que você aguarde cerca de cinco minutos antes de reativar as cotas em cada volume afetado, pois tentar ativá-las quase imediatamente após a execução do `volume quota off` comando pode resultar em erros.
+
+Como alternativa, você pode executar os comandos para reinicializar as cotas de um volume do nó que contém o volume específico.
+
+====
++
+Você pode monitorar o processo de inicialização de uma das seguintes maneiras:
+
++
+*** Ao utilizar o `volume quota on` comando, pode adicionar o `-foreground` parâmetro para executar a quota no trabalho em primeiro plano. (Por padrão, o trabalho é executado em segundo plano.)
++
+Quando o trabalho é executado em segundo plano, você pode monitorar seu progresso usando o `job show` comando.
+
+*** Você pode usar o `volume quota show` comando para monitorar o status da inicialização da cota.
+
+
+
+
+. Use o `volume quota show -instance` comando para verificar se há erros de inicialização, como regras de cota que não foram inicializadas.
+. Use o `volume quota report` comando para exibir um relatório de cota para garantir que as cotas aplicadas correspondam às suas expetativa.
+

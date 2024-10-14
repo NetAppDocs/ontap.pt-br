@@ -1,0 +1,120 @@
+---
+permalink: volumes/split-flexclone-from-parent-task.html 
+sidebar: sidebar 
+keywords: split, flexclone, volume, parent, volume, clone 
+summary: Você pode dividir um volume FlexClone de seu pai para fazer o clone um FlexVol volume normal. 
+---
+= Divida um volume FlexClone do volume pai
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode dividir um volume FlexClone de seu pai para fazer o clone um FlexVol volume normal.
+
+A operação de divisão de clones ocorre em segundo plano. Os dados podem ser acessados no clone e no pai durante a divisão. Começando com ONTAP 9.4, a eficiência de espaço é preservada. O processo de divisão atualiza apenas os metadados e requer o mínimo de e/S. Nenhum bloco de dados é copiado.
+
+.Sobre esta tarefa
+* Não é possível criar novas cópias Snapshot do volume FlexClone durante a operação de divisão.
+* Um volume FlexClone não pode ser dividido do volume pai se pertencer a uma relação de proteção de dados ou fizer parte de um espelhamento de compartilhamento de carga.
+* Se você colocar o volume FlexClone offline enquanto a divisão estiver em andamento, a operação de divisão será suspensa; quando você colocar o volume FlexClone novamente on-line, a operação de divisão será retomada.
+* Após a divisão, tanto o FlexVol volume pai quanto o clone exigem a alocação de espaço total determinada por suas garantias de volume.
+* Depois que um volume FlexClone é dividido de seu pai, os dois não podem ser rejuntados.
+* A partir do ONTAP 9.4, para volumes não garantidos em sistemas AFF, a operação dividida para volumes FlexClone compartilha os blocos físicos e não copia os dados. Portanto, a divisão de volumes FlexClone em sistemas AFF é mais rápida do que a operação de divisão FlexClone em outros sistemas FAS no ONTAP 9.4 e posterior. A operação de divisão de FlexClone aprimorada em sistemas AFF tem os seguintes benefícios:
++
+** A eficiência de storage é preservada após a divisão do clone do pai.
+** As cópias Snapshot existentes não são excluídas.
+** A operação é mais rápida.
+** O volume FlexClone pode ser dividido de qualquer ponto na hierarquia de clones.
+
+
+
+
+.Antes de começar
+* Você deve ser um administrador de cluster.
+* O volume FlexClone deve estar online quando a operação de divisão começar.
+* O volume principal deve estar online para que a divisão tenha sucesso.
+
+
+.Passos
+. Determine a quantidade de espaço livre necessária para concluir a operação de divisão:
++
+`volume clone show -estimate -vserver _vserver_name_ -flexclone _clone_volume_name_ -parent-volume _parent_vol_name_`
+
++
+O exemplo a seguir fornece informações sobre o espaço livre necessário para dividir o volume FlexClone "'clone1" do volume pai "'vol1":
+
++
+[listing]
+----
+cluster1::> volume clone show -estimate -vserver vs1 -flexclone clone1 -parent-volume volume1
+                             Split
+Vserver   FlexClone       Estimate
+--------- ------------- ----------
+vs1       clone1           40.73MB
+----
+. Verifique se o agregado que contém o volume FlexClone e seu pai tem espaço suficiente:
++
+.. Determine a quantidade de espaço livre no agregado que contém o volume FlexClone e seu pai:
++
+`storage aggregate show`
+
+.. Se o agregado que contém não tiver espaço livre suficiente disponível, adicione armazenamento ao agregado:
++
+`storage aggregate add-disks`
+
+
+
+. Inicie a operação dividida:
++
+`volume clone split start -vserver _vserver_name_ -flexclone _clone_volume_name_`
+
++
+O exemplo a seguir mostra como você pode iniciar o processo para dividir o volume FlexClone "'clone1" do volume pai "'vol1":
+
++
+[listing]
+----
+cluster1::> volume clone split start -vserver vs1 -flexclone clone1
+
+Warning: Are you sure you want to split clone volume clone1 in Vserver vs1 ?
+{y|n}: y
+[Job 1617] Job is queued: Split clone1.
+----
+. Monitorize o estado da operação dividida do FlexClone:
++
+`volume clone split show -vserver _vserver_name_ -flexclone _clone_volume_name_`
+
++
+O exemplo a seguir mostra o status da operação dividida do FlexClone em um sistema AFF:
+
++
+[listing]
+----
+cluster1::> volume clone split show -vserver vs1 -flexclone clone1
+                                              Inodes                   Blocks
+                                     ---------------------    ---------------------
+Vserver   FlexClone    Processed Total    Scanned  Updated      % Inode   % Block
+                                                                 Complete  Complete
+vs1       clone1        0         0       411247   153600         0        37
+----
+. Verifique se o volume de divisão não é mais um volume FlexClone:
++
+`volume show -volume _volume_name_ -fields clone-volume`
+
++
+O valor `clone-volume` da opção é "false" para um volume que não é um volume FlexClone.
+
++
+O exemplo a seguir mostra como você pode verificar se o volume "'clone1" que está dividido de seu pai não é um volume FlexClone.
+
++
+[listing]
+----
+cluster1::> volume show -volume clone1 -fields clone-volume
+vserver volume **clone-volume**
+------- ------ **------------**
+vs1     clone1 **false**
+----
+

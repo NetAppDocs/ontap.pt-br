@@ -1,0 +1,63 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/planned-failover-task.html 
+keywords: SM-BC, testing failover, planned failover, maintenance, quorum, snapmirror active sync 
+summary: É possível executar um failover planejado para testar a configuração de recuperação de desastres ou para executar manutenção no cluster primário. 
+---
+= Executar um failover planejado de clusters em uma relação de sincronização ativa do SnapMirror
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Em um failover planejado de clusters do ONTAP em uma relação de sincronização ativa do SnapMirror, você alterna as funções dos clusters primário e secundário para que o cluster secundário assuma o controle do cluster primário. Durante um failover, o que normalmente é o cluster secundário processa as solicitações de entrada e saída localmente sem interromper as operações do cliente.
+
+Você pode querer executar um failover planejado para testar a integridade da configuração de recuperação de desastres ou para executar a manutenção no cluster primário.
+
+.Sobre esta tarefa
+Um failover planejado é iniciado pelo administrador do cluster secundário. A operação requer a comutação das funções primária e secundária para que o cluster secundário assuma o controle do primário. O novo cluster primário pode então começar a processar solicitações de entrada e saída localmente sem interromper as operações do cliente.
+
+.Antes de começar
+* A relação de sincronização ativa do SnapMirror deve estar sincronizada.
+* Não é possível iniciar um failover planejado quando uma operação sem interrupções está em processo. As operações ininterruptas incluem movimentação de volume, realocação de agregados e failovers de storage.
+* O Mediador ONTAP deve ser configurado, conetado e no quórum.
+
+
+.Passos
+Você pode executar um failover planejado usando a CLI do ONTAP ou o Gerenciador de sistema.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+
+IMPORTANT: Do ONTAP 9.8 ao 9.14.1, a sincronização ativa do SnapMirror é chamada de continuidade de negócios do SnapMirror (SM-BC).
+
+. No System Manager, selecione **proteção > Visão geral > relacionamentos**.
+. Identifique a relação de sincronização ativa do SnapMirror que você deseja fazer failover. Ao lado de seu nome, selecione o `...` próximo ao nome do relacionamento e, em seguida, selecione **failover**.
+. Para monitorar o status do failover, use o `snapmirror failover show` na CLI do ONTAP.
+
+
+--
+.CLI
+--
+. A partir do cluster de destino, inicie a operação de failover:
++
+`destination::>snapmirror failover start -destination-path   vs1_dst:/cg/cg_dst`
+
+. Monitore o progresso do failover:
++
+`destination::>snapmirror failover show`
+
+. Quando a operação de failover estiver concluída, você poderá monitorar o status do relacionamento de proteção síncrona SnapMirror a partir do destino:
++
+`destination::>snapmirror show`
+
+
+
+--
+====

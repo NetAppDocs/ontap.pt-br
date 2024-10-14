@@ -1,0 +1,70 @@
+---
+permalink: antivirus/schedule-on-demand-task-task.html 
+sidebar: sidebar 
+keywords: schedule, on-demand, task 
+summary: 'Você pode criar uma tarefa sem atribuir uma programação e usar o `vserver vscan on-demand-task schedule` comando para atribuir uma programação; ou adicionar uma programação ao criar a tarefa.' 
+---
+= Agende uma tarefa sob demanda
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar uma tarefa sem atribuir uma programação e usar o `vserver vscan on-demand-task schedule` comando para atribuir uma programação; ou adicionar uma programação ao criar a tarefa.
+
+.Sobre esta tarefa
+A programação atribuída com o `vserver vscan on-demand-task schedule` comando substitui uma programação já atribuída com o `vserver vscan on-demand-task create` comando.
+
+.Passos
+. Agendar uma tarefa a pedido:
++
+`vserver vscan on-demand-task schedule -vserver _data_SVM_ -task-name _task_name_ -schedule cron_schedule`
+
++
+O comando a seguir agenda uma tarefa de acesso chamada `Task2` no `vs2` SVM:
+
++
+[listing]
+----
+cluster1::> vserver vscan on-demand-task schedule -vserver vs2 -task-name Task2 -schedule daily
+[Job 142]: Vscan On-Demand job is queued. Use the "job show -id 142" command to view the status.
+----
++
+Para ver o estado do trabalho, utilize o `job show` comando . Os `job pause` comandos e `job resume`, respetivamente, pausam e reiniciam a tarefa; o `job stop` comando termina a tarefa.
+
+. Verifique se a tarefa a pedido foi agendada:
++
+`vserver vscan on-demand-task show -instance _data_SVM_ -task-name _task_name_`
+
++
+Para obter uma lista completa de opções, consulte a página de manual do comando.
+
++
+O comando a seguir exibe os detalhes `Task 2` da tarefa:
+
++
+[listing]
+----
+cluster1::> vserver vscan on-demand-task show -instance vs2 -task-name Task2
+
+                           Vserver: vs2
+                         Task Name: Task2
+                List of Scan Paths: /vol1/, /vol2/cifs/
+             Report Directory Path: /report
+                      Job Schedule: daily
+Max File Size Allowed for Scanning: 5GB
+            File Paths Not to Scan: /vol1/cold-files/
+       File Extensions Not to Scan: mp3, mp4
+           File Extensions to Scan: vmdk, mp*
+      Scan Files with No Extension: false
+           Request Service Timeout: 5m
+                    Cross Junction: true
+               Directory Recursion: true
+                     Scan Priority: low
+                  Report Log Level: info
+----
+
+
+.Depois de terminar
+Você deve habilitar a digitalização no SVM antes que a tarefa seja agendada para ser executada.

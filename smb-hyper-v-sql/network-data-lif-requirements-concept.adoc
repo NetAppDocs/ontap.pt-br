@@ -1,0 +1,54 @@
+---
+permalink: smb-hyper-v-sql/network-data-lif-requirements-concept.html 
+sidebar: sidebar 
+keywords: network, data, lif, requirements, hyper, v, sql, server, protocol 
+summary: 'Você precisa estar ciente de certos requisitos de rede e de LIF de dados ao criar configurações do SQL Server ou Hyper-V em SMB para operações ininterruptas).' 
+---
+= Requisitos de LIF de rede e dados
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa estar ciente de certos requisitos de rede e de LIF de dados ao criar configurações do SQL Server ou Hyper-V em SMB para operações ininterruptas).
+
+
+
+== Requisitos de protocolo de rede
+
+* São suportadas redes IPv4G e IPv6G.
+* SMB 3,0 ou posterior é necessário.
++
+O SMB 3,0 fornece a funcionalidade necessária para criar as conexões SMB continuamente disponíveis necessárias para oferecer operações ininterruptas.
+
+* Os servidores DNS devem conter entradas que mapeiam o nome do servidor CIFS para os endereços IP atribuídos aos LIFs de dados na máquina virtual de armazenamento (SVM).
++
+Os servidores de aplicativos Hyper-V ou SQL Server normalmente fazem várias conexões em várias LIFs de dados ao acessar arquivos de máquina virtual ou banco de dados. Para uma funcionalidade adequada, os servidores de aplicativos devem fazer essas várias conexões SMB usando o nome do servidor CIFS em vez de fazer várias conexões com vários endereços IP exclusivos.
+
++
+Witness também requer o uso do nome DNS do servidor CIFS em vez de endereços IP LIF individuais.
+
++
+A partir do ONTAP 9.4, você pode melhorar a taxa de transferência e a tolerância a falhas para as configurações Hyper-V e SQL Server em SMB, ativando o Multichannel SMB. Para fazer isso, você deve ter várias NICs de 1G, 10G ou maiores implantados no cluster e nos clientes.
+
+
+
+
+
+== Requisitos de LIF de dados
+
+* O SVM que hospeda a solução de servidor de aplicações em SMB precisa ter pelo menos um LIF de dados operacionais em cada nó do cluster.
++
+Os LIFs de dados do SVM podem fazer failover para outras portas de dados no cluster, incluindo nós que não estão hospedando dados acessados pelos servidores de aplicações. Além disso, como o nó testemunha é sempre o parceiro SFO de um nó ao qual o servidor de aplicativos está conetado, cada nó no cluster é um nó de testemunha potencial.
+
+* Os LIFs de dados não devem ser configurados para reverter automaticamente.
++
+Após um evento de aquisição ou giveback, você deve reverter manualmente os LIFs de dados para suas portas domésticas.
+
+* Todos os endereços IP de LIF de dados devem ter uma entrada no DNS e todas as entradas devem ser resolvidas para o nome do servidor CIFS.
++
+Os servidores de aplicativos devem se conetar a compartilhamentos SMB usando o nome do servidor CIFS. Você não deve configurar os servidores de aplicativos para fazer conexões usando os endereços IP LIF.
+
+* Se o nome do servidor CIFS for diferente do nome SVM, as entradas DNS deverão ser resolvidas para o nome do servidor CIFS.
+

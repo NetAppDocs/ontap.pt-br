@@ -1,0 +1,290 @@
+---
+permalink: system-admin/configure-saml-authentication-task.html 
+sidebar: sidebar 
+keywords: tdp, ldap, identity, provider, saml, security, assertion, markup, lanaguage, active, directory, disable, authentication, idp, active directory, troubleshoot, repair 
+summary: 'A partir do ONTAP 9.3, você pode configurar a autenticação de linguagem de marcação de asserção de Segurança (SAML) para serviços da Web. Quando a autenticação SAML é configurada e ativada, os usuários são autenticados por um Provedor de identidade (IDP) externo em vez dos provedores de serviços de diretório, como o ative Directory e o LDAP. Quando a autenticação SAML está desativada, os provedores de serviços de diretório configurados, como o ative Directory e o LDAP, são usados para autenticação.' 
+---
+= Configurar a autenticação SAML
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.3, você pode configurar a autenticação de linguagem de marcação de asserção de Segurança (SAML) para serviços da Web. Quando a autenticação SAML é configurada e ativada, os usuários são autenticados por um Provedor de identidade (IDP) externo em vez dos provedores de serviços de diretório, como o ative Directory e o LDAP.
+
+
+
+== Ativar a autenticação SAML
+
+Para ativar a autenticação SAML com o System Manager ou com a CLI, execute as seguintes etapas. Se o cluster estiver executando o ONTAP 9.7 ou anterior, as etapas do Gerenciador de sistema que você precisa seguir serão diferentes. Consulte a ajuda online do System Manager disponível no seu sistema.
+
+
+NOTE: Depois de ativar a autenticação SAML, somente usuários remotos podem acessar a GUI do System Manager. Os usuários locais não podem acessar a GUI do System Manager depois que a autenticação SAML estiver ativada.
+
+image:workflow_security_mfa_setup.gif["Fluxo de trabalho da tarefa para configurar a autenticação multifator com SAML"]
+
+.Antes de começar
+* O IDP que pretende utilizar para autenticação remota tem de ser configurado.
++
+[NOTE]
+====
+Consulte a documentação fornecida pelo IDP que você configurou.
+
+====
+* Você deve ter o URI do IDP.
+
+
+.Sobre esta tarefa
+* A autenticação SAML aplica-se apenas `http` aos aplicativos e `ontapi`.
++
+ `http`Os aplicativos e `ontapi` são usados pelos seguintes serviços da Web: Infraestrutura do processador de serviço, APIs do ONTAP ou Gerenciador de sistema.
+
+* A autenticação SAML é aplicável apenas para acessar o SVM admin.
+
+
+Os seguintes IDPs foram validados com o System Manager:
+
+* Serviços de Federação do ative Directory
+* Cisco Duo (validado com as seguintes versões do ONTAP:)
++
+** 9.7P21 e versões posteriores do 9,7 (consulte a https://docs.netapp.com/us-en/ontap-system-manager-classic/online-help-96-97/task_setting_up_saml_authentication.html["Documentação do System Manager Classic"^])
+** 9.8P17 e versões posteriores do 9,8
+** 9,9.1P13 e versões posteriores do 9,9
+** 9.10.1P9 e versões posteriores do 9,10
+** 9.11.1P4 e versões posteriores do 9,11
+** 9.12.1 e versões posteriores
+
+
+* Shibboleth
+
+
+Execute as seguintes etapas, dependendo do ambiente:
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Clique em *Cluster > Settings*.
+. Ao lado de *Autenticação SAML*, clique image:icon_gear.gif["Ícone ações"]em .
+. Verifique se há uma verificação na caixa de seleção *Ativar autenticação SAML*.
+. Insira o URL do URI de IDP (incluindo "https://"[]).
+. Modifique o endereço do sistema host, se necessário.
+. Certifique-se de que está a ser utilizado o certificado correto:
++
+** Se o seu sistema foi mapeado com apenas um certificado com o tipo "servidor", esse certificado é considerado o padrão e não é exibido.
+** Se o seu sistema foi mapeado com vários certificados como tipo "servidor", um dos certificados será exibido. Para selecionar um certificado diferente, clique em *alterar*.
+
+
+. Clique em *Salvar*. Uma janela de confirmação exibe as informações de metadados, que foram copiadas automaticamente para a área de transferência.
+. Vá para o sistema IDP que você especificou e copie os metadados da área de transferência para atualizar os metadados do sistema.
+. Retorne à janela de confirmação (no System Manager) e marque a caixa de seleção *Eu configurei o IDP com o URI do host ou metadados*.
+. Clique em *Logout* para ativar a autenticação baseada em SAML. O sistema IDP exibirá uma tela de autenticação.
+. No sistema IDP, insira suas credenciais baseadas em SAML. Depois que suas credenciais forem verificadas, você será direcionado para a página inicial do System Manager.
+
+
+--
+.CLI
+--
+. Crie uma configuração SAML para que o ONTAP possa acessar os metadados do IDP:
++
+`*security saml-sp create -idp-uri _idp_uri_ -sp-host _ontap_host_name_*`
+
++
+`idp_uri` É o endereço FTP ou HTTP do host IDP de onde os metadados IDP podem ser baixados.
+
++
+`ontap_host_name` É o nome do host ou endereço IP do host do provedor de serviços SAML, que neste caso é o sistema ONTAP. Por padrão, o endereço IP do LIF de gerenciamento de cluster é usado.
+
++
+Opcionalmente, você pode fornecer as informações do certificado do servidor ONTAP. Por padrão, as informações de certificado do servidor Web do ONTAP são usadas.
+
++
+[listing]
+----
+cluster_12::> security saml-sp create -idp-uri https://example.url.net/idp/shibboleth
+
+Warning: This restarts the web server. Any HTTP/S connections that are active
+         will be disrupted.
+Do you want to continue? {y|n}: y
+[Job 179] Job succeeded: Access the SAML SP metadata using the URL:
+https://10.0.0.1/saml-sp/Metadata
+
+Configure the IdP and Data ONTAP users for the same directory server domain to ensure that users are the same for different authentication methods. See the "security login show" command for the Data ONTAP user configuration.
+----
++
+O URL para acessar os metadados do host do ONTAP é exibido.
+
+. No host IDP, configure o IDP com os metadados do host ONTAP.
++
+Para obter mais informações sobre como configurar o IDP, consulte a documentação do IDP.
+
+. Ativar configuração SAML:
++
+`*security saml-sp modify -is-enabled true*`
+
++
+Qualquer usuário existente que acesse o `http` aplicativo ou `ontapi` é configurado automaticamente para autenticação SAML.
+
+. Se você quiser criar usuários para o `http` aplicativo ou `ontapi` depois que o SAML for configurado, especifique SAML como o método de autenticação para os novos usuários.
++
+.. Criar um método de login para novos usuários com autenticação SAML
+`*security login create -user-or-group-name _user_name_ -application [http | ontapi] -authentication-method saml -vserver _svm_name_*`
++
+[listing]
+----
+cluster_12::> security login create -user-or-group-name admin1 -application http -authentication-method saml -vserver  cluster_12
+----
+.. Verifique se a entrada do usuário foi criada:
++
+`*security login show*`
+
++
+[listing]
+----
+cluster_12::> security login show
+
+Vserver: cluster_12
+                                                                 Second
+User/Group                 Authentication                 Acct   Authentication
+Name           Application Method        Role Name        Locked Method
+-------------- ----------- ------------- ---------------- ------ --------------
+admin          console     password      admin            no     none
+admin          http        password      admin            no     none
+admin          http        saml          admin            -      none
+admin          ontapi      password      admin            no     none
+admin          ontapi      saml          admin            -      none
+admin          service-processor
+                           password      admin            no     none
+admin          ssh         password      admin            no     none
+admin1         http        password      backup           no     none
+**admin1       http        saml          backup           -      none**
+----
+
+
+
+
+--
+====
+
+
+== Desativar a autenticação SAML
+
+Você pode desativar a autenticação SAML quando quiser parar de autenticar usuários da Web usando um provedor de identidade externo (IDP). Quando a autenticação SAML está desativada, os provedores de serviços de diretório configurados, como o ative Directory e o LDAP, são usados para autenticação.
+
+Execute as seguintes etapas, dependendo do ambiente:
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Clique em *Cluster > Settings*.
+. Em *Autenticação SAML*, clique no botão de alternância *Enabled*.
+. _Opcional_: Você também pode clicar image:icon_gear.gif["Ícone ações"] ao lado de *Autenticação SAML* e, em seguida, desmarcar a caixa de seleção *Ativar autenticação SAML*.
+
+
+--
+.CLI
+--
+. Desativar autenticação SAML:
++
+`*security saml-sp modify -is-enabled false*`
+
+. Se você não quiser mais usar a autenticação SAML ou se quiser modificar o IDP, exclua a configuração SAML:
++
+`*security saml-sp delete*`
+
+
+
+--
+====
+
+
+== Solucionar problemas com a configuração SAML
+
+Se a configuração da autenticação SAML (Security Assertion Markup Language) falhar, você poderá reparar manualmente cada nó em que a configuração SAML falhou e recuperar da falha. Durante o processo de reparo, o servidor da Web é reiniciado e todas as conexões HTTP ou HTTPS ativas são interrompidas.
+
+.Sobre esta tarefa
+Quando você configura a autenticação SAML, o ONTAP aplica a configuração SAML por nó. Quando você ativa a autenticação SAML, o ONTAP tenta reparar automaticamente cada nó se houver problemas de configuração. Se houver problemas com a configuração SAML em qualquer nó, você poderá desabilitar a autenticação SAML e rehabilitar a autenticação SAML. Pode haver situações em que a configuração SAML não se aplica em um ou mais nós, mesmo após a reativação da autenticação SAML. Você pode identificar o nó no qual a configuração SAML falhou e, em seguida, reparar manualmente esse nó.
+
+.Passos
+. Inicie sessão no nível de privilégio avançado:
++
+`*set -privilege advanced*`
+
+. Identificar o nó no qual a configuração SAML falhou:
++
+`*security saml-sp status show -instance*`
+
++
+[listing]
+----
+cluster_12::*> security saml-sp status show -instance
+
+                         Node: node1
+                Update Status: config-success
+               Database Epoch: 9
+   Database Transaction Count: 997
+                   Error Text:
+SAML Service Provider Enabled: false
+        ID of SAML Config Job: 179
+
+                         Node: node2
+                Update Status: config-failed
+               Database Epoch: 9
+   Database Transaction Count: 997
+                   Error Text: SAML job failed, Reason: Internal error. Failed to receive the SAML IDP Metadata file.
+SAML Service Provider Enabled: false
+        ID of SAML Config Job: 180
+2 entries were displayed.
+----
+. Repare a configuração SAML no nó com falha:
++
+`*security saml-sp repair -node _node_name_*`
+
++
+[listing]
+----
+cluster_12::*> security saml-sp repair -node node2
+
+Warning: This restarts the web server. Any HTTP/S connections that are active
+         will be disrupted.
+Do you want to continue? {y|n}: y
+[Job 181] Job is running.
+[Job 181] Job success.
+----
++
+O servidor web é reiniciado e quaisquer conexões HTTP ou HTTPS ativas são interrompidas.
+
+. Verifique se o SAML está configurado com êxito em todos os nós:
++
+`*security saml-sp status show -instance*`
+
++
+[listing]
+----
+cluster_12::*> security saml-sp status show -instance
+
+                         Node: node1
+                Update Status: config-success
+               Database Epoch: 9
+   Database Transaction Count: 997
+                   Error Text:
+SAML Service Provider Enabled: false
+        ID of SAML Config Job: 179
+
+                         Node: node2
+                Update Status: **config-success**
+               Database Epoch: 9
+   Database Transaction Count: 997
+                   Error Text:
+SAML Service Provider Enabled: false
+        ID of SAML Config Job: 180
+2 entries were displayed.
+----
+
+
+.Informações relacionadas
+link:../concepts/manual-pages.html["Referência do comando ONTAP"]

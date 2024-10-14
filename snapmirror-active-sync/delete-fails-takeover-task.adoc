@@ -1,0 +1,37 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/delete-fails-takeover-task.html 
+keywords: troubleshooting, SM-BC, SMBC, SnapMirror, delete, takeover, consistency group, snapmirror active sync 
+summary: 'Quando o ONTAP 9.9,1 é instalado em um cluster, a execução do `snapmirror delete` comando falha quando uma relação de grupo de consistência de sincronização ativa do SnapMirror está no estado de aquisição.' 
+---
+= A operação de exclusão do SnapMirror falha no estado takover
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+.Problema:
+[role="lead"]
+Quando o ONTAP 9.9,1 é instalado em um cluster, a execução do `snapmirror delete` comando falha quando uma relação de grupo de consistência de sincronização ativa do SnapMirror está no estado de aquisição.
+
+....
+C2_cluster::> snapmirror delete  vs1:/cg/dd
+
+Error: command failed: RPC: Couldn't make connection
+....
+.Solução
+Quando os nós de uma relação de sincronização ativa do SnapMirror estiverem no estado de aquisição, execute a operação de exclusão e liberação do SnapMirror com a opção "-force" definida como verdadeiro.
+
+....
+C2_cluster::> snapmirror delete  vs1:/cg/dd -force true
+
+Warning: The relationship between source "vs0:/cg/ss" and destination
+         "vs1:/cg/dd" will be deleted, however the items of the destination
+         Consistency Group might not be made writable, deletable, or modifiable
+         after the operation. Manual recovery might be required.
+Do you want to continue? {y|n}: y
+Operation succeeded: snapmirror delete for the relationship with destination "vs1:/cg/dd".
+....

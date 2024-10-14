@@ -1,0 +1,34 @@
+---
+permalink: flexgroup/disable-svm-protection-task.html 
+sidebar: sidebar 
+keywords: disable, SVM, protection, flexgroup, volume 
+summary: Quando o sinalizador SVM DR está definido como protegido em um volume FlexGroup, você pode definir o sinalizador como desprotegido para desativar a proteção SVM DR em um volume FlexGroup. 
+---
+= Desativar a proteção contra SVM em um volume FlexGroup
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando o sinalizador SVM DR está definido como `protected` em um volume FlexGroup, você pode definir o sinalizador como desprotegido para desativar o SVM DR `protection` em um volume FlexGroup.
+
+.O que você vai precisar
+* A relação do SVM DR entre o primário e o secundário está saudável.
+* O parâmetro de proteção do SVM DR é definido como `protected`.
+
+
+.Passos
+. Desative a proteção usando o `volume modify` comando para alterar o `vserver-dr-protection` parâmetro do volume FlexGroup para `unprotected`.
++
+[listing]
+----
+cluster2::> volume modify -vserver vs1 -volume fg_src -vserver-dr-protection unprotected
+[Job 5384] Job is queued: Modify fg_src.
+[Job 5384] Steps completed: 4 of 4.
+cluster2::>
+----
+. Atualize o SVM no local secundário: `snapmirror update -destination-path destination_svm_name: -source-path Source_svm_name:`
+. Verifique se a relação SnapMirror está saudável: `snapmirror show`
+. Verifique se a relação FlexGroup SnapMirror foi removida: `snapmirror show -expand`
+

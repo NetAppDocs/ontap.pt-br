@@ -1,0 +1,806 @@
+---
+permalink: mediator/manage-task.html 
+sidebar: sidebar 
+keywords: mediator, service, username, user name, password, change, uninstall, self-signed certificate, self signed certificate, regenerate, stop mediator service, uninstall scst 
+summary: Gerencie o serviço ONTAP Mediator, incluindo gerenciamento de credenciais de usuário, controle de serviços, verificação de integridade, manutenção SCST e gerenciamento e solução de problemas de certificados. 
+---
+= Gerenciar o serviço de mediador do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Gerencie o serviço do ONTAP Mediator, incluindo alteração das credenciais do usuário, interrupção e reativação do serviço, verificação de sua integridade e instalação ou desinstalação do SCST para manutenção do host. Você também pode gerenciar certificados, como a geração de certificados autoassinados, a substituição deles por certificados de terceiros confiáveis e a solução de problemas relacionados a certificados.
+
+
+
+== Altere o nome de usuário
+
+Você pode alterar o nome de usuário usando o procedimento a seguir.
+
+.Sobre esta tarefa
+Execute esta tarefa no host Linux no qual o serviço Mediador ONTAP está instalado.
+
+Se você não conseguir alcançar esse comando, talvez seja necessário executar o comando usando o caminho completo como mostrado no exemplo a seguir:
+
+`/usr/local/bin/mediator_username`
+
+.Passos
+Altere o nome de usuário escolhendo uma das seguintes opções:
+
+* *Opção (a)*: Execute o comando `mediator_change_user` e responda aos prompts como mostrado no exemplo a seguir:
++
+....
+ [root@mediator-host ~]# mediator_change_user
+ Modify the Mediator API username by entering the following values:
+     Mediator API User Name: mediatoradmin
+                   Password:
+ New Mediator API User Name: mediator
+ The account username has been modified successfully.
+ [root@mediator-host ~]#
+....
+* *Opção (b)*: Execute o seguinte comando:
++
+`MEDIATOR_USERNAME=mediator MEDIATOR_PASSWORD=mediator2 MEDIATOR_NEW_USERNAME=mediatoradmin mediator_change_user`
+
++
+[listing]
+----
+ [root@mediator-host ~]# MEDIATOR_USERNAME=mediator MEDIATOR_PASSWORD='mediator2' MEDIATOR_NEW_USERNAME=mediatoradmin mediator_change_user
+ The account username has been modified successfully.
+ [root@mediator-host ~]#
+----
+
+
+
+
+== Altere a palavra-passe
+
+Pode alterar a palavra-passe utilizando o seguinte procedimento.
+
+.Sobre esta tarefa
+Execute esta tarefa no host Linux no qual o serviço Mediador ONTAP está instalado.
+
+Se você não conseguir alcançar esse comando, talvez seja necessário executar o comando usando o caminho completo como mostrado no exemplo a seguir:
+
+`/usr/local/bin/mediator_change_password`
+
+.Passos
+Altere a senha escolhendo uma das seguintes opções:
+
+* *Opção (a)*: Execute o `mediator_change_password` comando e responda aos prompts como mostrado no exemplo a seguir:
++
+....
+ [root@mediator-host ~]# mediator_change_password
+ Change the Mediator API password by entering the following values:
+    Mediator API User Name: mediatoradmin
+              Old Password:
+              New Password:
+          Confirm Password:
+ The password has been updated successfully.
+ [root@mediator-host ~]#
+....
+* *Opção (b)*: Execute o seguinte comando:
++
+`MEDIATOR_USERNAME=mediatoradmin MEDIATOR_PASSWORD=mediator1 MEDIATOR_NEW_PASSWORD=mediator2 mediator_change_password`
+
++
+O exemplo mostra que a senha foi alterada de "mediator1" para "mediator2".
+
++
+....
+ [root@mediator-host ~]# MEDIATOR_USERNAME=mediatoradmin MEDIATOR_PASSWORD=mediator1 MEDIATOR_NEW_PASSWORD=mediator2 mediator_change_password
+ The password has been updated successfully.
+ [root@mediator-host ~]#
+....
+
+
+
+
+== Pare o serviço Mediador ONTAP
+
+Para interromper o serviço do Mediador ONTAP, execute as seguintes etapas:
+
+.Passos
+. Pare o Mediador ONTAP:
++
+`systemctl stop ontap_mediator`
+
+. Parar SCST:
++
+`systemctl stop mediator-scst`
+
+. Desative o Mediador ONTAP e o SCST:
++
+`systemctl diable ontap_mediator mediator-scst`
+
+
+
+
+
+== Reative o serviço Mediador ONTAP
+
+Para reativar o serviço do Mediador ONTAP, execute as seguintes etapas:
+
+.Passos
+. Ative o Mediador ONTAP e o SCST:
++
+`systemctl enable ontap_mediator mediator-scst`
+
+. Iniciar SCST:
++
+`systemctl start mediator-scst`
+
+. Iniciar o Mediador ONTAP:
++
+`systemctl start ontap_mediator`
+
+
+
+
+
+== Verifique se o Mediador ONTAP está saudável
+
+Após a instalação do Mediador ONTAP, você deve verificar se os serviços do Mediador ONTAP estão em execução.
+
+.Passos
+. Veja o status dos serviços do Mediador ONTAP:
++
+.. `systemctl status ontap_mediator`
++
+[listing]
+----
+[root@scspr1915530002 ~]# systemctl status ontap_mediator
+
+ ontap_mediator.service - ONTAP Mediator
+Loaded: loaded (/etc/systemd/system/ontap_mediator.service; enabled; vendor preset: disabled)
+Active: active (running) since Mon 2022-04-18 10:41:49 EDT; 1 weeks 0 days ago
+Process: 286710 ExecStop=/bin/kill -s INT $MAINPID (code=exited, status=0/SUCCESS)
+Main PID: 286712 (uwsgi)
+Status: "uWSGI is ready"
+Tasks: 3 (limit: 49473)
+Memory: 139.2M
+CGroup: /system.slice/ontap_mediator.service
+      ├─286712 /opt/netapp/lib/ontap_mediator/pyenv/bin/uwsgi --ini /opt/netapp/lib/ontap_mediator/uwsgi/ontap_mediator.ini
+      ├─286716 /opt/netapp/lib/ontap_mediator/pyenv/bin/uwsgi --ini /opt/netapp/lib/ontap_mediator/uwsgi/ontap_mediator.ini
+      └─286717 /opt/netapp/lib/ontap_mediator/pyenv/bin/uwsgi --ini /opt/netapp/lib/ontap_mediator/uwsgi/ontap_mediator.ini
+
+[root@scspr1915530002 ~]#
+----
+.. `systemctl status mediator-scst`
++
+[listing]
+----
+[root@scspr1915530002 ~]# systemctl status mediator-scst
+   Loaded: loaded (/etc/systemd/system/mediator-scst.service; enabled; vendor preset: disabled)
+   Active: active (running) since Mon 2022-04-18 10:41:47 EDT; 1 weeks 0 days ago
+  Process: 286595 ExecStart=/etc/init.d/scst start (code=exited, status=0/SUCCESS)
+ Main PID: 286662 (iscsi-scstd)
+    Tasks: 1 (limit: 49473)
+   Memory: 1.2M
+   CGroup: /system.slice/mediator-scst.service
+           └─286662 /usr/local/sbin/iscsi-scstd
+
+[root@scspr1915530002 ~]#
+----
+
+
+. Confirme as portas usadas pelo serviço do Mediador ONTAP:
++
+`netstat`
+
++
+[listing]
+----
+[root@scspr1905507001 ~]# netstat -anlt | grep -E '3260|31784'
+
+         tcp   0   0 0.0.0.0:31784   0.0.0.0:*      LISTEN
+
+         tcp   0   0 0.0.0.0:3260    0.0.0.0:*      LISTEN
+
+         tcp6  0   0 :::3260         :::*           LISTEN
+----
+
+
+
+
+== Desinstale manualmente o SCST para executar a manutenção do host
+
+Para desinstalar o SCST, você precisa do pacote tar SCST que é usado para a versão instalada do ONTAP Mediator.
+
+.Passos
+. Baixe o pacote SCST apropriado (como mostrado na tabela a seguir) e descompacte-o.
++
+[cols="50,50"]
+|===
+
+
+| Para esta versão ... | Use este pacote tar... 
+
+
+ a| 
+ONTAP Mediador 1,8
+ a| 
+scst-3,8.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,7
+ a| 
+scst-3,7.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,6
+ a| 
+scst-3,7.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,5
+ a| 
+scst-3,6.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,4
+ a| 
+scst-3,6.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,3
+ a| 
+scst-3,5.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,1
+ a| 
+scst-3,4.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,0
+ a| 
+scst-3,3.0.tar.bz2
+
+|===
+. Emita os seguintes comandos no diretório "scst":
++
+.. `systemctl stop mediator-scst`
+.. `make scstadm_uninstall`
+.. `make iscsi_uninstall`
+.. `make usr_uninstall`
+.. `make scst_uninstall`
+.. `depmod`
+
+
+
+
+
+
+== Instale manualmente o SCST para executar a manutenção do host
+
+Para instalar manualmente o SCST, você precisa do pacote tar SCST que é usado para a versão instalada do ONTAP Mediator (consulte a <<scst-bundle-table,tabela acima>>).
+
+. Emita os seguintes comandos no diretório "scst":
++
+.. `make 2release`
+.. `make scst_install`
+.. `make usr_install`
+.. `make iscsi_install`
+.. `make scstadm_install`
+.. `depmod`
+.. `cp scst/src/certs/scst_module_key.der /opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/`
+.. `patch /etc/init.d/scst < /opt/netapp/lib/ontap_mediator/systemd/scst.patch`
+
+
+. Opcionalmente, se o Secure Boot estiver ativado, antes de reiniciar, execute as seguintes etapas:
++
+.. Determine cada nome de arquivo para os módulos "scst_vdisk", "scst" e "iscsi_scst":
++
+....
+[root@localhost ~]# modinfo -n scst_vdisk
+[root@localhost ~]# modinfo -n scst
+[root@localhost ~]# modinfo -n iscsi_scst
+....
+.. Determine a versão do kernel:
++
+....
+[root@localhost ~]# uname -r
+....
+.. Assine cada arquivo com o kernel:
++
+....
+[root@localhost ~]# /usr/src/kernels/<KERNEL-RELEASE>/scripts/sign-file \sha256 \
+/opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/scst_module_key.priv \
+/opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/scst_module_key.der \
+_module-filename_
+....
+.. Instale a chave correta com o firmware UEFI.
++
+As instruções para instalar a chave UEFI estão localizadas em:
+
++
+`/opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/README.module-signing`
+
++
+A chave UEFI gerada está localizada em:
+
++
+`/opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/scst_module_key.der`
+
+
+
+. Execute uma reinicialização:
++
+`reboot`
+
+
+
+
+
+== Desinstale o serviço ONTAP Mediator
+
+Se necessário, pode remover o serviço Mediador ONTAP.
+
+.Antes de começar
+O Mediador ONTAP tem de ser desligado do ONTAP antes de remover o serviço Mediador ONTAP.
+
+.Sobre esta tarefa
+Você precisa executar esta tarefa no host Linux no qual o serviço do Mediador ONTAP está instalado.
+
+Se você não conseguir alcançar esse comando, talvez seja necessário executar o comando usando o caminho completo como mostrado no exemplo a seguir:
+
+`/usr/local/bin/uninstall_ontap_mediator`
+
+.Passo
+. Desinstale o serviço ONTAP Mediator:
++
+`uninstall_ontap_mediator`
+
++
+....
+ [root@mediator-host ~]# uninstall_ontap_mediator
+
+ ONTAP Mediator: Self Extracting Uninstaller
+
+ + Removing ONTAP Mediator. (Log: /tmp/ontap_mediator.GmRGdA/uninstall_ontap_mediator/remove.log)
+ + Remove successful.
+ [root@mediator-host ~]#
+....
+
+
+
+
+== Regenerar um certificado temporário autoassinado
+
+A partir do ONTAP Mediator 1,7, você pode regenerar um certificado auto-assinado temporário usando o seguinte procedimento.
+
+
+NOTE: Este procedimento só é suportado em sistemas que executam o ONTAP Mediator 1,7 ou posterior.
+
+.Sobre esta tarefa
+* Você executa essa tarefa no host Linux no qual o serviço do Mediador ONTAP está instalado.
+* Só é possível executar esta tarefa se os certificados autoassinados gerados se tornarem obsoletos devido a alterações no nome de host ou endereço IP do host após a instalação do Mediador ONTAP.
+* Depois que o certificado auto-assinado temporário for substituído por um certificado de terceiros confiável, você _não_ usará essa tarefa para regenerar um certificado. A ausência de um certificado auto-assinado fará com que este procedimento falhe.
+
+
+.Passo
+Para regenerar um novo certificado auto-assinado temporário para o host atual, execute o seguinte passo:
+
+. Reinicie o serviço do Mediador ONTAP:
++
+`./make_self_signed_certs.sh overwrite`
+
++
+[listing]
+----
+[root@xyz000123456 ~]# cd /opt/netapp/lib/ontap_mediator/ontap_mediator/server_config
+[root@xyz000123456 server_config]# ./make_self_signed_certs.sh overwrite
+
+Adding Subject Alternative Names to the self-signed server certificate
+#
+# OpenSSL example configuration file.
+Generating self-signed certificates
+Generating RSA private key, 4096 bit long modulus (2 primes)
+..................................................................................................................................................................++++
+........................................................++++
+e is 65537 (0x010001)
+Generating a RSA private key
+................................................++++
+.............................................................................................................................................++++
+writing new private key to 'ontap_mediator_server.key'
+-----
+Signature ok
+subject=C = US, ST = California, L = San Jose, O = "NetApp, Inc.", OU = ONTAP Core Software, CN = ONTAP Mediator, emailAddress = support@netapp.com
+Getting CA Private Key
+----
+
+
+
+
+== Substitua certificados autoassinados por certificados de terceiros confiáveis
+
+Se suportado, você pode substituir certificados autoassinados por certificados de terceiros confiáveis.
+
+[CAUTION]
+====
+* Os certificados de terceiros são suportados apenas com o Mediador ONTAP em determinadas versões do ONTAP. link:https://mysupport.netapp.com/site/bugs-online/product/ONTAP/JiraNgage/CONTAP-243278["NetApp Bugs Online ID de erro CONTAP-243278"^]Consulte .
+* Os certificados de terceiros são suportados apenas em sistemas que executam o ONTAP Mediator 1,7 ou posterior.
+
+
+====
+.Sobre esta tarefa
+* Você executa essa tarefa no host Linux no qual o serviço do Mediador ONTAP está instalado.
+* Você pode executar esta tarefa se os certificados autoassinados gerados precisarem ser substituídos por certificados obtidos de uma autoridade de certificação subordinada (CA) confiável. Para isso, você deve ter acesso a uma autoridade de infraestrutura de chave pública (PKI) confiável.
+* A imagem a seguir mostra as finalidades de cada certificado do Mediador ONTAP.
++
+image:mediator-cert-purposes.png["Finalidades do certificado do mediador ONTAP"]
+
+* A imagem a seguir mostra a configuração para a configuração do servidor web e a configuração do servidor do ONTAP Mediator.
++
+image:mediator-certs-index.png["Configuração do servidor Web e configuração do servidor do ONTAP Mediator"]
+
+
+
+
+
+=== Etapa 1: Obter um certificado de um terceiro que emite um certificado de CA
+
+Você pode obter um certificado de uma autoridade PKI usando o procedimento a seguir.
+
+O exemplo a seguir demonstra a substituição dos agentes de certificados autoassinados, ou seja, `ca.key` `ca.csr` `ca.srl` , e `ca.crt` localizados em `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/` por agentes de certificados de terceiros.
+
+
+NOTE: O exemplo ilustra os critérios necessários para os certificados necessários para o serviço Mediador ONTAP. Você pode obter os certificados de uma autoridade PKI de uma forma que pode ser diferente deste procedimento. Ajuste o procedimento de acordo com a necessidade do seu negócio.
+
+.Passos
+. Crie uma chave `ca.key` privada e um arquivo de configuração `openssl_ca.cnf` que serão consumidos pela autoridade PKI para gerar um certificado.
++
+.. Gerar a chave privada `ca.key` :
++
+*Exemplo*
+
++
+`openssl genrsa -aes256 -out ca.key 4096`
+
+.. O arquivo de `openssl_ca.cnf` configuração (localizado em `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/openssl_ca.cnf`) define as propriedades que o certificado gerado deve ter.
+
+
+. Use a chave privada e o arquivo de configuração para criar uma solicitação de assinatura de certificado `ca.csr` :
++
+*Exemplo:*
+
++
+`openssl req -key <private_key_name>.key -new -out <certificate_csr_name>.csr -config <config_file_name>.cnf`
+
++
+[listing]
+----
+[root@scs000216655 server_config]# openssl req -key ca.key -new -config openssl_ca.cnf -out ca.csr
+Enter pass phrase for ca.key:
+[root@scs000216655 server_config]# cat ca.csr
+-----BEGIN CERTIFICATE REQUEST-----
+MIIE6TCCAtECAQAwgaMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlh
+...
+erARKhY9z0e8BHPl3g==
+-----END CERTIFICATE REQUEST-----
+----
+. Envie a solicitação de assinatura de certificado `ca.csr` para uma autoridade PKI para sua assinatura.
++
+A autoridade PKI verifica a solicitação e assina o `.csr`, gerando o certificado `ca.crt`. Além disso, você precisa obter o `root_ca.crt` certificado que assinou o `ca.crt` certificado da autoridade PKI.
+
++
+
+NOTE: Para clusters do SnapMirror Business Continuity (SM-BC), é necessário adicionar os `ca.crt` certificados e `root_ca.crt` a um cluster do ONTAP. link:../snapmirror-active-sync/mediator-install-task.html["Configure o Mediador e os clusters do ONTAP para a sincronização ativa do SnapMirror"]Consulte .
+
+
+
+
+
+=== Etapa 2: Gere um certificado de servidor assinando com uma certificação de CA de terceiros
+
+Um certificado de servidor deve ser assinado pela chave privada `ca.key` e pelo certificado de `ca.crt` terceiros . Além disso, o arquivo de configuração `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/openssl_server.cnf` contém certos atributos que especificam as propriedades necessárias para certificados de servidor emitidos pelo OpenSSL.
+
+Os comandos a seguir podem gerar um certificado de servidor.
+
+.Passos
+. Para gerar uma solicitação de assinatura de certificado de servidor (CSR), execute o seguinte comando `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config` na pasta:
++
+`openssl req -config openssl_server.cnf -extensions v3_req -nodes -newkey rsa:4096 -sha512 -keyout ontap_mediator_server.key -out ontap_mediator_server.csr`
+
+. [[step_2_intermediate_info]]para gerar um certificado de servidor a partir do CSR, execute o seguinte comando a partir `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config` da pasta:
++
+
+NOTE: Os `ca.crt` arquivos e `ca.key` foram obtidos de uma autoridade PKI. Se estiver a utilizar um nome de certificado diferente, por exemplo, `intermediate.crt` e `intermediate.key`, substitua `ca.crt` e `ca.key` por `intermediate.crt` e `intermediate.key` respetivamente.
+
++
+`openssl x509 -extfile openssl_server.cnf -extensions v3_req -CA ca.crt -CAkey ca.key -CAcreateserial -sha512 -days 1095 -req -in ontap_mediator_server.csr -out ontap_mediator_server.crt`
+
++
+** A `-CAcreateserial` opção é usada para gerar os `ca.srl` arquivos ou `intermediate.srl`, dependendo do nome do certificado que você está usando.
+
+
+
+
+
+
+=== Etapa 3: Substitua o novo certificado de CA de terceiros e o certificado de servidor na configuração do ONTAP Mediator
+
+A configuração do certificado é fornecida ao serviço do Mediador ONTAP no arquivo de configuração localizado em `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator.config.yaml`. O arquivo inclui os seguintes atributos:
+
+[listing]
+----
+cert_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.crt'
+key_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.key'
+ca_cert_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.crt'
+ca_key_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.key'
+ca_serial_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.srl'
+----
+* `cert_path` e `key_path` são variáveis de certificado de servidor.
+* `ca_cert_path`, `ca_key_path`, E `ca_serial_path` são variáveis de certificado CA.
+
+
+.Passos
+. Substitua todos `ca.*` os arquivos por certificados de terceiros.
+. Crie uma cadeia de certificados a partir dos `ca.crt` certificados e `ontap_mediator_server.crt`:
++
+`cat ontap_mediator_server.crt ca.crt > ontap_mediator_server_chain.crt`
+
+. Atualize o `/opt/netapp/lib/ontap_mediator/uwsgi/ontap_mediator.ini` ficheiro.
++
+Atualizar os valores de `mediator_cert`, `mediator_key` e `ca_certificate`:
+
++
+`set-placeholder = mediator_cert = /opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server_chain.crt`
+
++
+`set-placeholder = mediator_key = /opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.key`
+
++
+`set-placeholder = ca_certificate = /opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/root_ca.crt`
+
++
+** O `mediator_cert` valor é o caminho do `ontap_mediator_server_chain.crt` arquivo.
+**  `mediator_key value`O é o caminho da chave no `ontap_mediator_server.crt` arquivo, que é `ontap_mediator_server.key`.
+** O `ca_certificate` valor é o caminho do `root_ca.crt` arquivo.
+
+
+. Verifique se os seguintes atributos dos certificados recém-gerados estão definidos corretamente:
++
+** Proprietário do Grupo Linux: `netapp:netapp`
+** Permissões do Linux: `600`
+
+
+. Reinicie o Mediador ONTAP:
++
+`systemctl restart ontap_mediator`
+
+
+
+
+
+=== Passo 4: Opcionalmente, use um caminho ou nome diferente para seus certificados de terceiros
+
+Você pode usar certificados de terceiros com um nome diferente `ca.*` ou armazenar os certificados de terceiros em um local diferente.
+
+.Passos
+. Configure o `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator.user_config.yaml` arquivo para substituir os valores de variável padrão no `ontap_mediator.config.yaml` arquivo.
++
+Se você tiver obtido `intermediate.crt` de uma autoridade PKI e armazenar sua chave privada `intermediate.key` no local `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config`, o `ontap_mediator.user_config.yaml` arquivo deverá ser parecido com o seguinte exemplo:
+
++
+
+NOTE: Se você usou `intermediate.crt` para assinar o `ontap_mediator_server.crt` certificado, o  `intermediate.srl` arquivo será gerado. Consulte <<step_2_intermediate_info,Etapa 2: Gere um certificado de servidor assinando com uma certificação de CA de terceiros>> para obter mais informações.
+
++
+[listing]
+----
+[root@scs000216655 server_config]# cat  ontap_mediator.user_config.yaml
+
+# This config file can be used to override the default settings in ontap_mediator.config.yaml
+# To override a setting, copy the property key from ontap_mediator.config.yaml to this file and
+# set the property to the desired value. e.g.,
+#
+# The default value for 'default_mailboxes_per_target' is 4 in ontap_mediator.config.yaml
+#
+# To override this value with 6 mailboxes per target, add the following key/value pair
+# below this comment:
+#
+# 'default_mailboxes_per_target': 6
+#
+cert_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.crt'
+key_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.key'
+ca_cert_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/intermediate.crt'
+ca_key_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/intermediate.key'
+ca_serial_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/intermediate.srl'
+
+----
++
+.. Se estiver a utilizar uma estrutura de certificados onde o `root_ca.crt` certificado forneça um `intermediate.crt` certificado que assine o `ontap_mediator_server.crt` certificado, crie uma cadeia de certificados a partir dos `intermediate.crt` certificados e `ontap_mediator_server.crt`:
++
+
+NOTE: Você deve ter obtido os `intermediate.crt` certificados e `ontap_mediator_server.crt` de uma autoridade PKI anteriormente no procedimento.
+
++
+`cat ontap_mediator_server.crt intermediate.crt > ontap_mediator_server_chain.crt`
+
+.. Atualize o `/opt/netapp/lib/ontap_mediator/uwsgi/ontap_mediator.ini` ficheiro.
++
+Atualizar os valores de `mediator_cert`, `mediator_key` e `ca_certificate`:
+
++
+`set-placeholder = mediator_cert = /opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server_chain.crt`
+
++
+`set-placeholder = mediator_key = /opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.key`
+
++
+`set-placeholder = ca_certificate = /opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/root_ca.crt`
+
++
+*** O `mediator_cert` valor é o caminho do `ontap_mediator_server_chain.crt` arquivo.
+*** O `mediator_key` valor é o caminho da chave no `ontap_mediator_server.crt` arquivo, que é `ontap_mediator_server.key`.
+*** O `ca_certificate` valor é o caminho do `root_ca.crt` arquivo.
++
+
+NOTE: Para clusters do SnapMirror Business Continuity (SM-BC), é necessário adicionar os `intermediate.crt` certificados e `root_ca.crt` a um cluster do ONTAP. link:../snapmirror-active-sync/mediator-install-task.html["Configure o Mediador e os clusters do ONTAP para a sincronização ativa do SnapMirror"]Consulte .
+
+
+
+.. Verifique se os seguintes atributos dos certificados recém-gerados estão definidos corretamente:
++
+*** Proprietário do Grupo Linux: `netapp:netapp`
+*** Permissões do Linux: `600`
+
+
+
+
+. Reinicie o Mediador ONTAP quando os certificados forem atualizados no arquivo de configuração:
++
+`systemctl restart ontap_mediator`
+
+
+
+
+
+== Solucionar problemas relacionados ao certificado
+
+Você pode verificar certas propriedades dos certificados.
+
+
+
+=== Verifique a expiração do certificado
+
+Use o seguinte comando para identificar o intervalo de validade do certificado:
+
+[listing]
+----
+[root@scs000216982 server_config]# openssl x509 -in ca.crt -text -noout
+Certificate:
+    Data:
+...
+        Validity
+            Not Before: Feb 22 19:57:25 2024 GMT
+            Not After : Feb 15 19:57:25 2029 GMT
+----
+
+
+=== Verifique as extensões X509v3 na certificação CA
+
+Use o comando a seguir para verificar as extensões X509v3 na certificação CA.
+
+As propriedades definidas em `*v3_ca*` em `openssl_ca.cnf` são apresentadas como `X509v3 extensions` em `ca.crt`.
+
+[listing, subs="+quotes"]
+----
+[root@scs000216982 server_config]# pwd
+/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config
+
+[root@scs000216982 server_config]# cat openssl_ca.cnf
+...
+[ v3_ca ]
+*subjectKeyIdentifier = hash*
+*authorityKeyIdentifier = keyid:always,issuer*
+*basicConstraints = critical, CA:true*
+*keyUsage = critical, cRLSign, digitalSignature, keyCertSign*
+
+[root@scs000216982 server_config]# openssl x509 -in ca.crt -text -noout
+Certificate:
+    Data:
+...
+        *X509v3 extensions:*
+            X509v3 Subject Key Identifier:
+                9F:06:FA:47:00:67:BA:B2:D4:82:70:38:B8:48:55:B5:24:DB:FC:27
+            X509v3 Authority Key Identifier:
+                keyid:9F:06:FA:47:00:67:BA:B2:D4:82:70:38:B8:48:55:B5:24:DB:FC:27
+
+            X509v3 Basic Constraints: critical
+                CA:TRUE
+            X509v3 Key Usage: critical
+                Digital Signature, Certificate Sign, CRL Sign
+----
+
+
+=== Verifique as extensões X509v3 nos nomes Alt do certificado do servidor e do assunto
+
+As `v3_req` propriedades definidas no `openssl_server.cnf` arquivo de configuração são exibidas como `X509v3 extensions` no certificado.
+
+No exemplo a seguir, você pode obter as variáveis nas `alt_names` seções executando os comandos `hostname -A` e `hostname -I` na VM Linux na qual o Mediador ONTAP está instalado.
+
+Verifique com o administrador da rede os valores corretos das variáveis.
+
+[listing]
+----
+[root@scs000216982 server_config]# pwd
+/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config
+
+[root@scs000216982 server_config]# cat openssl_server.cnf
+...
+[ v3_req ]
+basicConstraints       = CA:false
+extendedKeyUsage       = serverAuth
+keyUsage               = keyEncipherment, dataEncipherment
+subjectAltName         = @alt_names
+
+[ alt_names ]
+DNS.1 = abc.company.com
+DNS.2 = abc-v6.company.com
+IP.1 = 1.2.3.4
+IP.2 = abcd:abcd:abcd:abcd:abcd:abcd
+
+[root@scs000216982 server_config]# openssl x509 -in ca.crt -text -noout
+Certificate:
+    Data:
+...
+
+        X509v3 extensions:
+            X509v3 Basic Constraints:
+                CA:FALSE
+            X509v3 Extended Key Usage:
+                TLS Web Server Authentication
+            X509v3 Key Usage:
+                Key Encipherment, Data Encipherment
+            X509v3 Subject Alternative Name:
+                DNS:abc.company.com, DNS:abc-v6.company.com, IP Address:1.2.3.4, IP Address:abcd:abcd:abcd:abcd:abcd:abcd
+----
+
+
+=== Verifique se uma chave privada corresponde a um certificado
+
+Você pode verificar se uma chave particular corresponde a um certificado.
+
+Use os seguintes comandos OpenSSL na chave e no certificado respetivamente:
+
+[listing]
+----
+[root@scs000216982 server_config]# openssl rsa -noout -modulus -in intermediate.key | openssl md5
+Enter pass phrase for intermediate.key:
+(stdin)= 14c6b98b0c7c59012b1de89eee4a9dbc
+[root@scs000216982 server_config]# openssl x509 -noout -modulus -in intermediate.crt | openssl md5
+(stdin)= 14c6b98b0c7c59012b1de89eee4a9dbc
+----
+Se o `-modulus` atributo para ambos corresponder, ele indica que a chave privada e o par de certificados são compatíveis e podem funcionar entre si.
+
+
+
+=== Verifique se um certificado de servidor é criado a partir de um certificado de CA específico
+
+Você pode usar o comando a seguir para verificar se o certificado do servidor foi criado a partir de um certificado de CA específico.
+
+[listing]
+----
+[root@scs000216982 server_config]# openssl verify -CAfile ca.crt ontap_mediator_server.crt
+ontap_mediator_server.crt: OK
+----
+Se a validação OCSP (Online Certificate Status Protocol) estiver sendo usada, use o comando link:https://www.openssl.org/docs/manmaster/man1/openssl-verify.html["verificação do openssl"^].

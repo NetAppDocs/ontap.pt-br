@@ -1,0 +1,45 @@
+---
+permalink: revert/concept_reversion_requirements_for_snapmirror_and_snapvault_relationships.html 
+sidebar: sidebar 
+keywords: ontap, revert, reverting, reversion, requirements, snapmirror, snapvault, relationships 
+summary: O comando revert-to do nó do sistema notifica você sobre quaisquer relações SnapMirror e SnapVault que precisam ser excluídas ou reconfiguradas para que o processo de reversão seja concluído. No entanto, você deve estar ciente desses requisitos antes de iniciar a reversão. 
+---
+= Requisitos de reversão para relacionamentos SnapMirror e SnapVault
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O comando revert-to do nó do sistema notifica você sobre quaisquer relações SnapMirror e SnapVault que precisam ser excluídas ou reconfiguradas para que o processo de reversão seja concluído. No entanto, você deve estar ciente desses requisitos antes de iniciar a reversão.
+
+* Todos os relacionamentos de espelhamento de proteção de dados e SnapVault precisam estar quietos e quebrados.
++
+Depois que a reversão for concluída, você poderá ressincronizar e retomar esses relacionamentos se houver uma cópia Snapshot comum.
+
+* Os relacionamentos do SnapVault não devem conter os seguintes tipos de diretiva do SnapMirror:
++
+** espelho assíncrono
++
+Você deve excluir qualquer relacionamento que use esse tipo de política.
+
+** MirrorAndVault
++
+Se algum desses relacionamentos existir, você deve alterar a política do SnapMirror para mirror-Vault.
+
+
+
+* Todas as relações de espelhamento de compartilhamento de carga e volumes de destino devem ser excluídos.
+* As relações do SnapMirror com volumes de destino do FlexClone devem ser excluídas.
+* A compactação de rede deve ser desativada para cada política do SnapMirror.
+* A regra all_source_snapshot deve ser removida de qualquer tipo de diretiva SnapMirror assíncrona-mirror.
++
+
+NOTE: As operações Single File Snapshot Restore (SFSR) e Partial File Snapshot Restore (PFSR) são obsoletas no volume raiz.
+
+* Todas as operações de restauração do Snapshot em execução no momento devem ser concluídas antes que a reversão possa continuar.
++
+Você pode esperar que a operação de restauração seja concluída ou pode abortá-la.
+
+* Todas as operações de restauração do Snapshot e arquivo único incompleto devem ser removidas usando o comando SnapMirror Restore.
+

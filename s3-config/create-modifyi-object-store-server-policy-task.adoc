@@ -1,0 +1,122 @@
+---
+permalink: s3-config/create-modifyi-object-store-server-policy-task.html 
+sidebar: sidebar 
+keywords: create, modify, object, store, server, policy 
+summary: Você pode criar políticas que podem ser aplicadas a um ou mais buckets em um armazenamento de objetos. As políticas de servidor de armazenamento de objetos podem ser anexadas a grupos de usuários, simplificando assim o gerenciamento do acesso a recursos em vários buckets. 
+---
+= Criar ou modificar uma política de servidor de armazenamento de objetos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar políticas que podem ser aplicadas a um ou mais buckets em um armazenamento de objetos. As políticas de servidor de armazenamento de objetos podem ser anexadas a grupos de usuários, simplificando assim o gerenciamento do acesso a recursos em vários buckets.
+
+.Antes de começar
+Um SVM habilitado para S3 que contenha um servidor S3 e um bucket já deve existir.
+
+.Sobre esta tarefa
+É possível habilitar políticas de acesso no nível SVM especificando uma política padrão ou personalizada em um grupo de servidores de storage de objetos. As políticas não entram em vigor até que sejam especificadas na definição de grupo.
+
+
+NOTE: Quando você usa políticas de servidor de armazenamento de objetos, você especifica princípios (ou seja, usuários e grupos) na definição de grupo, não na própria política.
+
+Há três políticas padrão somente leitura para acesso aos recursos do ONTAP S3:
+
+* FullAccess
+* NoS3Access
+* ReadOnlyAccess
+
+
+Você também pode criar novas políticas personalizadas, adicionar novas instruções para novos usuários e grupos ou modificar os atributos de instruções existentes. Para obter mais opções, consulte `vserver object-store-server policy` link:https://docs.netapp.com/us-en/ontap-cli/index.html["referência do comando"^].
+
+A partir do ONTAP 9.9,1, se você planeja oferecer suporte à funcionalidade de marcação de objetos cliente AWS com o servidor ONTAP S3, as ações `GetObjectTagging` `PutObjectTagging` e `DeleteObjectTagging` precisam ser permitidas usando o bucket ou as políticas de grupo.
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Use o System Manager para criar ou modificar uma política de servidor de armazenamento de objetos*
+
+.Passos
+. Edite a VM de armazenamento: Clique em *armazenamento > VMs de armazenamento*, clique na VM de armazenamento, clique em *Configurações* e, em seguida, clique image:icon_pencil.gif["Ícone de edição"] em S3.
+. Adicionar um usuário: Clique em *políticas* e, em seguida, clique em *Adicionar*.
++
+.. Introduza um nome de política e selecione a partir de uma lista de grupos.
+.. Selecione uma política padrão existente ou adicione uma nova.
++
+Ao adicionar ou modificar uma política de grupo, você pode especificar os seguintes parâmetros:
+
++
+*** Grupo: Os grupos a quem o acesso é concedido.
+*** Efeito: Permite ou nega o acesso a um ou mais grupos.
+*** Ações: Ações permitidas em um ou mais buckets para um determinado grupo.
+*** Recursos: Caminhos e nomes de objetos dentro de um ou mais buckets para os quais o acesso é concedido ou negado. Por exemplo:
++
+**** *** Concede acesso a todos os buckets na VM de armazenamento.
+**** *bucketname* e *bucketname/** concedem acesso a todos os objetos em um bucket específico.
+**** *bucketname/readme.txt* concede acesso a um objeto em um intervalo específico.
+
+
+
+
+.. Se desejar, adicione instruções às políticas existentes.
+
+
+
+
+--
+.CLI
+--
+*Use a CLI para criar ou modificar uma política de servidor de armazenamento de objetos*
+
+.Passos
+. Criar uma política de servidor de armazenamento de objetos:
++
+`vserver object-store-server policy create -vserver _svm_name_ -policy _policy_name_ [-comment _text_]`
+
+. Crie uma declaração para a política:
++
+`vserver object-store-server policy statement create -vserver _svm_name_ -policy _policy_name_ -effect {allow|deny} -action _object_store_actions_ -resource _object_store_resources_ [-sid text]`
+
++
+Os seguintes parâmetros definem permissões de acesso:
+
++
+[cols="2*"]
+|===
+
+
+ a| 
+`-effect`
+ a| 
+A declaração pode permitir ou negar acesso
+
+
+
+ a| 
+`-action`
+ a| 
+Você pode especificar `*` para indicar todas as ações ou uma lista de uma ou mais das seguintes opções: `GetObject, PutObject, DeleteObject, ListBucket,GetBucketAcl, GetObjectAcl, ListAllMyBuckets, ListBucketMultipartUploads,` E `ListMultipartUploadParts`.
+
+
+
+ a| 
+`-resource`
+ a| 
+O balde e qualquer objeto que ele contém. Os carateres curinga `*` e `?` podem ser usados para formar uma expressão regular para especificar um recurso.
+
+|===
++
+Opcionalmente, você pode especificar uma cadeia de texto como comentário com a `-sid` opção.
+
++
+Por padrão, novas instruções são adicionadas ao final da lista de instruções, que são processadas em ordem. Quando você adiciona ou modifica instruções mais tarde, você tem a opção de modificar a configuração da instrução `-index` para alterar a ordem de processamento.
+
+
+
+--
+====

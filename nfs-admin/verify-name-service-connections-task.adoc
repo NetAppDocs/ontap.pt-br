@@ -1,0 +1,68 @@
+---
+permalink: nfs-admin/verify-name-service-connections-task.html 
+sidebar: sidebar 
+keywords: verify, name, service, connection, dns, ldap, checker, check, configuration, configure 
+summary: A partir do ONTAP 9.2, pode verificar os servidores de nomes DNS e LDAP para verificar se estão ligados ao ONTAP. Esses comandos estão disponíveis no nível de privilégios de administrador. 
+---
+= Verifique as conexões do serviço de nomes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.2, pode verificar os servidores de nomes DNS e LDAP para verificar se estão ligados ao ONTAP. Esses comandos estão disponíveis no nível de privilégios de administrador.
+
+.Sobre esta tarefa
+Você pode verificar se há uma configuração válida do serviço de nomes DNS ou LDAP conforme necessário usando o verificador de configuração do serviço de nomes. Esta verificação de validação pode ser iniciada na linha de comando ou no System Manager.
+
+Para configurações de DNS, todos os servidores são testados e precisam estar funcionando para que a configuração seja considerada válida. Para configurações LDAP, desde que qualquer servidor esteja ativo, a configuração é válida. Os comandos do serviço de nomes aplicam o verificador de configuração a menos que o `skip-config-validation` campo seja verdadeiro (o padrão é falso).
+
+.Passo
+. Use o comando apropriado para verificar uma configuração do serviço de nomes. A IU exibe o status dos servidores configurados.
++
+|===
+
+
+| Para verificar... | Use este comando... 
+
+
+ a| 
+Estado da configuração DNS
+ a| 
+`vserver services name-service dns check`
+
+
+
+ a| 
+Estado da configuração LDAP
+ a| 
+`vserver services name-service ldap check`
+
+|===
++
+[listing]
+----
+cluster1::> vserver services name-service dns check -vserver vs0
+
+Vserver         Name Server     Status  Status Details
+--------------  --------------- ------- -------------------------
+ vs0            10.11.12.13     up      Response time (msec): 55
+ vs0            10.11.12.14     up      Response time (msec): 70
+ vs0            10.11.12.15     down    Connection refused.
++---------------------------------------------------------------+
+----
++
+[listing]
+----
+cluster1::> vserver services name-service ldap check -vserver vs0
+
+| Vserver: vs0                                                |
+| Client Configuration Name: c1                               |
+| LDAP Status: up                                             |
+| LDAP Status Details: Successfully connected to LDAP server "10.11.12.13".                                              |
+----
++
+A validação da configuração é bem-sucedida se pelo menos um dos servidores configurados (name-serviders/ldap-serviders) estiver acessível e fornecendo o serviço. É apresentado um aviso se alguns dos servidores não estiverem acessíveis.
+
+

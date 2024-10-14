@@ -1,0 +1,116 @@
+---
+permalink: file-system-analytics/activity-tracking-task.html 
+sidebar: sidebar 
+keywords: monitor, volume, ontap, FSA, File System Analytics, 
+summary: Recurso de acompanhamento de atividades que permite identificar objetos ativos e baixá-los como um arquivo CSV. 
+---
+= Ative o acompanhamento de atividades
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.10,1, a análise do sistema de arquivos inclui um recurso de acompanhamento de atividades que permite identificar objetos ativos e fazer o download dos dados como um arquivo CSV. A partir do ONTAP 9.11,1, o acompanhamento de atividades é expandido para o escopo da SVM. Também começando no ONTAP 9.11,1, o Gerenciador de sistema apresenta uma linha do tempo para o acompanhamento de atividades, permitindo que você analise até cinco minutos de dados de acompanhamento de atividades.
+
+O acompanhamento de atividades permite a monitorização em quatro categorias:
+
+* Diretórios
+* Ficheiros
+* Clientes
+* Usuários
+
+
+Para cada categoria monitorada, o acompanhamento de atividades exibirá IOPs de leitura, escrita IOPs, leitura de throughput e gravação de throughput. As consultas sobre o acompanhamento de atividades são atualizadas a cada 10 a 15 segundos referentes aos pontos quentes vistos no sistema em relação ao intervalo de cinco segundos anterior.
+
+As informações de rastreamento de atividade são aproximadas e a precisão dos dados depende da distribuição do tráfego de e/S de entrada.
+
+Ao visualizar o acompanhamento de atividades no System Manager no nível do volume, apenas o menu do volume expandido será atualizado ativamente. Se a visualização de quaisquer volumes estiver colapsada, eles não serão atualizados até que a exibição do volume seja expandida. Você pode parar as atualizações com o botão *Pausa Atualizar*. Os dados de atividade podem ser baixados em um formato CSV que exibirá todos os dados pontuais capturados para o volume selecionado.
+
+Com o recurso de linha do tempo disponível a partir do ONTAP 9.11,1, você pode manter um Registro da atividade de hotspot em um volume ou SVM, atualizando continuamente aproximadamente a cada cinco segundos e mantendo os cinco minutos de dados anteriores. Os dados da linha do tempo são retidos apenas para campos que são área visível da página. Se você recolher uma categoria de rastreamento ou rolar para que a linha do tempo esteja fora de exibição, a linha do tempo deixará de coletar dados. Por padrão, os cronogramas são desativados e serão automaticamente desativados quando você navegar para fora da guia atividade.
+
+
+
+== Ative o acompanhamento de atividades para um único volume
+
+Você pode ativar o acompanhamento de atividades com o Gerenciador de sistema do ONTAP ou com a CLI.
+
+.Sobre esta tarefa
+Se você usar o RBAC com a API REST do ONTAP ou o Gerenciador de sistemas, precisará criar funções personalizadas para gerenciar o acesso ao acompanhamento de atividades. Consulte xref:role-based-access-control-task.html[Controles de acesso baseados em função] para obter este processo.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *armazenamento > volumes*. Selecione o volume pretendido. No menu volume individual, selecione sistema de arquivos e, em seguida, selecione a guia atividade.
+. Certifique-se de que *Activity Tracking* esteja ativado para visualizar relatórios individuais em diretórios, arquivos, clientes e usuários superiores.
+. Para analisar dados em maior profundidade sem atualizações, selecione *Pausa Atualizar*. Você pode baixar os dados para ter um Registro CSV do relatório também.
+
+
+--
+.CLI
+--
+.Passos
+. Ativar monitorização de atividade:
++
+`volume activity-tracking on -vserver _svm_name_ -volume _volume_name_`
+
+. Verifique se o estado de monitorização de atividade para um volume está ligado ou desligado com o comando:
++
+`volume activity-tracking show -vserver _svm_name_ -volume _volume_name_ -state`
+
+. Uma vez ativado, use o Gerenciador de sistema do ONTAP ou a API REST do ONTAP para exibir dados de acompanhamento de atividades.
+
+
+--
+====
+
+
+== Ative o acompanhamento de atividades para vários volumes
+
+Você pode ativar o acompanhamento de atividades para vários volumes com o System Manager ou a CLI.
+
+.Sobre esta tarefa
+Se você usar o RBAC com a API REST do ONTAP ou o Gerenciador de sistemas, precisará criar funções personalizadas para gerenciar o acesso ao acompanhamento de atividades. Consulte xref:role-based-access-control-task.html[Controles de acesso baseados em função] para obter este processo.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Ativar para volumes específicos
+. Selecione *armazenamento > volumes*. Selecione o volume pretendido. No menu volume individual, selecione sistema de arquivos e, em seguida, selecione a guia atividade.
+. Selecione os volumes em que pretende ativar o acompanhamento de atividades. Na parte superior da lista de volume, selecione o botão *mais Opções*. Selecione *Ativar monitorização de atividade*.
+. Para exibir o acompanhamento de atividades no nível SVM, selecione o SVM específico que você gostaria de exibir em *Storage > volumes*. Navegue até a guia sistema de arquivos e, em seguida, Activity e você verá os dados dos volumes que têm o acompanhamento de atividades ativado.
+
+
+.Ativar para todos os volumes
+. Selecione *armazenamento > volumes*. Selecione uma SVM no menu.
+. Navegue até a guia *sistema de arquivos*, escolha a guia *mais* para ativar o acompanhamento de atividades em todos os volumes no SVM.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.13,1, você pode ativar o acompanhamento de atividades para vários volumes usando a CLI do ONTAP.
+
+.Passos
+. Ativar monitorização de atividade:
++
+`volume activity-tracking on -vserver _svm_name_ -volume [*|!_volume_names_]`
+
++
+ `*`Use para ativar o acompanhamento de atividades para todos os volumes na VM de armazenamento especificada.
+
++
+Use `!` seguido por nomes de volume para ativar o acompanhamento de atividades para todos os volumes na SVM, exceto os volumes nomeados.
+
+. Confirme se a operação foi bem-sucedida:
++
+`volume show -fields activity-tracking-state`
+
+. Uma vez ativado, use o Gerenciador de sistema do ONTAP ou a API REST do ONTAP para exibir dados de acompanhamento de atividades.
+
+
+--
+====

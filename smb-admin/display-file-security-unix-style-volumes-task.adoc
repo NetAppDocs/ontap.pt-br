@@ -1,0 +1,105 @@
+---
+permalink: smb-admin/display-file-security-unix-style-volumes-task.html 
+sidebar: sidebar 
+keywords: display, information, file, directory, security, unix, security-style, volume, style, effective, permission, applied, apply, owner, group, result, validate, configuration, troubleshoot, access, issues, display information about file security on unix security-style volumes 
+summary: Você pode exibir informações sobre segurança de arquivos e diretórios em volumes estilo de segurança UNIX, incluindo quais são os estilos de segurança e estilos de segurança eficazes, quais permissões são aplicadas e informações sobre proprietários e grupos UNIX. Você pode usar os resultados para validar sua configuração de segurança ou para solucionar problemas de acesso a arquivos. 
+---
+= Exibir informações sobre segurança de arquivos em volumes estilo de segurança UNIX
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode exibir informações sobre segurança de arquivos e diretórios em volumes estilo de segurança UNIX, incluindo quais são os estilos de segurança e estilos de segurança eficazes, quais permissões são aplicadas e informações sobre proprietários e grupos UNIX. Você pode usar os resultados para validar sua configuração de segurança ou para solucionar problemas de acesso a arquivos.
+
+.Sobre esta tarefa
+Você deve fornecer o nome da máquina virtual de armazenamento (SVM) e o caminho para os dados cujas informações de segurança de arquivo ou diretório você deseja exibir. Você pode exibir a saída em forma de resumo ou como uma lista detalhada.
+
+* Os volumes e qtrees de estilo de segurança UNIX usam apenas permissões de arquivo UNIX, bits de modo ou ACLs NFSv4 ao determinar direitos de acesso a arquivos.
+* A saída ACL é exibida apenas para arquivos e pastas com segurança NFSv4.
++
+Este campo está vazio para arquivos e diretórios que usam segurança UNIX que têm somente permissões de bit de modo aplicadas (sem ACLs NFSv4).
+
+* Os campos de saída de proprietário e grupo na saída ACL não se aplicam no caso de descritores de segurança NFSv4.
++
+Eles são apenas significativos para descritores de segurança NTFS.
+
+* Como a segurança do Storage-Level Access Guard é suportada em um volume ou qtree UNIX se um servidor CIFS estiver configurado no SVM, a saída pode conter informações sobre a segurança do Storage-Level Access Guard aplicada ao volume ou qtree especificado no `-path` parâmetro.
+
+
+.Passo
+. Exiba as configurações de segurança de arquivo e diretório com o nível de detalhes desejado:
++
+|===
+| Se você quiser exibir informações... | Digite o seguinte comando... 
+
+
+ a| 
+Em forma de resumo
+ a| 
+`vserver security file-directory show -vserver _vserver_name_ -path _path_`
+
+
+
+ a| 
+Com detalhes expandidos
+ a| 
+`vserver security file-directory show -vserver _vserver_name_ -path _path_ -expand-mask true`
+
+|===
+
+
+.Exemplos
+O exemplo a seguir exibe as informações de segurança sobre o caminho `/home` no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver security file-directory show -vserver vs1 -path /home
+
+                                  Vserver: vs1
+                                File Path: /home
+                        File Inode Number: 9590
+                           Security Style: unix
+                          Effective Style: unix
+                           DOS Attributes: 10
+                   DOS Attributes in Text: ----D---
+                  Expanded Dos Attributes: -
+                             Unix User Id: 0
+                            Unix Group Id: 1
+                           Unix Mode Bits: 700
+                   Unix Mode Bits in Text: rwx------
+                                     ACLs: -
+----
+O exemplo a seguir exibe as informações de segurança sobre o caminho `/home` no SVM VS1 no formulário de máscara expandida:
+
+[listing]
+----
+cluster1::> vserver security file-directory show -vserver vs1 -path /home -expand-mask true
+
+                                 Vserver: vs1
+                               File Path: /home
+                       File Inode Number: 9590
+                          Security Style: unix
+                         Effective Style: unix
+                          DOS Attributes: 10
+                  DOS Attributes in Text: ----D---
+                 Expanded Dos Attributes: 0x10
+                      ...0 .... .... .... = Offline
+                      .... ..0. .... .... = Sparse
+                      .... .... 0... .... = Normal
+                      .... .... ..0. .... = Archive
+                      .... .... ...1 .... = Directory
+                      .... .... .... .0.. = System
+                      .... .... .... ..0. = Hidden
+                      .... .... .... ...0 = Read Only
+                            Unix User Id: 0
+                           Unix Group Id: 1
+                          Unix Mode Bits: 700
+                  Unix Mode Bits in Text: rwx------
+                                    ACLs: -
+----
+.Informações relacionadas
+xref:display-file-security-ntfs-style-volumes-task.adoc[Exibindo informações sobre segurança de arquivos em volumes de estilo de segurança NTFS]
+
+xref:display-file-security-mixed-style-volumes-task.adoc[Exibindo informações sobre segurança de arquivos em volumes mistos de estilo de segurança]

@@ -1,0 +1,250 @@
+---
+permalink: fabricpool/tiering-policies-concept.html 
+sidebar: sidebar 
+keywords: understanding, fabricpool, tiering, policies, types, modify, volume, clone, cloud migration 
+summary: As políticas de disposição em camadas do FabricPool permitem que você mova dados com eficiência entre camadas à medida que os dados ficam inativos. Compreender as políticas de disposição em camadas ajuda você a selecionar a política certa que atende às suas necessidades de gerenciamento de storage. 
+---
+= Sobre as políticas de disposição em camadas do FabricPool
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+As políticas de disposição em camadas do FabricPool permitem que você mova dados com eficiência entre camadas à medida que os dados ficam inativos. Compreender as políticas de disposição em camadas ajuda você a selecionar a política certa que atende às suas necessidades de gerenciamento de storage.
+
+
+
+== Tipos de políticas de disposição em camadas do FabricPool
+
+As políticas de disposição em camadas do FabricPool determinam quando ou se os blocos de dados do usuário de um volume no FabricPool são movidos para a camada de nuvem, com base na temperatura do volume de quente (ativo) ou frio (inativo). O volume "temperatura" aumenta quando é acessado com frequência e diminui quando não é. Algumas políticas de disposição em camadas têm um período de resfriamento mínimo de disposição em camadas associado, que define o tempo em que os dados do usuário em um volume de FabricPool precisam permanecer inativos para que os dados sejam considerados "inativos" e movidos para a camada de nuvem.
+
+Depois que um bloco foi identificado como frio, ele é marcado como elegível para ser escalonado. Uma verificação diária em camadas de fundo procura blocos frios. Quando suficientes blocos 4KB do mesmo volume forem coletados, eles são concatenados em um objeto 4MB e movidos para a camada de nuvem com base na política de disposição em categorias de volume.
+
+[NOTE]
+====
+Os dados em volumes que usam a `all` política de disposição em camadas são imediatamente marcados como inativos e começam a categorização na categoria de nuvem o mais rápido possível. Não é necessário esperar que a digitalização de disposição em camadas diária seja executada.
+
+====
+Você pode usar o `volume object-store tiering show` comando para exibir o status de disposição em camadas de um volume FabricPool. Para obter mais informações, consulte link:https://docs.netapp.com/us-en/ontap-cli/["Referência do comando"].
+
+A política de disposição em camadas do FabricPool é especificada no nível do volume. Estão disponíveis quatro opções:
+
+* A `snapshot-only` política de disposição em camadas (padrão) move blocos de dados do usuário das cópias do Snapshot de volume que não estão associados ao sistema de arquivos ativo para a camada de nuvem.
++
+O período mínimo de resfriamento em categorias é de 2 dias. É possível modificar a configuração padrão para o período mínimo de resfriamento em camadas com o `-tiering-minimum-cooling-days` parâmetro no nível de privilégio avançado dos `volume create` comandos e. `volume modify` Os valores válidos são de 2 a 183 dias usando o ONTAP 9.8 e posterior. Se você estiver usando uma versão do ONTAP anterior a 9,8, os valores válidos são de 2 a 63 dias.
+
+* A `auto` política de disposição em camadas, compatível apenas com o ONTAP 9.4 e versões posteriores, move blocos de dados de usuários inativos nas cópias Snapshot e no sistema de arquivos ativo para a camada de nuvem.
++
+O período de resfriamento mínimo de disposição em camadas padrão é de 31 dias e aplica-se a todo o volume, tanto para o sistema de arquivos ativo quanto para as cópias Snapshot.
+
++
+É possível modificar a configuração padrão para o período mínimo de resfriamento em camadas com o `-tiering-minimum-cooling-days` parâmetro no nível de privilégio avançado dos `volume create` comandos e. `volume modify` Os valores válidos são de 2 a 183 dias.
+
+*  `all`A política de disposição em camadas, compatível apenas com o ONTAP 9.6 e posterior, move todos os blocos de dados de usuários no sistema de arquivos ativo e cópias Snapshot para a camada de nuvem. Ele substitui a `backup` política de disposição em camadas.
++
+A `all` política de disposição em categorias de volume não deve ser usada em volumes de leitura/gravação que tenham tráfego de cliente normal.
+
++
+O período de resfriamento mínimo de disposição em camadas não se aplica porque os dados são movidos para a camada de nuvem assim que a verificação de disposição em camadas é executada e não é possível modificar a configuração.
+
+* A `none` política de disposição em categorias mantém os dados de um volume na categoria de performance e não é migrada para a camada de nuvem.
++
+Definir a política de disposição em categorias `none` para impedir a nova disposição em camadas. Os dados de volume anteriormente movidos para a camada de nuvem permanecem na camada de nuvem até que fiquem ativos e são movidos automaticamente de volta para a camada local.
+
++
+O período de resfriamento mínimo de disposição em camadas não se aplica porque os dados nunca são movidos para a camada de nuvem e não é possível modificar a configuração.
+
++
+Quando blocos frios em um volume com uma política de disposição em categorias definida como `none` são lidos, eles ficam ativos e gravados no nível local.
+
+
+
+O `volume show` comando output mostra a política de disposição em camadas de um volume. Um volume que nunca foi usado com o FabricPool mostra a `none` política de disposição em camadas na saída.
+
+
+
+== O que acontece quando você modifica a política de disposição em camadas de um volume no FabricPool
+
+Você pode modificar a política de disposição em categorias de um volume executando `volume modify` uma operação. Você deve entender como mudar a política de disposição em camadas pode afetar o tempo necessário para que os dados fiquem inativos e sejam movidos para a categoria de nuvem.
+
+* Ao alterar a política de disposição em categorias de `snapshot-only` ou `none` para `auto`, o ONTAP pode enviar blocos de dados de usuários no sistema de arquivos ativo que já estão inativos na categoria de nuvem, mesmo que esses blocos de dados de usuários não estivessem qualificados anteriormente para a categoria de nuvem.
+* A alteração da política de disposição em camadas para `all` outra política faz com que o ONTAP mova todos os blocos de usuários no sistema de arquivos ativo e nas cópias Snapshot para a nuvem o mais rápido possível. Antes do ONTAP 9.8, os blocos precisavam esperar até que a próxima verificação de disposição em camadas fosse executada.
++
+Mover blocos de volta para o nível de desempenho não é permitido.
+
+* Alterar a política de disposição em categorias de `auto` ou `none` para `snapshot-only` fazer com que os blocos de sistema de arquivos ativos que já foram migrados para a categoria de nuvem sejam movidos de volta para a categoria de performance.
++
+Leituras de volume são necessárias para que os dados sejam movidos de volta para a camada de performance.
+
+* Sempre que você alterar a política de disposição em categorias em um volume, o período mínimo de resfriamento em categorias será redefinido para o valor padrão da política.
+
+
+
+
+== O que acontece com a política de disposição em camadas quando você move um volume
+
+* A menos que você especifique explicitamente uma política de disposição em camadas diferente, um volume mantém sua política de disposição em camadas original quando é movido para dentro e para fora de um agregado habilitado para FabricPool.
++
+No entanto, a política de disposição em categorias só entra em vigor quando o volume está em um agregado habilitado para FabricPool.
+
+* O valor existente `-tiering-minimum-cooling-days` do parâmetro para um volume é movido com o volume, a menos que você especifique uma política de disposição em camadas diferente para o destino.
++
+Se você especificar uma política de disposição em camadas diferente, o volume usará o período mínimo de resfriamento de disposição em camadas padrão para essa política. Este é o caso se o destino é FabricPool ou não.
+
+* Você pode mover um volume entre agregados e, ao mesmo tempo, modificar a política de disposição em camadas.
+* Você deve prestar atenção especial quando `volume move` uma operação envolver a `auto` política de disposição em camadas.
++
+Supondo que a origem e o destino sejam agregados habilitados para FabricPool, a tabela a seguir resume o resultado de uma `volume move` operação que envolve alterações de política relacionadas `auto` ao :
+
++
+|===
+
+
+| Quando você move um volume que tem uma política de disposição em camadas de... | E você altera a política de disposição em camadas com a... | Então, depois que o volume se move... 
+
+
+ a| 
+`all`
+ a| 
+`auto`
+ a| 
+Todos os dados são movidos para o nível de performance.
+
+
+
+ a| 
+`snapshot-only`, `none`, ou `auto`
+ a| 
+`auto`
+ a| 
+Os blocos de dados são movidos para o mesmo nível de destino que anteriormente estavam na origem.
+
+
+
+ a| 
+`auto` ou `all`
+ a| 
+`snapshot-only`
+ a| 
+Todos os dados são movidos para o nível de performance.
+
+
+
+ a| 
+`auto`
+ a| 
+`all`
+ a| 
+Todos os dados de usuário são movidos para a camada de nuvem.
+
+
+
+ a| 
+`snapshot-only`,`auto` ou `all`
+ a| 
+`none`
+ a| 
+Todos os dados são mantidos na camada de performance.
+
+|===
+
+
+
+
+== O que acontece com a política de disposição em camadas quando você clonar um volume
+
+* A partir do ONTAP 9.8, um volume de clone herda sempre a política de disposição em camadas e a política de recuperação de nuvem do volume pai.
++
+Em versões anteriores ao ONTAP 9.8, um clone herda a política de disposição em camadas do pai, exceto quando o pai tem a `all` política de disposição em camadas.
+
+* Se o volume pai tiver a `never` política de recuperação de nuvem, seu volume clone precisará ter a `never` política de recuperação de nuvem ou a `all` política de disposição em camadas e uma política de recuperação de nuvem correspondente `default` .
+* A política de recuperação de nuvem de volume pai não pode ser alterada para `never`, a menos que todos os seus volumes clones tenham uma política de recuperação de `never` nuvem .
+
+
+Ao clonar volumes, tenha em mente as seguintes práticas recomendadas:
+
+* A `-tiering-policy` opção e `tiering-minimum-cooling-days` a opção do clone controlam apenas o comportamento de disposição em camadas de blocos exclusivos do clone. Portanto, recomendamos o uso de configurações de disposição em categorias no FlexVol pai que migram a mesma quantidade de dados ou que migram menos dados do que qualquer um dos clones
+* A política de recuperação de nuvem no FlexVol pai deve mover a mesma quantidade de dados ou mover mais dados do que a política de recuperação de qualquer um dos clones
+
+
+
+
+== Como as políticas de disposição em camadas funcionam com a migração para a nuvem
+
+A recuperação de dados em nuvem do FabricPool é controlada por políticas de disposição em camadas que determinam a recuperação de dados da camada de nuvem para a camada de performance com base no padrão de leitura. Os padrões de leitura podem ser sequenciais ou aleatórios.
+
+A tabela a seguir lista as políticas de disposição em camadas e as regras de recuperação de dados na nuvem para cada política.
+
+|===
+
+
+| Política de disposição em camadas | Comportamento de recuperação 
+
+
+ a| 
+nenhum
+ a| 
+Leituras sequenciais e aleatórias
+
+
+
+ a| 
+apenas snapshot
+ a| 
+Leituras sequenciais e aleatórias
+
+
+
+ a| 
+auto
+ a| 
+Leituras aleatórias
+
+
+
+ a| 
+tudo
+ a| 
+Sem recuperação de dados
+
+|===
+A partir do ONTAP 9.8, a opção de controle de migração para a `cloud-retrieval-policy` nuvem substitui o comportamento padrão de migração ou recuperação da nuvem controlado pela política de disposição em camadas.
+
+A tabela a seguir lista as políticas de recuperação de nuvem suportadas e seu comportamento de recuperação.
+
+|===
+
+
+| Política de recuperação de nuvem | Comportamento de recuperação 
+
+
+ a| 
+padrão
+ a| 
+A política de disposição em camadas decide quais dados devem ser retirados, portanto, não há alteração na recuperação de dados na nuvem com "falha,`" `cloud-retrieval-policy`". Esta política é o valor padrão para qualquer volume, independentemente do tipo de agregado hospedado.
+
+
+
+ a| 
+na leitura
+ a| 
+Todas as leituras de dados orientadas pelo cliente são extraídas da camada de nuvem para a camada de performance.
+
+
+
+ a| 
+nunca
+ a| 
+Nenhum dado orientado pelo cliente é extraído da camada de nuvem para a camada de performance
+
+
+
+ a| 
+promover
+ a| 
+* Para a política de disposição em categorias "nenhuma", todos os dados de nuvem são extraídos da camada de nuvem para a camada de performance
+* Para a política de disposição em camadas "somente snapshot", os dados do AFS são extraídos.
+
+
+|===

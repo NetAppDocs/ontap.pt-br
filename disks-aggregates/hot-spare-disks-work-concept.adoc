@@ -1,0 +1,28 @@
+---
+permalink: disks-aggregates/hot-spare-disks-work-concept.html 
+sidebar: sidebar 
+keywords: hot, spare disks, work 
+summary: Um disco hot spare é um disco que é atribuído a um sistema de armazenamento e está pronto para uso, mas não está em uso por um grupo RAID e não armazena nenhum dado. 
+---
+= Como os discos hot spare funcionam
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um disco hot spare é um disco que é atribuído a um sistema de armazenamento e está pronto para uso, mas não está em uso por um grupo RAID e não armazena nenhum dado.
+
+Se ocorrer uma falha de disco em um grupo RAID, o disco hot spare é automaticamente atribuído ao grupo RAID para substituir os discos com falha. Os dados do disco com falha são reconstruídos no disco de substituição hot spare em segundo plano a partir do disco de paridade RAID. A atividade de reconstrução é registada no `/etc/message` ficheiro e é enviada uma mensagem AutoSupport.
+
+Se o disco hot spare disponível não tiver o mesmo tamanho do disco com falha, um disco do tamanho maior seguinte é escolhido e depois reduzido para corresponder ao tamanho do disco que está substituindo.
+
+
+
+== Requisitos de substituição para disco transportador de vários discos
+
+Manter o número adequado de peças sobressalentes para discos em suportes de vários discos é fundamental para otimizar a redundância de armazenamento e minimizar o tempo que o ONTAP deve gastar copiando discos para obter um layout de disco ideal.
+
+Você precisa manter um mínimo de dois hot spares para discos de portadora de vários discos em todos os momentos. Para dar suporte ao uso do Centro de Manutenção e evitar problemas causados por várias falhas simultâneas de disco, você deve manter pelo menos quatro hot spares para operação em estado estável e substituir discos com falha imediatamente.
+
+Se dois discos falharem ao mesmo tempo com apenas duas hot spares disponíveis, o ONTAP pode não ser capaz de trocar o conteúdo do disco com falha e seu companheiro de operadora para os discos sobressalentes. Esse cenário é chamado de impasse. Se isso acontecer, você será notificado através de mensagens EMS e mensagens AutoSupport. Quando as transportadoras de substituição estiverem disponíveis, tem de seguir as instruções fornecidas pelas mensagens EMS. Para obter informações, consulte o artigo da base de dados de Conhecimento link:++https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Systems/FAS_Systems/Draft_-_RAID_Layout_Cannot_Be_Autocorrected_-_AutoSupport_message++["O layout RAID não pode ser corrigido automaticamente - mensagem AutoSupport"]

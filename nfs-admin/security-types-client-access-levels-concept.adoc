@@ -1,0 +1,117 @@
+---
+permalink: nfs-admin/security-types-client-access-levels-concept.html 
+sidebar: sidebar 
+keywords: security, type, determine, client, access, level 
+summary: O tipo de segurança com o qual o cliente autenticou desempenha um papel especial nas regras de exportação. Você deve entender como o tipo de segurança determina os níveis de acesso que o cliente obtém a um volume ou qtree. 
+---
+= Como os tipos de segurança determinam os níveis de acesso do cliente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O tipo de segurança com o qual o cliente autenticou desempenha um papel especial nas regras de exportação. Você deve entender como o tipo de segurança determina os níveis de acesso que o cliente obtém a um volume ou qtree.
+
+Os três níveis de acesso possíveis são os seguintes:
+
+. Somente leitura
+. Leitura-gravação
+. Superusuário (para clientes com ID de usuário 0)
+
+
+Como o nível de acesso por tipo de segurança é avaliado nesta ordem, você deve observar as seguintes regras ao construir parâmetros de nível de acesso em regras de exportação:
+
+[cols="2*"]
+|===
+| Para um cliente obter nível de acesso... | Esses parâmetros de acesso devem corresponder ao tipo de segurança do cliente... 
+
+
+ a| 
+Apenas de leitura normal do utilizador
+ a| 
+Somente leitura (`-rorule`)
+
+
+
+ a| 
+Leitura-escrita normal do utilizador
+ a| 
+Somente leitura (`-rorule`) e leitura-gravação (`-rwrule`)
+
+
+
+ a| 
+Somente leitura do superusuário
+ a| 
+Apenas leitura (`-rorule`) e. `-superuser`
+
+
+
+ a| 
+Leitura-gravação do superusuário
+ a| 
+Somente leitura (`-rorule`) e leitura-gravação (`-rwrule`) e. `-superuser`
+
+|===
+Os seguintes são tipos de segurança válidos para cada um destes três parâmetros de acesso:
+
+* `any`
+* `none`
+* `never`
++
+Este tipo de segurança não é válido para utilização com o `-superuser` parâmetro.
+
+* `krb5`
+* `krb5i`
+* `krb5p`
+* `ntlm`
+* `sys`
+
+
+Ao combinar o tipo de segurança de um cliente com cada um dos três parâmetros de acesso, há três resultados possíveis:
+
+[cols="2*"]
+|===
+| Se o tipo de segurança do cliente... | Então o cliente... 
+
+
+ a| 
+Corresponde ao especificado no parâmetro Access.
+ a| 
+Obtém acesso para esse nível com seu próprio ID de usuário.
+
+
+
+ a| 
+Não corresponde ao especificado, mas o parâmetro Access inclui a opção `none`.
+ a| 
+Obtém acesso para esse nível, mas como o usuário anônimo com o ID de usuário especificado pelo `-anon` parâmetro.
+
+
+
+ a| 
+Não corresponde ao especificado e o parâmetro Access não inclui a opção `none`.
+ a| 
+Não obtém acesso para esse nível. Isso não se aplica ao `-superuser` parâmetro porque ele sempre inclui `none` mesmo quando não especificado.
+
+|===
+.Exemplo
+A política de exportação contém uma regra de exportação com os seguintes parâmetros:
+
+* `-protocol` `nfs3`
+* `-clientmatch` `10.1.16.0/255.255.255.0`
+* `-rorule` `any`
+* `-rwrule` `sys,krb5`
+* `-superuser` `krb5`
+
+
+O cliente nº 1 tem o endereço IP 10,1.16,207, tem ID de usuário 0, envia uma solicitação de acesso usando o protocolo NFSv3 e autenticado com Kerberos v5.
+
+O cliente nº 2 tem o endereço IP 10,1.16,211, tem ID de usuário 0, envia uma solicitação de acesso usando o protocolo NFSv3 e autenticado com AUTH_SYS.
+
+O cliente nº 3 tem o endereço IP 10,1.16,234, tem ID de usuário 0, envia uma solicitação de acesso usando o protocolo NFSv3 e não autenticou (AUTH_NONE).
+
+O protocolo de acesso do cliente e o endereço IP correspondem aos três clientes. O parâmetro somente leitura permite o acesso somente leitura a todos os clientes, independentemente do tipo de segurança. O parâmetro read-write permite o acesso de leitura-gravação a clientes com sua própria ID de usuário autenticado com AUTH_SYS ou Kerberos v5. O parâmetro superuser permite o acesso do superusuário a clientes com ID de usuário 0 autenticado com Kerberos v5.
+
+Portanto, o cliente nº 1 obtém acesso de leitura e gravação do superusuário porque ele corresponde aos três parâmetros de acesso. O cliente nº 2 obtém acesso de leitura e gravação, mas não acesso ao superusuário. O cliente nº 3 obtém acesso somente leitura, mas não acesso ao superusuário.

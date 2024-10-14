@@ -1,0 +1,173 @@
+---
+permalink: nas-audit/plan-fpolicy-scope-config-concept.html 
+sidebar: sidebar 
+keywords: plan, fpolicy, scope, configuration 
+summary: Antes de configurar o escopo FPolicy, você deve entender o que significa criar um escopo. Você deve entender o que a configuração do escopo contém. Você também precisa entender quais são as regras de escopo de precedência. Essas informações podem ajudá-lo a Planejar os valores que você deseja definir. 
+---
+= Planeje a visão geral da configuração do escopo da FPolicy
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de configurar o escopo FPolicy, você deve entender o que significa criar um escopo. Você deve entender o que a configuração do escopo contém. Você também precisa entender quais são as regras de escopo de precedência. Essas informações podem ajudá-lo a Planejar os valores que você deseja definir.
+
+
+
+== O que significa criar um escopo FPolicy
+
+Criar o escopo FPolicy significa definir os limites nos quais a política FPolicy se aplica. A máquina virtual de storage (SVM) é o limite básico. Ao criar um escopo para uma política de FPolicy, você deve definir a política de FPolicy à qual será aplicada e designar a qual SVM você deseja aplicar o escopo.
+
+Há vários parâmetros que restringem ainda mais o escopo dentro do SVM especificado. Você pode restringir o escopo especificando o que incluir no escopo ou especificando o que excluir do escopo. Depois de aplicar um escopo a uma política habilitada, as verificações de eventos de política são aplicadas ao escopo definido por este comando.
+
+As notificações são geradas para eventos de acesso a arquivos onde as correspondências são encontradas nas opções "'include'". As notificações não são geradas para eventos de acesso a arquivos em que as correspondências são encontradas nas opções "'excluir'".
+
+A configuração do escopo da FPolicy define as seguintes informações de configuração:
+
+* Nome do SVM
+* Nome da política
+* As ações a incluir ou excluir do que é monitorado
+* As políticas de exportação para incluir ou excluir do que é monitorado
+* Os volumes a incluir ou excluir do que é monitorado
+* As extensões de arquivo para incluir ou excluir do que é monitorado
+* Se a extensão de arquivo deve ser feita verifica em objetos de diretório
+
+
+[NOTE]
+====
+Existem considerações especiais para o escopo de uma política de FPolicy de cluster. A política de FPolicy de cluster é uma política que o administrador do cluster cria para o SVM admin. Se o administrador do cluster também criar o escopo dessa política de FPolicy do cluster, o administrador SVM não poderá criar um escopo para essa mesma política. No entanto, se o administrador do cluster não criar um escopo para a política de FPolicy do cluster, qualquer administrador SVM poderá criar o escopo dessa política de cluster. Se o administrador do SVM criar um escopo para essa política de FPolicy de cluster, o administrador do cluster não poderá criar posteriormente um escopo de cluster para essa mesma política de cluster. Isso ocorre porque o administrador do cluster não pode substituir o escopo da mesma diretiva de cluster.
+
+====
+
+
+== Quais são as regras de escopo de precedência
+
+As seguintes regras de precedência se aplicam às configurações do escopo:
+
+* Quando um compartilhamento é incluído no `-shares-to-include` parâmetro e o volume pai do compartilhamento é incluído no `-volumes-to-exclude` parâmetro, `-volumes-to-exclude` tem precedência sobre `-shares-to-include`.
+* Quando uma política de exportação é incluída no `-export-policies-to-include` parâmetro e o volume pai da política de exportação é incluído no `-volumes-to-exclude` parâmetro, `-volumes-to-exclude` tem precedência sobre `-export-policies-to-include`.
+* Um administrador pode especificar as `-file-extensions-to-include` listas e `-file-extensions-to-exclude` .
++
+O `-file-extensions-to-exclude` parâmetro é verificado antes de o `-file-extensions-to-include` parâmetro ser verificado.
+
+
+
+
+
+== O que contém a configuração do escopo do FPolicy
+
+Você pode usar a seguinte lista de parâmetros de configuração do escopo FPolicy disponíveis para ajudá-lo a Planejar sua configuração:
+
+[NOTE]
+====
+Ao configurar quais compartilhamentos, políticas de exportação, volumes e extensões de arquivo para incluir ou excluir do escopo, os parâmetros incluir e excluir podem incluir metacaracters como ""?`" and "`*". O uso de expressões regulares não é suportado.
+
+====
+[cols="70,30"]
+|===
+
+
+| Tipo de informação | Opção 
+
+
+ a| 
+_SVM_
+
+Especifica o nome do SVM no qual você deseja criar um escopo FPolicy.
+
+Cada configuração de FPolicy é definida em um único SVM. O mecanismo externo, o evento de política, o escopo da política e a política que se combinam para criar uma configuração de política FPolicy devem estar associados ao mesmo SVM.
+ a| 
+`-vserver` `vserver_name`
+
+
+
+ a| 
+_Nome da política_
+
+Especifica o nome da política FPolicy à qual você deseja anexar o escopo. A política FPolicy já deve existir.
+ a| 
+`-policy-name` `policy_name`
+
+
+
+ a| 
+_Compartilhamentos para incluir_
+
+Especifica uma lista delimitada por vírgulas de compartilhamentos para monitorar a política FPolicy à qual o escopo é aplicado.
+ a| 
+`-shares-to-include` `share_name`, ...
+
+
+
+ a| 
+_Compartilhamentos para excluir_
+
+Especifica uma lista delimitada por vírgulas de compartilhamentos a serem excluídos do monitoramento para a política FPolicy à qual o escopo é aplicado.
+ a| 
+`-shares-to-exclude` `share_name`, ...
+
+
+
+ a| 
+_Volumes a incluir_ especifica uma lista delimitada por vírgulas de volumes a monitorar para a política FPolicy à qual o escopo é aplicado.
+ a| 
+`-volumes-to-include` `volume_name`, ...
+
+
+
+ a| 
+_Volumes a excluir_
+
+Especifica uma lista delimitada por vírgulas de volumes a excluir do monitoramento para a política FPolicy à qual o escopo é aplicado.
+ a| 
+`-volumes-to-exclude` `volume_name`, ...
+
+
+
+ a| 
+_Exportar políticas para incluir_
+
+Especifica uma lista delimitada por vírgulas de políticas de exportação para monitorar a política FPolicy à qual o escopo é aplicado.
+ a| 
+`-export-policies-to-include` `export_policy_name`, ...
+
+
+
+ a| 
+_Exportar políticas para excluir_
+
+Especifica uma lista delimitada por vírgulas de políticas de exportação para excluir do monitoramento da política FPolicy à qual o escopo é aplicado.
+ a| 
+`-export-policies-to-exclude` `export_policy_name`, ...
+
+
+
+ a| 
+_Extensões de arquivo para incluir_
+
+Especifica uma lista delimitada por vírgulas de extensões de arquivo para monitorar a política FPolicy à qual o escopo é aplicado.
+ a| 
+`-file-extensions-to-include` `file_extensions`, ...
+
+
+
+ a| 
+_Extensão de arquivo para excluir_
+
+Especifica uma lista delimitada por vírgulas de extensões de arquivo para excluir do monitoramento da política FPolicy à qual o escopo é aplicado.
+ a| 
+`-file-extensions-to-exclude` `file_extensions`, ...
+
+
+
+ a| 
+_A verificação de extensão de arquivo no diretório está ativada ?_
+
+Especifica se as verificações de extensão de nome de arquivo também se aplicam a objetos de diretório. Se esse parâmetro estiver definido como `true`, os objetos de diretório serão submetidos às mesmas verificações de extensão que os arquivos normais. Se esse parâmetro estiver definido como `false`, os nomes dos diretórios não serão correlacionados para extensões e as notificações serão enviadas para diretórios, mesmo que suas extensões de nome não correspondam.
+
+Se a política FPolicy ao qual o escopo é atribuído estiver configurada para usar o mecanismo nativo, esse parâmetro deverá ser definido como `true`.
+ a| 
+`-is-file-extension-check-on-directories-enabled`{`true`  `false`| |
+
+|===

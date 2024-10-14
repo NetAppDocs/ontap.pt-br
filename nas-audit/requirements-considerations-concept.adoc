@@ -1,0 +1,76 @@
+---
+permalink: nas-audit/requirements-considerations-concept.html 
+sidebar: sidebar 
+keywords: audit, requirements, considerations 
+summary: 'Antes de configurar e habilitar a auditoria na máquina virtual de storage (SVM), é necessário estar ciente de certos requisitos e considerações.' 
+---
+= Requisitos e considerações de auditoria
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de configurar e habilitar a auditoria na máquina virtual de storage (SVM), é necessário estar ciente de certos requisitos e considerações.
+
+* O número máximo de SVMs habilitadas para auditoria suportado depende da sua versão do ONTAP:
++
+|===
+
+
+| Versão de ONTAP | Máximo 
+
+
+| 9,8 e anteriores | 50 
+
+
+| 9.9.1 e mais tarde | 400 
+|===
+* A auditoria não está vinculada ao licenciamento SMB ou NFS.
++
+Você pode configurar e ativar a auditoria mesmo que as licenças SMB e NFS não estejam instaladas no cluster.
+
+* A auditoria NFS dá suporte a ACEs de segurança (tipo U).
+* Para auditoria NFS, não há mapeamento entre bits de modo e ACEs de auditoria.
++
+Ao converter ACLs em bits de modo, os ACEs de auditoria são ignorados. Ao converter bits de modo para ACLs, os ACEs de auditoria não são gerados.
+
+* O diretório especificado na configuração de auditoria deve existir.
++
+Se não existir, o comando para criar a configuração de auditoria falha.
+
+* O diretório especificado na configuração de auditoria deve atender aos seguintes requisitos:
++
+** O diretório não deve conter links simbólicos.
++
+Se o diretório especificado na configuração de auditoria contiver links simbólicos, o comando para criar a configuração de auditoria falhará.
+
+** Você deve especificar o diretório usando um caminho absoluto.
++
+Você não deve especificar um caminho relativo, por exemplo `/vs1/../`, .
+
+
+
+* A auditoria depende de ter espaço disponível nos volumes de teste.
++
+Você deve estar ciente e ter um plano para garantir que haja espaço suficiente para os volumes de teste em agregados que contenham volumes auditados.
+
+* A auditoria depende de ter espaço disponível no volume que contém o diretório onde os logs de eventos convertidos são armazenados.
++
+Você deve estar ciente e ter um plano para garantir que há espaço suficiente nos volumes usados para armazenar logs de eventos. Você pode especificar o número de logs de eventos a serem mantidos no diretório de auditoria usando o `-rotate-limit` parâmetro ao criar uma configuração de auditoria, o que pode ajudar a garantir que haja espaço disponível suficiente para os logs de eventos no volume.
+
+* Embora você possa ativar o estadiamento da diretiva de acesso central na configuração de auditoria sem ativar o Controle de Acesso Dinâmico no servidor SMB, o Controle de Acesso Dinâmico deve estar habilitado para gerar eventos de estadiamento da política de acesso central.
++
+O controlo de Acesso Dinâmico não está ativado por predefinição.
+
+
+
+
+
+== Agregue considerações de espaço ao ativar a auditoria
+
+Quando uma configuração de auditoria é criada e a auditoria é ativada em pelo menos uma máquina virtual de storage (SVM) no cluster, o subsistema de auditoria cria volumes de teste em todos os agregados existentes e em todos os novos agregados criados. Você precisa estar ciente de certas considerações de espaço agregado ao habilitar a auditoria no cluster.
+
+A criação de volume de estadiamento pode falhar devido à não disponibilidade de espaço em um agregado. Isso pode acontecer se você criar uma configuração de auditoria e os agregados existentes não tiverem espaço suficiente para conter o volume de preparo.
+
+Você deve garantir que haja espaço suficiente nos agregados existentes para os volumes de teste antes de habilitar a auditoria em um SVM.

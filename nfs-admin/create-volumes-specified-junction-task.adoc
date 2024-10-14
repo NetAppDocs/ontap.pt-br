@@ -1,0 +1,65 @@
+---
+permalink: nfs-admin/create-volumes-specified-junction-task.html 
+sidebar: sidebar 
+keywords: create, data, volume, specify, junction, point 
+summary: Pode especificar o ponto de junção quando cria um volume de dados. O volume resultante é montado automaticamente no ponto de junção e está imediatamente disponível para configurar para acesso nas. 
+---
+= Crie volumes de dados com pontos de junção especificados
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Pode especificar o ponto de junção quando cria um volume de dados. O volume resultante é montado automaticamente no ponto de junção e está imediatamente disponível para configurar para acesso nas.
+
+.Antes de começar
+* O agregado no qual você deseja criar o volume já deve existir.
+* A partir do ONTAP 9.13,1, você pode criar volumes com análise de capacidade e acompanhamento de atividades habilitados. Para ativar o acompanhamento de capacidade ou atividade, emita o `volume create` comando com `-analytics-state` ou `-activity-tracking-state` defina como `on`.
++
+Para saber mais sobre análise de capacidade e acompanhamento de atividades, https://docs.netapp.com/us-en/ontap/task_nas_file_system_analytics_enable.html["Ative a análise do sistema de ficheiros"] consulte .
+
+
+
+
+NOTE: Os seguintes carateres não podem ser usados no caminho de junção: * *
+
+Além disso, o comprimento do caminho de junção não pode ter mais de 255 carateres.
+
+.Passos
+. Crie o volume com um ponto de junção:
++
+`volume create -vserver _vserver_name_ -volume _volume_name_ -aggregate _aggregate_name_ -size {integer[KB|MB|GB|TB|PB]} -security-style {ntfs|unix|mixed} -junction-path _junction_path_`
+
++
+O caminho de junção deve começar com a raiz (/) e pode conter diretórios e volumes juntados. O caminho de junção não precisa conter o nome do volume. Os caminhos de junção são independentes do nome do volume.
+
++
+Especificar um estilo de segurança de volume é opcional. Se você não especificar um estilo de segurança, o ONTAP criará o volume com o mesmo estilo de segurança aplicado ao volume raiz da máquina virtual de storage (SVM). No entanto, o estilo de segurança do volume raiz pode não ser o estilo de segurança que você deseja aplicar ao volume de dados criado. A recomendação é especificar o estilo de segurança quando você cria o volume para minimizar problemas de acesso a arquivos difíceis de solucionar.
+
++
+O caminho de junção é insensível a maiúsculas e minúsculas; `/ENG` é o mesmo que `/eng`. Se você criar um compartilhamento CIFS, o Windows tratará o caminho de junção como se ele fosse sensível a maiúsculas e minúsculas. Por exemplo, se a junção for `/ENG`, o caminho de um compartilhamento SMB deve começar com `/ENG`, não `/eng`.
+
++
+Há muitos parâmetros opcionais que você pode usar para personalizar um volume de dados. Para saber mais sobre eles, consulte as páginas de manual do `volume create` comando.
+
+. Verifique se o volume foi criado com o ponto de junção desejado:
++
+`volume show -vserver _vserver_name_ -volume _volume_name_ -junction`
+
+
+
+.Exemplo
+O exemplo a seguir cria um volume chamado "home4" localizado na SVM VS1 que tem um caminho de junção `/eng/home` :
+
+[listing]
+----
+cluster1::> volume create -vserver vs1 -volume home4 -aggregate aggr1 -size 1g -junction-path /eng/home
+[Job 1642] Job succeeded: Successful
+
+cluster1::> volume show -vserver vs1 -volume home4 -junction
+                  Junction                 Junction
+Vserver   Volume  Active   Junction Path   Path Source
+--------- ------- -------- --------------- -----------
+vs1       home4   true     /eng/home       RW_volume
+----

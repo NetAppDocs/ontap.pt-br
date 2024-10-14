@@ -1,0 +1,82 @@
+---
+permalink: encryption-at-rest/purge-data-encrypted-volume-synchronous-snapmirror-task.html 
+sidebar: sidebar 
+keywords: secure, purge, scrub, data, encrypted, volume, nve, netapp, volume encryption, snapmirror, synchronous 
+summary: 'A partir do ONTAP 9.8, você pode usar a limpeza segura para "esfregar" dados em volumes habilitados para NVE com uma relação síncrona SnapMirror sem interrupções.' 
+---
+= Limpeza de dados em um volume criptografado com uma relação síncrona SnapMirror
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.8, você pode usar uma limpeza segura para "limpar" dados em volumes habilitados para NVE sem interrupções, com uma relação síncrona SnapMirror.
+
+.Sobre esta tarefa
+Uma limpeza segura pode levar de vários minutos a muitas horas para ser concluída, dependendo da quantidade de dados nos arquivos excluídos. Pode utilizar o `volume encryption secure-purge show` comando para visualizar o estado da operação. Você pode usar o `volume encryption secure-purge abort` comando para encerrar a operação.
+
+
+NOTE: Para fazer uma limpeza segura em um host SAN, você deve excluir todo o LUN que contém os arquivos que deseja limpar, ou você deve ser capaz de perfurar buracos no LUN para os blocos que pertencem aos arquivos que deseja limpar. Se você não puder excluir o LUN ou o sistema operacional do host não suportar furos no LUN, não será possível executar uma limpeza segura.
+
+.Antes de começar
+* Você deve ser um administrador de cluster para executar esta tarefa.
+* São necessários Privileges avançados para esta tarefa.
+
+
+.Passos
+. No sistema de armazenamento, altere para nível de privilégio avançado:
++
+`set -privilege advanced`
+
+. Exclua os arquivos ou o LUN que você deseja limpar com segurança.
++
+** Em um cliente nas, exclua os arquivos que você deseja limpar com segurança.
+** Em um host SAN, exclua o LUN que você deseja limpar com segurança ou perfurar buracos no LUN para os blocos que pertencem aos arquivos que deseja limpar.
+
+
+. Prepare o volume de destino na relação assíncrona para ser purgado com segurança:
++
+`volume encryption secure-purge start -vserver <SVM_name> -volume <volume_name> -prepare true`
+
++
+Repita esta etapa para o outro volume em sua relação síncrona do SnapMirror.
+
+. Se os arquivos que você deseja limpar com segurança estiverem em cópias Snapshot, exclua as cópias Snapshot:
++
+`snapshot delete -vserver <SVM_name> -volume <volume_name> -snapshot <snapshot>`
+
+. Se o arquivo de limpeza segura estiver na base ou nas cópias Snapshot comuns, atualize o SnapMirror para mover a cópia Snapshot comum para frente:
++
+`snapmirror update -source-snapshot <snapshot_name> -destination-path <destination_path>`
+
++
+Há duas cópias Snapshot comuns, portanto, esse comando deve ser emitido duas vezes.
+
+. Se o arquivo de limpeza segura estiver na cópia Snapshot consistente com o aplicativo, exclua a cópia Snapshot em ambos os volumes na relação síncrona do SnapMirror:
++
+`snapshot delete -vserver <SVM_name> -volume <volume_name> -snapshot <snapshot>`
+
++
+Execute esta etapa em ambos os volumes.
+
+. Limpe com segurança os arquivos excluídos:
++
+`volume encryption secure-purge start -vserver <SVM_name> -volume <volume_name>`
+
++
+Repita esta etapa em cada volume na relação síncrona do SnapMirror.
+
++
+O comando a seguir limpa com segurança os arquivos excluídos no "'vol1" no SVM "'VS1".
+
++
+[listing]
+----
+cluster1::> volume encryption secure-purge start -vserver vs1 -volume vol1
+----
+. Verifique o estado da operação de purga segura:
++
+`volume encryption secure-purge show`
+
+

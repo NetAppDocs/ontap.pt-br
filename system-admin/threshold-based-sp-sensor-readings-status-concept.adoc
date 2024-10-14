@@ -1,0 +1,87 @@
+---
+permalink: system-admin/threshold-based-sp-sensor-readings-status-concept.html 
+sidebar: sidebar 
+keywords: understand, threshold, sp, sensor, readings, status, value, command, output, periodic, operating, conditions 
+summary: Os sensores baseados em limites fazem leituras periódicas de uma variedade de componentes do sistema. O SP compara a leitura de um sensor baseado em limites com seus limites predefinidos que definem as condições de operação aceitáveis de um componente. 
+---
+= Sobre as leituras do sensor SP baseado no limiar e os valores de estado da saída do comando dos sensores do sistema
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os sensores baseados em limites fazem leituras periódicas de uma variedade de componentes do sistema. O SP compara a leitura de um sensor baseado em limites com os limites predefinidos que definem as condições de funcionamento aceitáveis de um componente.
+
+Com base na leitura do sensor, o SP apresenta o estado do sensor para o ajudar a monitorizar a condição do componente.
+
+Exemplos de sensores baseados em limites incluem sensores para as temperaturas do sistema, tensões, correntes e velocidades do ventilador. A lista específica de sensores baseados em limites depende da plataforma.
+
+Os sensores baseados em limites têm os seguintes limites, exibidos na saída do comando SP `system sensors`:
+
+* Crítico inferior (LCR)
+* Não crítico inferior (LNC)
+* Não crítico superior (UNC)
+* Crítica superior (UCR)
+
+
+Uma leitura do sensor entre LNC e LCR ou entre UNC e UCR significa que o componente está mostrando sinais de um problema e uma falha do sistema pode ocorrer como resultado. Portanto, você deve Planejar o serviço de componentes em breve.
+
+Uma leitura do sensor abaixo de LCR ou acima de UCR significa que o componente está avariado e está prestes a ocorrer uma falha do sistema. Portanto, o componente requer atenção imediata.
+
+O diagrama a seguir ilustra os intervalos de gravidade especificados pelos limites:
+
+image:sp-sensor-thresholds.png["Intervalos de gravidade especificados por limites"]
+
+Você pode encontrar a leitura de um sensor baseado em limiar sob a `Current` coluna na `system sensors` saída do comando. O `system sensors get` `sensor_name` comando exibe detalhes adicionais para o sensor especificado. À medida que a leitura de um sensor baseado em limites cruza os limites não críticos e críticos, o sensor relata um problema de gravidade crescente. Quando a leitura excede um limite, o status do sensor na `system sensors` saída do comando muda de `ok` para `nc` (não crítico) ou `cr` (crítico) dependendo do limite excedido, e uma mensagem de evento é registrada no log de eventos SEL.
+
+Alguns sensores baseados em limites não têm todos os quatro níveis de limiar. Para esses sensores, os limites em falta mostram `na` como seus limites na `system sensors` saída de comando, indicando que o sensor em particular não tem limite ou problema de gravidade para o determinado limite e o SP não monitora o sensor para esse limite.
+
+.Exemplo de saída de comando dos sensores do sistema
+O exemplo a seguir mostra algumas das informações exibidas pelo `system sensors` comando na CLI do SP:
+
+[listing]
+----
+SP node1> system sensors
+
+Sensor Name      | Current    | Unit       | Status| LCR       | LNC       | UNC       | UCR
+-----------------+------------+------------+-------+-----------+-----------+-----------+-----------
+CPU0_Temp_Margin | -55.000    | degrees C  | ok    | na        | na        | -5.000    | 0.000
+CPU1_Temp_Margin | -56.000    | degrees C  | ok    | na        | na        | -5.000    | 0.000
+In_Flow_Temp     | 32.000     | degrees C  | ok    | 0.000     | 10.000    | 42.000    | 52.000
+Out_Flow_Temp    | 38.000     | degrees C  | ok    | 0.000     | 10.000    | 59.000    | 68.000
+CPU1_Error       | 0x0        | discrete   | 0x0180| na        | na        | na        | na
+CPU1_Therm_Trip  | 0x0        | discrete   | 0x0180| na        | na        | na        | na
+CPU1_Hot         | 0x0        | discrete   | 0x0180| na        | na        | na        | na
+IO_Mid1_Temp     | 30.000     | degrees C  | ok    | 0.000     | 10.000    | 55.000    | 64.000
+IO_Mid2_Temp     | 30.000     | degrees C  | ok    | 0.000     | 10.000    | 55.000    | 64.000
+CPU_VTT          | 1.106      | Volts      | ok    | 1.028     | 1.048     | 1.154     | 1.174
+CPU0_VCC         | 1.154      | Volts      | ok    | 0.834     | 0.844     | 1.348     | 1.368
+3.3V             | 3.323      | Volts      | ok    | 3.053     | 3.116     | 3.466     | 3.546
+5V               | 5.002      | Volts      | ok    | 4.368     | 4.465     | 5.490     | 5.636
+STBY_1.8V        | 1.794      | Volts      | ok    | 1.678     | 1.707     | 1.892     | 1.911
+…
+----
+.Exemplo de saída do comando sensor_NAME dos sensores do sistema para um sensor baseado em limiar
+O exemplo a seguir mostra o resultado da entrada `system sensors get` `sensor_name` na CLI do SP para o sensor 5V baseado em limiar:
+
+[listing]
+----
+SP node1> system sensors get 5V
+
+Locating sensor record...
+Sensor ID              : 5V (0x13)
+ Entity ID             : 7.97
+ Sensor Type (Analog)  : Voltage
+ Sensor Reading        : 5.002 (+/- 0) Volts
+ Status                : ok
+ Lower Non-Recoverable : na
+ Lower Critical        : 4.246
+ Lower Non-Critical    : 4.490
+ Upper Non-Critical    : 5.490
+ Upper Critical        : 5.758
+ Upper Non-Recoverable : na
+ Assertion Events      :
+ Assertions Enabled    : lnc- lcr- ucr+
+ Deassertions Enabled  : lnc- lcr- ucr+
+----

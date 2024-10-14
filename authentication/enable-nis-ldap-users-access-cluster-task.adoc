@@ -1,0 +1,164 @@
+---
+permalink: authentication/enable-nis-ldap-users-access-cluster-task.html 
+sidebar: sidebar 
+keywords: configure, ldap, nis, server access, create, name, service, switch 
+summary: Você deve configurar o acesso de servidor LDAP ou NIS a um SVM antes que as contas LDAP ou NIS possam acessar o SVM. O recurso de switch permite que você use LDAP ou NIS como fontes alternativas de serviço de nomes. 
+---
+= Configure a visão geral do acesso ao servidor LDAP ou NIS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve configurar o acesso de servidor LDAP ou NIS a um SVM antes que as contas LDAP ou NIS possam acessar o SVM. O recurso de switch permite que você use LDAP ou NIS como fontes alternativas de serviço de nomes.
+
+
+
+== Configurar o acesso ao servidor LDAP
+
+Você deve configurar o acesso do servidor LDAP a um SVM antes que as contas LDAP possam acessar o SVM. Você pode usar o `vserver services name-service ldap client create` comando para criar uma configuração de cliente LDAP no SVM. Em seguida, você pode usar o `vserver services name-service ldap create` comando para associar a configuração do cliente LDAP ao SVM.
+
+.Sobre esta tarefa
+A maioria dos servidores LDAP pode usar os esquemas padrão fornecidos pelo ONTAP:
+
+* MS-AD-BIS (o esquema preferido para a maioria dos servidores AD do Windows 2012 e posteriores)
+* Ad-IDMU (Windows 2008, Windows 2016 e servidores AD posteriores)
+* Ad-SFU (Windows 2003 e servidores AD anteriores)
+* RFC-2307 (SERVIDORES LDAP UNIX)
+
+
+É melhor usar os esquemas padrão, a menos que haja um requisito para fazer o contrário. Nesse caso, você pode criar seu próprio esquema copiando um esquema padrão e modificando a cópia. Para obter mais informações, consulte:
+
+* link:../nfs-config/index.html["Configuração NFS"]
+* https://www.netapp.com/pdf.html?item=/media/19423-tr-4835.pdf["Relatório técnico do NetApp 4835: Como configurar o LDAP no ONTAP"^]
+
+
+.Antes de começar
+* Você precisa ter instalado a link:install-ca-signed-server-digital-certificate-task.html["Certificado digital do servidor assinado pela CA"]no SVM.
+* Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
+
+
+.Passos
+. Criar uma configuração de cliente LDAP em uma SVM:
++
+`vserver services name-service ldap client create -vserver <SVM_name> -client-config <client_configuration> -servers <LDAP_server_IPs> -schema <schema> -use-start-tls <true|false>`
+
++
+
+NOTE: Iniciar TLS é compatível apenas para acesso a SVMs de dados. Ele não é compatível com acesso a SVMs administrativas.
+
++
+Para obter a sintaxe de comando completa, consulte link:config-worksheets-reference.html["folha de trabalho"].
+
++
+O comando a seguir cria uma configuração de cliente LDAP chamada `corp` em SVM `engData`. O cliente faz ligações anônimas aos servidores LDAP com os endereços IP 172.160.0.100 e 172.16.0.101. O cliente usa o esquema RFC-2307 para fazer consultas LDAP. A comunicação entre o cliente e o servidor é criptografada usando Iniciar TLS.
+
++
+[listing]
+----
+cluster1::> vserver services name-service ldap client create
+-vserver engData -client-config corp -servers 172.16.0.100,172.16.0.101 -schema RFC-2307 -use-start-tls true
+----
++
+
+NOTE: A partir de ONTAP 9.2, o campo `-ldap-servers` substitui o `-servers` campo . Este novo campo pode ter um nome de host ou um endereço IP para o servidor LDAP.
+
+. Associe a configuração do cliente LDAP à SVM: `vserver services name-service ldap create -vserver <SVM_name> -client-config <client_configuration> -client-enabled <true|false>`
++
+Para obter a sintaxe de comando completa, consulte link:config-worksheets-reference.html["folha de trabalho"].
+
++
+O comando a seguir associa a configuração do cliente LDAP `corp` ao SVM `engData` e habilita o cliente LDAP no SVM.
+
++
+[listing]
+----
+cluster1::>vserver services name-service ldap create -vserver engData -client-config corp -client-enabled true
+----
++
+
+NOTE: A partir do ONTAP 9.2, o `vserver services name-service ldap create` comando executa uma validação automática de configuração e relata uma mensagem de erro se o ONTAP não conseguir entrar em Contato com o servidor de nomes.
+
+. Valide o status dos servidores de nomes usando o comando de verificação ldap do serviço de nomes dos serviços vserver.
++
+O comando a seguir valida servidores LDAP no SVM vs0.
+
++
+[listing]
+----
+cluster1::> vserver services name-service ldap check -vserver vs0
+
+| Vserver: vs0                                                |
+| Client Configuration Name: c1                               |
+| LDAP Status: up                                             |
+| LDAP Status Details: Successfully connected to LDAP server "10.11.12.13".                                              |
+----
++
+O comando name Service check está disponível a partir de ONTAP 9.2.
+
+
+
+
+
+== Configurar o acesso ao servidor NIS
+
+Você deve configurar o acesso do servidor NIS a um SVM antes que as contas NIS possam acessar o SVM. Você pode usar o `vserver services name-service nis-domain create` comando para criar uma configuração de domínio NIS em um SVM.
+
+.Antes de começar
+* Todos os servidores configurados devem estar disponíveis e acessíveis antes de configurar o domínio NIS no SVM.
+* Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
+
+
+.Passo
+. Crie uma configuração de domínio NIS em uma SVM:
++
+`vserver services name-service nis-domain create -vserver <SVM_name> -domain <client_configuration> -nis-servers <NIS_server_IPs>`
+
++
+Para obter a sintaxe de comando completa, consulte link:config-worksheets-reference.html["folha de trabalho"].
+
++
+
+NOTE: A partir de ONTAP 9.2, o campo `-nis-servers` substitui o `-servers` campo . Este novo campo pode ter um nome de host ou um endereço IP para o servidor NIS.
+
++
+O comando a seguir cria uma configuração de domínio NIS no SVM `engData`. O domínio NIS `nisdomain` comunica com um servidor NIS com o endereço IP `192.0.2.180` .
+
++
+[listing]
+----
+cluster1::>vserver services name-service nis-domain create
+-vserver engData -domain nisdomain -nis-servers 192.0.2.180
+----
+
+
+
+
+== Crie um switch de serviço de nomes
+
+O recurso de switch de serviço de nomes permite que você use LDAP ou NIS como fontes alternativas de serviço de nomes. Você pode usar o `vserver services name-service ns-switch modify` comando para especificar a ordem de pesquisa para fontes de serviço de nome.
+
+.Antes de começar
+* Tem de ter configurado o acesso ao servidor LDAP e NIS.
+* Você deve ser um administrador de cluster ou um administrador de SVM para executar essa tarefa.
+
+
+.Passo
+. Especifique a ordem de pesquisa para fontes do serviço de nomes:
++
+`vserver services name-service ns-switch modify -vserver <SVM_name> -database <name_service_switch_database> -sources <name_service_source_order>`
+
++
+Para obter a sintaxe de comando completa, consulte link:config-worksheets-reference.html["folha de trabalho"].
+
++
+O comando a seguir especifica a ordem de pesquisa das fontes de serviço de nomes LDAP e NIS para o `passwd` banco de dados no SVM `engData`.
+
++
+[listing]
+----
+cluster1::>vserver services name-service ns-switch
+modify -vserver engData -database passwd -source files ldap,nis
+----
+

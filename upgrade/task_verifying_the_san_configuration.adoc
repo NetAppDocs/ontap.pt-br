@@ -1,0 +1,58 @@
+---
+permalink: upgrade/task_verifying_the_san_configuration.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, verify, verifying, san, configuration 
+summary: Antes de atualizar um cluster SAN, verifique se cada host está configurado com o número correto de caminhos diretos e indiretos e se cada host está conetado aos LIFs corretos. 
+---
+= Verifique a configuração do host SAN antes de uma atualização do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A atualização do ONTAP em um ambiente SAN altera quais caminhos são diretos. Antes de atualizar um cluster SAN, verifique se cada host está configurado com o número correto de caminhos diretos e indiretos e se cada host está conetado aos LIFs corretos.
+
+.Passos
+. Em cada host, verifique se um número suficiente de caminhos diretos e indiretos está configurado e se cada caminho está ativo.
++
+Cada host deve ter um caminho para cada nó no cluster.
+
+. Verifique se cada host está conetado a um LIF em cada nó.
++
+Você deve gravar a lista de iniciadores para comparação após a atualização. Se você estiver executando o ONTAP 9.11,1 ou posterior, use o Gerenciador do sistema para exibir o status da conexão, pois ele oferece uma exibição muito mais clara do que a CLI.
+
++
+[role="tabbed-block"]
+====
+.System Manager
+--
+.. No System Manager, clique em *hosts > SAN Initiator Groups*.
++
+A página exibe uma lista de grupos de iniciadores (grupos de iniciadores). Se a lista for grande, você pode visualizar páginas adicionais da lista clicando nos números de página no canto inferior direito da página.
+
++
+As colunas exibem várias informações sobre os grupos. A partir de 9.11.1, o estado da ligação do grupo também é apresentado. Passe o Mouse sobre alertas de status para ver detalhes.
+
+
+
+--
+.CLI
+--
+** Listar iniciadores iSCSI:
++
+[source, cli]
+----
+iscsi initiator show -fields igroup,initiator-name,tpgroup
+----
+** Listar iniciadores FC:
++
+[source, cli]
+----
+fcp initiator show -fields igroup,wwpn,lif
+----
+
+
+--
+====
+

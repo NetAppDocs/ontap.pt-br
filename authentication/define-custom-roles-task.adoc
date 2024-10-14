@@ -1,0 +1,63 @@
+---
+permalink: authentication/define-custom-roles-task.html 
+sidebar: sidebar 
+keywords: define, custom roles 
+summary: Você pode usar o comando security login role create para definir uma função personalizada. Você pode executar o comando quantas vezes for necessário para obter a combinação exata de recursos que deseja associar à função. 
+---
+= Definir funções personalizadas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `security login role create` comando para definir uma função personalizada. Você pode executar o comando quantas vezes for necessário para obter a combinação exata de recursos que deseja associar à função.
+
+.Sobre esta tarefa
+* Uma função, predefinida ou personalizada, concede ou nega acesso a comandos ou diretórios de comandos do ONTAP.
++
+Um diretório de comandos (`volume`, por exemplo) é um grupo de comandos e subdiretórios de comandos relacionados. Exceto conforme descrito neste procedimento, conceder ou negar acesso a um diretório de comando concede ou nega acesso a cada comando no diretório e seus subdiretórios.
+
+* O acesso a comandos específicos ou o acesso a subdiretórios substitui o acesso ao diretório pai.
++
+Se uma função for definida com um diretório de comando e, em seguida, for definida novamente com um nível de acesso diferente para um comando específico ou para um subdiretório do diretório pai, o nível de acesso especificado para o comando ou subdiretório substitui o do pai.
+
+
+
+
+NOTE: Não é possível atribuir a um administrador SVM uma função que dê acesso a um diretório de comando ou comando que esteja disponível apenas para o `admin` administrador de cluster - por exemplo, o `security` diretório de comando.
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa.
+
+.Passo
+. Definir uma função personalizada:
++
+`security login role create -vserver SVM_name -role role -cmddirname command_or_directory_name -access access_level -query query`
+
++
+Para obter a sintaxe de comando completa, consulte link:config-worksheets-reference.html["folha de trabalho"].
+
++
+Os comandos a seguir concedem à `vol_role` função acesso total aos comandos no `volume` diretório de comandos e acesso somente leitura aos comandos `volume snapshot` no subdiretório.
+
++
+[listing]
+----
+cluster1::>security login role create -role vol_role -cmddirname "volume" -access all
+
+cluster1::>security login role create -role vol_role -cmddirname "volume snapshot" -access readonly
+----
++
+Os comandos a seguir concedem à `SVM_storage` função acesso somente leitura aos comandos no `storage` diretório de comandos, sem acesso aos comandos `storage encryption` no subdiretório e acesso total ao `storage aggregate plex offline` comando não intrínseco.
+
++
+[listing]
+----
+cluster1::>security login role create -role SVM_storage -cmddirname "storage" -access readonly
+
+cluster1::>security login role create -role SVM_storage -cmddirname "storage encryption" -access none
+
+cluster1::>security login role create -role SVM_storage -cmddirname "storage aggregate plex offline" -access all
+----
+

@@ -1,0 +1,170 @@
+---
+permalink: smb-admin/configure-character-mappings-file-name-translation-task.html 
+sidebar: sidebar 
+keywords: nfs, client, create, file, name, character, valid, smb, windows, application, configure, map, translation, configure character mapping for smb file name translation on volumes 
+summary: Os clientes NFS podem criar nomes de arquivos que contêm carateres que não são válidos para clientes SMB e determinados aplicativos do Windows. Você pode configurar o mapeamento de carateres para a tradução de nome de arquivo em volumes para permitir que clientes SMB acessem arquivos com nomes NFS que, de outra forma, não seriam válidos. 
+---
+= Configure o mapeamento de carateres para a tradução de nomes de arquivo SMB em volumes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os clientes NFS podem criar nomes de arquivos que contêm carateres que não são válidos para clientes SMB e determinados aplicativos do Windows. Você pode configurar o mapeamento de carateres para a tradução de nome de arquivo em volumes para permitir que clientes SMB acessem arquivos com nomes NFS que, de outra forma, não seriam válidos.
+
+.Sobre esta tarefa
+Quando os arquivos criados por clientes NFS são acessados por clientes SMB, o ONTAP examina o nome do arquivo. Se o nome não for um nome de arquivo SMB válido (por exemplo, se ele tiver um caractere de dois pontos "':'" incorporado), o ONTAP retornará o nome de arquivo 8,3 que é mantido para cada arquivo. No entanto, isso causa problemas para aplicativos que codificam informações importantes em nomes de arquivos longos.
+
+Portanto, se você estiver compartilhando um arquivo entre clientes em sistemas operacionais diferentes, você deve usar carateres nos nomes de arquivo que são válidos em ambos os sistemas operacionais.
+
+No entanto, se você tiver clientes NFS que criam nomes de arquivo contendo carateres que não são nomes de arquivo válidos para clientes SMB, você poderá definir um mapa que converte os carateres NFS inválidos em carateres Unicode que tanto SMB quanto determinados aplicativos do Windows aceitam. Por exemplo, essa funcionalidade suporta os aplicativos CATIA MCAD e Mathematica, bem como outros aplicativos que têm esse requisito.
+
+Você pode configurar o mapeamento de carateres em uma base volume por volume.
+
+Você deve ter em mente o seguinte ao configurar o mapeamento de carateres em um volume:
+
+* O mapeamento de carateres não é aplicado em pontos de junção.
++
+Você deve configurar explicitamente o mapeamento de carateres para cada volume de junção.
+
+* Você deve certificar-se de que os carateres Unicode que são usados para representar carateres inválidos ou ilegais são carateres que normalmente não aparecem em nomes de arquivos; caso contrário, mapeamentos indesejados ocorrem.
++
+Por exemplo, se você tentar mapear dois pontos (:) para um hífen (-), mas o hífen (-) foi usado no nome do arquivo corretamente, um cliente Windows tentando acessar um arquivo chamado "'a-b'" teria sua solicitação mapeada para o nome NFS de "'a:b'" (não o resultado desejado).
+
+* Depois de aplicar o mapeamento de carateres, se o mapeamento ainda contiver um caractere Windows inválido, o ONTAP volta para os nomes de arquivos do Windows 8,3.
+* Em notificações FPolicy, logs de auditoria nas e mensagens de rastreamento de segurança, os nomes de arquivo mapeados são exibidos.
+* Quando uma relação SnapMirror do tipo DP é criada, o mapeamento de carateres do volume de origem não é replicado no volume DP de destino.
+* Sensibilidade do caso: Como os nomes mapeados do Windows se transformam em nomes NFS, a pesquisa dos nomes segue semântica de NFS. Isso inclui o fato de que pesquisas NFS são sensíveis a maiúsculas e minúsculas. Isso significa que os aplicativos que acessam compartilhamentos mapeados não devem depender de comportamento insensível a maiúsculas e minúsculas do Windows. No entanto, o nome 8,3 está disponível, e isso é insensível a maiúsculas e minúsculas.
+* Mapeamentos parciais ou inválidos: Depois de mapear um nome para retornar aos clientes fazendo enumeração de diretórios ("dir"), o nome Unicode resultante é verificado para a validade do Windows. Se esse nome ainda tiver carateres inválidos nele, ou se for inválido para o Windows (por exemplo, termina em "." ou em branco), o nome 8,3 será retornado em vez do nome inválido.
+
+
+.Passo
+. Configurar mapeamento de carateres
+
+
+`vserver cifs character-mapping create -vserver _vserver_name_ -volume _volume_name_ -mapping _mapping_text_, ...` E
+
+O mapeamento consiste em uma lista de pares de carateres fonte-alvo separados por "':'". Os carateres são carateres Unicode inseridos usando dígitos hexadecimais. Por exemplo: 3c:E03C. E
+
+O primeiro valor de cada `mapping_text` par que é separado por dois pontos é o valor hexadecimal do caractere NFS que você deseja traduzir, e o segundo valor é o valor Unicode que SMB usa. Os pares de mapeamento devem ser únicos (deve existir um mapeamento um-para-um).
+
+* Mapeamento de origem
+
+
+A tabela a seguir mostra o conjunto de carateres Unicode permissível para mapeamento de fontes:
+
+E
+
+|===
+| Caractere Unicode | Caráter impresso | Descrição 
+
+
+ a| 
+0x01-0x19
+ a| 
+Não aplicável
+ a| 
+Caracteres de controle não-impressão
+
+
+
+ a| 
+0x5C
+ a| 
+ a| 
+Barra invertida
+
+
+
+ a| 
+0x3A
+ a| 
+:
+ a| 
+Cólon
+
+
+
+ a| 
+0x2A
+ a| 
+*
+ a| 
+Asterisco
+
+
+
+ a| 
+0x3F
+ a| 
+?
+ a| 
+Ponto de interrogação
+
+
+
+ a| 
+0x22
+ a| 
+"
+ a| 
+Marca de cotação
+
+
+
+ a| 
+0x3C
+ a| 
+*
+ a| 
+Menos de
+
+
+
+ a| 
+0x3E
+ a| 
+>
+ a| 
+Superior a.
+
+
+
+ a| 
+0x7C
+ a| 
+|
+ a| 
+Linha vertical
+
+
+
+ a| 
+0xB1
+ a| 
+±
+ a| 
+Sinal de mais-menos
+
+|===
+* Mapeamento de alvos
++
+Você pode especificar carateres de destino na ""Área de uso privado"" do Unicode no seguinte intervalo: U-E0000...U-F8FF.
+
+
+
+.Exemplo
+O comando a seguir cria um mapeamento de carateres para um volume chamado "data" na máquina virtual de armazenamento (SVM) VS1:
+
+[listing]
+----
+cluster1::> vserver cifs character-mapping create -volume data -mapping 3c:e17c,3e:f17d,2a:f745
+cluster1::> vserver cifs character-mapping show
+
+Vserver         Volume Name  Character Mapping
+--------------  -----------  ------------------------------------------
+vs1             data         3c:e17c, 3e:f17d, 2a:f745
+----
+.Informações relacionadas
+xref:create-manage-data-volumes-nas-namespaces-concept.adoc[Criação e gerenciamento de volumes de dados em namespaces nas]

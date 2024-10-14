@@ -1,0 +1,30 @@
+---
+permalink: smb-admin/dynamic-access-control-concept.html 
+sidebar: sidebar 
+keywords: consideration, dynamic, access, control, dac, central, policies, policy, secure, file, folder, cifs, server, consideration when using dynamic access control and central access policies with cifs servers 
+summary: 'Há certas considerações que você deve ter em mente ao usar o controle de acesso dinâmico (DAC) e as políticas de acesso central para proteger arquivos e pastas em servidores CIFS.' 
+---
+= Considerações ao usar o Controle de Acesso Dinâmico e políticas de Acesso Central com servidores CIFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Há certas considerações que você deve ter em mente ao usar o controle de acesso dinâmico (DAC) e as políticas de acesso central para proteger arquivos e pastas em servidores CIFS.
+
+
+
+== O acesso NFS pode ser negado ao root se a regra de política se aplicar ao usuário do domínio/administrador
+
+Em determinadas circunstâncias, o acesso NFS à raiz pode ser negado quando a segurança da diretiva de acesso central é aplicada aos dados que o usuário raiz está tentando acessar. O problema ocorre quando a política de acesso central contém uma regra que é aplicada ao domínio/administrador e a conta raiz é mapeada para a conta de domínio/administrador.
+
+Em vez de aplicar uma regra ao utilizador de domínio/administrador, deve aplicar a regra a um grupo com Privileges administrativo, como o grupo de domínio/administradores. Desta forma, pode mapear a raiz para a conta de domínio/administrador sem que a raiz seja afetada por este problema.
+
+
+
+== O grupo BUILTIN/Administradores do servidor CIFS tem acesso a recursos quando a diretiva de acesso central aplicado não é encontrada no ative Directory
+
+É possível que os recursos contidos no servidor CIFS tenham políticas de acesso central aplicadas a eles, mas quando o servidor CIFS usa o SID da política de acesso central para tentar recuperar informações do ative Directory, o SID não corresponde a nenhum SIDs de política de acesso central existente no ative Directory. Nestas circunstâncias, o servidor CIFS aplica a política de recuperação padrão local para esse recurso.
+
+A política de recuperação padrão local permite o acesso do grupo BUILTIN/Administradores do servidor CIFS a esse recurso.

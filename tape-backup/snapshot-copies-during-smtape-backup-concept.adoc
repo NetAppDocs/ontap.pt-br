@@ -1,0 +1,55 @@
+---
+permalink: tape-backup/snapshot-copies-during-smtape-backup-concept.html 
+sidebar: sidebar 
+keywords: snapshot, copy, smtape, backup, baseline, incremental, snapmirror 
+summary: Você deve entender como as cópias Snapshot são usadas durante um backup de linha de base do SMTape e um backup incremental. Há também considerações a ter em mente ao executar um backup usando SMTape. 
+---
+= Use cópias Snapshot durante o backup SMTape
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve entender como as cópias Snapshot são usadas durante um backup de linha de base do SMTape e um backup incremental. Há também considerações a ter em mente ao executar um backup usando SMTape.
+
+
+
+== Backup de linha de base
+
+Durante a execução de um backup de linha de base, você pode especificar o nome da cópia Snapshot a ser feita em backup em fita. Se nenhuma cópia Snapshot for especificada, dependendo do tipo de acesso do volume (leitura/gravação ou somente leitura), uma cópia Snapshot será criada automaticamente ou as cópias Snapshot existentes serão usadas. Quando você especifica uma cópia Snapshot para o backup, todas as cópias Snapshot anteriores à cópia Snapshot especificada também são feitas backup em fita.
+
+Se você não especificar uma cópia Snapshot para o backup, ocorrerá o seguinte:
+
+* Para um volume de leitura/gravação, uma cópia Snapshot é criada automaticamente.
++
+O backup da cópia Snapshot recém-criada e de todas as cópias Snapshot mais antigas é feito em fita.
+
+* Para um volume somente leitura, o backup de todas as cópias Snapshot, incluindo a cópia Snapshot mais recente, é feito em fita.
++
+Não é feito o backup de todas as novas cópias Snapshot criadas após o backup ser iniciado.
+
+
+
+
+
+== Backup incremental
+
+Para operações de backup incrementais ou diferenciais do SMTape, os aplicativos de backup compatíveis com NDMP criam e gerenciam as cópias Snapshot.
+
+Você sempre deve especificar uma cópia Snapshot durante a execução de uma operação de backup incremental. Para uma operação de backup incremental bem-sucedida, o backup da cópia Snapshot durante a operação de backup anterior (linha de base ou incremental) deve estar no volume a partir do qual o backup é executado. Para garantir que você use essa cópia Snapshot de backup, considere a política Snapshot atribuída a esse volume enquanto configura a política de backup.
+
+
+
+== Considerações sobre backups do SMTape em destinos do SnapMirror
+
+* Uma relação de espelho de proteção de dados cria cópias Snapshot temporárias no volume de destino para replicação.
++
+Você não deve usar essas cópias Snapshot para backup SMTape.
+
+* Se uma atualização do SnapMirror ocorrer em um volume de destino em um relacionamento de espelho de proteção de dados durante uma operação de backup do SMTape no mesmo volume, a cópia Snapshot que é backup do SMTape não deve ser excluída no volume de origem.
++
+Durante a operação de backup, o SMTape bloqueia a cópia Snapshot no volume de destino e, se a cópia Snapshot correspondente for excluída no volume de origem, a operação de atualização do SnapMirror subsequente falha.
+
+* Você não deve usar essas cópias Snapshot durante o backup incremental.
+

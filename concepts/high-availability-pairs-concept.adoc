@@ -1,0 +1,34 @@
+---
+permalink: concepts/high-availability-pairs-concept.html 
+sidebar: sidebar 
+keywords: high-availability pairs 
+summary: 'Os nós de cluster são configurados em pares de alta disponibilidade (HA) para tolerância de falhas e operações ininterruptas. Se um nó falhar ou se você precisar reduzir um nó para manutenção de rotina, o parceiro poderá assumir o storage e continuar fornecendo dados a partir dele. O parceiro devolve o storage quando o nó é colocado de volta na linha.' 
+---
+= Pares de alta disponibilidade
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os nós de cluster são configurados em _high-availability (HA) pairs_ para tolerância de falhas e operações ininterruptas. Se um nó falhar ou se você precisar reduzir um nó para manutenção de rotina, seu parceiro pode _assumir o armazenamento e continuar a fornecer dados a partir dele. O parceiro _devolve_ armazenamento quando o nó é colocado de volta na linha.
+
+Os pares HA consistem sempre em modelos de controlador semelhantes. Normalmente, as controladoras residem no mesmo chassi com fontes de alimentação redundantes.
+
+Os pares de HA são nós tolerantes a falhas que podem se comunicar entre si de maneiras diferentes para permitir que cada nó verifique continuamente se seu parceiro está funcionando e espelhar dados de log para a memória não volátil do outro. Quando uma solicitação de gravação é feita em um nó, ela é registrada no NVRAM em ambos os nós antes que uma resposta seja enviada de volta para o cliente ou host. No failover, o parceiro sobrevivente compromete as solicitações de gravação não confirmadas do nó com falha no disco, garantindo a consistência dos dados.
+
+As conexões com a Mídia de armazenamento do outro controlador permitem que cada nó acesse o armazenamento do outro no caso de uma aquisição. Os mecanismos de failover de caminho de rede garantem que os clientes e hosts continuem a se comunicar com o nó sobrevivente.
+
+Para garantir disponibilidade, você deve manter a utilização da capacidade de performance em qualquer nó em 50% para acomodar o workload adicional no caso de failover. Pelo mesmo motivo, você pode querer configurar não mais de 50% do número máximo de interfaces de rede virtual nas para um nó.
+
+image:high-availability.gif["Par de alta disponibilidade"]
+
+|===
+
+
+ a| 
+*_Takeover e giveback em implementações virtualizadas de ONTAP_*
+
+O storage não é compartilhado entre nós em implementações virtualizadas do ONTAP "sem nada", como o Cloud Volumes ONTAP para AWS ou ONTAP Select. Quando um nó cai, seu parceiro continua fornecendo dados de uma cópia espelhada síncrona dos dados do nó. Ele não assume o storage do nó, apenas sua função de fornecimento de dados.
+
+|===

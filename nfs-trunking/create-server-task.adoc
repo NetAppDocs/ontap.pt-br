@@ -1,0 +1,60 @@
+---
+permalink: nfs-trunking/create-server-task.html 
+sidebar: sidebar 
+keywords: NFS, servers, create, NFS trunking, enabled, multipathing, svm 
+summary: A partir do ONTAP 9.14,1, o entroncamento pode ser ativado em servidores NFS que executam o v4,1 ou posterior. NFSv4,1 e posterior são ativados por padrão quando os servidores NFS são criados. 
+---
+= Crie um servidor NFS habilitado para entroncamento
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.14,1, o entroncamento pode ser ativado em servidores NFS. O NFSv4,1 é ativado por padrão quando os servidores NFS são criados.
+
+.Antes de começar
+A criação de um servidor NFS habilitado para trunking requer uma SVM. O SVM precisa ser:
+
+* apoiado por armazenamento suficiente para os requisitos de dados do cliente.
+* Habilitado para NFS.
+
+
+Você pode usar uma SVM existente. No entanto, a ativação do entroncamento requer que todos os clientes NFSv4.x sejam remontados, o que pode ser disruptivo. Se não for possível montar novamente, crie um novo SVM para o servidor NFS.
+
+.Passos
+. Se não houver um SVM adequado, crie um:
++
+`vserver create -vserver _svm_name_ -rootvolume _root_volume_name_ -aggregate _aggregate_name_ -rootvolume-security-style unix -language C.UTF-8`
+
+. Verifique a configuração e o status do SVM recém-criado:
++
+`vserver show -vserver _svm_name_`
+
++
+Saiba mais link:../nfs-config/create-svms-data-access-task.html["Criação de um SVM"]sobre o .
+
+. Crie o servidor NFS:
++
+`vserver nfs create -vserver _svm_name_ -v3 disabled -v4.0 disabled -v4.1 enabled -v4.1-trunking enabled -v4-id-domain _my_domain.com_`
+
+. Verifique se o NFS está em execução:
++
+`vserver nfs status -vserver _svm_name_`
+
+. Verifique se o NFS está configurado conforme desejado:
++
+`vserver nfs show -vserver _svm_name_`
+
++
+Saiba mais sobre link:../nfs-config/create-server-task.html["Configuração do servidor NFS."]
+
+
+
+.Depois de terminar
+Configure os seguintes serviços conforme necessário:
+
+* link:../nfs-config/configure-dns-host-name-resolution-task.html["DNS"]
+* link:../nfs-config/using-ldap-concept.html["LDAP"]
+* link:../nfs-config/kerberos-nfs-strong-security-concept.html["Kerberos"]
+

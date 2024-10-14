@@ -1,0 +1,51 @@
+---
+sidebar: sidebar 
+permalink: networking/removing_a_nic_from_the_node.html 
+keywords: delete, deleting, remove, removing, nic, network, interface, card, slot, maintenance, faulty, error, bad, failed, fail, node, remove a faulty NIC from its slot or move the NIC to another slot for maintenance purposes, removing a nic from the node on ontap 9.8 or later, controller-replacement, network displaced-vlans, displaced-vlans show, displaced-vlans restore, 
+summary: ONTAP 9.8 e posterior, remova uma NIC defeituosa de seu slot ou mova a NIC para outro slot para fins de manutenção 
+---
+= Removendo uma NIC do nó (ONTAP 9.8 e posterior)
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Este tópico aplica-se ao ONTAP 9.8 e posterior. Você pode ter que remover uma NIC defeituosa de seu slot ou mover a NIC para outro slot para fins de manutenção.
+
+.Passos
+. Desligue o nó.
+. Remova fisicamente a NIC do respetivo slot.
+. Ligue o nó.
+. Verifique se a porta foi excluída:
++
+....
+network port show
+....
++
+
+NOTE: O ONTAP remove automaticamente a porta de qualquer grupo de interface. Se a porta fosse o único membro de um grupo de interfaces, o grupo de interfaces será excluído.
+
+. Se a porta tiver quaisquer VLANs configuradas, elas serão deslocadas. Você pode exibir VLANs deslocadas usando o seguinte comando:
++
+....
+cluster controller-replacement network displaced-vlans show
+....
++
+
+NOTE: Os `displaced-interface show` comandos , `displaced-vlans show`, e `displaced-vlans restore` são únicos e não requerem o nome do comando totalmente qualificado, que começa com `cluster controller-replacement network`.
+
+. Essas VLANs são excluídas, mas podem ser restauradas usando o seguinte comando:
++
+....
+displaced-vlans restore
+....
+. Se a porta tivesse quaisquer LIFs configuradas nela, o ONTAP escolherá automaticamente novas portas residenciais para esses LIFs em outra porta no mesmo domínio de broadcast. Se nenhuma porta inicial adequada for encontrada no mesmo arquivador, esses LIFs são considerados deslocados. Você pode visualizar LIFs deslocados usando o seguinte comando:
++
+`displaced-interface show`
+
+. Quando uma nova porta é adicionada ao domínio de broadcast no mesmo nó, as portas iniciais para os LIFs são restauradas automaticamente. Alternativamente, você pode definir a porta inicial usando `network interface modify -home-port -home-node or use the displaced- interface restore` o comando.
+

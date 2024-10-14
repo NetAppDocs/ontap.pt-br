@@ -1,0 +1,151 @@
+---
+permalink: smb-config/create-lif-task.html 
+sidebar: sidebar 
+keywords: lif, ip, address, associate, physical, logical, port, component, failure, migrate, communicate, network, create a lif 
+summary: Um LIF é um endereço IP associado a uma porta física ou lógica. Se houver uma falha de componente, um LIF pode falhar ou ser migrado para uma porta física diferente, continuando assim a se comunicar com a rede. 
+---
+= Crie um LIF
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um LIF é um endereço IP associado a uma porta física ou lógica. Se houver uma falha de componente, um LIF pode falhar ou ser migrado para uma porta física diferente, continuando assim a se comunicar com a rede.
+
+.Antes de começar
+* A porta de rede física ou lógica subjacente deve ter sido configurada para o status administrativo `up`.
+* Se você estiver planejando usar um nome de sub-rede para alocar o endereço IP e o valor de máscara de rede para um LIF, a sub-rede já deve existir.
++
+As sub-redes contêm um conjunto de endereços IP que pertencem à mesma sub-rede da camada 3. Eles são criados usando o `network subnet create` comando.
+
+* O mecanismo para especificar o tipo de tráfego Tratado por um LIF foi alterado. Para o ONTAP 9.5 e anteriores, LIFs usaram funções para especificar o tipo de tráfego que ele lidaria. A partir do ONTAP 9.6, os LIFs usam políticas de serviço para especificar o tipo de tráfego que ele lidaria.
+
+
+.Sobre esta tarefa
+* Você pode criar LIFs IPv4 e IPv6 na mesma porta de rede.
+* Se você tiver um grande número de LIFs no cluster, poderá verificar a capacidade de LIF suportada no cluster usando o `network interface capacity show` comando e a capacidade de LIF suportada em cada nó usando o `network interface capacity details show` comando (no nível de privilégio avançado).
+* A partir do ONTAP 9.7, se outros LIFs já existirem para o SVM na mesma sub-rede, você não precisará especificar a porta inicial do LIF. O ONTAP escolhe automaticamente uma porta aleatória no nó inicial especificado no mesmo domínio de broadcast que os outros LIFs já configurados na mesma sub-rede.
+
+
+.Passos
+. Criar um LIF:
++
+`network interface create -vserver _vserver_name_ -lif _lif_name_ -role data -data-protocol cifs -home-node _node_name_ -home-port _port_name_ {-address _IP_address_ -netmask IP_address | -subnet-name _subnet_name_} -firewall-policy data -auto-revert {true|false}`
+
++
+|===
+
+
+| *ONTAP 9 .5 e anteriores* 
+
+
+ a| 
+`network interface create -vserver _vserver_name_ -lif _lif_name_ -role data -data-protocol cifs -home-node _node_name_ -home-port _port_name_ {-address _IP_address_ -netmask _IP_address_ | -subnet-name _subnet_name_} -firewall-policy data -auto-revert {true|false}`
+
+|===
++
+|===
+
+
+| *ONTAP 9 1.6 e posterior* 
+
+
+ a| 
+`network interface create -vserver _vserver_name_ -lif _lif_name_ -service-policy _service_policy_name_ -home-node _node_name_ -home-port _port_name_ {-address _IP_address_ -netmask _IP_address_ | -subnet-name _subnet_name_} -firewall-policy data -auto-revert {true|false}`
+
+|===
++
+** O `-role` parâmetro não é necessário ao criar um LIF usando uma política de serviço (começando com ONTAP 9.6).
+** O `-data-protocol` parâmetro não é necessário ao criar um LIF usando uma política de serviço (começando com ONTAP 9.6). Ao usar o ONTAP 9.5 e anteriores, o `-data-protocol` parâmetro deve ser especificado quando o LIF é criado e não pode ser modificado mais tarde sem destruir e recriar o LIF de dados.
+** `-home-node` É o nó para o qual o LIF retorna quando o `network interface revert` comando é executado no LIF.
++
+Você também pode especificar se o LIF deve reverter automaticamente para o nó inicial e porta inicial com a `-auto-revert` opção.
+
+** `-home-port` É a porta física ou lógica para a qual o LIF retorna quando o `network interface revert` comando é executado no LIF.
+** Pode especificar um endereço IP com `-address` as opções e `-netmask` ou ativar a atribuição a partir de uma sub-rede com a `-subnet_name` opção.
+** Ao usar uma sub-rede para fornecer o endereço IP e a máscara de rede, se a sub-rede foi definida com um gateway, uma rota padrão para esse gateway é adicionada automaticamente ao SVM quando um LIF é criado usando essa sub-rede.
+** Se você atribuir endereços IP manualmente (sem usar uma sub-rede), talvez seja necessário configurar uma rota padrão para um gateway se houver clientes ou controladores de domínio em uma sub-rede IP diferente. A `network route create` página man contém informações sobre a criação de uma rota estática dentro de um SVM.
+** Para a `-firewall-policy` opção, use o mesmo padrão `data` que a função LIF.
++
+Você pode criar e adicionar uma política de firewall personalizada mais tarde, se desejado.
+
++
+
+NOTE: A partir do ONTAP 9.10,1, as políticas de firewall são obsoletas e totalmente substituídas por políticas de serviço LIF. Para obter mais informações, link:../networking/configure_firewall_policies_for_lifs.html["Configurar políticas de firewall para LIFs"]consulte .
+
+** `-auto-revert` Permite especificar se um LIF de dados é automaticamente revertido para o seu nó inicial em circunstâncias como inicialização, alterações no status do banco de dados de gerenciamento ou quando a conexão de rede é feita. A configuração padrão é `false`, mas você pode defini-la como `false` dependendo das políticas de gerenciamento de rede em seu ambiente.
+
+
+. Verifique se o LIF foi criado com sucesso:
++
+`network interface show`
+
+. Verifique se o endereço IP configurado está acessível:
++
+|===
+
+
+| Para verificar um... | Utilizar... 
+
+
+ a| 
+Endereço IPv4
+ a| 
+`network ping`
+
+
+
+ a| 
+Endereço IPv6
+ a| 
+`network ping6`
+
+|===
+
+
+.Exemplos
+O comando a seguir cria um LIF e especifica os valores de endereço IP e máscara de rede usando os `-address` parâmetros e `-netmask`:
+
+[listing]
+----
+network interface create -vserver vs1.example.com -lif datalif1 -role data -data-protocol cifs -home-node node-4 -home-port e1c -address 192.0.2.145 -netmask 255.255.255.0 -firewall-policy data -auto-revert true
+----
+O comando a seguir cria um LIF e atribui valores de endereço IP e máscara de rede da sub-rede especificada (chamado client1_sub):
+
+[listing]
+----
+network interface create -vserver vs3.example.com -lif datalif3 -role data -data-protocol cifs -home-node node-3 -home-port e1c -subnet-name client1_sub -firewall-policy data -auto-revert true
+----
+O comando a seguir mostra todas as LIFs no cluster-1. Os LIFs de dados datalif1 e datalif3 são configurados com endereços IPv4 e o datalif4 é configurado com um endereço IPv6:
+
+[listing]
+----
+network interface show
+
+            Logical    Status     Network          Current      Current Is
+Vserver     Interface  Admin/Oper Address/Mask     Node         Port    Home
+----------- ---------- ---------- ---------------- ------------ ------- ----
+cluster-1
+            cluster_mgmt up/up    192.0.2.3/24     node-1       e1a     true
+node-1
+            clus1        up/up    192.0.2.12/24    node-1       e0a     true
+            clus2        up/up    192.0.2.13/24    node-1       e0b     true
+            mgmt1        up/up    192.0.2.68/24    node-1       e1a     true
+node-2
+            clus1        up/up    192.0.2.14/24    node-2       e0a     true
+            clus2        up/up    192.0.2.15/24    node-2       e0b     true
+            mgmt1        up/up    192.0.2.69/24    node-2       e1a     true
+vs1.example.com
+            datalif1     up/down  192.0.2.145/30   node-1       e1c     true
+vs3.example.com
+            datalif3     up/up    192.0.2.146/30   node-2       e0c     true
+            datalif4     up/up    2001::2/64       node-2       e0c     true
+5 entries were displayed.
+----
+O comando a seguir mostra como criar um LIF de dados nas atribuído com a `default-data-files` política de serviço:
+
+[listing]
+----
+network interface create -vserver vs1 -lif lif2 -home-node node2 -homeport e0d -service-policy default-data-files -subnet-name ipspace1
+----

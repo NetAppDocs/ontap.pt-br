@@ -1,0 +1,86 @@
+---
+permalink: san-admin/prevent_port_overlap_between_switchover.html 
+sidebar: sidebar 
+keywords: metrocluster environments, considerations, san configuration, metrocluster, environments, san, configurations, cisco switch, brocade switch, 
+summary: Para evitar sobreposição quando a porta antiga fica offline e a nova porta entra online, você pode configurar os switches front-end. 
+---
+= Evite a sobreposição de portas entre switchover e switchback
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Em um ambiente SAN, você pode configurar os switches front-end para evitar sobreposição quando a porta antiga fica off-line e a nova porta entra on-line.
+
+Durante o switchover, a porta FC no local sobrevivente pode fazer login na malha antes que a malha detete que a porta FC no local de desastre está off-line e removeu essa porta dos serviços de nome e diretório.
+
+Se a porta FC no desastre ainda não for removida, a tentativa de login da malha da porta FC no local sobrevivente pode ser rejeitada devido a uma WWPN duplicada. Esse comportamento dos switches FC pode ser alterado para honrar o login do dispositivo anterior e não o existente. Você deve verificar os efeitos desse comportamento em outros dispositivos de malha. Entre em Contato com o fornecedor do switch para obter mais informações.
+
+Escolha o procedimento correto de acordo com o seu tipo de interrutor.
+
+.Passos
+[role="tabbed-block"]
+====
+.Interrutor Cisco
+--
+. Ligue ao interrutor e inicie sessão.
+. Entre no modo de configuração:
++
+....
+switch# config t
+switch(config)#
+....
+. Substituir a primeira entrada de dispositivo na base de dados do servidor de nomes pelo novo dispositivo:
++
+[listing]
+----
+switch(config)# no fcns reject-duplicate-pwwn vsan 1
+----
+. Nos switches que estão executando o NX-os 8.x, confirme se o tempo limite do flogi quiesce está definido como zero:
++
+.. Apresentar o timererval quiesce:
++
+`switch(config)# show flogi interval info \| i quiesce`
+
++
+....
+ Stats:  fs flogi quiesce timerval:  0
+....
+.. Se a saída na etapa anterior não indicar que o timerval é zero, defina-o como zero:
++
+`switch(config)# flogi scale enable`
+
++
+`switch(config)$ flogi quiesce timeout 0`
+
+
+
+
+
+--
+.Interrutor Brocade
+--
+. Ligue ao interrutor e inicie sessão.
+. Introduza o `switchDisable` comando.
+. Digite o `configure` comando e pressione `y` no prompt.
++
+....
+ F-Port login parameters (yes, y, no, n): [no] y
+....
+. Escolha a definição 1:
++
+....
+- 0: First login take precedence over the second login (default)
+- 1: Second login overrides first login.
+- 2: the port type determines the behavior
+Enforce FLOGI/FDISC login: (0..2) [0] 1
+....
+. Responda aos prompts restantes, ou pressione *Ctrl D*.
+. Introduza o `switchEnable` comando.
+
+
+--
+====
+.Informações relacionadas
+link:https://docs.netapp.com/us-en/ontap-metrocluster/manage/task_perform_switchover_for_tests_or_maintenance.html["Realização de comutação para testes ou manutenção"^]

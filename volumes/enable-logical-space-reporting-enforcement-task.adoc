@@ -1,0 +1,51 @@
+---
+permalink: volumes/enable-logical-space-reporting-enforcement-task.html 
+sidebar: sidebar 
+keywords: enable, logical, space, reporting, enforcement 
+summary: A partir do ONTAP 9.4, ative a geração de relatórios de espaço lógico. A partir de 9,5, ative a aplicação de espaço lógico ou relatórios e execução. 
+---
+= Ativar relatórios e imposição de espaço lógico
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.4, você pode ativar o relatório de espaço lógico. A partir do 9,5, você pode habilitar a aplicação de espaço lógico, ou tanto relatórios quanto imposição juntos.
+
+.Sobre esta tarefa
+Além de ativar a aplicação e a geração de relatórios de espaço lógico no nível de volume individual, você pode habilitá-los no nível SVM para cada volume compatível com a funcionalidade. Se você habilitar recursos de espaço lógico para toda a SVM, também poderá desativá-los para volumes individuais.
+
+A partir do ONTAP 9.8, se você ativar a geração de relatórios de espaço lógico em um volume de origem SnapMirror, ele será automaticamente ativado no volume de destino após a transferência.
+
+A partir do ONTAP 9.13,1, se a opção de imposição estiver ativada em um volume de origem SnapMirror, o destino informará o consumo de espaço lógico e honrará sua aplicação, permitindo um melhor Planejamento de capacidade.
+
+
+NOTE: Se você estiver executando uma versão do ONTAP anterior ao ONTAP 9.13,1, você deve entender que, embora a configuração de imposição seja transferida para o volume de destino do SnapMirror, o volume de destino não oferece suporte à imposição. Como resultado, o destino reportará o consumo de espaço lógico, mas não honrará sua aplicação.
+
+Saiba mais link:../volumes/logical-space-reporting-enforcement-concept.html["Suporte à versão ONTAP para relatórios de espaço lógico"]sobre o .
+
+.Passos
+Ative uma ou mais das seguintes opções:
+
+* Ativar relatórios de espaço lógico para um volume:
++
+`volume modify -vserver _svm_name_ -volume _volume_name_ -size _volume_size_ -is-space-reporting-logical true`
+
+* Ativar a imposição de espaço lógico para um volume:
++
+`volume modify -vserver _svm_name_ -volume _volume_name_ -size _volume_size_ -is-space-enforcement-logical true`
+
+* Ative relatórios de espaço lógico e imposição juntos para um volume:
++
+`volume modify -vserver _svm_name_ -volume _volume_name_ -size _volume_size_ -is-space-reporting-logical true -is-space-enforcement-logical true`
+
+* Habilite a aplicação ou geração de relatórios de espaço lógico para um novo SVM:
++
+`+vserver create -vserver _svm_name_ -rootvolume root-_volume_name_ -rootvolume-security-style unix -data-services {desired-data-services} [-is-space-reporting-logical true] [-is-space-enforcement-logical true]+`
+
+* Habilite a aplicação ou a geração de relatórios de espaço lógico para uma SVM existente:
++
+`+vserver modify -vserver _svm_name_ {desired-data-services} [-is-space-reporting-logical true] [-is-space-enforcement-logical true]+`
+
+

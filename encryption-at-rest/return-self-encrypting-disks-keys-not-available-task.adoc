@@ -1,0 +1,104 @@
+---
+permalink: encryption-at-rest/return-self-encrypting-disks-keys-not-available-task.html 
+sidebar: sidebar 
+keywords: returning, fips, drive, sed, service, authentication, keys, lost 
+summary: O sistema trata uma unidade FIPS ou SED como quebrado se você perder as chaves de autenticação permanentemente e não conseguir recuperá-las do servidor KMIP. Embora você não possa acessar ou recuperar os dados no disco, você pode tomar medidas para tornar o espaço não utilizado do SED disponível novamente para os dados. 
+---
+= Retorne uma unidade FIPS ou SED ao serviço quando as chaves de autenticação forem perdidas
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O sistema trata uma unidade FIPS ou SED como quebrado se você perder as chaves de autenticação permanentemente e não conseguir recuperá-las do servidor KMIP. Embora você não possa acessar ou recuperar os dados no disco, você pode tomar medidas para tornar o espaço não utilizado do SED disponível novamente para os dados.
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa.
+
+.Sobre esta tarefa
+Deve utilizar este processo apenas se tiver a certeza de que as chaves de autenticação para a unidade FIPS ou SED estão permanentemente perdidas e que não pode recuperá-las.
+
+Se os discos forem particionados, eles devem primeiro ser desparticionados antes de iniciar esse processo.
+
+
+NOTE: O comando para desparticionar um disco só está disponível no nível de diag e só deve ser executado sob supervisão de suporte NetApp. **É altamente recomendável que você entre em Contato com o suporte da NetApp antes de prosseguir.** Você também pode consultar o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Systems/FAS_Systems/How_to_unpartition_a_spare_drive_in_ONTAP["Como desparticionar uma unidade sobressalente no ONTAP"^].
+
+.Passos
+. Retornar uma unidade FIPS ou SED à manutenção:
++
+[cols="25,75"]
+|===
+
+
+| Se os SEDS são... | Siga estes passos... 
+
+
+ a| 
+Não está no modo de conformidade FIPS nem no modo de conformidade FIPS, e a chave FIPS está disponível
+ a| 
+.. Defina o nível de privilégio como avançado:
+`set -privilege advanced`
+.. Reponha a chave FIPS para a ID segura de fabricação padrão 0x0:
+`storage encryption disk modify -fips-key-id 0x0 -disk _disk_id_`
+.. Verifique se a operação foi bem-sucedida:
+`storage encryption disk show-status` Se a operação falhou, use o processo PSID neste tópico.
+.. Sanitize o disco quebrado:
+`storage encryption disk sanitize -disk _disk_id_` Verifique se a operação foi bem-sucedida com o comando `storage encryption disk show-status` antes de prosseguir para a próxima etapa.
+.. Desfalhe o disco higienizado:
+`storage disk unfail -spare true -disk _disk_id_`
+.. Verifique se o disco tem um proprietário:
+`storage disk show -disk _disk_id_` Se o disco não tem um proprietário, atribua um.
+`storage disk assign -owner node -disk _disk_id_`
++
+... Introduza o nodeshell para o nó que possui os discos que pretende higienizar:
++
+`system node run -node _node_name_`
+
++
+Executar o `disk sanitize release` comando.
+
+
+
+.. Saia do nodeshell. Desfalhe o disco novamente:
+`storage disk unfail -spare true -disk _disk_id_`
+.. Verifique se o disco agora está sobressalente e pronto para ser reutilizado em um agregado:
+`storage disk show -disk _disk_id_`
+
+
+
+
+ a| 
+No modo de conformidade com o FIPS, a chave FIPS não está disponível e os SEDs têm um PSID impresso na etiqueta
+ a| 
+.. Obtenha o PSID do disco a partir da etiqueta do disco.
+.. Defina o nível de privilégio como avançado:
+`set -privilege advanced`
+.. Redefina o disco para suas configurações configuradas de fábrica:
+`storage encryption disk revert-to-original-state -disk _disk_id_ -psid _disk_physical_secure_id_` Verifique se a operação foi bem-sucedida com o comando `storage encryption disk show-status` antes de prosseguir para a próxima etapa.
+.. Se você estiver executando o ONTAP 9.8P5 ou anterior, vá para a próxima etapa. Se você estiver executando o ONTAP 9.8P6 ou posterior, desmarque o disco higienizado.
+`storage disk unfail -disk _disk_id_`
+.. Verifique se o disco tem um proprietário:
+`storage disk show -disk _disk_id_` Se o disco não tem um proprietário, atribua um.
+`storage disk assign -owner node -disk _disk_id_`
++
+... Introduza o nodeshell para o nó que possui os discos que pretende higienizar:
++
+`system node run -node _node_name_`
+
++
+Executar o `disk sanitize release` comando.
+
+
+
+.. Saia do nodeshell.. Desfalhe o disco novamente:
+`storage disk unfail -spare true -disk _disk_id_`
+.. Verifique se o disco agora está sobressalente e pronto para ser reutilizado em um agregado:
+`storage disk show -disk _disk_id_`
+
+
+|===
+
+
+Para obter a sintaxe de comando completa, consulte link:https://docs.netapp.com/us-en/ontap-cli/storage-disk-assign.html["referência do comando"^].

@@ -1,0 +1,99 @@
+---
+permalink: smb-admin/requirements-automatic-node-referrals-concept.html 
+sidebar: sidebar 
+keywords: smb, automatic, node, referral, autolocation, aware, requirement, version, ontap, feature, support, guideline, requirement, requirements and guidelines for using automatic node referrals 
+summary: Antes de poder usar referências de nó automáticas SMB, também conhecidas como autolocation, você precisa estar ciente de certos requisitos, incluindo quais versões do ONTAP suportam o recurso. Você também precisa saber sobre versões de protocolo SMB compatíveis e algumas outras diretrizes especiais. 
+---
+= Requisitos e diretrizes para o uso de referências automáticas de nós
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de poder usar referências de nó automáticas SMB, também conhecidas como _autolocation_, você precisa estar ciente de certos requisitos, incluindo quais versões do ONTAP suportam o recurso. Você também precisa saber sobre versões de protocolo SMB compatíveis e algumas outras diretrizes especiais.
+
+
+
+== Requisitos de versão e licença do ONTAP
+
+* Todos os nós no cluster devem estar executando uma versão do ONTAP que suporte referências automáticas de nós.
+* Os Widelinks devem estar ativados em um compartilhamento SMB para usar a autenticação automática.
+* O CIFS deve ser licenciado e um servidor SMB deve existir nos SVMs. A licença SMB está incluída no link:../system-admin/manage-licenses-concept.html#licenses-included-with-ontap-one["ONTAP One"]. Se não tiver o ONTAP One e a licença não estiver instalada, contacte o seu representante de vendas.
+
+
+
+
+== Requisitos de versão do protocolo SMB
+
+* Para SVMs, o ONTAP oferece suporte a referências automáticas de nós em todas as versões do SMB.
+
+
+
+
+== Requisitos do cliente SMB
+
+Todos os clientes Microsoft suportados pelo ONTAP suportam referências de nó automáticas SMB.
+
+A Matriz de interoperabilidade contém as informações mais recentes sobre quais clientes Windows ONTAP suportam.
+
+link:http://mysupport.netapp.com/matrix["Ferramenta de Matriz de interoperabilidade do NetApp"^]
+
+
+
+== Requisitos de LIF de dados
+
+Se você quiser usar um data LIF como potencial referência para clientes SMB, crie LIFs de dados com NFS e CIFS habilitados.
+
+As referências automáticas de nós podem falhar ao funcionar se o nó de destino contiver LIFs de dados que são ativados apenas para o protocolo NFS ou ativados apenas para o protocolo SMB.
+
+Se este requisito não for cumprido, o acesso aos dados não será afetado. O cliente SMB mapeia o compartilhamento usando o LIF original usado pelo cliente para se conetar ao SVM.
+
+
+
+== Requisitos de autenticação NTLM ao fazer uma conexão SMB referida
+
+A autenticação NTLM deve ser permitida no domínio que contém o servidor CIFS e nos domínios que contêm clientes que desejam usar referências automáticas de nós.
+
+Ao fazer uma referência, o servidor SMB refere um endereço IP ao cliente Windows. Como a autenticação NTLM é usada ao fazer uma conexão usando um endereço IP, a autenticação Kerberos não é executada para conexões referidas.
+
+Isso acontece porque o cliente Windows não pode criar o nome principal do serviço usado pelo Kerberos (que é do formulário `service/NetBIOS name` e `service/FQDN`), o que significa que o cliente não pode solicitar um ticket Kerberos ao serviço.
+
+
+
+== Diretrizes para o uso de referências automáticas de nós com o recurso de diretório base
+
+Quando os compartilhamentos são configurados com a propriedade de compartilhamento do diretório base ativada, pode haver um ou mais caminhos de pesquisa do diretório base configurados para uma configuração do diretório base. Os caminhos de pesquisa podem apontar para volumes contidos em cada nó que contém volumes SVM. Os clientes recebem uma referência e, se um LIF de dados local ativo estiver disponível, se conetam através de um LIF referido que é local para o diretório home do usuário doméstico.
+
+Há diretrizes quando clientes SMB 1,0 acessam diretórios base dinâmicos com referências automáticas de nós ativadas. Isso ocorre porque os clientes SMB 1,0 exigem a referência automática do nó antes de autenticarem, o que é antes que o servidor SMB tenha o nome do usuário. No entanto, o acesso ao diretório home SMB funciona corretamente para clientes SMB 1,0 se as seguintes instruções forem verdadeiras:
+
+* Os diretórios home SMB são configurados para usar nomes simples, como "%W" (nome de usuário do Windows) ou ""%u" (nome de usuário UNIX mapeado), e não nomes de estilo de nome de domínio, como "%d%W "" (nome de domínio/nome de usuário).
+* Ao criar compartilhamentos de diretório base, os nomes de compartilhamentos de diretório base CIFS são configurados com variáveis ("'%W'" ou "'%u'") e não com nomes estáticos, como "'HOME'".
+
+
+Para clientes SMB 2.x e SMB 3,0, não há diretrizes especiais ao acessar diretórios base usando referências automáticas de nós.
+
+
+
+== Diretrizes para desabilitar referências automáticas de nós em servidores CIFS com conexões referidas existentes
+
+Se você desativar as referências automáticas de nós depois que a opção tiver sido ativada, os clientes atualmente conetados a um LIF referido mantêm a conexão referida. Como o ONTAP usa referências DFS como o mecanismo para referências de nó automáticas SMB, os clientes podem até se reconetar ao LIF referido depois de desativar a opção até que a referência DFS armazenada em cache do cliente para a conexão referida expire. Isso é verdade mesmo no caso de uma reversão para uma versão do ONTAP que não suporta referências automáticas de nós. Os clientes continuam a usar referências até que o encaminhamento do DFS termine do cache do cliente.
+
+A Autolocation usa referências de nó automáticas SMB para aumentar o desempenho do cliente SMB, referindo os clientes ao LIF no nó que possui o volume de dados de um SVM. Quando um cliente SMB se coneta a um compartilhamento SMB hospedado em um SVM, ele pode se conetar usando um LIF em um nó que não possui os dados solicitados e usa a rede de interconexão de cluster para recuperar dados. O cliente pode ter tempos de resposta mais rápidos se a conexão SMB usar um LIF localizado no nó que contém os dados solicitados.
+
+O ONTAP fornece essa funcionalidade usando referências do sistema de arquivos distribuídos da Microsoft (DFS) para informar os clientes SMB que um arquivo ou pasta solicitado no namespace está hospedado em outro lugar. Um nó faz uma referência quando determina que há um LIF SVM no nó que contém os dados. As referências são feitas com base na localização da raiz da partilha através da qual o cliente está ligado.
+
+A referência ocorre durante a negociação SMB. A referência é feita antes da conexão ser estabelecida. Depois que o ONTAP refere o cliente SMB ao nó de destino, a conexão é feita e o cliente acessa os dados através do caminho LIF referido a partir desse ponto. Isso permite que os clientes tenham acesso mais rápido aos dados e evite a comunicação de cluster adicional.
+
+
+
+== Diretrizes para o uso de referências automáticas de nó com clientes Mac os
+
+Os clientes Mac os X não suportam referências de nó automáticas SMB, mesmo que o Mac os suporte o sistema de arquivos distribuídos (DFS) da Microsoft. Os clientes Windows fazem uma solicitação de referência DFS antes de se conetar a um compartilhamento SMB. O ONTAP fornece uma referência a um LIF de dados encontrado no mesmo nó que hospeda os dados solicitados, o que leva a melhores tempos de resposta do cliente. Embora o Mac os suporte DFS, os clientes do Mac os não se comportam exatamente como os clientes do Windows nesta área.
+
+.Informações relacionadas
+xref:dynamic-home-directories-concept.html[Como o ONTAP ativa diretórios base dinâmicos]
+
+link:../networking/networking_reference.html["Gerenciamento de rede"]
+
+https://mysupport.netapp.com/NOW/products/interoperability["Ferramenta de Matriz de interoperabilidade do NetApp"^]

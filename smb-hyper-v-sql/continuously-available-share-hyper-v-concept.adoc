@@ -1,0 +1,62 @@
+---
+permalink: smb-hyper-v-sql/continuously-available-share-hyper-v-concept.html 
+sidebar: sidebar 
+keywords: share, requirements, continuously, share, consideration, hyper, v, smb, nondiruptive, operation 
+summary: Você precisa estar ciente de certos requisitos e considerações ao configurar compartilhamentos disponíveis continuamente para configurações do Hyper-V em SMB que dão suporte a operações ininterruptas. 
+---
+= Requisitos e considerações de compartilhamento continuamente disponíveis para Hyper-V sobre SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa estar ciente de certos requisitos e considerações ao configurar compartilhamentos disponíveis continuamente para configurações do Hyper-V em SMB que dão suporte a operações ininterruptas.
+
+
+
+== Compartilhar requisitos
+
+* Os compartilhamentos usados pelos servidores de aplicativos devem ser configurados com o conjunto de propriedades continuamente disponível.
++
+Os servidores de aplicações que se conectam a compartilhamentos continuamente disponíveis recebem alças persistentes que lhes permitem se reconectarem sem interrupções aos compartilhamentos de SMB e recuperarem bloqueios de arquivos após eventos disruptivos, como takeover, giveback e realocação de agregados.
+
+* Se você quiser usar serviços de backup habilitados para VSS remoto, não será possível colocar arquivos Hyper-V em compartilhamentos que contenham junções.
++
+No caso de recuperação automática, a criação de cópia sombra falha se uma junção for encontrada ao atravessar o compartilhamento. No caso não auto-recuperação, a criação de cópia sombra não falha, mas a junção não aponta para nada.
+
+* Se você quiser usar serviços de backup habilitados para VSS remoto com recuperação automática, não será possível colocar arquivos Hyper-V em compartilhamentos que contenham o seguinte:
++
+** Links simbólicos, hardlinks ou widelinks
+** Arquivos não regulares
++
+A criação de cópia sombra falha se houver links ou arquivos não regulares na cópia compartilhar para sombra. Esse requisito só se aplica a cópias sombra com recuperação automática.
+
+** Para que as operações de cópia sombra tenham sucesso, você deve ter espaço disponível suficiente no volume (somente para Hyper-V sobre SMB).
++
+O espaço disponível deve ser pelo menos tão grande quanto o espaço combinado usado por todos os arquivos, diretórios e subdiretórios contidos nos compartilhamentos incluídos no conjunto de backup de cópia sombra. Esse requisito só se aplica a cópias sombra com recuperação automática.
+
+
+
+* As seguintes propriedades de compartilhamento não devem ser definidas em compartilhamentos continuamente disponíveis usados pelos servidores de aplicativos:
++
+** Diretório base
+** Armazenamento em cache de atributos
+** BranchCache
+
+
+
+
+
+
+== Considerações
+
+* As cotas são suportadas em ações continuamente disponíveis.
+* A seguinte funcionalidade não é suportada para configurações Hyper-V em SMB:
++
+** Auditoria
+** FPolicy
+
+
+* A verificação de vírus não é realizada em compartilhamentos SMB com o `continuously-availability` parâmetro definido como `Yes`.
+

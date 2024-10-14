@@ -1,0 +1,68 @@
+---
+permalink: nfs-config/configure-svms-ldap-task.html 
+sidebar: sidebar 
+keywords: verify, ldap, sources, name, service, switch, table 
+summary: Você deve verificar se as fontes LDAP para serviços de nome estão listadas corretamente na tabela de opções de serviço de nomes para o SVM. 
+---
+= Verifique as fontes LDAP na tabela do switch do serviço de nomes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve verificar se as fontes LDAP para serviços de nome estão listadas corretamente na tabela de opções de serviço de nomes para o SVM.
+
+.Passos
+. Exibir o conteúdo da tabela de opções de serviço de nomes atual:
++
+`vserver services name-service ns-switch show -vserver _svm_name_`
+
++
+O comando a seguir mostra os resultados do SVM My_SVM:
+
++
+[listing]
+----
+ie3220-a::> vserver services name-service ns-switch show -vserver My_SVM
+                               Source
+Vserver         Database       Order
+--------------- ------------   ---------
+My_SVM          hosts          files,
+                               dns
+My_SVM          group          files,ldap
+My_SVM          passwd         files,ldap
+My_SVM          netgroup       files
+My_SVM          namemap        files
+5 entries were displayed.
+----
++
+`namemap` especifica as fontes para procurar informações de mapeamento de nomes e em que ordem. Em um ambiente somente UNIX, essa entrada não é necessária. O mapeamento de nomes só é necessário em um ambiente misto usando UNIX e Windows.
+
+. Atualize a `ns-switch` entrada conforme apropriado:
++
+|===
+| Se quiser atualizar a entrada ns-switch para... | Digite o comando... 
+
+
+ a| 
+Informações do utilizador
+ a| 
+`vserver services name-service ns-switch modify -vserver _vserver_name_ -database passwd -sources ldap,files`
+
+
+
+ a| 
+Informações do grupo
+ a| 
+`vserver services name-service ns-switch modify -vserver _vserver_name_ -database group -sources ldap,files`
+
+
+
+ a| 
+Informações do netgroup
+ a| 
+`vserver services name-service ns-switch modify -vserver _vserver_name_ -database netgroup -sources ldap,files`
+
+|===
+

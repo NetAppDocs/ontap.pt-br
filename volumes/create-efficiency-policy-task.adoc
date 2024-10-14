@@ -1,0 +1,38 @@
+---
+permalink: volumes/create-efficiency-policy-task.html 
+sidebar: sidebar 
+keywords: create, volume efficiency policy, run, efficiency, operation, volume, policy 
+summary: Você pode criar uma política de eficiência de volume para executar operações de eficiência em um volume. 
+---
+= Crie uma política de eficiência de volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar uma política de eficiência de volume para executar deduplicação ou compactação de dados, seguida de deduplicação em um volume por uma duração específica e especificar a programação da tarefa usando o `volume efficiency policy create` comando.
+
+.Antes de começar
+Você deve ter criado um cronograma cron usando o `job schedule cron create` comando. Para obter mais informações sobre como gerenciar os cronogramas do cron, consulte link:../system-admin/index.html["Referência de administração do sistema"].
+
+.Sobre esta tarefa
+Um administrador da SVM com funções predefinidas não pode gerenciar as políticas de deduplicação. No entanto, o administrador do cluster pode modificar o Privileges atribuído a um administrador SVM usando quaisquer funções personalizadas. Para obter mais informações sobre os recursos do administrador da SVM, link:../authentication/index.html["Autenticação de administrador e RBAC"]consulte .
+
+[NOTE]
+====
+É possível executar operações de deduplicação ou compactação de dados em um horário agendado, ou criando um cronograma com uma duração específica, ou especificando uma porcentagem de limite, que aguarda que os novos dados excedam o limite e acionando a operação de deduplicação ou compactação de dados. Este valor limite é a percentagem do número total de blocos utilizados no volume. Por exemplo, se você definir o valor de limite em um volume para 20% quando o número total de blocos usados no volume for de 50%, a deduplicação de dados ou a compactação de dados serão acionados automaticamente quando novos dados gravados no volume chegarem a 10% (20% dos blocos de 50% usados). Se necessário, você pode obter o número total de blocos usados a partir da `df` saída do comando.
+
+====
+.Passos
+. Use o `volume efficiency policy create` comando para criar uma política de eficiência de volume.
+
+
+.Exemplos
+O comando a seguir cria uma política de eficiência de volume chamada pol1 que aciona uma operação de eficiência diariamente:
+
+`volume efficiency policy create -vserver vs1 -policy pol1 -schedule daily`
+
+O comando a seguir cria uma política de eficiência de volume chamada pol2 que aciona uma operação de eficiência quando a porcentagem de limite atinge 20%:
+
+`volume efficiency policy create -vserver vs1 -policy pol2 -type threshold -start-threshold-percent 20%`

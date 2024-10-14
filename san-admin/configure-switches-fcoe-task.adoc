@@ -1,0 +1,55 @@
+---
+permalink: san-admin/configure-switches-fcoe-task.html 
+sidebar: sidebar 
+keywords: configure, switches, fcoe 
+summary: Você deve configurar seus switches para FCoE antes que seu serviço FC possa ser executado sobre a infraestrutura Ethernet existente. 
+---
+= Configurar switches para FCoE
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve configurar seus switches para FCoE antes que seu serviço FC possa ser executado sobre a infraestrutura Ethernet existente.
+
+.O que você vai precisar
+* Sua configuração SAN precisa ser compatível.
++
+Para obter mais informações sobre as configurações suportadas, consulte o https://mysupport.netapp.com/matrix["Ferramenta de Matriz de interoperabilidade do NetApp"^].
+
+* Um adaptador de destino unificado (UTA) deve ser instalado em seu sistema de armazenamento.
++
+Se você estiver usando um UTA2, ele deve ser definido para `cna` o modo.
+
+* Um adaptador de rede convergente (CNA) deve ser instalado em seu host.
+
+
+.Passos
+. Use a documentação do switch para configurar os switches para FCoE.
+. Verifique se as configurações do DCB para cada nó no cluster foram configuradas corretamente.
++
+[source, cli]
+----
+run -node node1 -command dcb show
+----
++
+As definições do DCB são configuradas no interrutor. Consulte a documentação do switch se as configurações estiverem incorretas.
+
+. Verifique se o login FCoE está funcionando quando o status on-line da porta de destino FC for `true`.
++
+[source, cli]
+----
+fcp adapter show -fields node,adapter,status,state,speed,fabric-established,physical-protocol
+----
++
+Se o status on-line da porta de destino FC for `false`, consulte a documentação do switch.
+
+
+
+.Informações relacionadas
+* https://mysupport.netapp.com/matrix["Ferramenta de Matriz de interoperabilidade do NetApp"^]
+* https://www.netapp.com/pdf.html?item=/media/19674-tr-3800.pdf["Relatório técnico da NetApp 3800: Guia de implantação completa em Fibre Channel over Ethernet (FCoE)"^]
+* http://www.cisco.com/en/US/products/ps5989/products_installation_and_configuration_guides_list.html["Guias de configuração de software Cisco MDS 9000 NX-os e SAN-os"]
+* http://www.brocade.com/products/all/index.page["Produtos Brocade"]
+

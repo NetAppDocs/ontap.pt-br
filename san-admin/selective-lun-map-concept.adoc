@@ -1,0 +1,70 @@
+---
+permalink: san-admin/selective-lun-map-concept.html 
+sidebar: sidebar 
+keywords: select, selective, lun, map, slm, enabled, modify, reporting, nodes, list 
+summary: 'O mapa de LUN seletivo (SLM) reduz o número de caminhos do host para o LUN. Com o SLM, quando um novo mapa LUN é criado, o LUN só pode ser acessado por meio de caminhos no nó proprietário do LUN e de seu parceiro de HA.' 
+---
+= Descrição geral do mapa LUN seletivo
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O mapa de LUN seletivo (SLM) reduz o número de caminhos do host para o LUN. Com o SLM, quando um novo mapa LUN é criado, o LUN só pode ser acessado por meio de caminhos no nó proprietário do LUN e de seu parceiro de HA.
+
+O SLM permite o gerenciamento de um único grupo por host e também é compatível com operações de movimentação de LUN ininterruptas que não exigem manipulação de portset ou remapeamento de LUN.
+
+link:create-port-sets-binding-igroups-task.html["Portsets"] Pode ser usado com o SLM para restringir ainda mais o acesso de determinados alvos a certos iniciadores. Ao usar o SLM com portsets, os LUNs estarão acessíveis no conjunto de LIFs no portset no nó proprietário do LUN e no parceiro de HA desse nó.
+
+O SLM está ativado por predefinição em todos os novos mapas LUN.
+
+
+
+== Determine se o SLM está habilitado em um mapa LUN
+
+Se o seu ambiente tiver uma combinação de LUNs criadas em uma versão do ONTAP 9 e LUNs transferidos de versões anteriores, talvez seja necessário determinar se o mapa de LUN seletivo (SLM) está habilitado em um LUN específico.
+
+Você pode usar as informações exibidas na saída do `lun mapping show -fields reporting-nodes, node` comando para determinar se o SLM está habilitado no mapa LUN. Se o SLM não estiver habilitado, "-" será exibido nas células sob a coluna "'reportar nós'" da saída do comando. Se o SLM estiver ativado, a lista de nós exibida sob a coluna "'nós'" será duplicada na coluna "'reportar nós'".
+
+
+
+== Modifique a lista de nós de relatórios SLM
+
+Se você estiver movendo um LUN ou um volume contendo LUNs para outro par de alta disponibilidade (HA) dentro do mesmo cluster, você deve modificar a lista de nós de relatórios de mapa de LUN seletivo (SLM) antes de iniciar a movimentação para garantir que os caminhos de LUN ativos e otimizados sejam mantidos.
+
+.Passos
+. Adicione o nó de destino e o nó de parceiro à lista de nós de relatório do agregado ou do volume:
++
+[source, cli]
+----
+lun mapping add-reporting-nodes -vserver <vserver_name> -path <lun_path> -igroup <igroup_name> [-destination-aggregate <aggregate_name>|-destination-volume <volume_name>]
+----
++
+Se você tiver uma convenção de nomenclatura consistente, poderá modificar vários mapeamentos de LUN ao mesmo tempo usando `igroup_prefix*` em vez `igroup_name` de .
+
+. Volte a digitalizar o host para descobrir os caminhos recém-adicionados.
+. Se o seu sistema operacional exigir isso, adicione os novos caminhos à configuração de e/S de rede multipath (MPIO).
+. Execute o comando para a operação de movimentação necessária e aguarde até que a operação termine.
+. Verifique se a e/S está sendo atendida pelo caminho Ativo/otimizado:
++
+[source, cli]
+----
+lun mapping show -fields reporting-nodes
+----
+. Remova o proprietário do LUN anterior e o nó de parceiro da lista de nós de relatórios:
++
+[source, cli]
+----
+lun mapping remove-reporting-nodes -vserver <vserver_name> -path <lun_path> -igroup <igroup_name> -remote-nodes
+----
+. Verifique se o LUN foi removido do mapa LUN existente:
++
+[source, cli]
+----
+lun mapping show -fields reporting-nodes
+----
+. Remova quaisquer entradas de dispositivo obsoletas para o sistema operacional do host.
+. Altere quaisquer arquivos de configuração de multipathing, se necessário.
+. Volte a digitalizar o host para verificar a remoção de caminhos antigos. Consulte a documentação do seu host para obter etapas específicas para verificar novamente seus hosts.
+

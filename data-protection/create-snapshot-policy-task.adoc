@@ -1,0 +1,68 @@
+---
+permalink: data-protection/create-snapshot-policy-task.html 
+sidebar: sidebar 
+keywords: create, snapshot, policy 
+summary: 'Uma política Snapshot especifica quando criar cópias Snapshot, quantas cópias devem ser mantidas e como nomeá-las. Por exemplo, um sistema pode criar uma cópia Snapshot todos os dias às 12:10 da manhã, manter as duas cópias mais recentes e nomeá-las como "daily.timestamp". Uma política de instantâneos pode conter até cinco agendamentos de trabalhos.' 
+---
+= Criar uma política Snapshot
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Uma política Snapshot especifica quando criar cópias Snapshot, quantas cópias devem ser mantidas e como nomeá-las. Por exemplo, um sistema pode criar uma cópia Snapshot todos os dias às 12:10 da manhã, manter as duas cópias mais recentes e nomeá-las "diárias.`_timestamp_`". Uma política Snapshot pode conter até cinco agendamentos de tarefas.
+
+.Sobre esta tarefa
+Este procedimento aplica-se aos sistemas FAS, AFF e ASA atuais. Se você tiver um sistema ASA R2 (ASA A1K, ASA A70 ou ASA A90), siga link:https://docs.netapp.com/us-en/asa-r2/data-protection/policies-schedules.html#create-a-snapshot-policy["estes passos"^] para criar uma política de snapshot. Os sistemas ASA R2 fornecem uma experiência de ONTAP simplificada específica para clientes somente SAN.
+
+Por padrão, o ONTAP forma os nomes das cópias Snapshot anexando um carimbo de data/hora ao nome da programação de trabalhos:
+
+[listing]
+----
+daily.2017-05-14_0013/              hourly.2017-05-15_1106/
+daily.2017-05-15_0012/              hourly.2017-05-15_1206/
+hourly.2017-05-15_1006/             hourly.2017-05-15_1306/
+----
+Se preferir, pode substituir um prefixo para o nome da agenda de trabalhos.
+
+A `snapmirror-label` opção é para replicação SnapMirror. Para obter mais informações, link:define-rule-policy-task.html["Definir uma regra para uma política"]consulte .
+
+.Passos
+Você pode criar uma política de cópia Snapshot usando o Gerenciador do sistema ou a CLI do ONTAP. O procedimento cria uma política de cópia Snapshot apenas no cluster local.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *proteção > Visão geral* e expanda *configurações de política local*.
+. No painel *políticas de instantâneos*, clique image:icon_arrow.gif["Ícone de seta"]em .
+. Na guia *políticas de instantâneos*, clique image:icon_add.gif["Adicionar ícone"]em .
+. Na janela *Add Snapshot policy* (Adicionar instantâneo), insira o nome da política e escolha o escopo.
+. Clique image:icon_add.gif["Adicionar ícone"]em .
+. Para selecionar uma programação, clique no nome da programação atualmente exibida, clique image:icon_dropdown_arrow.gif["Ícone pendente"]em e escolha uma programação diferente.
+. Insira o máximo de cópias Snapshot a reter e, se necessário, insira o rótulo SnapMirror e o período de retenção do SnapLock.
+. Clique em *Salvar*.
+
+
+--
+.CLI
+--
+. Criar uma política Snapshot:
++
+[source, cli]
+----
+volume snapshot policy create -vserver <SVM> -policy <policy_name> -enabled true|false -schedule1 <schedule1_name> -count1 <copies_to_retain> -prefix1 <snapshot_prefix> -snapmirror-label1 <snapshot_label> ... -schedule5 <schedule5_name> -count5 <copies_to_retain> -prefix5 <snapshot_prefix> -snapmirror-label5 <snapshot_label>
+----
++
+O exemplo a seguir cria uma política de Snapshot chamada `snap_policy_daily` que é executada em um `daily` agendamento. A política tem no máximo cinco cópias Snapshot, cada uma com o nome `daily`.`_timestamp_` e o rótulo SnapMirror `daily` :
+
++
+[listing]
+----
+cluster1::> volume snapshot policy create -vserver vs0 -policy snap_policy_daily -schedule1 daily -count1 5 -snapmirror-label1 daily
+----
+
+
+--
+====

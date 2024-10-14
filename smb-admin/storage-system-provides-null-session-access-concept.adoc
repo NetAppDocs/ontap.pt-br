@@ -1,0 +1,30 @@
+---
+permalink: smb-admin/storage-system-provides-null-session-access-concept.html 
+sidebar: sidebar 
+keywords: null, session, share, require, authentication, client, ip, address, map, storage, system, how the storage system provides null session access 
+summary: Como compartilhamentos de sessão nulos não exigem autenticação, os clientes que exigem acesso de sessão null devem ter seus endereços IP mapeados no sistema de armazenamento. 
+---
+= Como o sistema de armazenamento fornece acesso nulo à sessão
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Como compartilhamentos de sessão nulos não exigem autenticação, os clientes que exigem acesso de sessão null devem ter seus endereços IP mapeados no sistema de armazenamento.
+
+Por padrão, os clientes de sessão nula não mapeados podem acessar determinados serviços do sistema ONTAP, como enumeração de compartilhamento, mas eles são restritos a acessar quaisquer dados do sistema de storage.
+
+[NOTE]
+====
+O ONTAP suporta os valores de configuração do Registro anônimo do Windows com a `–restrict-anonymous` opção. Isso permite controlar até que ponto os usuários nulos não mapeados podem exibir ou acessar recursos do sistema. Por exemplo, você pode desativar a enumeração de compartilhamento e o acesso ao compartilhamento IPC (o compartilhamento de pipe nomeado oculto). As `vserver cifs options modify` páginas de manual e `vserver cifs options show` fornecem mais informações sobre a `–restrict-anonymous` opção.
+
+====
+A menos que configurado de outra forma, um cliente executando um processo local que solicita acesso ao sistema de armazenamento por meio de uma sessão nula é membro apenas de grupos não restritivos, como "'todos'". Para limitar o acesso de sessão nula a recursos selecionados do sistema de armazenamento, você pode querer criar um grupo ao qual todos os clientes de sessão nula pertencem; a criação deste grupo permite restringir o acesso ao sistema de armazenamento e definir permissões de recursos do sistema de armazenamento que se aplicam especificamente a clientes de sessão nula.
+
+O ONTAP fornece uma sintaxe de mapeamento no `vserver name-mapping` conjunto de comandos para especificar o endereço IP dos clientes que têm acesso permitido aos recursos do sistema de armazenamento usando uma sessão de usuário nula. Depois de criar um grupo para usuários nulos, você pode especificar restrições de acesso para recursos do sistema de armazenamento e permissões de recursos que se aplicam somente a sessões nulas. O usuário nulo é identificado como logon anônimo. Os usuários nulos não têm acesso a nenhum diretório home.
+
+Qualquer usuário nulo que acesse o sistema de armazenamento a partir de um endereço IP mapeado recebe permissões de usuário mapeadas. Considere as precauções apropriadas para evitar o acesso não autorizado aos sistemas de armazenamento mapeados com usuários nulos. Para máxima proteção, coloque o sistema de armazenamento e todos os clientes que necessitem de acesso nulo ao sistema de armazenamento de utilizadores numa rede separada, para eliminar a possibilidade de "spoofing" de endereço IP.
+
+.Informações relacionadas
+xref:configure-access-restrictions-anonymous-users-task.adoc[Configurando restrições de acesso para usuários anônimos]

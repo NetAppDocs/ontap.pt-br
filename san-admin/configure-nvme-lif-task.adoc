@@ -1,0 +1,54 @@
+---
+permalink: san-admin/configure-nvme-lif-task.html 
+sidebar: sidebar 
+keywords: configure, nvme, lif 
+summary: Certos requisitos devem ser atendidos ao configurar as LIFs do NVMe. 
+---
+= Configurar um NVMe LIF
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Certos requisitos devem ser atendidos ao configurar as LIFs do NVMe.
+
+.Antes de começar
+O NVMe precisa ser compatível com o adaptador FC no qual você cria o LIF. Os adaptadores suportados estão listados em https://hwu.netapp.com["Hardware Universe"^].
+
+.Sobre esta tarefa
+A partir do ONTAP 9.12,1 e posterior, é possível configurar duas LIFs NVMe por nó em um máximo de 12 nós. No ONTAP 9.11,1 e versões anteriores, é possível configurar duas LIFs NVMe por nó no máximo dois nós.
+
+As regras a seguir se aplicam ao criar um LIF NVMe:
+
+* O NVMe pode ser o único protocolo de dados em LIFs de dados.
+* Você deve configurar um LIF de gerenciamento para cada SVM compatível com SAN.
+* Para o ONTAP 9.5 e posterior, você precisa configurar um LIF NVMe no nó que contém o namespace e o parceiro de HA do nó.
+* Apenas para o ONTAP 9.4:
++
+** Os LIFs e namespaces NVMe devem ser hospedados no mesmo nó.
+** Somente um LIF de dados NVMe pode ser configurado por SVM.
+
+
+
+
+.Passos
+. Crie o LIF:
++
+[source, cli]
+----
+network interface create -vserver <SVM_name> -lif <LIF_name> -role <LIF_role> -data-protocol {fc-nvme|nvme-tcp} -home-node <home_node> -home-port <home_port>
+----
++
+
+NOTE: NVMe/TCP está disponível a partir do ONTAP 9.10,1 e posterior.
+
+. Verifique se o LIF foi criado:
++
+[source, cli]
+----
+network interface show -vserver <SVM_name>
+----
+
+
+Após a criação, os LIFs NVMe/TCP escutam a descoberta na porta 8009.

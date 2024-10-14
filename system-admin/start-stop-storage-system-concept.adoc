@@ -1,0 +1,181 @@
+---
+permalink: system-admin/start-stop-storage-system-concept.html 
+sidebar: sidebar 
+keywords: start, stop, node, cli, ontap, troubleshoot, sp, reboot, system, boot, compactflash, shut down, shutdown,  unresponsive, shut, down, node, unresponsive, support, personnel, direct, troubleshoot 
+summary: Talvez seja necessário iniciar ou parar um nó por motivos de manutenção ou solução de problemas. Você pode fazer isso a partir da CLI do ONTAP, do prompt do ambiente de inicialização ou da CLI do SP. 
+---
+= Iniciar ou parar uma visão geral do nó
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Talvez seja necessário iniciar ou parar um nó por motivos de manutenção ou solução de problemas. Você pode fazer isso a partir da CLI do ONTAP, do prompt do ambiente de inicialização ou da CLI do SP.
+
+O uso do comando SP CLI `system power off` ou `system power cycle` para desligar ou desligar um nó pode causar um desligamento inadequado do nó (também chamado de _desligamento anormal_) e não substitui um desligamento gracioso usando o comando ONTAP `system node halt`.
+
+
+
+== Reinicie um nó no prompt do sistema
+
+Você pode reinicializar um nó no modo normal a partir do prompt do sistema. Um nó é configurado para inicializar a partir do dispositivo de inicialização, como uma placa CompactFlash do PC.
+
+.Passos
+. Se o cluster contiver quatro ou mais nós, verifique se o nó a ser reiniciado não possui epsilon:
++
+.. Defina o nível de privilégio como avançado:
++
+`*set -privilege advanced*`
+
+.. Determine qual nó contém o epsilon:
++
+`*cluster show*`
+
++
+O exemplo a seguir mostra que "'node1" contém epsilon:
+
++
+[listing]
+----
+cluster1::*> cluster show
+Node                 Health  Eligibility   Epsilon
+-------------------- ------- ------------  ------------
+node1                true    true          true
+node2                true    true          false
+node3                true    true          false
+node4                true    true          false
+4 entries were displayed.
+----
+.. Se o nó a ser reinicializado contiver epsilon, remova o epsilon do nó:
++
+`*cluster modify -node _node_name_ -epsilon false*`
+
+.. Atribua o epsilon a um nó diferente que permanecerá ativo:
++
+`*cluster modify -node _node_name_ -epsilon true*`
+
+.. Voltar ao nível de privilégio de administrador:
++
+`*set -privilege admin*`
+
+
+
+. Use o `system node reboot` comando para reinicializar o nó.
++
+Se você não especificar o `-skip-lif-migration` parâmetro, o comando tentará migrar dados e LIFs de gerenciamento de cluster de forma síncrona para outro nó antes da reinicialização. Se a migração de LIF falhar ou expirar, o processo de reinicialização será abortado e o ONTAP exibirá um erro para indicar a falha de migração de LIF.
+
++
+[listing]
+----
+cluster1::> system node reboot -node node1 -reason "software upgrade"
+----
++
+O nó inicia o processo de reinicialização. O prompt de login do ONTAP é exibido, indicando que o processo de reinicialização está concluído.
+
+
+
+
+
+== Inicie o ONTAP no prompt do ambiente de inicialização
+
+Você pode inicializar a versão atual ou a versão de backup do ONTAP quando estiver no prompt do ambiente de inicialização de um nó.
+
+.Passos
+. Acesse o prompt do ambiente de inicialização a partir do prompt do sistema de armazenamento usando o `system node halt` comando.
++
+O console do sistema de armazenamento exibe o prompt do ambiente de inicialização.
+
+. No prompt do ambiente de inicialização, digite um dos seguintes comandos:
++
+|===
+| Para iniciar... | Digite... 
+
+
+ a| 
+A versão atual do ONTAP
+ a| 
+`boot_ontap`
+
+
+
+ a| 
+A imagem primária do ONTAP a partir do dispositivo de arranque
+ a| 
+`boot_primary`
+
+
+
+ a| 
+A imagem de cópia de segurança do ONTAP a partir do dispositivo de arranque
+ a| 
+`boot_backup`
+
+|===
++
+Se você não tiver certeza sobre qual imagem usar, você deve usar `boot_ontap` na primeira instância.
+
+
+
+
+
+== Encerre um nó
+
+Você pode encerrar um nó se ele ficar sem resposta ou se a equipe de suporte o direcionar para fazer isso como parte dos esforços de solução de problemas.
+
+.Passos
+. Se o cluster contiver quatro ou mais nós, verifique se o nó a ser desligado não possui epsilon:
++
+.. Defina o nível de privilégio como avançado:
++
+`*set -privilege advanced*`
+
+.. Determine qual nó contém o epsilon:
++
+`*cluster show*`
+
++
+O exemplo a seguir mostra que "'node1" contém epsilon:
+
++
+[listing]
+----
+cluster1::*> cluster show
+Node                 Health  Eligibility   Epsilon
+-------------------- ------- ------------  ------------
+node1                true    true          true
+node2                true    true          false
+node3                true    true          false
+node4                true    true          false
+4 entries were displayed.
+----
+.. Se o nó a ser desligado mantiver o epsilon, remova o epsilon do nó:
++
+`*cluster modify -node _node_name_ -epsilon false*`
+
+.. Atribua o epsilon a um nó diferente que permanecerá ativo:
++
+`*cluster modify -node _node_name_ -epsilon true*`
+
+.. Voltar ao nível de privilégio de administrador:
++
+`*set -privilege admin*`
+
+
+
+. Use o `system node halt` comando para encerrar o nó.
++
+Se você não especificar o `-skip-lif-migration` parâmetro, o comando tentará migrar dados e LIFs de gerenciamento de cluster de forma síncrona para outro nó antes do desligamento. Se a migração de LIF falhar ou expirar o tempo, o processo de encerramento é cancelado e o ONTAP exibe um erro para indicar a falha de migração de LIF.
+
++
+Você pode acionar manualmente um despejo de memória com o desligamento usando ambos os `-dump` parâmetros.
+
++
+O exemplo a seguir desliga o nó chamado "'node1" para manutenção de hardware:
+
++
+[listing]
+----
+cluster1::> system node halt -node node1 -reason 'hardware maintenance'
+----
+

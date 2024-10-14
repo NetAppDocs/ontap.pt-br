@@ -1,0 +1,55 @@
+---
+permalink: nfs-admin/access-cache-parameters-work-concept.html 
+sidebar: sidebar 
+keywords: access, cache, parameter, work 
+summary: Vários parâmetros controlam os períodos de atualização para entradas no cache de acesso. Entender como esses parâmetros funcionam permite modificá-los para ajustar o cache de acesso e equilibrar o desempenho com o quão recente é a informação armazenada. 
+---
+= Como funcionam os parâmetros de cache de acesso
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Vários parâmetros controlam os períodos de atualização para entradas no cache de acesso. Entender como esses parâmetros funcionam permite modificá-los para ajustar o cache de acesso e equilibrar o desempenho com o quão recente é a informação armazenada.
+
+O cache de acesso armazena entradas que consistem em uma ou mais regras de exportação que se aplicam a clientes que tentam acessar volumes ou qtrees. Essas entradas são armazenadas por um determinado período de tempo antes de serem atualizadas. O tempo de atualização é determinado pelos parâmetros de cache de acesso e depende do tipo de entrada de cache de acesso.
+
+Você pode especificar parâmetros de cache de acesso para SVMs individuais. Isso permite que os parâmetros sejam diferentes de acordo com os requisitos de acesso à SVM. As entradas de cache de acesso que não são usadas ativamente não são atualizadas, o que reduz a comunicação desnecessária e desperdiçada com servidores de nomes externos.
+
+[cols="30,40,30"]
+|===
+
+
+| Acesse o tipo de entrada de cache | Descrição | Período de atualização em segundos 
+
+
+ a| 
+Entradas positivas
+ a| 
+Acesse entradas de cache que não resultaram na negação de acesso aos clientes.
+ a| 
+Mínimo: 300
+
+Máximo: 86.400
+
+Padrão: 3.600
+
+
+
+ a| 
+Entradas negativas
+ a| 
+Acesse entradas de cache que resultaram na negação de acesso aos clientes.
+ a| 
+Mínimo: 60
+
+Máximo: 86.400
+
+Padrão: 3.600
+
+|===
+.Exemplo
+Um cliente NFS tenta acessar um volume em um cluster. O ONTAP corresponde o cliente a uma regra de política de exportação e determina que o cliente obtém acesso com base na configuração da regra de política de exportação. O ONTAP armazena a regra de política de exportação no cache de acesso como uma entrada positiva. Por padrão, o ONTAP mantém a entrada positiva no cache de acesso por uma hora (3.600 segundos) e, em seguida, atualiza automaticamente a entrada para manter as informações atualizadas.
+
+Para evitar que o cache de acesso seja preenchido desnecessariamente, há um parâmetro adicional para limpar entradas de cache de acesso existentes que não foram usadas por um determinado período de tempo para decidir o acesso do cliente.  `-harvest-timeout`Este parâmetro tem um intervalo permitido de 60 a 2.592.000 segundos e uma predefinição de 86.400 segundos.

@@ -1,0 +1,91 @@
+---
+permalink: disks-aggregates/create-ssd-storage-pool-task.html 
+sidebar: sidebar 
+keywords: create, provision, ssd, storage, flash, pool, add, cache, local tier, aggregate 
+summary: 'Você pode criar pools de storage de unidades de estado sólido (SSD) para fornecer cache SSD para duas a quatro camadas locais de Pool Flash (agregados).' 
+---
+= Adicione cache a um nível local (agregado) criando um pool de storage SSD
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode provisionar o cache convertendo uma camada local (agregado) existente em uma camada local do Flash Pool (agregado) adicionando unidades de estado sólido (SSDs).
+
+Você pode criar pools de storage de unidades de estado sólido (SSD) para fornecer cache SSD para duas a quatro camadas locais de Pool Flash (agregados). Agregados Flash Pool permitem que você implante flash como cache de alta performance para seu conjunto de dados em trabalho, ao mesmo tempo em que usa HDDs de baixo custo para dados acessados com menos frequência.
+
+.Sobre esta tarefa
+* Você deve fornecer uma lista de discos ao criar ou adicionar discos a um pool de armazenamento.
++
+Os pools de armazenamento não suportam um `diskcount` parâmetro.
+
+* Os SSDs usados no pool de storage devem ter o mesmo tamanho.
+
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Use o Gerenciador do sistema para adicionar um cache SSD (ONTAP 9.12,1 e posterior)
+[%collapsible%open]
+=====
+A partir do ONTAP 9.12,1, você pode usar o Gerenciador do sistema para adicionar um cache SSD.
+
+
+NOTE: As opções de pool de storage não estão disponíveis em sistemas AFF.
+
+.Passos
+. Clique em *Cluster > Disks* e, em seguida, clique em *Show/Hide*.
+. Selecione *Type* e verifique se há SSDs sobressalentes no cluster.
+. Clique em *Storage > Tiers* e clique em *Add Storage Pool*.
+. Selecione o tipo de disco.
+. Introduza um tamanho de disco.
+. Selecione o número de discos a serem adicionados ao pool de armazenamento.
+. Reveja o tamanho estimado da cache.
+
+
+=====
+.Use o Gerenciador do sistema para adicionar um cache SSD (somente ONTAP 9.7)
+[%collapsible%open]
+=====
+
+NOTE: Use o procedimento CLI se você estiver usando uma versão do ONTAP posterior ao ONTAP 9.7 ou anterior ao ONTAP 9.12,1.
+
+.Passos
+. Clique em *(retornar à versão clássica)*.
+. Clique em *armazenamento > agregados e discos > agregados*.
+. Selecione o nível local (agregado) e clique em *ações > Adicionar cache*.
+. Selecione a origem do cache como "pools de armazenamento" ou "SSDs dedicados".
+. Clique em *(mudar para a nova experiência)*.
+. Clique em *armazenamento > camadas* para verificar o tamanho do novo agregado.
+
+
+=====
+--
+.CLI
+--
+*Use a CLI para criar um pool de armazenamento SSD*
+
+.Passos
+. Determine os nomes dos SSDs sobressalentes disponíveis:
++
+`storage aggregate show-spare-disks -disk-type SSD`
+
++
+Os SSDs usados em um pool de storage podem pertencer a qualquer nó de um par de HA.
+
+. Crie o pool de armazenamento:
++
+`storage pool create -storage-pool _sp_name_ -disk-list _disk1_,_disk2_,...`
+
+. *Opcional:* Verifique o pool de armazenamento recém-criado:
++
+`storage pool show -storage-pool _sp_name_`
+
+
+
+--
+====
+.Resultados
+Depois que os SSDs são colocados no pool de storage, eles não aparecerão mais como sobressalentes no cluster, mesmo que o storage fornecido pelo pool de armazenamento ainda não tenha sido alocado a nenhum cache do Flash Pool. Não é possível adicionar SSDs a um grupo RAID como unidades discretas; o armazenamento deles pode ser provisionado somente usando as unidades de alocação do pool de armazenamento ao qual pertencem.

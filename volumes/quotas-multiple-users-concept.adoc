@@ -1,0 +1,38 @@
+---
+permalink: volumes/quotas-multiple-users-concept.html 
+sidebar: sidebar 
+keywords: how quotas work, with multiple users 
+summary: Quando você coloca vários usuários no mesmo destino de cota, os limites definidos pela cota não são aplicados a cada usuário individual. Em vez disso, os limites de cota são compartilhados entre todos os usuários no destino de cota. 
+---
+= Como as cotas funcionam com vários usuários
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando você coloca vários usuários no mesmo destino de cota, os limites definidos pela cota não são aplicados a cada usuário individual. Em vez disso, os limites de cota são compartilhados entre todos os usuários no destino de cota.
+
+Ao contrário dos comandos para gerenciar objetos, como volumes e qtrees, você não pode renomear um destino de cota, incluindo uma cota multiusuário. Isso significa que depois que uma cota de vários usuários é definida, você não pode modificar os usuários no destino de cota e não pode adicionar usuários a um destino ou remover usuários de um destino. Se você quiser adicionar ou remover um usuário de uma cota de vários usuários, a cota que contém esse usuário deve ser excluída e uma nova regra de cota com o conjunto de usuários no destino definido.
+
+[NOTE]
+====
+Se você combinar cotas de usuário separadas em uma cota de vários usuários, poderá ativar a alteração reredimensionando cotas. No entanto, se você quiser remover usuários de um destino de cota com vários usuários ou adicionar usuários a um destino que já tenha vários usuários, será necessário reinicializar cotas antes que a alteração entre em vigor.
+
+====
+.Exemplo de mais de um usuário em uma regra de cota
+No exemplo a seguir, há dois usuários listados na entrada de cota. Os dois usuários podem usar até 80MBMB de espaço combinado. Se um usa 75MB, então o outro pode usar apenas 5MB.
+
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -volume vol1 -policy-name default -type user -target "jsmith,chen" -qtree "" -disk-limit 80m
+
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol1
+
+Vserver: vs0               Policy: default           Volume: vol1
+                                                    Soft             Soft
+                              User         Disk     Disk   Files    Files
+Type   Target         Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------       ------- -------  --------  -------  ------  -------  ---------
+user   "jsmith,chen"  ""      off          80MB        -       -        -          -
+----

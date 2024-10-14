@@ -1,0 +1,109 @@
+---
+permalink: encryption-at-rest/enable-aggregate-level-encryption-nve-license-task.html 
+sidebar: sidebar 
+keywords: enabling, aggregate-level, encryption, nve, ve license, license 
+summary: A partir do ONTAP 9.7, agregados e volumes recém-criados são criptografados por padrão quando você tem a licença VE e o gerenciamento de chaves integradas ou externas. A partir do ONTAP 9.6, você pode usar a criptografia em nível de agregado para atribuir chaves ao agregado que contém para que os volumes sejam criptografados. Os volumes criados no agregado são criptografados por padrão. Você pode substituir o padrão quando criptografar o volume. 
+---
+= Ative a encriptação em nível de agregado com licença VE
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.7, agregados e volumes recém-criados são criptografados por padrão quando você tem o link:../encryption-at-rest/install-license-task.html["Licença VE"] e gerenciamento de chaves externas ou integradas. A partir do ONTAP 9.6, você pode usar a criptografia em nível de agregado para atribuir chaves ao agregado que contém para que os volumes sejam criptografados.
+
+.Sobre esta tarefa
+Você deve usar criptografia em nível de agregado se planeja executar deduplicação in-line ou em segundo plano. De outra forma, a deduplicação em nível de agregado não é compatível com NVE.
+
+Um agregado habilitado para criptografia de nível agregado é chamado de _agregado NAE_ (para criptografia agregada NetApp). Todos os volumes em um agregado NAE precisam ser criptografados com criptografia NAE ou NVE. Com a criptografia de nível agregado, os volumes criados no agregado são criptografados com criptografia NAE por padrão. Em vez disso, você pode substituir o padrão para usar a criptografia NVE.
+
+Os volumes de texto sem formatação não são suportados em agregados NAE.
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa.
+
+.Passos
+. Ativar ou desativar a encriptação de nível agregado:
++
+[cols="40,60"]
+|===
+
+
+| Para... | Use este comando... 
+
+
+ a| 
+Crie um agregado NAE com o ONTAP 9.7 ou posterior
+ a| 
+`storage aggregate create -aggregate _aggregate_name_ -node _node_name_`
+
+
+
+ a| 
+Crie um agregado NAE com o ONTAP 9.6
+ a| 
+`storage aggregate create -aggregate _aggregate_name_ -node _node_name_ -encrypt-with-aggr-key true`
+
+
+
+ a| 
+Converter um agregado não-naE em um agregado NAE
+ a| 
+`storage aggregate modify -aggregate _aggregate_name_ -node _node_name_ -encrypt-with-aggr-key true`
+
+
+
+ a| 
+Converter um agregado NAE em um agregado não-naE
+ a| 
+`storage aggregate modify -aggregate _aggregate_name_ -node _node_name_ -encrypt-with-aggr-key false`
+
+|===
++
+Para obter a sintaxe completa do comando, consulte as páginas man.
+
++
+O comando a seguir habilita a criptografia de nível agregado `aggr1` no :
+
++
+** ONTAP 9.7 ou posterior:
++
+[listing]
+----
+cluster1::> storage aggregate create -aggregate aggr1
+----
+** ONTAP 9.6 ou anterior:
++
+[listing]
+----
+cluster1::> storage aggregate create -aggregate aggr1 -encrypt-with-aggr-key true
+----
+
+
+. Verifique se o agregado está habilitado para criptografia:
++
+`storage aggregate show -fields encrypt-with-aggr-key`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O comando a seguir verifica se `aggr1` está habilitado para criptografia:
+
++
+[listing]
+----
+cluster1::> storage aggregate show -fields encrypt-with-aggr-key
+aggregate            encrypt-aggr-key
+-------------------- ----------------
+aggr0_vsim4          false
+aggr1                true
+2 entries were displayed.
+----
+
+
+.Depois de terminar
+Execute o `volume create` comando para criar os volumes criptografados.
+
+Se você estiver usando um servidor KMIP para armazenar as chaves de criptografia de um nó, o ONTAP automaticamente "envia" uma chave de criptografia para o servidor quando você criptografa um volume.

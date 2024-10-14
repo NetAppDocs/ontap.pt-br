@@ -1,0 +1,75 @@
+---
+permalink: fabricpool/attach-cloud-tier-aggregate-task.html 
+sidebar: sidebar 
+keywords: attaching, cloud, tier, aggregate 
+summary: Depois de configurar um armazenamento de objetos como o nível de nuvem, especifique o agregado a ser usado anexando-o ao FabricPool. No ONTAP 9.5 e posterior, também é possível anexar agregados que contêm componentes de volume FlexGroup qualificados. 
+---
+= Anexar a camada de nuvem a um nível local (agregado)
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois de configurar um armazenamento de objetos como o nível de nuvem, especifique o nível local (agregado) a ser usado anexando-o ao FabricPool. No ONTAP 9.5 e posterior, você também pode anexar camadas locais (agregados) que contêm componentes de volume FlexGroup qualificados.
+
+.Sobre esta tarefa
+Conectar uma camada de nuvem a um nível local é uma ação permanente. Um nível de nuvem não pode ser desanexado de um nível local depois de ser anexado. No entanto, você pode usar link:../fabricpool/create-mirror-task.html["Espelho FabricPool"] para anexar um nível local a um nível de nuvem diferente.
+
+.Antes de começar
+Quando você usa a CLI do ONTAP para configurar um agregado para o FabricPool, o agregado já deve existir.
+
+[NOTE]
+====
+Quando você usa o Gerenciador de sistema para configurar um nível local para o FabricPool, você pode criar o nível local e configurá-lo para uso no FabricPool ao mesmo tempo.
+
+====
+.Passos
+É possível anexar um nível local (agregado) a um armazenamento de objetos do FabricPool com o Gerenciador de sistemas do ONTAP ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *Storage > Tiers*, selecione um nível de nuvem e clique image:icon_kabob.gif["Ícone de opções do menu"]em .
+. Selecione *Anexar níveis locais*.
+. Em *Adicionar como primário*, verifique se os volumes estão qualificados para anexar.
+. Se necessário, selecione *Converter volumes para thin Provisioning*.
+. Clique em *Salvar*.
+
+
+--
+.CLI
+--
+.Para anexar um armazenamento de objetos a um agregado com a CLI:
+. *Opcional*: Para ver quantos dados em um volume estão inativos, siga as etapas em link:determine-data-inactive-reporting-task.html["Determinar a quantidade de dados em um volume estão inativos usando relatórios de dados inativos"].
++
+Ver quantos dados em um volume estão inativos pode ajudá-lo a decidir qual agregado usar para o FabricPool.
+
+. Anexe o armazenamento de objetos a um agregado usando o `storage aggregate object-store attach` comando.
++
+Se o agregado nunca tiver sido usado com o FabricPool e contiver volumes existentes, a política de disposição em camadas padrão será atribuída aos volumes `snapshot-only`.
+
++
+[listing]
+----
+cluster1::> storage aggregate object-store attach -aggregate myaggr
+-object-store-name Amazon01B1
+----
++
+Você pode usar a `allow-flexgroup` `true` opção para anexar agregados que contêm componentes de volume FlexGroup.
+
+. Exiba as informações do armazenamento de objetos e verifique se o armazenamento de objetos anexado está disponível usando o `storage aggregate object-store show` comando.
++
+[listing]
+----
+cluster1::> storage aggregate object-store show
+
+Aggregate    Object Store Name    Availability State
+---------    -----------------    ------------------
+myaggr       Amazon01B1           available
+----
+
+
+--
+====

@@ -1,0 +1,161 @@
+---
+permalink: nvme/support-limitations.html 
+sidebar: sidebar 
+keywords: nvme, namespaces, considerations, provisioning 
+summary: O suporte a NVMe varia de acordo com a versão do ONTAP, a plataforma e a configuração. 
+---
+= Configuração, suporte e limitações do NVMe
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.4, o link:../san-admin/manage-nvme-concept.html["Memória expressa (NVMe) não volátil"] protocolo está disponível para ambientes SAN. O FC-NVMe usa a mesma configuração física e prática de zoneamento das redes FC tradicionais, mas permite maior largura de banda, IOPs maiores e latência reduzida do que o FC-SCSI.
+
+As limitações e o suporte do NVMe variam de acordo com a versão do ONTAP, a plataforma e a configuração. Para obter detalhes sobre sua configuração específica, consulte o link:https://imt.netapp.com/matrix/["Ferramenta de Matriz de interoperabilidade do NetApp"^]. Para obter os limites suportados, link:https://hwu.netapp.com/["Hardware Universe"^]consulte .
+
+
+NOTE: O máximo de nós por cluster está disponível no Hardware Universe em *mistura de plataformas suportadas*.
+
+
+
+== Configuração
+
+* É possível configurar a configuração NVMe usando uma única malha ou várias malhas.
+* Você deve configurar um LIF de gerenciamento para cada SVM que suporte SAN.
+* O uso de malhas de switch FC heterogêneas não é suportado, exceto no caso de switches blade incorporados.
++
+Exceções específicas estão listadas no link:https://mysupport.netapp.com/matrix["Ferramenta de Matriz de interoperabilidade do NetApp"^].
+
+* Cascata, malha parcial, malha completa, borda central e tecidos diretor são todos métodos padrão do setor de conexão de switches FC a uma malha e todos são compatíveis.
++
+Uma malha pode consistir em um ou vários switches, e os controladores de storage podem ser conectados a vários switches.
+
+
+
+
+
+== Caraterísticas
+
+Os recursos NVMe a seguir são compatíveis com base na sua versão do ONTAP.
+
+[cols="2*"]
+|===
+
+
+| Começando com ONTAP... | Compatível com NVMe 
+
+
+| 9.15.1  a| 
+* Configurações de IP MetroCluster de quatro nós em NVMe/TCP
+
+
+
+
+| 9.14.1  a| 
+* Definir a prioridade do host no subsistema (QoS em nível de host)
+
+
+
+
+| 9.12.1  a| 
+* Configurações de IP MetroCluster de quatro nós no NVMe/FC
+* As configurações do MetroCluster não são compatíveis com redes NVMe front-end anteriores ao ONTAP 9.12,1.
+* As configurações do MetroCluster não são compatíveis com NVMe/TCP.
+
+
+
+
+| 9.10.1 | xref:../nvme/resize-namespace-task.html[Redimensionamento de um namespace] 
+
+
+| 9.9.1  a| 
+* Coexistência de namespaces e LUNs no mesmo volume
+
+
+
+
+| 9,8  a| 
+* Coexistência do protocolo
++
+Os protocolos SCSI, nas e NVMe podem existir na mesma máquina virtual de storage (SVM).
+
++
+Antes do ONTAP 9.8, o NVMe pode ser o único protocolo na SVM.
+
+
+
+
+
+| 9,6  a| 
+* blocos de 512 bytes e blocos de 4096 bytes para namespaces
++
+4096 é o valor padrão. 512 só deve ser usado se o sistema operacional host não suportar blocos de 4096 bytes.
+
+* Movimentação de volume com namespaces mapeados
+
+
+
+
+| 9,5  a| 
+* Failover de par de HA multipath/giveback
+
+
+|===
+
+
+== Protocolos
+
+Os protocolos NVMe a seguir são compatíveis.
+
+[cols="3*"]
+|===
+
+
+| Protocolo | Começando com ONTAP... | Permitido por... 
+
+
+| TCP | 9.10.1 | Padrão 
+
+
+| FC | 9,4 | Padrão 
+|===
+A partir do ONTAP 9.8, é possível configurar protocolos SCSI, nas e NVMe na mesma máquina virtual de storage (SVM). No ONTAP 9.7 e versões anteriores, o NVMe pode ser o único protocolo na SVM.
+
+
+
+== Namespaces
+
+Ao trabalhar com namespaces NVMe, você deve estar ciente do seguinte:
+
+* O ONTAP não é compatível com o comando NVMe dataset Management (desalocar) com o NVMe para exigência de espaço.
+* Não é possível usar o SnapRestore para restaurar um namespace de um LUN ou vice-versa.
+* A garantia de espaço para namespaces é a mesma que a garantia de espaço do volume contendo.
+* Não é possível criar um namespace em uma transição de volume do Data ONTAP operando no modo 7D.
+* Namespaces não suportam o seguinte:
++
+** Renomeação
+** Movimento entre volumes
+** Cópia entre volumes
+** Cópia sob demanda
+
+
+
+
+
+
+== Limitações adicionais
+
+.Os seguintes recursos do ONTAP não são compatíveis com configurações NVMe:
+* Sincronizar
+* Console de armazenamento virtual
+
+
+.O seguinte aplica-se apenas aos nós que executam o ONTAP 9.4:
+* Os LIFs e namespaces NVMe devem ser hospedados no mesmo nó.
+* O serviço NVMe deve ser criado antes da criação do NVMe LIF.
+
+
+.Informações relacionadas
+link:https://www.netapp.com/pdf.html?item=/media/10680-tr4080.pdf["Práticas recomendadas para SAN moderna"]

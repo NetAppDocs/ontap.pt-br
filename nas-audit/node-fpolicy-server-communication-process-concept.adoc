@@ -1,0 +1,48 @@
+---
+permalink: nas-audit/node-fpolicy-server-communication-process-concept.html 
+sidebar: sidebar 
+keywords: node-to-external, fpolicy, server communication process 
+summary: Para Planejar adequadamente a configuração do FPolicy, você deve entender o que é o processo de comunicação do servidor FPolicy de nó para externo. 
+---
+= Qual é o processo de comunicação do servidor FPolicy nó para externo
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para Planejar adequadamente a configuração do FPolicy, você deve entender o que é o processo de comunicação do servidor FPolicy de nó para externo.
+
+Cada nó que participa de cada máquina virtual de armazenamento (SVM) inicia uma conexão com um servidor FPolicy externo (servidor FPolicy) usando TCP/IP. As conexões com os servidores FPolicy são configuradas usando LIFs de dados de nó; portanto, um nó participante pode configurar uma conexão somente se o nó tiver um LIF de dados operacional para o SVM.
+
+Cada processo de FPolicy nos nós participantes tenta estabelecer uma conexão com o servidor FPolicy quando a diretiva está ativada. Ele usa o endereço IP e a porta do mecanismo externo FPolicy especificado na configuração da política.
+
+A conexão estabelece um canal de controle de cada um dos nós participantes de cada SVM para o servidor FPolicy por meio do data LIF. Além disso, se os endereços de LIF de dados IPv4 e IPv6 estiverem presentes no mesmo nó participante, o FPolicy tentará estabelecer conexões para IPv4 e IPv6. Portanto, em um cenário em que o SVM se estende por vários nós ou se ambos os endereços IPv4 e IPv6 estiverem presentes, o servidor FPolicy deve estar pronto para várias solicitações de configuração de canal de controle do cluster após a diretiva FPolicy ser ativada no SVM.
+
+Por exemplo, se um cluster tiver três nós - Node1, Node2 e Node3 - e os LIFs de dados SVM estiverem espalhados por apenas Node2 e Node3, os canais de controle serão iniciados apenas a partir de Node2 e Node3, independentemente da distribuição dos volumes de dados. Digamos que o Node2 tem duas LIFs de dados - LIF1 e LIF2 - que pertencem ao SVM e que a conexão inicial é de LIF1. Se o LIF1 falhar, o FPolicy tentará estabelecer um canal de controle a partir do LIF2.
+
+image:what-node-to-fpolicy-server-communication-process-is.png["Processo de comunicação de nó para serviço Fpolocy"]
+
+
+
+== Como o FPolicy gerencia a comunicação externa durante a migração de LIF ou failover
+
+As LIFs de dados podem ser migradas para portas de dados no mesmo nó ou para portas de dados em um nó remoto.
+
+Quando um LIF de dados falha ou é migrado, uma nova conexão de canal de controle é feita para o servidor FPolicy. O FPolicy pode, então, tentar novamente solicitações de clientes SMB e NFS que expiraram, com o resultado de novas notificações serem enviadas para os servidores FPolicy externos. O nó rejeita as respostas do servidor FPolicy às solicitações SMB e NFS originais e com tempo limite.
+
+
+
+== Como o FPolicy gerencia a comunicação externa durante o failover de nó
+
+Se o nó do cluster que hospeda as portas de dados usadas para comunicação FPolicy falhar, o ONTAP rompe a conexão entre o servidor FPolicy e o nó.
+
+O impactos do failover de cluster no servidor FPolicy pode ser atenuado configurando a política de failover para migrar a porta de dados usada na comunicação FPolicy para outro nó ativo. Após a conclusão da migração, uma nova conexão é estabelecida usando a nova porta de dados.
+
+Se a política de failover não estiver configurada para migrar a porta de dados, o servidor FPolicy deverá aguardar que o nó com falha apareça. Depois que o nó estiver ativo, uma nova conexão será iniciada a partir desse nó com um novo Session ID.
+
+[NOTE]
+====
+O servidor FPolicy deteta conexões quebradas com a mensagem do protocolo keep-alive. O tempo limite para a purga do Session ID é determinado ao configurar o FPolicy. O limite de tempo de espera predefinido é de dois minutos.
+
+====

@@ -1,0 +1,75 @@
+---
+permalink: upgrade/task_reconfiguring_kmip_servers_connections_after_upgrading_to_ontap_9_3_or_later.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, reconfigure, reconfiguring, kmip, server, connections, 9.3, later 
+summary: 'Depois de atualizar para o ONTAP 9.3 ou posterior, você precisa reconfigurar suas conexões de servidor de gerenciamento de chaves externas (KMIP).' 
+---
+= Reconfigure as conexões do servidor KMIP após uma atualização do ONTAP 9.2 ou anterior
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois de atualizar do ONTAP 9.2 ou anterior para o ONTAP 9.3 ou posterior, você precisa reconfigurar todas as conexões de servidor de gerenciamento de chaves externas (KMIP).
+
+.Passos
+. Configurar a conetividade do gerenciador de chaves:
++
+[source, cli]
+----
+security key-manager setup
+----
+. Adicione seus servidores KMIP:
++
+[source, cli]
+----
+security key-manager add -address <key_management_server_ip_address>
+----
+. Verifique se os servidores KMIP estão conetados:
++
+[source, cli]
+----
+security key-manager show -status
+----
+. Consultar os servidores-chave:
++
+[source, cli]
+----
+security key-manager query
+----
+. Crie uma nova chave de autenticação e frase-passe:
++
+[source, cli]
+----
+security key-manager create-key -prompt-for-key true
+----
++
+A frase-passe tem de ter um mínimo de 32 carateres.
+
+. Consultar a nova chave de autenticação:
++
+[source, cli]
+----
+security key-manager query
+----
+. Atribua a nova chave de autenticação aos seus discos de encriptação automática (SEDs):
++
+[source, cli]
+----
+storage encryption disk modify -disk <disk_ID> -data-key-id <key_ID>
+----
++
+
+NOTE: Certifique-se de que está a utilizar a nova chave de autenticação da sua consulta.
+
+. Se necessário, atribua uma chave FIPS às SEDs:
++
+[source, cli]
+----
+storage encryption disk modify -disk <disk_id> -fips-key-id <fips_authentication_key_id>
+----
++
+Se a configuração de segurança exigir que você use chaves diferentes para autenticação de dados e autenticação FIPS 140-2-2, você deve criar uma chave separada para cada uma. Se esse não for o caso, você poderá usar a mesma chave de autenticação para conformidade com o FIPS usada para acesso aos dados.
+
+

@@ -1,0 +1,67 @@
+---
+permalink: smb-hyper-v-sql/nondisruptive-operations-glossary-concept.html 
+sidebar: sidebar 
+keywords: key, concepts, nondisruptive, operation, hyper, v, sql, server, smb, configure 
+summary: 'Há certos conceitos sobre operações ininterruptas (NDOs) que você deve entender antes de configurar sua solução Hyper-V ou SQL Server sobre SMB.' 
+---
+= Conceitos-chave sobre operações ininterruptas para Hyper-V e SQL Server sobre SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Há certos conceitos sobre operações ininterruptas (NDOs) que você deve entender antes de configurar sua solução Hyper-V ou SQL Server sobre SMB.
+
+* *Partilha continuamente disponível*
++
+Um compartilhamento SMB 3,0 que tem o conjunto de propriedades de compartilhamento continuamente disponível. Os clientes que se conetam por meio de compartilhamentos disponíveis continuamente podem sobreviver a eventos disruptivos, como aquisição, giveback e realocação agregada.
+
+* *Nó*
++
+Um único controlador que é membro de um cluster. Para distinguir entre os dois nós em um par de SFO, um nó é às vezes chamado de _nó local_ e o outro nó é às vezes chamado de _nó parceiro_ ou _nó remoto_. O principal proprietário do storage é o nó local. O proprietário secundário, que controla o storage quando o proprietário principal falha, é o nó do parceiro. Cada nó é o principal proprietário do storage e o proprietário secundário do storage do parceiro.
+
+* * Realocação de agregados sem interrupções*
++
+Capacidade de mover um agregado entre nós de parceiros dentro de um par de SFO em um cluster sem interromper as aplicações de clientes.
+
+* *Failover sem interrupções*
++
+Veja _Takeover_.
+
+* *Migração de LIF sem interrupções*
++
+A capacidade de realizar uma migração de LIF sem interromper aplicativos clientes conectados ao cluster por meio desse LIF. Para conexões SMB, isso só é possível para clientes que se conetam usando SMB 2,0 ou posterior.
+
+* *Operações ininterruptas*
++
+Capacidade de executar grandes operações de gerenciamento e atualização do ONTAP, bem como resistir a falhas de nós sem interromper as aplicações dos clientes. Esse termo se refere à coleção de funcionalidades de aquisição sem interrupções, atualização sem interrupções e migração sem interrupções como um todo.
+
+* *Atualização sem interrupções*
++
+Capacidade de atualizar o hardware ou o software do nó sem interrupção da aplicação.
+
+* * Movimento de volume sem interrupções*
++
+Capacidade de mover um volume livremente pelo cluster sem interromper as aplicações que estão usando o volume. Para conexões SMB, todas as versões do SMB são compatíveis com movimentos de volume sem interrupções.
+
+* * Alças persistentes*
++
+Uma propriedade do SMB 3,0 que permite que conexões continuamente disponíveis se reconetem de forma transparente ao servidor CIFS em caso de desconexão. Semelhante aos manipuladores duráveis, os manipuladores persistentes são mantidos pelo servidor CIFS por um período de tempo após a perda da comunicação com o cliente de conexão. No entanto, alças persistentes têm mais resiliência do que alças duráveis. Além de dar ao cliente a chance de recuperar o identificador dentro de uma janela de 60 segundos após a reconexão, o servidor CIFS nega acesso a quaisquer outros clientes que solicitem acesso ao arquivo durante essa janela de 60 segundos.
+
++
+As informações sobre alças persistentes são espelhadas no armazenamento persistente do parceiro SFO, o que permite que os clientes com alças persistentes desconetadas recuperem as alças duráveis após um evento em que o parceiro SFO assuma a propriedade do armazenamento do nó. Além de fornecer operações ininterruptas no caso de mudanças de LIF (que são duráveis lidar com o suporte), as alças persistentes fornecem operações ininterruptas para takeover, giveback e realocação de agregados.
+
+* *SFO*
++
+Retorno de agregados para seus locais de origem ao se recuperar de um evento de aquisição.
+
+* *Par SFO*
++
+Um par de nós cujos controladores estão configurados para servir dados entre si se um dos dois nós deixar de funcionar. Dependendo do modelo do sistema, ambos os controladores podem estar em um único chassi ou os controladores podem estar em um chassi separado. Conhecido como um par de HA em um cluster de dois nós.
+
+* *Aquisição*
++
+O processo pelo qual o parceiro assume o controle do storage quando o proprietário principal desse storage falha. No contexto de SFO, failover e aquisição são sinônimos.
+
+

@@ -1,0 +1,73 @@
+---
+permalink: snaplock/create-audit-log-task.html 
+sidebar: sidebar 
+keywords: create, audit, log, snaplock, protected, administrator, accounts 
+summary: Você deve criar um log de auditoria protegido por SnapLock antes de executar uma exclusão privilegiada ou movimentação de volume do SnapLock. O log de auditoria Registra a criação e exclusão de contas de administrador do SnapLock, modificações no volume de log, se a exclusão privilegiada está ativada, operações de exclusão privilegiada e operações de movimentação de volume do SnapLock. 
+---
+= Criar um log de auditoria
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você estiver usando o ONTAP 9.9,1 ou anterior, primeiro você deve criar um agregado SnapLock e, em seguida, criar um log de auditoria protegido por SnapLock antes de executar uma exclusão privilegiada ou movimentação de volume SnapLock. O log de auditoria Registra a criação e exclusão de contas de administrador do SnapLock, modificações no volume de log, se a exclusão privilegiada está ativada, operações de exclusão privilegiada e operações de movimentação de volume do SnapLock.
+
+A partir do ONTAP 9.10,1, você não cria mais um agregado SnapLock. Você deve usar a opção -SnapLock-type para link:../snaplock/create-snaplock-volume-task.html["Crie explicitamente um volume SnapLock"]especificando conformidade ou empresa como o tipo SnapLock.
+
+.Antes de começar
+Se você estiver usando o ONTAP 9.9,1 ou anterior, será necessário ser um administrador de cluster para criar um agregado SnapLock.
+
+.Sobre esta tarefa
+Não é possível excluir um log de auditoria até que o período de retenção do arquivo de log tenha decorrido. Não é possível modificar um registo de auditoria mesmo depois de decorrido o período de retenção. Isso é verdade para os modos SnapLock Compliance e Enterprise.
+
+[NOTE]
+====
+No ONTAP 9.4 e anteriores, não é possível usar um volume SnapLock Enterprise para o log de auditoria. Você deve usar um volume SnapLock Compliance. No ONTAP 9.5 e posterior, você pode usar um volume SnapLock Enterprise ou um volume SnapLock Compliance para o log de auditoria. Em todos os casos, o volume do log de auditoria deve ser montado no caminho de `/snaplock_audit_log` junção . Nenhum outro volume pode usar este caminho de junção.
+
+====
+Você pode encontrar os logs de auditoria do SnapLock `/snaplock_log` no diretório sob a raiz do volume de log de auditoria, em subdiretórios `privdel_log` nomeados (operações de exclusão privilegiadas) e `system_log` (tudo o resto). Os nomes dos arquivos de log de auditoria contêm o carimbo de data/hora da primeira operação registrada, facilitando a pesquisa de Registros pelo tempo aproximado em que as operações foram executadas.
+
+* Você pode usar o `snaplock log file show` comando para exibir os arquivos de log no volume de log de auditoria.
+* Você pode usar o `snaplock log file archive` comando para arquivar o arquivo de log atual e criar um novo, o que é útil nos casos em que você precisa Registrar informações de log de auditoria em um arquivo separado.
+
+
+Para obter mais informações, consulte as páginas man para os comandos.
+
+[NOTE]
+====
+Um volume de proteção de dados não pode ser usado como um volume de log de auditoria do SnapLock.
+
+====
+.Passos
+. Crie um agregado SnapLock.
++
+xref:create-snaplock-aggregate-task.adoc[Crie um agregado SnapLock]
+
+. No SVM que você deseja configurar para o log de auditoria, crie um volume SnapLock.
++
+xref:create-snaplock-volume-task.adoc[Crie um volume SnapLock]
+
+. Configure o SVM para o log de auditoria:
++
+`*snaplock log create -vserver _SVM_name_ -volume _snaplock_volume_name_ -max-log-size _size_ -retention-period _default_retention_period_*`
+
++
+[NOTE]
+====
+O período de retenção padrão mínimo para arquivos de log de auditoria é de seis meses. Se o período de retenção de um arquivo afetado for maior do que o período de retenção do log de auditoria, o período de retenção do log herdará o período de retenção do arquivo. Assim, se o período de retenção para um arquivo excluído usando exclusão privilegiada for de 10 meses, e o período de retenção do log de auditoria for de 8 meses, o período de retenção do log será estendido para 10 meses. Para obter mais informações sobre o tempo de retenção e o período de retenção padrão, link:../snaplock/set-retention-period-task.html["Defina o tempo de retenção"]consulte .
+
+====
++
+O comando a seguir configura-se `SVM1` para o log de auditoria usando o volume SnapLock `logVol` . O log de auditoria tem um tamanho máximo de 20 GB e é mantido por oito meses.
+
++
+[listing]
+----
+SVM1::> snaplock log create -vserver SVM1 -volume logVol -max-log-size 20GB -retention-period 8months
+----
+. No SVM que você configurou para o log de auditoria, monte o volume SnapLock no caminho de `/snaplock_audit_log` junção .
++
+xref:mount-snaplock-volume-task.adoc[Monte um volume SnapLock]
+
+

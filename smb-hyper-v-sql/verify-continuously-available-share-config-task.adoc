@@ -1,0 +1,79 @@
+---
+permalink: smb-hyper-v-sql/verify-continuously-available-share-config-task.html 
+sidebar: sidebar 
+keywords: verify, continuously, available, smb, share, configuration, hyper, v, sql, server, nondisruptive, application 
+summary: Para dar suporte a operações ininterruptas, os compartilhamentos SMB do Hyper-V e do SQL Server devem ser configurados como compartilhamentos disponíveis continuamente. Além disso, existem certas outras configurações de compartilhamento que você deve verificar. Você deve verificar se os compartilhamentos estão configurados corretamente para fornecer operações ininterruptas contínuas para os servidores de aplicações, se houver eventos disruptivos planejados ou não planejados. 
+---
+= Verifique a configuração de compartilhamento SMB continuamente disponível
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para dar suporte a operações ininterruptas, os compartilhamentos SMB do Hyper-V e do SQL Server devem ser configurados como compartilhamentos disponíveis continuamente. Além disso, existem certas outras configurações de compartilhamento que você deve verificar. Você deve verificar se os compartilhamentos estão configurados corretamente para fornecer operações ininterruptas contínuas para os servidores de aplicações, se houver eventos disruptivos planejados ou não planejados.
+
+.Sobre esta tarefa
+Você deve verificar se os dois parâmetros de compartilhamento a seguir estão definidos corretamente:
+
+* O `-offline-files` parâmetro é definido como `manual` (o padrão) ou `none`.
+* Os links simbólicos devem ser desativados.
+
+
+Para operações ininterruptas adequadas, as seguintes propriedades de compartilhamento devem ser definidas:
+
+* `continuously-available`
+* `oplocks`
+
+
+As seguintes propriedades de compartilhamento não devem ser definidas:
+
+* `homedirectory`
+* `attributecache`
+* `branchcache`
+* `access-based-enumeration`
+
+
+.Passos
+. Verifique se os arquivos off-line estão definidos como `manual` ou `disabled` e se os links simbólicos estão desativados:
++
+`*vserver cifs shares show -vserver _vserver_name_*`
+
+. Verifique se os compartilhamentos SMB estão configurados para disponibilidade contínua:
++
+`*vserver cifs shares properties show -vserver _vserver_name_*`
+
+
+
+.Exemplos
+O exemplo a seguir exibe a configuração de compartilhamento para um compartilhamento chamado "hare1" na máquina virtual de armazenamento (SVM, anteriormente conhecido como SVM) VS1. Os arquivos offline são definidos como `manual` e os links simbólicos são desativados (designados por um hífen na `Symlink Properties` saída do campo):
+
+[listing]
+----
+cluster1::> vserver cifs share show -vserver vs1 -share-name share1
+                      Vserver: vs1
+                        Share: share1
+     CIFS Server NetBIOS Name: VS1
+                         Path: /data/share1
+             Share Properties: oplocks
+                               continuously-available
+           Symlink Properties: -
+      File Mode Creation Mask: -
+ Directory Mode Creation Mask: -
+                Share Comment: -
+                    Share ACL: Everyone / Full Control
+File Attribute Cache Lifetime: -
+                  Volume Name: -
+                Offline Files: manual
+Vscan File-Operations Profile: standard
+----
+O exemplo a seguir exibe as propriedades de compartilhamento de um compartilhamento chamado "hare1" no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs share properties show -vserver vs1 -share-name share1
+Vserver    Share   Properties
+---------  ------  ----------
+vs1        share1  oplocks
+                   continuously-available
+----

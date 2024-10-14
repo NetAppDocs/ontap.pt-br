@@ -1,0 +1,58 @@
+---
+permalink: volumes/enable-deduplication-volume-task.html 
+sidebar: sidebar 
+keywords: enable, deduplication, volume, FlexVol, postprocess, inline 
+summary: 'Habilitar a deduplicação (pós-processo ou inline) em um FlexVol volume para obter eficiência de storage.' 
+---
+= Habilitar a deduplicação em um volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode habilitar a deduplicação em um FlexVol volume para obter eficiência de storage. É possível habilitar a deduplicação pós-processo em todos os volumes e a deduplicação in-line em volumes que residem em agregados AFF ou Flash Pool.
+
+Se você quiser habilitar a deduplicação in-line em outros tipos de volumes, consulte o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/How_to_enable_volume_inline_deduplication_on_Non-AFF_(All_Flash_FAS)_aggregates["Como habilitar a deduplicação in-line de volume em agregados não AFF (All Flash FAS)"^].
+
+.Antes de começar
+Para um FlexVol volume, você precisa ter verificado se existe espaço livre suficiente para metadados de deduplicação em volumes e agregados. Os metadados de deduplicação exigem uma quantidade mínima de espaço livre no agregado. Esse valor é igual a 3% do total de dados físicos para todos os volumes de FlexVol desduplicados ou componentes de dados dentro do agregado. Cada FlexVol volume ou componente de dados deve ter 4% do valor total de dados físicos de espaço livre, para um total de 7%.
+
+[NOTE]
+====
+A partir do ONTAP 9.2, a deduplicação in-line é habilitada por padrão em sistemas AFF.
+
+====
+.Opções
+* Use o `volume efficiency on` comando para habilitar a deduplicação pós-processo.
++
+O seguinte comando permite a deduplicação pós-processo no volume VolA:
+
++
+`volume efficiency on -vserver vs1 -volume VolA`
+
+* Use o `volume efficiency on` comando seguido pelo `volume efficiency modify` comando com a `-inline-deduplication` opção definida como `true` para habilitar a deduplicação pós-processo e a deduplicação in-line.
++
+Os comandos a seguir habilitam a deduplicação pós-processo e a deduplicação in-line no volume VolA:
+
++
+`volume efficiency on -vserver vs1 -volume VolA`
+
++
+`volume efficiency modify -vserver vs1 -volume VolA -inline-dedupe true`
+
+* Use o `volume efficiency on` comando seguido pelo `volume efficiency modify` comando com a `-inline-deduplication` opção definida como `true` e a `-policy` opção definida como `inline-only` para habilitar somente a deduplicação in-line.
++
+Os comandos a seguir habilitam somente a deduplicação in-line no volume VolA:
+
++
+`volume efficiency on -vserver vs1 -volume VolA`
+
++
+`volume efficiency modify -vserver vs1 -volume VolA -policy inline-only -inline-dedupe true`
+
+
+
+.Depois de terminar
+Verifique se a configuração foi alterada visualizando as configurações de eficiência de volume:
+`volume efficiency show -instance`

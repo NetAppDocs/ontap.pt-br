@@ -1,0 +1,62 @@
+---
+permalink: data-protection/restore-part-file-snapshot-task.html 
+sidebar: sidebar 
+keywords: restore, part, file, snapshot copy 
+summary: Você pode usar o comando volume snapshot Partial-restore-file para restaurar um intervalo de dados de uma cópia Snapshot para um LUN ou para um arquivo de contentor NFS ou SMB, supondo que você saiba o deslocamento de byte inicial dos dados e a contagem de bytes. Você pode usar esse comando para restaurar um dos bancos de dados em um host que armazena vários bancos de dados no mesmo LUN. 
+---
+= Restaure parte de um arquivo a partir de uma cópia Snapshot
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `volume snapshot partial-restore-file` comando para restaurar um intervalo de dados de uma cópia Snapshot para um LUN ou para um arquivo de contentor NFS ou SMB, supondo que você saiba o deslocamento de byte inicial dos dados e a contagem de bytes. Você pode usar esse comando para restaurar um dos bancos de dados em um host que armazena vários bancos de dados no mesmo LUN.
+
+A partir do ONTAP 9.12,1, a restauração parcial está disponível para volumes usando xref:../snapmirror-active-sync/index.html[Sincronização ativa do SnapMirror]o .
+
+.Passos
+. Listar as cópias Snapshot em um volume:
++
+`volume snapshot show -vserver _SVM_ -volume _volume_`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir mostra as cópias Snapshot `vol1` no :
+
++
+[listing]
+----
+
+clus1::> volume snapshot show -vserver vs1 -volume vol1
+
+Vserver Volume Snapshot                State    Size  Total% Used%
+------- ------ ---------- ----------- ------   -----  ------ -----
+vs1	    vol1   hourly.2013-01-25_0005  valid   224KB     0%    0%
+               daily.2013-01-25_0010   valid   92KB      0%    0%
+               hourly.2013-01-25_0105  valid   228KB     0%    0%
+               hourly.2013-01-25_0205  valid   236KB     0%    0%
+               hourly.2013-01-25_0305  valid   244KB     0%    0%
+               hourly.2013-01-25_0405  valid   244KB     0%    0%
+               hourly.2013-01-25_0505  valid   244KB     0%    0%
+
+7 entries were displayed.
+----
+. Restaure parte de um arquivo a partir de uma cópia Snapshot:
++
+`volume snapshot partial-restore-file -vserver _SVM_ -volume _volume_ -snapshot _snapshot_ -path _file_path_ -start-byte _starting_byte_ -byte-count _byte_count_`
+
++
+O desvio de byte inicial e a contagem de bytes devem ser múltiplos de 4.096.
+
++
+O exemplo a seguir restaura os primeiros 4.096 bytes do arquivo `myfile.txt`:
+
++
+[listing]
+----
+cluster1::> volume snapshot partial-restore-file -vserver vs0 -volume vol1 -snapshot daily.2013-01-25_0010 -path /myfile.txt -start-byte 0 -byte-count 4096
+----
+

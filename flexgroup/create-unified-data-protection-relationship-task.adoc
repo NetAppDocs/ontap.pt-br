@@ -1,0 +1,107 @@
+---
+permalink: flexgroup/create-unified-data-protection-relationship-task.html 
+sidebar: sidebar 
+keywords: create, unified, data, protection, relationship, flexgroup, volume, snap shot, snapshot, policy, policies, mirrorandvault, mirror-vault, mirrorallsnapshot, back up, backup, snapvault, snap vault 
+summary: A partir do ONTAP 9.3, você pode criar e configurar relações de proteção de dados unificadas do SnapMirror para configurar a recuperação de desastres e o arquivamento no mesmo volume de destino. 
+---
+= Criar uma relação unificada de proteção de dados para o FlexGroup volumes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.3, você pode criar e configurar relações de proteção de dados unificadas do SnapMirror para configurar a recuperação de desastres e o arquivamento no mesmo volume de destino.
+
+.O que você vai precisar
+Você precisa estar ciente das considerações para criar relacionamentos de proteção de dados unificados para volumes do FlexGroup.
+
+link:snapvault-backup-concept.html["Considerações para criar uma relação de backup do SnapVault e uma relação de proteção de dados unificada para volumes do FlexGroup"]
+
+.Passos
+. Crie um volume FlexGroup de destino do tipo `DP` que tenha o mesmo número de constituintes do volume FlexGroup de origem:
++
+.. A partir do cluster de origem, determine o número de componentes no volume FlexGroup de origem: `volume show -volume volume_name* -is-constituent true`
++
+[listing]
+----
+cluster1::> volume show  -volume srcFG* -is-constituent true
+Vserver   Volume         Aggregate    State      Type       Size  Available  Used%
+--------- ------------   ------------ ---------- ---- ----------  ---------- -----
+vss       srcFG          -            online     RW         400TB   172.86GB  56%
+vss       srcFG__0001    Aggr_cmode   online     RW         25GB    10.86TB   56%
+vss       srcFG__0002    aggr1        online     RW         25TB    10.86TB   56%
+vss       srcFG__0003    Aggr_cmode   online     RW         25TB    10.72TB   57%
+vss       srcFG__0004    aggr1        online     RW         25TB    10.73TB   57%
+vss       srcFG__0005    Aggr_cmode   online     RW         25TB    10.67TB   57%
+vss       srcFG__0006    aggr1        online     RW         25TB    10.64TB   57%
+vss       srcFG__0007    Aggr_cmode   online     RW         25TB    10.63TB   57%
+...
+----
+.. A partir do cluster de destino, crie um volume do tipo FlexGroup de destino `DP` com o mesmo número de componentes que o do volume FlexGroup de origem.
++
+[listing]
+----
+cluster2::> volume create -vserver vsd -aggr-list aggr1,aggr2 -aggr-list-multiplier 8 -size 400TB -type DP dstFG
+
+Warning: The FlexGroup volume "dstFG" will be created with the following number of constituents of size 25TB: 16.
+Do you want to continue? {y|n}: y
+[Job 766] Job succeeded: Successful
+----
+.. A partir do cluster de destino, verifique o número de componentes no volume FlexGroup de destino: `volume show -volume volume_name* -is-constituent true`
++
+[listing]
+----
+cluster2::> volume show  -volume dstFG* -is-constituent true
+Vserver   Volume       Aggregate    State      Type       Size  Available Used%
+--------- ------------ ------------ ---------- ---- ---------- ---------- -----
+vsd       dstFG          -            online     RW         400TB   172.86GB  56%
+vsd       dstFG__0001    Aggr_cmode   online     RW         25GB    10.86TB   56%
+vsd       dstFG__0002    aggr1        online     RW         25TB    10.86TB   56%
+vsd       dstFG__0003    Aggr_cmode   online     RW         25TB    10.72TB   57%
+vsd       dstFG__0004    aggr1        online     RW         25TB    10.73TB   57%
+vsd       dstFG__0005    Aggr_cmode   online     RW         25TB    10.67TB   57%
+vsd       dstFG__0006    aggr1        online     RW         25TB    10.64TB   57%
+vsd       dstFG__0007    Aggr_cmode   online     RW         25TB    10.63TB   57%
+...
+----
+
+
+. Criar uma agenda de trabalhos: `job schedule cron create -name job_name -month month -dayofweek day_of_week -day day_of_month -hour hour -minute minute`
++
+Para as `-month` opções , `-dayofweek`, e `-hour` , é possível especificar `all` para executar o trabalho todos os meses, todos os dias da semana e a cada hora, respetivamente.
+
++
+O exemplo a seguir cria um horário de trabalho chamado `my_weekly` que é executado aos sábados às 3:00 da manhã:
+
++
+[listing]
+----
+cluster1::> job schedule cron create -name my_weekly -dayofweek "Saturday" -hour 3 -minute 0
+----
+. Crie uma política personalizada de tipo `mirror-vault` e defina uma regra para a política de espelhamento e cofre:
++
+.. Crie uma política de tipo personalizada `mirror-vault` para o relacionamento unificado de proteção de dados: `snapmirror policy create -vserver svm_name -policy policy_name -type mirror-vault`
+.. Defina uma regra para a política de espelhamento e cofre que determina quais cópias snapshot serão transferidas durante as operações de inicialização e atualização: `snapmirror policy add-rule -vserver svm_name -policy policy_for_rule - snapmirror-label snapmirror-label -keep retention_count -schedule schedule`
+
+
++
+Se você não especificar uma política personalizada, a `MirrorAndVault` política será usada para relacionamentos de proteção de dados unificados.
+
+. Criar uma relação unificada de proteção de dados: `snapmirror create -source-path src_svm:src_flexgroup -destination-path dest_svm:dest_flexgroup -type XDP -schedule schedule_name -policy MirrorAndVault`
++
+No ONTAP 9.4 e anteriores, se a política não for especificada com o `snapmirror create` comando, a `MirrorAllSnapshots` política será usada por padrão. No ONTAP 9.5, se a política não for especificada com o `snapmirror create` comando, a `MirrorAndVault` política será usada por padrão.
+
++
+[listing]
+----
+cluster2::> snapmirror create -source-path vss:srcFG -destination-path vsd:dstFG -type XDP -schedule Daily -policy MirrorAndVault
+----
+. No cluster de destino, inicialize a relação unificada de proteção de dados executando uma transferência de linha de base: `snapmirror initialize -destination-path dest_svm:dest_flexgroup`
++
+[listing]
+----
+cluster2::> snapmirror initialize -destination-path vsd:dstFG
+Operation is queued: snapmirror initialize of destination "vsd:dstFG".
+----
+

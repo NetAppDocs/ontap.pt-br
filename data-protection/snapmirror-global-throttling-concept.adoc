@@ -1,0 +1,84 @@
+---
+permalink: data-protection/snapmirror-global-throttling-concept.html 
+sidebar: sidebar 
+keywords: using snapmirror, global, throttling 
+summary: A regulagem global da rede está disponível para todas as transferências SnapMirror e SnapVault em um nível por nó. 
+---
+= Use a regulagem global do SnapMirror
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A regulagem global da rede está disponível para todas as transferências SnapMirror e SnapVault em um nível por nó.
+
+.Sobre esta tarefa
+A regulagem global da SnapMirror restringe a largura de banda usada pelas transferências SnapMirror e SnapVault de entrada e/ou saída. A restrição é aplicada em todo o cluster em todos os nós no cluster.
+
+Por exemplo, se o acelerador de saída estiver definido para 100 Mbps, cada nó no cluster terá a largura de banda de saída definida para 100 Mbps. Se a limitação global estiver desativada, ela será desativada em todos os nós.
+
+Embora as taxas de transferência de dados sejam frequentemente expressas em bits por segundo (bps), os valores do acelerador devem ser inseridos em kilobytes por segundo (kbps).
+
+[NOTE]
+====
+No ONTAP 9.9,1 e versões anteriores, o acelerador não tem efeito em `volume move` transferências ou transferências de espelho de compartilhamento de carga. Começando com ONTAP 9.10,0, você pode especificar uma opção para controlar as operações de movimentação de volume. Para obter detalhes, consulte link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/How_to_throttle_volume_move_in_ONTAP_9.10_or_later["Como mover o volume do acelerador em ONTAP 9.10 e mais tarde."]
+
+====
+A regulagem global funciona com o recurso de aceleração por relacionamento para transferências SnapMirror e SnapVault. O acelerador por relação é aplicado até que a largura de banda combinada de transferências por relação exceda o valor do acelerador global, após o qual o acelerador global é aplicado. Um valor de aceleração `0` implica que a limitação global está desativada.
+
+[NOTE]
+====
+A regulagem global do SnapMirror não tem efeito nas relações síncronas do SnapMirror quando elas estão em sincronia. No entanto, o acelerador afeta as relações síncronas do SnapMirror quando executam uma fase de transferência assíncrona, como uma operação de inicialização ou após um evento fora de sincronização. Por esse motivo, não é recomendável habilitar a limitação global com relacionamentos síncronos do SnapMirror.
+
+====
+.Passos
+. Ativar a limitação global:
++
+`options -option-name replication.throttle.enable on|off`
+
++
+O exemplo a seguir mostra como ativar a limitação global do SnapMirror no `cluster_dst`:
+
++
+[listing]
+----
+cluster_dst::> options -option-name replication.throttle.enable on
+----
+. Especifique a largura de banda total máxima usada pelas transferências recebidas no cluster de destino:
++
+`options -option-name replication.throttle.incoming.max_kbs _KBps_`
+
++
+A largura de banda mínima recomendada do acelerador é de 4 kbps e o máximo é de até 2 Tbps. O valor padrão para essa opção é `unlimited`, o que significa que não há limite na largura de banda total usada.
+
++
+O exemplo a seguir mostra como definir a largura de banda total máxima usada pelas transferências recebidas para 100 Mbps:
+
++
+[listing]
+----
+cluster_dst::> options -option-name replication.throttle.incoming.max_kbs 12500
+----
++
+[NOTE]
+====
+100 Mbps: 12500 kbps
+
+====
+. Especifique a largura de banda total máxima utilizada pelas transferências efetuadas no cluster de origem:
++
+`options -option-name replication.throttle.outgoing.max_kbs _KBps_`
+
++
+A largura de banda mínima recomendada do acelerador é de 4 kbps e o máximo é de até 2 Tbps. O valor padrão para essa opção é `unlimited`, o que significa que não há limite na largura de banda total usada. Os valores dos parâmetros estão em kbps.
+
++
+O exemplo a seguir mostra como definir a largura de banda total máxima usada pelas transferências de saída para 100 Mbps:
+
++
+[listing]
+----
+cluster_src::> options -option-name replication.throttle.outgoing.max_kbs 12500
+----
+

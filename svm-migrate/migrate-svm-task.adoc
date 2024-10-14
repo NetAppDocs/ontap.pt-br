@@ -1,0 +1,93 @@
+---
+permalink: svm-migrate/migrate-svm-task.html 
+sidebar: sidebar 
+keywords: svm, migrate, defaults, cutover, cleanup 
+summary: Após a conclusão da migração para o SVM, os clientes são cortados automaticamente para o cluster de destino e a SVM desnecessária é removida do cluster de origem. A redução automática e a limpeza automática da fonte são ativadas por padrão. Se necessário, você pode desativar a transição automática do cliente para suspender a migração antes que a transição ocorra e também desativar a limpeza automática da SVM de origem. 
+---
+= Migrar um SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Após a conclusão da migração para o SVM, os clientes são cortados automaticamente para o cluster de destino e a SVM desnecessária é removida do cluster de origem. A redução automática e a limpeza automática da fonte são ativadas por padrão. Se necessário, você pode desativar a transição automática do cliente para suspender a migração antes que a transição ocorra e também desativar a limpeza automática da SVM de origem.
+
+* Você pode usar a `-auto-cutover false` opção para suspender a migração quando a transição automática do cliente ocorre normalmente e, em seguida, executar manualmente a transição mais tarde.
++
+xref:manual-client-cutover-task.adoc[Faça a redução manual dos clientes após a migração do SVM]
+
+* Você pode usar a opção de privilégio avançado `-auto-source-cleanup false` para desativar a remoção do SVM de origem após a transição e, em seguida, acionar a limpeza de origem manualmente mais tarde, após a transição.
++
+xref:manual-source-removal-task.adoc[Remova manualmente o SVM de origem após a redução]
+
+
+
+
+
+== Migrar um SVM com a redução automática habilitada
+
+Por padrão, os clientes são cortados automaticamente para o cluster de destino quando a migração for concluída, e o SVM desnecessário é removido do cluster de origem.
+
+.Passos
+. No cluster de destino, execute as verificações prévias de migração:
++
+`dest_cluster> vserver migrate start -vserver _SVM_name_ -source-cluster _cluster_name_ -check-only true`
+
+. No cluster de destino, inicie a migração para o SVM:
++
+`dest_cluster> vserver migrate start -vserver _SVM_name_ -source-cluster _cluster_name_`
+
+. Verifique o status da migração:
++
+`dest_cluster> vserver migrate show`
+
++
+O status exibe migrar-concluído quando a migração para SVM for concluída.
+
+
+
+
+
+== Migrar um SVM com a redução automática de cliente desativada
+
+Você pode usar a opção -auto-redução false para suspender a migração quando a transição automática do cliente ocorre normalmente e, em seguida, executar manualmente a transição mais tarde. xref:manual-client-cutover-task.adoc[Faça a redução manual dos clientes após a migração do SVM]Consulte .
+
+.Passos
+. No cluster de destino, execute as verificações prévias de migração:
++
+`dest_cluster> vserver migrate start -vserver _SVM_name_ -source-cluster _cluster_name_ -check-only true`
+
+. No cluster de destino, inicie a migração para o SVM:
++
+`dest_cluster> vserver migrate start -vserver _SVM_name_ -source-cluster _cluster_name_ -auto-cutover false`
+
+. Verifique o status da migração:
++
+`dest_cluster> vserver migrate show` O status exibe pronto para a transição quando a migração para o SVM concluir as transferências de dados assíncronas, e está pronto para a operação de redução.
+
+
+
+
+
+== Migrar um SVM com a limpeza de origem desativada
+
+Você pode usar a opção false privilégio avançado -auto-source-cleanup para desativar a remoção do SVM de origem após a transição e, em seguida, acionar a limpeza da fonte manualmente mais tarde, após a transição. xref:manual-source-removal-task.adoc[Remova manualmente o SVM de origem]Consulte .
+
+.Passos
+. No cluster de destino, execute as verificações prévias de migração:
++
+`dest_cluster*> vserver migrate start -vserver _SVM_name_ -source-cluster _cluster_name_ -check-only true`
+
+. No cluster de destino, inicie a migração para o SVM:
++
+`dest_cluster*> vserver migrate start -vserver _SVM_name_ -source-cluster _cluster_name_ -auto-source-cleanup false`
+
+. Verifique o status da migração:
++
+`dest_cluster*> vserver migrate show`
+
++
+O status exibe pronto para limpeza da fonte quando a transição da migração para o SVM está concluída, e está pronto para remover o SVM no cluster de origem.
+
+

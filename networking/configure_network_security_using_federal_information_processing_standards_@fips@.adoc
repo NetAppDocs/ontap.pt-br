@@ -1,0 +1,153 @@
+---
+sidebar: sidebar 
+permalink: networking/configure_network_security_using_federal_information_processing_standards_@fips@.html 
+keywords: fips 140-2, compliant, ssl, connections, tlsv1.2, tlsv1.1, tlsv1, enable fips, disable fips, compliance status, SSL 
+summary: 'Conformidade com Federal Information Processing Standards (FIPS) 140-2 para todas as conexões SSL' 
+---
+= Configurar a segurança da rede usando padrões federais de processamento de informações (FIPS)
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+O ONTAP é compatível com os padrões federais de processamento de informações (FIPS) 140-2 para todas as conexões SSL. Você pode ativar e desativar o modo SSL FIPS, definir protocolos SSL globalmente e desativar quaisquer cifras fracas, como RC4 dentro do ONTAP.
+
+Por padrão, o SSL no ONTAP é definido com conformidade FIPS desativada e o protocolo SSL habilitado com o seguinte:
+
+* TLSv1,3 (começando em ONTAP 9.11,1)
+* TLSv1.2
+* TLSv1.1
+* TLSv1
+
+
+Quando o modo SSL FIPS está ativado, a comunicação SSL do ONTAP para clientes externos ou componentes de servidor fora do ONTAP usará criptografia compatível com FIPS para SSL.
+
+Se você quiser que as contas de administrador acessem SVMs com uma chave pública SSH, certifique-se de que o algoritmo da chave do host seja suportado antes de ativar o modo SSL FIPS.
+
+*Nota:* o suporte ao algoritmo da chave do host foi alterado no ONTAP 9.11,1 e versões posteriores.
+
+[cols="30,30,30"]
+|===
+
+
+| Lançamento do ONTAP | Tipos de chave suportados | Tipos de chave não suportados 
+
+
+ a| 
+9.11.1 e mais tarde
+ a| 
+ecdsa-sha2-nistp256
+ a| 
+rsa-sha2-512 mais rsa-sha2-256 mais ssh-ed25519 mais ssh-dss e ssh-rsa
+
+
+
+ a| 
+9.10.1 e anteriores
+ a| 
+ecdsa-sha2-nistp256 e ssh-ed25519
+ a| 
+ssh-dss e ssh-rsa
+
+|===
+Contas de chave pública SSH existentes sem os algoritmos de chave suportados devem ser reconfiguradas com um tipo de chave suportado antes de ativar o FIPS, ou a autenticação do administrador falhará.
+
+Para obter mais informações, link:../authentication/enable-ssh-public-key-accounts-task.html["Ativar contas de chave pública SSH"]consulte .
+
+Para obter mais informações sobre a configuração do modo SSL FIPS, consulte a `security config modify` página de manual.
+
+
+
+== Ativar FIPS
+
+É recomendável que todos os usuários seguros ajustem sua configuração de segurança imediatamente após a instalação ou atualização do sistema. Quando o modo SSL FIPS está ativado, a comunicação SSL do ONTAP para clientes externos ou componentes de servidor fora do ONTAP usará criptografia compatível com FIPS para SSL.
+
+
+NOTE: Quando o FIPS está ativado, não é possível instalar ou criar um certificado com um comprimento de chave RSA de 4096.
+
+.Passos
+. Alterar para nível de privilégio avançado:
++
+`set -privilege advanced`
+
+. Ativar FIPS:
++
+`security config modify -interface SSL -is-fips-enabled true`
+
+. Quando solicitado a continuar, digite `y`
+. Se você estiver executando o ONTAP 9.8 ou anterior reinicialize manualmente cada nó no cluster um por um. A partir do ONTAP 9.9,1, a reinicialização não é necessária.
+
+
+.Exemplo
+Se estiver a executar o ONTAP 9.9,1 ou posterior, não verá a mensagem de aviso.
+
+....
+security config modify -interface SSL -is-fips-enabled true
+
+Warning: This command will enable FIPS compliance and can potentially cause some non-compliant components to fail. MetroCluster and Vserver DR require FIPS to be enabled on both sites in order to be compatible.
+Do you want to continue? {y|n}: y
+
+Warning: When this command completes, reboot all nodes in the cluster. This is necessary to prevent components from failing due to an inconsistent security configuration state in the cluster. To avoid a service outage, reboot one node at a time and wait for it to completely initialize before rebooting the next node. Run "security config status show" command to monitor the reboot status.
+Do you want to continue? {y|n}: y
+....
+
+
+== Desativar FIPS
+
+Se você ainda estiver executando uma configuração de sistema mais antiga e quiser configurar o ONTAP com compatibilidade com versões anteriores, você poderá ativar o SSLv3 somente quando o FIPS estiver desativado.
+
+.Passos
+. Alterar para nível de privilégio avançado:
++
+`set -privilege advanced`
+
+. Desative o FIPS digitando:
++
+`security config modify -interface SSL -is-fips-enabled false`
+
+. Quando solicitado a continuar, digite `y`.
+. Se você estiver executando o ONTAP 9.8 ou anterior, reinicie manualmente cada nó no cluster. A partir do ONTAP 9.9,1, a reinicialização não é necessária.
+
+
+.Exemplo
+Se estiver a executar o ONTAP 9.9,1 ou posterior, não verá a mensagem de aviso.
+
+....
+security config modify -interface SSL -supported-protocols SSLv3
+
+Warning: Enabling the SSLv3 protocol may reduce the security of the interface, and is not recommended.
+Do you want to continue? {y|n}: y
+
+Warning: When this command completes, reboot all nodes in the cluster. This is necessary to prevent components from failing due to an inconsistent security configuration state in the cluster. To avoid a service outage, reboot one node at a time and wait for it to completely initialize before rebooting the next node. Run "security config status show" command to monitor the reboot status.
+Do you want to continue? {y|n}: y
+....
+
+
+== Visualizar o status de conformidade FIPS
+
+Você pode ver se todo o cluster está executando as configurações de segurança atuais.
+
+.Passos
+. Um por um, reinicie cada nó no cluster.
++
+Não reinicie todos os nós de cluster simultaneamente. É necessário reinicializar para garantir que todos os aplicativos do cluster estejam executando a nova configuração de segurança e todas as alterações no modo de ativação/desativação FIPS, protocolos e cifras.
+
+. Exibir o status de conformidade atual:
++
+`security config show`
+
+
+
+....
+security config show
+
+          Cluster                                              Cluster Security
+Interface FIPS Mode  Supported Protocols     Supported Ciphers Config Ready
+--------- ---------- ----------------------- ----------------- ----------------
+SSL       false      TLSv1_2, TLSv1_1, TLSv1 ALL:!LOW:!aNULL:  yes
+                                             !EXP:!eNULL
+....

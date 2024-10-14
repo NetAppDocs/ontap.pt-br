@@ -1,0 +1,173 @@
+---
+permalink: encryption-at-rest/manage-external-key-managers-sm-task.html 
+sidebar: sidebar 
+keywords: system manager, external key manager, configure external key manager, migrate keys, store keys, authentication keys, encryption keys 
+summary: A partir do ONTAP 9.13,1, você pode usar o Gerenciador do sistema para gerenciar gerenciadores de chaves externos para armazenar e gerenciar chaves de autenticação e criptografia. 
+---
+= Gerencie gerenciadores de chaves externos com o System Manager
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.7, você pode armazenar e gerenciar chaves de autenticação e criptografia com o Gerenciador de chaves integrado. A partir do ONTAP 9.13,1, você também pode usar gerenciadores de chaves externos para armazenar e gerenciar essas chaves.
+
+O Gerenciador de chaves integrado armazena e gerencia chaves em um banco de dados seguro interno ao cluster. Seu escopo é o cluster. Um gerenciador de chaves externo armazena e gerencia chaves fora do cluster. Seu escopo pode ser o cluster ou a VM de storage. Um ou mais gerenciadores de chaves externos podem ser usados. Aplicam-se as seguintes condições:
+
+* Se o Gerenciador de chaves integrado estiver habilitado, um gerenciador de chaves externo não poderá ser habilitado no nível do cluster, mas poderá ser habilitado no nível da VM de armazenamento.
+* Se um gerenciador de chaves externo estiver habilitado no nível do cluster, o Gerenciador de chaves integrado não poderá ser habilitado.
+
+
+Ao usar gerenciadores de chaves externos, você pode Registrar até quatro servidores de chaves primárias por VM de armazenamento e cluster. Cada servidor de chave primária pode ser agrupado com até três servidores de chaves secundárias.
+
+
+
+== Configurar um gerenciador de chaves externo
+
+Para adicionar um gerenciador de chaves externo para uma VM de armazenamento, você deve adicionar um gateway opcional ao configurar a interface de rede para a VM de armazenamento. Se a VM de armazenamento foi criada sem a rota de rede, você terá que criar a rota explicitamente para o gerenciador de chaves externo. link:../networking/create_a_lif.html["Criar um LIF (interface de rede)"]Consulte .
+
+.Passos
+Você pode configurar um gerenciador de chaves externo a partir de diferentes locais no System Manager.
+
+. Para configurar um gerenciador de chaves externo, execute um dos seguintes passos iniciais.
++
+[cols="25,25,50"]
+|===
+
+
+| Fluxo de trabalho | Navegação | Etapa inicial 
+
+
+ a| 
+Configure o Gerenciador de chaves
+ a| 
+*Cluster* > *Settings*
+ a| 
+Role até a seção *Segurança*. Em *encriptação*, image:icon_gear.gif["Ícone ações"]selecione . Selecione *External Key Manager*.
+
+
+
+ a| 
+Adicionar nível local
+ a| 
+*Armazenamento* > *camadas*
+ a| 
+Selecione * Adicionar nível local*. Marque a caixa de seleção "Configurar Gerenciador de chaves". Selecione *External Key Manager*.
+
+
+
+ a| 
+Prepare o armazenamento
+ a| 
+*Painel*
+ a| 
+Na seção *capacidade*, selecione *preparar armazenamento*. Em seguida, selecione "Configure Key Manager". Selecione *External Key Manager*.
+
+
+
+ a| 
+Configurar a criptografia (gerenciador de chaves somente no escopo da VM de storage)
+ a| 
+*Storage* > *Storage VMs*
+ a| 
+Selecione a VM de armazenamento. Selecione a guia *Configurações*. Na seção *criptografia* em *Segurança*, image:icon_gear_blue_bg.png["Ícone ações"]selecione .
+
+|===
+. Para adicionar um servidor de chave primária, selecione image:icon_add.gif["Adicionar ícone"]e preencha os campos *Endereço IP ou Nome do host* e *porta*.
+. Os certificados instalados existentes são listados nos campos *certificados KMIP Server CA* e *KMIP Client Certificate*. Você pode executar qualquer uma das seguintes ações:
++
+** image:icon_dropdown_arrow.gif["Ícone pendente"]Selecione para selecionar os certificados instalados que pretende mapear para o gestor de chaves. (Podem ser selecionados vários certificados de CA de serviço, mas apenas um certificado de cliente pode ser selecionado.)
+** Selecione *Adicionar novo certificado* para adicionar um certificado que ainda não tenha sido instalado e mapeie-o para o gerenciador de chaves externo.
+** image:icon-x-close.gif["Fechar o ícone"]Selecione ao lado do nome do certificado para excluir os certificados instalados que você não deseja mapear para o gerenciador de chaves externo.
+
+
+. Para adicionar um servidor de chaves secundário, selecione *Add* na coluna *Secondary Key Servers* e forneça seus detalhes.
+. Selecione *Save* para concluir a configuração.
+
+
+
+
+== Editar um gerenciador de chaves externo existente
+
+Se você já tiver configurado um gerenciador de chaves externo, poderá modificar suas configurações.
+
+.Passos
+. Para editar a configuração de um gerenciador de chaves externo, execute um dos seguintes passos iniciais.
++
+[cols="25,25,50"]
+|===
+
+
+| Âmbito de aplicação | Navegação | Etapa inicial 
+
+
+ a| 
+Gerenciador de chaves externo do escopo do cluster
+ a| 
+*Cluster* > *Settings*
+ a| 
+Role até a seção *Segurança*. Em *Encryption*, image:icon_kabob.gif["Ícone de opções do menu"]selecione e, em seguida, selecione *Edit External Key Manager*.
+
+
+
+ a| 
+Gerenciador de chaves externo de escopo da VM de storage
+ a| 
+*Storage* > *Storage VMs*
+ a| 
+Selecione a VM de armazenamento. Selecione a guia *Configurações*. Na seção *criptografia* em *Segurança*, image:icon_kabob.gif["Ícone de opções do menu"]selecione e selecione *Editar Gerenciador de chaves externas*.
+
+|===
+. Os servidores de chave existentes estão listados na tabela *Key Servers*. Você pode executar as seguintes operações:
++
+** Adicione um novo servidor de chaves selecionando image:icon_add.gif["Adicionar ícone"].
+** Exclua um servidor de chaves selecionando image:icon_kabob.gif["Ícone de opções do menu"]no final da célula da tabela que contém o nome do servidor de chaves. Os servidores de chave secundária associados a esse servidor de chave primária também são removidos da configuração.
+
+
+
+
+
+
+== Excluir um gerenciador de chaves externo
+
+Um gerenciador de chaves externo pode ser excluído se os volumes não forem criptografados.
+
+.Passos
+. Para excluir um gerenciador de chaves externo, execute uma das etapas a seguir.
++
+[cols="25,25,50"]
+|===
+
+
+| Âmbito de aplicação | Navegação | Etapa inicial 
+
+
+ a| 
+Gerenciador de chaves externo do escopo do cluster
+ a| 
+*Cluster* > *Settings*
+ a| 
+Role até a seção *Segurança*. Em *Encryption*, selecione image:icon_kabob.gif["Ícone de opções do menu"]e, em seguida, selecione *Delete External Key Manager*.
+
+
+
+ a| 
+Gerenciador de chaves externo de escopo da VM de storage
+ a| 
+*Storage* > *Storage VMs*
+ a| 
+Selecione a VM de armazenamento. Selecione a guia *Configurações*. Na seção *criptografia* em *Segurança*, image:icon_kabob.gif["Ícone de opções do menu"]selecione e selecione *Excluir Gerenciador de chaves externas*.
+
+|===
+
+
+
+
+== Migrar chaves entre os gerenciadores-chave
+
+Quando vários gerenciadores de chaves estão habilitados em um cluster, as chaves devem ser migradas de um gerenciador de chaves para outro. Este processo é concluído automaticamente com o System Manager.
+
+* Se o Gerenciador de chaves integrado ou um gerenciador de chaves externo estiver habilitado em um nível de cluster e alguns volumes estiverem criptografados, então, quando você configurar um gerenciador de chaves externo no nível de VM de armazenamento, as chaves devem ser migradas do Gerenciador de chaves integrado ou do gerenciador de chaves externo no nível do cluster para o gerenciador de chaves externo no nível de VM de armazenamento. Este processo é concluído automaticamente pelo System Manager.
+* Se os volumes tiverem sido criados sem criptografia em uma VM de armazenamento, as chaves não precisarão ser migradas.
+

@@ -1,0 +1,344 @@
+---
+permalink: nas-audit/plan-fpolicy-external-engine-config-concept.html 
+sidebar: sidebar 
+keywords: plan, fpolicy, external engine, configuration 
+summary: Antes de configurar o mecanismo externo FPolicy, você deve entender o que significa criar um mecanismo externo e quais parâmetros estão disponíveis. 
+---
+= Planeie a configuração do motor externo FPolicy
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de configurar o mecanismo externo FPolicy, você deve entender o que significa criar um mecanismo externo e quais parâmetros de configuração estão disponíveis. Essas informações ajudam você a determinar quais valores definir para cada parâmetro.
+
+
+
+== Informações que são definidas ao criar o mecanismo externo FPolicy
+
+A configuração do mecanismo externo define as informações que o FPolicy precisa para fazer e gerenciar conexões com os servidores FPolicy externos, incluindo o seguinte:
+
+* Nome do SVM
+* Nome do motor
+* Os endereços IP dos servidores FPolicy primário e secundário e o número da porta TCP a serem usados ao fazer a conexão com os servidores FPolicy
+* Se o tipo de motor é assíncrono ou síncrono
+* Se o formato do motor é `xml` ou `protobuf`
++
+Começando com ONTAP 9.15,1, você pode usar o `protobuf` formato do motor. Quando definido como `protobuf`, as mensagens de notificação são codificadas de forma binária usando o Google Protobuf. Antes de definir o formato do mecanismo como `protobuf`, certifique-se de que o servidor FPolicy também suporta `protobuf` a desserialização.
+
++
+Uma vez que o formato protobuf é suportado a partir de ONTAP 9.15,1, você deve considerar o formato externo do motor antes de reverter para uma versão anterior do ONTAP. Se você reverter para uma versão anterior do ONTAP 9.15,1, trabalhe com seu parceiro FPolicy para:
+
++
+** Altere cada formato do motor de `protobuf` para `xml`
+** Elimine os motores com um formato de motor de `protobuf`
+
+
+* Como autenticar a conexão entre o nó e o servidor FPolicy
++
+Se você optar por configurar a autenticação SSL mútua, você também deve configurar parâmetros que fornecem informações de certificado SSL.
+
+* Como gerir a ligação utilizando várias definições avançadas de privilégios
++
+Isso inclui parâmetros que definem coisas como valores de tempo limite, valores de repetição, valores de keep-alive, valores máximos de solicitação, valores de tamanho de buffer enviados e recebidos e valores de tempo limite da sessão.
+
+
+
+O `vserver fpolicy policy external-engine create` comando é usado para criar um mecanismo externo FPolicy.
+
+
+
+== Quais são os parâmetros básicos do motor externo
+
+Você pode usar a seguinte tabela de parâmetros básicos de configuração do FPolicy para ajudá-lo a Planejar sua configuração:
+
+[cols="70,30"]
+|===
+
+
+| Tipo de informação | Opção 
+
+
+ a| 
+_SVM_
+
+Especifica o nome do SVM que você deseja associar a esse mecanismo externo.
+
+Cada configuração de FPolicy é definida em um único SVM. O mecanismo externo, o evento de política, o escopo da política e a política que se combinam para criar uma configuração de política FPolicy devem estar associados ao mesmo SVM.
+ a| 
+`-vserver` `vserver_name`
+
+
+
+ a| 
+_Nome do motor_
+
+Especifica o nome a ser atribuído à configuração externa do motor. Você deve especificar o nome do mecanismo externo mais tarde quando criar a política FPolicy. Isto associa o motor externo à política.
+
+O nome pode ter até 256 carateres.
+
+[NOTE]
+====
+O nome deve ter até 200 carateres se estiver configurando o nome do mecanismo externo em uma configuração de recuperação de desastres do MetroCluster ou SVM.
+
+====
+O nome pode conter qualquer combinação dos seguintes carateres de intervalo ASCII:
+
+* `a` através `z`
+* `A` através `Z`
+* `0` através `9`
+* "»_", "-`", and "`»."
+
+ a| 
+`-engine-name` `engine_name`
+
+
+
+ a| 
+_Servidores FPolicy primários_
+
+Especifica os servidores FPolicy primários para os quais o nó envia notificações para uma determinada política FPolicy. O valor é especificado como uma lista delimitada por vírgulas de endereços IP.
+
+Se mais de um endereço IP de servidor primário for especificado, cada nó no qual o SVM participa criará uma conexão de controle para cada servidor FPolicy primário especificado no momento em que a diretiva é ativada. Se você configurar vários servidores FPolicy primários, as notificações serão enviadas para os servidores FPolicy de forma redonda.
+
+Se o mecanismo externo for usado em uma configuração de recuperação de desastres do MetroCluster ou SVM, você deverá especificar os endereços IP dos servidores FPolicy no local de origem como servidores primários. Os endereços IP dos servidores FPolicy no local de destino devem ser especificados como servidores secundários.
+ a| 
+`-primary-servers` `IP_address`,...
+
+
+
+ a| 
+_Número da porta_
+
+Especifica o número da porta do serviço FPolicy.
+ a| 
+`-port` `integer`
+
+
+
+ a| 
+_Servidores FPolicy secundários_
+
+Especifica os servidores FPolicy secundários para os quais enviar eventos de acesso a arquivos para uma determinada política FPolicy. O valor é especificado como uma lista delimitada por vírgulas de endereços IP.
+
+Os servidores secundários são utilizados apenas quando nenhum dos servidores primários é alcançável. As conexões com servidores secundários são estabelecidas quando a diretiva está ativada, mas as notificações são enviadas para servidores secundários somente se nenhum dos servidores primários estiver acessível. Se você configurar vários servidores secundários, as notificações serão enviadas para os servidores FPolicy de forma redonda.
+ a| 
+`-secondary-servers` `IP_address`,...
+
+
+
+ a| 
+_Tipo de motor externo_
+
+Especifica se o mecanismo externo opera no modo síncrono ou assíncrono. Por padrão, o FPolicy opera no modo síncrono.
+
+Quando definido como `synchronous`, o processamento de solicitação de arquivo envia uma notificação para o servidor FPolicy, mas depois não continua até receber uma resposta do servidor FPolicy. Nesse ponto, o fluxo de solicitação continua ou o processamento resulta em negação, dependendo se a resposta do servidor FPolicy permite a ação solicitada.
+
+Quando definido como `asynchronous`, o processamento de solicitação de arquivo envia uma notificação para o servidor FPolicy e, em seguida, continua.
+ a| 
+`-extern-engine-type` `external_engine_type` O valor para este parâmetro pode ser um dos seguintes:
+
+* `synchronous`
+* `asynchronous`
+
+
+
+
+ a| 
+_Formato externo do motor_
+
+Especifique se o formato do mecanismo externo é xml ou protobuf.
+
+Começando com ONTAP 9.15,1, você pode usar o formato do mecanismo protobuf. Quando definido como protobuf, as mensagens de notificação são codificadas em forma binária usando o Google Protobuf. Antes de definir o formato do motor para protobuf, certifique-se de que o servidor FPolicy também suporta a desserialização de protobuf.
+ a| 
+`- extern-engine-format` {`protobuf` ou `xml`
+
+
+
+ a| 
+_Opção SSL para comunicação com o servidor FPolicy_
+
+Especifica a opção SSL para comunicação com o servidor FPolicy. Este é um parâmetro obrigatório. Você pode escolher uma das opções com base nas seguintes informações:
+
+* Quando definido como `no-auth`, não ocorre autenticação.
++
+O link de comunicação é estabelecido através do TCP.
+
+* Quando definido como `server-auth`, o SVM autentica o servidor FPolicy usando autenticação de servidor SSL.
+* Quando definido como `mutual-auth`, a autenticação mútua ocorre entre o SVM e o servidor FPolicy; o SVM autentica o servidor FPolicy e o servidor FPolicy autentica o SVM.
++
+Se você optar por configurar a autenticação SSL mútua, também deverá configurar os `-certificate-common-name` parâmetros , `-certificate-serial` e `-certifcate-ca` .
+
+
+ a| 
+`-ssl-option` {`no-auth`|`server-auth`|`mutual-auth`Selecione
+
+
+
+ a| 
+_Certificado FQDN ou nome comum personalizado_
+
+Especifica o nome do certificado usado se a autenticação SSL entre o SVM e o servidor FPolicy estiver configurada. Você pode especificar o nome do certificado como um FQDN ou como um nome comum personalizado.
+
+Se você especificar `mutual-auth` para o `-ssl-option` parâmetro, será necessário especificar um valor para o `-certificate-common-name` parâmetro.
+ a| 
+`-certificate-common-name` `text`
+
+
+
+ a| 
+_Número de série do certificado_
+
+Especifica o número de série do certificado usado para autenticação se a autenticação SSL entre o SVM e o servidor FPolicy estiver configurada.
+
+Se você especificar `mutual-auth` para o `-ssl-option` parâmetro, será necessário especificar um valor para o `-certificate-serial` parâmetro.
+ a| 
+`-certificate-serial` `text`
+
+
+
+ a| 
+_Autoridade de certificação_
+
+Especifica o nome da CA do certificado usado para autenticação se a autenticação SSL entre o SVM e o servidor FPolicy estiver configurada.
+
+Se você especificar `mutual-auth` para o `-ssl-option` parâmetro, será necessário especificar um valor para o `-certificate-ca` parâmetro.
+ a| 
+`-certificate-ca` `text`
+
+|===
+
+
+== Quais são as opções avançadas do motor externo
+
+Você pode usar a seguinte tabela de parâmetros avançados de configuração FPolicy à medida que planeja personalizar sua configuração com parâmetros avançados. Você usa esses parâmetros para modificar o comportamento de comunicação entre os nós de cluster e os servidores FPolicy:
+
+[cols="70,30"]
+|===
+
+
+| Tipo de informação | Opção 
+
+
+ a| 
+_Tempo limite para cancelar uma solicitação_
+
+Especifica o intervalo de tempo em horas (`h`), (`m`minutos ) ou segundos (`s`) que o nó espera por uma resposta do servidor FPolicy.
+
+Se o intervalo de tempo limite passar, o nó envia uma solicitação de cancelamento para o servidor FPolicy. O nó então envia a notificação para um servidor FPolicy alternativo. Esse tempo limite ajuda a lidar com um servidor FPolicy que não está respondendo, o que pode melhorar a resposta do cliente SMB/NFS. Além disso, cancelar solicitações após um período de tempo limite pode ajudar a liberar recursos do sistema porque a solicitação de notificação é movida de um servidor FPolicy inativo/ruim para um servidor FPolicy alternativo.
+
+O intervalo para este valor é `0` através `100`de . Se o valor estiver definido como `0`, a opção será desativada e as mensagens de solicitação de cancelamento não serão enviadas para o servidor FPolicy. A predefinição é `20s`.
+ a| 
+`-reqs-cancel-timeout` `integer`[h|m|s]
+
+
+
+ a| 
+_Tempo limite para abortar uma solicitação_
+
+Especifica o tempo limite em horas (`h`), (`m`minutos ) ou segundos (`s`) para abortar uma solicitação.
+
+O intervalo para este valor é `0` através `200`de .
+ a| 
+`-reqs-abort-timeout` `` `integer`[h|m|s]
+
+
+
+ a| 
+_Intervalo para envio de solicitações de status_
+
+Especifica o intervalo em horas (`h`), minutos (`m`) ou segundos (`s`) após o qual uma solicitação de status é enviada ao servidor FPolicy.
+
+O intervalo para este valor é `0` através `50`de . Se o valor estiver definido como `0`, a opção será desativada e as mensagens de solicitação de status não serão enviadas ao servidor FPolicy. A predefinição é `10s`.
+ a| 
+`-status-req-interval` `integer`[h|m|s]
+
+
+
+ a| 
+_Máximo de solicitações pendentes no servidor FPolicy_
+
+Especifica o número máximo de solicitações pendentes que podem ser enfileiradas no servidor FPolicy.
+
+O intervalo para este valor é `1` através `10000`de . A predefinição é `500`.
+ a| 
+`-max-server-reqs` `integer`
+
+
+
+ a| 
+_Tempo limite para desconetar um servidor FPolicy não responsivo_
+
+Especifica o intervalo de tempo em horas (`h`), (`m`minutos ) ou segundos (`s`) após o qual a conexão com o servidor FPolicy é encerrada.
+
+A conexão é encerrada após o período de tempo limite somente se a fila do servidor FPolicy contiver o máximo de solicitações permitidas e nenhuma resposta for recebida dentro do período de tempo limite. O número máximo permitido de solicitações é `50` (o padrão) ou o número especificado pelo `max-server-reqs-` parâmetro.
+
+O intervalo para este valor é `1` através `100`de . A predefinição é `60s`.
+ a| 
+`-server-progress-timeout` `integer`[h|m|s]
+
+
+
+ a| 
+_Intervalo para enviar mensagens keep-alive para o servidor FPolicy_
+
+Especifica o intervalo de tempo em horas (`h`), (`m`minutos ) ou segundos (`s`) no qual as mensagens keep-alive são enviadas ao servidor FPolicy.
+
+As mensagens keep-alive detetam conexões semi-abertas.
+
+O intervalo para este valor é `10` através `600`de . Se o valor estiver definido como `0`, a opção será desativada e as mensagens de manutenção em tempo real serão impedidas de serem enviadas para os servidores FPolicy. A predefinição é `120s`.
+ a| 
+`-keep-alive-interval-` `integer`[h|m|s]
+
+
+
+ a| 
+_Máximo de tentativas de reconexão_
+
+Especifica o número máximo de vezes que o SVM tenta se reconetar ao servidor FPolicy depois que a conexão foi interrompida.
+
+O intervalo para este valor é `0` através `20`de . A predefinição é `5`.
+ a| 
+`-max-connection-retries` `integer`
+
+
+
+ a| 
+_Receive buffer size_
+
+Especifica o tamanho do buffer de receção do soquete conetado para o servidor FPolicy.
+
+O valor padrão é definido como 256 kilobytes (Kb). Quando o valor é definido como 0, o tamanho do buffer de receção é definido para um valor definido pelo sistema.
+
+Por exemplo, se o tamanho padrão do buffer de recebimento do soquete for de 65536 bytes, definindo o valor ajustável como 0, o tamanho do buffer do soquete será definido como 65536 bytes. Você pode usar qualquer valor não padrão para definir o tamanho (em bytes) do buffer de recebimento.
+ a| 
+`-recv-buffer-size` `integer`
+
+
+
+ a| 
+_Enviar tamanho do buffer_
+
+Especifica o tamanho do buffer de envio do soquete conetado para o servidor FPolicy.
+
+O valor padrão é definido como 256 kilobytes (Kb). Quando o valor é definido como 0, o tamanho do buffer de envio é definido para um valor definido pelo sistema.
+
+Por exemplo, se o tamanho padrão do buffer de envio do soquete for definido como 65536 bytes, definindo o valor ajustável como 0, o tamanho do buffer do soquete será definido como 65536 bytes. Você pode usar qualquer valor não padrão para definir o tamanho (em bytes) do buffer de envio.
+ a| 
+`-send-buffer-size` `integer`
+
+
+
+ a| 
+_Tempo limite para purgar um Session ID durante a reconexão_
+
+Especifica o intervalo em horas (`h`), minutos (`m`) ou segundos (`s`) após o qual um novo Session ID é enviado ao servidor FPolicy durante tentativas de reconexão.
+
+Se a conexão entre o controlador de armazenamento e o servidor FPolicy for encerrada e a nova conexão for feita dentro do `-session-timeout` intervalo, o Session ID antigo será enviado para o servidor FPolicy para que ele possa enviar respostas para notificações antigas.
+
+O valor padrão é definido para 10 segundos.
+ a| 
+`-session-timeout` [``integer``h]``integer``[ m][``integer``s]
+
+|===

@@ -1,0 +1,148 @@
+---
+permalink: nas-audit/create-security-trace-filters-task.html 
+sidebar: sidebar 
+keywords: create, security trace filters 
+summary: 'Você pode criar filtros de rastreamento de segurança que detetam operações de clientes SMB e NFS em máquinas virtuais de armazenamento (SVMs) e rastrear todas as verificações de acesso correspondentes ao filtro. Você pode usar os resultados de rastreamentos de segurança para validar sua configuração ou para solucionar problemas de acesso.' 
+---
+= Crie filtros de rastreamento de segurança
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar filtros de rastreamento de segurança que detetam operações de clientes SMB e NFS em máquinas virtuais de armazenamento (SVMs) e rastrear todas as verificações de acesso correspondentes ao filtro. Você pode usar os resultados de rastreamentos de segurança para validar sua configuração ou para solucionar problemas de acesso.
+
+.Sobre esta tarefa
+Existem dois parâmetros necessários para o comando criar filtro de rastreamento de segurança vserver:
+
+[cols="35,65"]
+|===
+
+
+| Parâmetros necessários | Descrição 
+
+
+ a| 
+`-vserver` `vserver_name`
+ a| 
+_Nome da SVM_
+
+O nome do SVM que contém os arquivos ou pastas em que você deseja aplicar o filtro de rastreamento de segurança.
+
+
+
+ a| 
+`-index` `index_number`
+ a| 
+_Número do índice do filtro_
+
+O número de índice que você deseja aplicar ao filtro. Você está limitado a um máximo de 10 filtros de rastreamento por SVM. Os valores permitidos para este parâmetro são de 1 a 10.
+
+|===
+Vários parâmetros de filtro opcionais permitem personalizar o filtro de rastreamento de segurança para que você possa reduzir os resultados produzidos pelo rastreamento de segurança:
+
+[cols="35,65"]
+|===
+
+
+| Parâmetro do filtro | Descrição 
+
+
+ a| 
+`-client-ip` `IP_Address`
+ a| 
+Esse filtro especifica o endereço IP a partir do qual o usuário está acessando o SVM.
+
+
+
+ a| 
+`-path` `path`
+ a| 
+Este filtro especifica o caminho no qual aplicar o filtro de rastreamento de permissões. O valor para `-path` pode utilizar um dos seguintes formatos:
+
+* O caminho completo, a partir da raiz do compartilhamento ou exportação
+* Um caminho parcial, relativo à raiz do compartilhamento
+
+
+Você deve usar separadores de diretório estilo NFS no valor do caminho.
+
+
+
+ a| 
+`-windows-name` `win_user_name` ou `-unix-name``unix_user_name`
+ a| 
+Você pode especificar o nome de usuário do Windows ou o nome de usuário UNIX cujas solicitações de acesso você deseja rastrear. A variável de nome de usuário é insensível a maiúsculas e minúsculas. Não é possível especificar um nome de usuário do Windows e um nome de usuário UNIX no mesmo filtro.
+
+[NOTE]
+====
+Mesmo que você possa rastrear eventos de acesso SMB e NFS, o usuário UNIX mapeado e os grupos de usuários UNIX mapeados podem ser usados ao executar verificações de acesso em dados de estilo de segurança misto ou UNIX.
+
+====
+
+
+ a| 
+`-trace-allow` {`yes`|`no`Selecione
+ a| 
+O rastreamento para eventos de negação é sempre ativado para um filtro de rastreamento de segurança. Opcionalmente, você pode rastrear eventos de permissão. Para rastrear eventos de permissão, defina este parâmetro como `yes`.
+
+
+
+ a| 
+`-enabled` {`enabled`|`disabled`Selecione
+ a| 
+Pode ativar ou desativar o filtro de rastreio de segurança. Por predefinição, o filtro de rastreio de segurança está ativado.
+
+
+
+ a| 
+`-time-enabled` `integer`
+ a| 
+Você pode especificar um tempo limite para o filtro, após o qual ele é desativado.
+
+|===
+.Passos
+. Criar um filtro de rastreamento de segurança:
++
+`vserver security trace filter create -vserver vserver_name -index index_numberfilter_parameters`
+
++
+`filter_parameters` é uma lista de parâmetros de filtro opcionais.
+
++
+Para obter mais informações, consulte as páginas man para o comando.
+
+. Verifique a entrada do filtro de rastreamento de segurança:
++
+`vserver security trace filter show -vserver vserver_name -index index_number`
+
+
+
+.Exemplos
+O comando a seguir cria um filtro de rastreamento de segurança para qualquer usuário que acesse um arquivo com um caminho de compartilhamento do `\\server\share1\dir1\dir2\file.txt` endereço IP 10.10.10.7. O filtro usa um caminho completo para a `-path` opção. O endereço IP do cliente usado para acessar dados é 10.10.10.7. O filtro expira após 30 minutos:
+
+[listing]
+----
+cluster1::> vserver security trace filter create -vserver vs1 -index 1 -path /dir1/dir2/file.txt -time-enabled 30 -client-ip 10.10.10.7
+cluster1::> vserver security trace filter show -index 1
+Vserver  Index   Client-IP            Path            Trace-Allow  Windows-Name
+-------- -----  -----------  ----------------------   -----------  -------------
+vs1        1    10.10.10.7   /dir1/dir2/file.txt          no       -
+----
+O comando a seguir cria um filtro de rastreamento de segurança usando um caminho relativo para a `-path` opção. O filtro rastreia o acesso de um usuário do Windows chamado "joe". Joe está acessando um arquivo com um caminho de compartilhamento `\\server\share1\dir1\dir2\file.txt` . Os rastreamentos de filtro permitem e negam eventos:
+
+[listing]
+----
+cluster1::> vserver security trace filter create -vserver vs1 -index 2 -path /dir1/dir2/file.txt -trace-allow yes -windows-name mydomain\joe
+
+cluster1::> vserver security trace filter show -vserver vs1 -index 2
+                                 Vserver: vs1
+                            Filter Index: 2
+              Client IP Address to Match: -
+                                    Path: /dir1/dir2/file.txt
+                       Windows User Name: mydomain\joe
+                          UNIX User Name: -
+                      Trace Allow Events: yes
+                          Filter Enabled: enabled
+               Minutes Filter is Enabled: 60
+----

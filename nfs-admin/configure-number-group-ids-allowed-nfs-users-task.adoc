@@ -1,0 +1,128 @@
+---
+permalink: nfs-admin/configure-number-group-ids-allowed-nfs-users-task.html 
+sidebar: sidebar 
+keywords: ontap, authentication, nfs, group id, rpcsec_gss 
+summary: Aumente o número de IDs de grupo para lidar com credenciais de usuário NFS usando a autenticação Kerberos para usuários que são membros de mais do que os grupos padrão. 
+---
+= Configure o número de IDs de grupo permitidas para usuários NFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Por padrão, o ONTAP suporta até 32 IDs de grupo ao lidar com credenciais de usuário NFS usando autenticação Kerberos (RPCSEC_GSS). Ao usar a autenticação AUTH_SYS, o número máximo padrão de IDs de grupo é 16, conforme definido na RFC 5531. Você pode aumentar o máximo até 1.024 se tiver usuários que são membros de mais do que o número padrão de grupos.
+
+.Sobre esta tarefa
+Se um usuário tiver mais do que o número padrão de IDs de grupo em suas credenciais, os IDs de grupo restantes serão truncados e o usuário poderá receber erros ao tentar acessar arquivos do sistema de armazenamento. Você deve definir o número máximo de grupos, por SVM, para um número que represente o máximo de grupos no ambiente.
+
+
+NOTE: Para entender os pré-requisitos de autenticação AUTH_SYS para ativar grupos estendidos (`-auth-sys-extended-groups`) que usam IDs de grupo além do máximo padrão de 16, consulte este artigo da base de dados de Conhecimento: https://kb.netapp.com/on-prem/ontap/da/NAS/NAS-KBs/How_does_AUTH_SYS_Extended_Groups_change_NFS_authentication["AUTH_SYS grupos estendidos alterações para autenticação NFS para ONTAP 9"].
+
+A tabela a seguir mostra os dois parâmetros `vserver nfs modify` do comando que determinam o número máximo de IDs de grupo em três configurações de amostra:
+
+[cols="40,30,30"]
+|===
+
+
+| Parâmetros | Definições | Limite de IDs de grupo resultantes 
+
+
+ a| 
+`-extended-groups-limit`
+
+`-auth-sys-extended-groups`
+ a| 
+`32`
+
+`disabled`
+
+Estas são as predefinições.
+ a| 
+RPCSEC_GSS: 32
+
+AUTH_SYS: 16
+
+
+
+ a| 
+`-extended-groups-limit`
+
+`-auth-sys-extended-groups`
+ a| 
+`256`
+
+`disabled`
+ a| 
+RPCSEC_GSS: 256
+
+AUTH_SYS: 16
+
+
+
+ a| 
+`-extended-groups-limit`
+
+`-auth-sys-extended-groups`
+ a| 
+`512`
+
+`enabled`
+ a| 
+RPCSEC_GSS: 512
+
+AUTH_SYS: 512
+
+|===
+.Passos
+. Defina o nível de privilégio como avançado:
++
+`set -privilege advanced`
+
+. Execute a ação desejada:
++
+|===
+
+
+| Se pretender definir o número máximo de grupos auxiliares permitidos... | Digite o comando... 
+
+
+ a| 
+Apenas para RPCSEC_GSS e deixar AUTH_SYS definido para o valor padrão 16
+ a| 
+`+vserver nfs modify -vserver vserver_name -extended-groups-limit {32-1024} -auth-sys-extended-groups disabled+`
+
+
+
+ a| 
+Para RPCSEC_GSS e AUTH_SYS
+ a| 
+`+vserver nfs modify -vserver vserver_name -extended-groups-limit {32-1024} -auth-sys-extended-groups enabled+`
+
+|===
+. Verifique o `-extended-groups-limit` valor e verifique se AUTH_SYS está usando grupos estendidos: `vserver nfs show -vserver vserver_name -fields auth-sys-extended-groups,extended-groups-limit`
+. Voltar ao nível de privilégio de administrador:
++
+`set -privilege admin`
+
+
+
+.Exemplo
+O exemplo a seguir habilita grupos estendidos para autenticação AUTH_SYS e define o número máximo de grupos estendidos para 512 para autenticação AUTH_SYS e RPCSEC_GSS. Essas alterações são feitas apenas para clientes que acessam o SVM chamado VS1:
+
+[listing]
+----
+vs1::> set -privilege advanced
+Warning: These advanced commands are potentially dangerous; use
+         them only when directed to do so by NetApp personnel.
+Do you want to continue? {y|n}: y
+
+vs1::*> vserver nfs modify -vserver vs1 -auth-sys-extended-groups enabled -extended-groups-limit 512
+
+vs1::*> vserver nfs show -vserver vs1 -fields auth-sys-extended-groups,extended-groups-limit
+vserver auth-sys-extended-groups extended-groups-limit
+------- ------------------------ ---------------------
+vs1     enabled                  512
+
+vs1::*> set -privilege admin
+----

@@ -1,0 +1,149 @@
+---
+permalink: s3-config/create-bucket-mcc-task.html 
+sidebar: sidebar 
+keywords: s3, bucket, system manager, metrocluster, unmirrored, mirrored, aggregate 
+summary: A partir do ONTAP 9.14,1, você pode provisionar um bucket em um agregado espelhado ou sem espelhamento nas configurações FC e IP do MetroCluster. 
+---
+= Crie um bucket em um agregado espelhado ou sem espelhamento em uma configuração do MetroCluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.14,1, você pode provisionar um bucket em um agregado espelhado ou sem espelhamento nas configurações FC e IP do MetroCluster.
+
+.Sobre esta tarefa
+* Por padrão, os buckets são provisionados em agregados espelhados.
+* As mesmas diretrizes de provisionamento descritas em link:create-bucket-task.html["Crie um bucket"] aplicam-se à criação de um bucket em um ambiente MetroCluster.
+* Os seguintes recursos de armazenamento de objetos S3 são *não* suportados em ambientes MetroCluster:
++
+** SnapMirror S3
+** Gerenciamento do ciclo de vida do bucket do S3
+** S3 bloqueio de objetos no modo *Compliance*
++
+
+NOTE: O bloqueio de objetos S3D no modo *Governance* é suportado.
+
+** Disposição em camadas no local FabricPool
+
+
+
+
+.Antes de começar
+Um SVM que contenha um servidor S3 já deve existir.
+
+
+
+== Processo para criar buckets
+
+[role="tabbed-block"]
+====
+.CLI
+--
+. Se você pretende selecionar agregados e componentes do FlexGroup você mesmo, defina o nível de privilégio como avançado (caso contrário, o nível de privilégio de administrador é suficiente): `set -privilege advanced`
+. Criar um bucket:
++
+`vserver object-store-server bucket create -vserver <svm_name> -bucket <bucket_name> [-size integer[KB|MB|GB|TB|PB]] [-use-mirrored-aggregates true/false]`
+
++
+Defina a `-use-mirrored-aggregates` opção como `true` ou `false` dependendo se você deseja usar um agregado espelhado ou sem espelhamento.
+
++
+
+NOTE: Por padrão, a `-use-mirrored-aggregates` opção é definida como `true`.
+
++
+** O nome do SVM deve ser um data SVM.
+** Se você não especificar nenhuma opção, o ONTAP criará um bucket do 800GB com o nível de serviço definido para o nível mais alto disponível para o sistema.
+** Se você quiser que o ONTAP crie um bucket com base no desempenho ou no uso, use uma das seguintes opções:
++
+*** nível de serviço
++
+Inclua a `-storage-service-level` opção com um dos seguintes valores: `value`, `performance`, Ou `extreme`.
+
+*** disposição em camadas
++
+Inclua a `-used-as-capacity-tier true` opção.
+
+
+
+** Se você quiser especificar os agregados nos quais criar o volume FlexGroup subjacente, use as seguintes opções:
++
+*** O `-aggr-list` parâmetro especifica a lista de agregados a serem usados para componentes de volume FlexGroup.
++
+Cada entrada na lista cria um constituinte no agregado especificado. Você pode especificar um agregado várias vezes para ter vários constituintes criados no agregado.
+
++
+Para obter performance consistente em todo o volume FlexGroup, todos os agregados precisam usar o mesmo tipo de disco e configurações de grupo RAID.
+
+*** O `-aggr-list-multiplier` parâmetro especifica o número de vezes a iterar sobre os agregados que são listados com o `-aggr-list` parâmetro ao criar um volume FlexGroup.
++
+O valor padrão do `-aggr-list-multiplier` parâmetro é 4.
+
+
+
+
+
+. Adicione um grupo de políticas de QoS, se necessário:
++
+`vserver object-store-server bucket modify -bucket _bucket_name_ -qos-policy-group _qos_policy_group_`
+
+. Verificar a criação do balde:
++
+`vserver object-store-server bucket show [-instance]`
+
+
+
+.Exemplo
+O exemplo a seguir cria um bucket do SVM VS1 de tamanho 1TB em um agregado espelhado:
+
+[listing]
+----
+cluster-1::*> vserver object-store-server bucket create -vserver svm1.example.com -bucket testbucket  -size 1TB -use-mirrored-aggregates true
+----
+--
+.System Manager
+--
+. Adicione um novo bucket em uma VM de storage habilitada para S3.
++
+.. Clique em *armazenamento > baldes* e, em seguida, clique em *Adicionar*.
+.. Insira um nome, selecione a VM de armazenamento e insira um tamanho.
++
+Por padrão, o bucket é provisionado em um agregado espelhado. Se você quiser criar um bucket em um agregado sem espelhamento, selecione *mais opções* e desmarque a caixa *Use the SyncMirror Tier* sob *proteção* conforme mostrado na imagem a seguir:
+
++
+image:../media/SM_create_bucket_MCC.png["Criação de bucket do System Manager MetroCluster"]
+
++
+*** Se você clicar em *Salvar* neste ponto, um bucket será criado com as seguintes configurações padrão:
++
+**** Nenhum usuário tem acesso ao bucket, a menos que as políticas de grupo já estejam em vigor.
++
+
+NOTE: Você não deve usar o usuário raiz do S3 para gerenciar o armazenamento de objetos do ONTAP e compartilhar suas permissões, pois ele tem acesso ilimitado ao armazenamento de objetos. Em vez disso, crie um usuário ou grupo com Privileges administrativo que você atribuir.
+
+**** Um nível de qualidade de serviço (desempenho) que é o mais alto disponível para o seu sistema.
+
+
+*** Você pode clicar em *mais Opções* para configurar permissões de usuário e nível de desempenho ao configurar o bucket, ou você pode modificar essas configurações posteriormente.
++
+**** Você já deve ter criado usuários e grupos antes de usar *mais Opções* para configurar suas permissões.
+**** Se você pretende usar o armazenamento de objetos S3 para disposição em camadas do FabricPool, considere selecionar *usar para disposição em camadas* (usar Mídia de baixo custo com desempenho ideal para os dados em camadas) em vez de um nível de serviço de desempenho.
+
+
+
+
+
+
+. Em aplicativos cliente S3 – outro sistema ONTAP ou um aplicativo externo de 3rd fabricantes – verifique o acesso ao novo bucket inserindo o seguinte:
++
+** O certificado da CA do servidor S3.
+** A chave de acesso e chave secreta do usuário.
+** O nome do FQDN do servidor S3 e o nome do bucket.
+
+
+
+
+--
+====

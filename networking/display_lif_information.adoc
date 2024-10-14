@@ -1,0 +1,107 @@
+---
+sidebar: sidebar 
+permalink: networking/display_lif_information.html 
+keywords: display, view, show, lif, logical, interface, display lif information, view detailed information about a lif to determine its configuration 
+summary: Veja informações detalhadas sobre um LIF para determinar sua configuração 
+---
+= Apresentar informações de LIF
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode visualizar informações detalhadas sobre um LIF para determinar sua configuração.
+
+Você também pode querer exibir essas informações para diagnosticar problemas básicos de LIF, como verificar endereços IP duplicados ou verificar se a porta de rede pertence à sub-rede correta. Os administradores de máquina virtual de armazenamento (SVM) podem exibir apenas as informações sobre os LIFs associados ao SVM.
+
+.Sobre esta tarefa
+São apresentadas as seguintes informações:
+
+* Endereço IP associado ao LIF
+* Estado administrativo do LIF
+* Status operacional do LIF
++
+O status operacional das LIFs de dados é determinado pelo status do SVM com o qual as LIFs de dados estão associadas. Quando o SVM é interrompido, o status operacional do LIF muda para baixo. Quando o SVM é iniciado novamente, o status operacional muda para up
+
+* Nó e a porta na qual reside o LIF
+
+
+Se os dados de um campo não estiverem disponíveis (por exemplo, se não houver informações de status estendidas), o valor do campo será listado como `-`.
+
+.Passo
+Exiba informações de LIF usando o comando network interface show.
+
+Você pode visualizar informações detalhadas para cada LIF especificando o parâmetro -instância ou obter informações específicas especificando nomes de campos usando o parâmetro -fields.
+
+O comando a seguir exibe informações gerais sobre todos os LIFs em um cluster:
+
+....
+network interface show
+           Logical    Status     Network          Current      Current Is
+Vserver    Interface  Admin/Oper Address/Mask     Node         Port    Home
+---------- ---------- ---------- ---------------- ------------ ------- ----
+example
+           lif1         up/up    192.0.2.129/22   node-01
+                                                               e0d     false
+node
+           cluster_mgmt up/up    192.0.2.3/20     node-02
+                                                               e0c     false
+node-01
+           clus1        up/up    192.0.2.65/18    node-01
+                                                               e0a     true
+           clus2        up/up    192.0.2.66/18    node-01
+                                                               e0b     true
+           mgmt1        up/up    192.0.2.1/20     node-01
+                                                               e0c     true
+node-02
+           clus1        up/up    192.0.2.67/18    node-02
+                                                               e0a     true
+           clus2        up/up    192.0.2.68/18    node-02
+                                                               e0b     true
+           mgmt2        up/up    192.0.2.2/20     node-02
+                                                               e0d     true
+vs1
+           d1           up/up    192.0.2.130/21   node-01
+                                                               e0d     false
+           d2           up/up    192.0.2.131/21   node-01
+                                                               e0d     true
+           data3        up/up    192.0.2.132/20   node-02
+                                                               e0c     true
+....
+O comando a seguir mostra informações detalhadas sobre um único LIF:
+
+....
+network interface show -lif data1 -instance
+
+                    Vserver Name: vs1
+          Logical Interface Name: data1
+                            Role: data
+                   Data Protocol: nfs,cifs
+                       Home Node: node-01
+                       Home Port: e0c
+                    Current Node: node-03
+                    Current Port: e0c
+              Operational Status: up
+                 Extended Status: -
+                         Is Home: false
+                 Network Address: 192.0.2.128
+                         Netmask: 255.255.192.0
+             Bits in the Netmask: 18
+                 IPv4 Link Local: -
+                     Subnet Name: -
+           Administrative Status: up
+                 Failover Policy: local-only
+                 Firewall Policy: data
+                     Auto Revert: false
+   Fully Qualified DNS Zone Name: xxx.example.com
+         DNS Query Listen Enable: false
+             Failover Group Name: Default
+                        FCP WWPN: -
+                  Address family: ipv4
+                         Comment: -
+                  IPspace of LIF: Default
+....

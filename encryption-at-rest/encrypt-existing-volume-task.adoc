@@ -1,0 +1,245 @@
+---
+permalink: encryption-at-rest/encrypt-existing-volume-task.html 
+sidebar: sidebar 
+keywords: enabling, encryption, existing, volume, volume move start, command, volume encryption conversion start 
+summary: Você pode usar um dos dois métodos para habilitar a criptografia em um volume existente - usando o comando volume Move start ou usando o comando volume Encryption Conversion start. 
+---
+= Ative a criptografia em um volume existente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `volume move start` comando ou o `volume encryption conversion start` para habilitar a criptografia em um volume existente.
+
+.Sobre esta tarefa
+* A partir do ONTAP 9.3, você pode usar o `volume encryption conversion start` comando para habilitar a criptografia de um volume existente "no lugar", sem ter que mover o volume para um local diferente. Alternativamente, você pode usar o `volume move start` comando.
+* Para o ONTAP 9.2 e versões anteriores, você pode usar apenas o `volume move start` comando para habilitar a criptografia movendo um volume existente.
+
+
+
+
+== Ative a criptografia em um volume existente com o comando de início da conversão de criptografia de volume
+
+A partir do ONTAP 9.3, você pode usar o `volume encryption conversion start` comando para habilitar a criptografia de um volume existente "no lugar", sem ter que mover o volume para um local diferente.
+
+Depois de iniciar uma operação de conversão, ela deve ser concluída. Se você encontrar um problema de desempenho durante a operação, você pode executar o `volume encryption conversion pause` comando para pausar a operação e o `volume encryption conversion resume` comando para retomar a operação.
+
+
+NOTE: Não pode utilizar `volume encryption conversion start` para converter um volume SnapLock.
+
+.Passos
+. Ativar encriptação num volume existente:
++
+`volume encryption conversion start -vserver SVM_name -volume volume_name`
+
++
+Para a sintaxe de comando inteira, consulte a página man para o comando.
+
++
+O comando a seguir habilita a criptografia no volume `vol1`existente :
+
++
+[listing]
+----
+cluster1::> volume encryption conversion start -vserver vs1 -volume vol1
+----
++
+O sistema cria uma chave de criptografia para o volume. Os dados no volume são criptografados.
+
+. Verifique o status da operação de conversão:
++
+`volume encryption conversion show`
+
++
+Para a sintaxe de comando inteira, consulte a página man para o comando.
+
++
+O comando a seguir exibe o status da operação de conversão:
+
++
+[listing]
+----
+cluster1::> volume encryption conversion show
+
+Vserver   Volume   Start Time           Status
+-------   ------   ------------------   ---------------------------
+vs1       vol1     9/18/2017 17:51:41   Phase 2 of 2 is in progress.
+----
+. Quando a operação de conversão estiver concluída, verifique se o volume está ativado para criptografia:
++
+`volume show -is-encrypted true`
+
++
+Para a sintaxe de comando inteira, consulte a página man para o comando.
+
++
+O comando a seguir exibe os volumes criptografados em `cluster1`:
+
++
+[listing]
+----
+cluster1::> volume show -is-encrypted true
+
+Vserver  Volume  Aggregate  State  Type  Size  Available  Used
+-------  ------  ---------  -----  ----  -----  --------- ----
+vs1      vol1    aggr2     online    RW  200GB    160.0GB  20%
+----
+
+
+.Resultado
+Se você estiver usando um servidor KMIP para armazenar as chaves de criptografia de um nó, o ONTAP automaticamente "envia" uma chave de criptografia para o servidor quando você criptografa um volume.
+
+
+
+== Ative a criptografia em um volume existente com o comando volume Move start
+
+Você pode usar o `volume move start` comando para habilitar a criptografia movendo um volume existente. Você deve usar `volume move start` no ONTAP 9.2 e anterior. Você pode usar o mesmo agregado ou um agregado diferente.
+
+.Sobre esta tarefa
+* A partir do ONTAP 9.8, pode utilizar `volume move start` para ativar a encriptação num volume SnapLock ou FlexGroup.
+* A partir do ONTAP 9.4, se você ativar o "cc-mode" quando você configurar o Gerenciador de chaves integrado, os volumes criados com o `volume move start` comando serão automaticamente criptografados. Não é necessário especificar `-encrypt-destination true`.
+* A partir do ONTAP 9.6, você pode usar a criptografia em nível de agregado para atribuir chaves ao agregado contendo para os volumes a serem movidos. Um volume criptografado com uma chave exclusiva é chamado de _volume NVE_ (ou seja, usa criptografia de volume NetApp). Um volume criptografado com uma chave de nível agregado é chamado de _volume NAE_ (para criptografia agregada NetApp). Os volumes de texto sem formatação não são suportados em agregados NAE.
+* A partir do ONTAP 9.14,1, é possível criptografar um volume raiz do SVM com NVE. Para obter mais informações, xref:configure-nve-svm-root-task.html[Configurar o NetApp volume Encryption em um volume raiz da SVM]consulte .
+
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar essa tarefa ou um administrador SVM a quem o administrador de cluster delegou autoridade.
+
+link:delegate-volume-encryption-svm-administrator-task.html["Delegando autoridade para executar o comando de movimentação de volume"]
+
+.Passos
+. Mova um volume existente e especifique se a criptografia está ativada no volume:
++
+[cols="35,65"]
+|===
+
+
+| Para converter... | Use este comando... 
+
+
+ a| 
+Um volume de texto sem formatação para um volume NVE
+ a| 
+`volume move start -vserver _SVM_name_ -volume _volume_name_ -destination-aggregate _aggregate_name_ -encrypt-destination true`
+
+
+
+ a| 
+Um volume NVE ou de texto sem formatação para um volume NAE (assumindo que a criptografia no nível de agregado esteja ativada no destino)
+ a| 
+`volume move start -vserver _SVM_name_ -volume _volume_name_ -destination-aggregate _aggregate_name_ -encrypt-with-aggr-key true`
+
+
+
+ a| 
+Um volume NAE para um volume NVE
+ a| 
+`volume move start -vserver _SVM_name_ -volume _volume_name_ -destination-aggregate _aggregate_name_ -encrypt-with-aggr-key false`
+
+
+
+ a| 
+Um volume NAE para um volume de texto sem formatação
+ a| 
+`volume move start -vserver _SVM_name_ -volume _volume_name_ -destination-aggregate _aggregate_name_ -encrypt-destination false -encrypt-with-aggr-key false`
+
+
+
+ a| 
+Um volume NVE para um volume de texto sem formatação
+ a| 
+`volume move start -vserver _SVM_name_ -volume _volume_name_ -destination-aggregate _aggregate_name_ -encrypt-destination false`
+
+|===
++
+Para a sintaxe de comando inteira, consulte a página man para o comando.
+
++
+O comando a seguir converte um volume de texto sem formatação nomeado `vol1` em um volume NVE:
+
++
+[listing]
+----
+cluster1::> volume move start -vserver vs1 -volume vol1 -destination-aggregate aggr2 -encrypt-destination true
+----
++
+Supondo que a criptografia em nível de agregado esteja ativada no destino, o comando a seguir converte um volume NVE ou de texto sem formatação nomeado `vol1` em um volume NAE:
+
++
+[listing]
+----
+cluster1::> volume move start -vserver vs1 -volume vol1 -destination-aggregate aggr2 -encrypt-with-aggr-key true
+----
++
+O comando a seguir converte um volume NAE nomeado `vol2` em um volume NVE:
+
++
+[listing]
+----
+cluster1::> volume move start -vserver vs1 -volume vol2 -destination-aggregate aggr2 -encrypt-with-aggr-key false
+----
++
+O comando a seguir converte um volume NAE nomeado `vol2` para um volume de texto sem formatação:
+
++
+[listing]
+----
+cluster1::> volume move start -vserver vs1 -volume vol2 -destination-aggregate aggr2 -encrypt-destination false -encrypt-with-aggr-key false
+----
++
+O comando a seguir converte um volume NVE nomeado `vol2` em um volume de texto sem formatação:
+
++
+[listing]
+----
+cluster1::> volume move start -vserver vs1 -volume vol2 -destination-aggregate aggr2 -encrypt-destination false
+----
+. Exibir o tipo de criptografia de volumes de cluster:
++
+`volume show -fields encryption-type none|volume|aggregate`
+
++
+O `encryption-type` campo está disponível no ONTAP 9.6 e posterior.
+
++
+Para a sintaxe de comando inteira, consulte a página man para o comando.
+
++
+O comando a seguir exibe o tipo de criptografia de volumes no `cluster2`:
+
++
+[listing]
+----
+cluster2::> volume show -fields encryption-type
+
+vserver  volume  encryption-type
+-------  ------  ---------------
+vs1      vol1    none
+vs2      vol2    volume
+vs3      vol3    aggregate
+----
+. Verifique se os volumes estão ativados para criptografia:
++
+`volume show -is-encrypted true`
+
++
+Para a sintaxe de comando inteira, consulte a página man para o comando.
+
++
+O comando a seguir exibe os volumes criptografados em `cluster2`:
+
++
+[listing]
+----
+cluster2::> volume show -is-encrypted true
+
+Vserver  Volume  Aggregate  State  Type  Size  Available  Used
+-------  ------  ---------  -----  ----  -----  --------- ----
+vs1      vol1    aggr2     online    RW  200GB    160.0GB  20%
+----
+
+
+.Resultado
+Se você estiver usando um servidor KMIP para armazenar as chaves de criptografia de um nó, o ONTAP enviará automaticamente uma chave de criptografia ao servidor quando você criptografar um volume.

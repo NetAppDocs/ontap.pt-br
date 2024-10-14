@@ -1,0 +1,58 @@
+---
+permalink: flexcache-writeback/flexcache-write-back-use-cases.html 
+sidebar: sidebar 
+keywords: tr-4743, flexcache writeback, flexcache write-back, use cases, workloads, technical report, netapp tr, ontap tr 
+summary: Estes são os perfis de escrita mais adequados para um FlexCache habilitado para gravação. Você deve testar seu workload para ver se o back-back ou a gravação fornecem a melhor performance. 
+---
+= Casos de uso de FlexCache writeback
+:allow-uri-read: 
+
+
+[role="lead"]
+Estes são os perfis de escrita mais adequados para um FlexCache habilitado para gravação. Você deve testar seu workload para ver se o back-back ou a gravação fornecem a melhor performance.
+
+
+NOTE: Write-back não é um substituto para write-around. Embora o write-back seja projetado com workloads com muita gravação, o write-around ainda é a melhor opção para muitos workloads.
+
+
+
+== Workloads de destino
+
+.Tamanho do ficheiro
+O tamanho do arquivo é menos importante do que o número de gravações emitidas entre o `OPEN` e `CLOSE` chamadas para um arquivo. Arquivos pequenos têm, inerentemente, `WRITE` menos chamadas, tornando-os menos ideais para write-back. Arquivos grandes podem ter mais gravações entre `OPEN` e `CLOSE` chamadas, mas isso não é garantido.
+
+.Tamanho da gravação
+Ao escrever de um cliente, outras chamadas nas são envolvidas além de chamadas de gravação:
+
+* `CREATE`
+* `OPEN`
+* `CLOSE`
+* `READDIR/READDIRPLUS`
+*  `SETATTR`: `SETATTR` as chamadas que apenas modificam `mtime`, `atime` ou `ctime` são processadas no cache.
+
+
+Essas chamadas devem ser processadas na origem e desencadear uma gravação de qualquer dado sujo acumulado no cache habilitado para write-back para o arquivo que está sendo operado. O IO para o arquivo será silenciado até que o write-back esteja concluído.
+
+Saber que essas chamadas devem atravessar a WAN ajuda você a identificar cargas de trabalho adequadas para back-back. Geralmente, quanto mais gravações que podem ser feitas entre `OPEN` e `CLOSE` chamadas sem que uma das outras chamadas listadas acima seja emitida, melhor será o ganho de desempenho de retorno de gravação.
+
+.Leitura-após-escrita
+As cargas de trabalho de leitura após gravação têm tido um desempenho insatisfatório na FlexCache. Isto deve-se ao modo de operação de escrita antes de 9.15.1. A `WRITE` chamada para o arquivo tem que ser confirmada na origem, e a chamada subsequente `READ` teria que puxar os dados de volta para o cache. Isso resulta em ambas as operações que incorrem na penalidade da WAN. Portanto, as cargas de trabalho de leitura após gravação são desencorajadas para o FlexCache no modo write-around. Com a introdução do write-back em 9.15.1, os dados agora são comprometidos no cache e podem ser lidos imediatamente a partir do cache, eliminando a penalidade da WAN. Se o seu workload incluir leitura após gravação em volumes FlexCache, você deverá configurar o cache para operar no modo write-back.
+
+
+TIP: Se a leitura após a gravação for uma parte crítica da sua carga de trabalho, você deve configurar o cache para operar no modo write-back.
+
+.Escrever-após-escrever
+Quando um arquivo acumula dados sujos em um cache, o cache grava os dados de volta para a origem de forma assíncrona. Isso naturalmente leva a momentos em que o cliente fecha o arquivo com dados sujos ainda esperando para ser lavado de volta à origem. Se outro arquivo aberto ou escrito aparecer para o arquivo que foi fechado e ainda tem dados sujos, a gravação será suspensa até que todos os dados sujos tenham sido lavados para origem.
+
+
+
+== Considerações sobre latência
+
+Quando o FlexCache opera no modo write-back, torna-se mais benéfico para os clientes nas à medida que a latência aumenta. No entanto, há um ponto em que a sobrecarga do write-back supera as vantagens obtidas em ambientes de baixa latência. Em alguns testes de NetApp, os benefícios de writeback começaram em torno de uma latência mínima entre cache e origem do 8ms. Essa latência varia de acordo com o workload, portanto, teste para saber seu ponto de retorno dos benefícios.
+
+O gráfico a seguir mostra o ponto de retorno para write-back em testes de laboratório do NetApp. O `x` eixo é o tamanho do arquivo e o `y` eixo é o tempo decorrido. O teste utilizou NFSv3, montagem com um `rsize` e `wsize` de 256KB e 64ms de latência WAN. Este teste foi realizado usando uma pequena instância do ONTAP Select para o cache e origem, e uma única operação de escrita em thread. Seus resultados podem variar.
+
+image::flexcache-write-back-point-of-return-nfs3.png[Ponto de retorno]
+
+
+IMPORTANT: O write-back não deve ser usado para armazenamento em cache sem brilho. O armazenamento em cache do Intracluster ocorre quando a origem e o cache estão no mesmo cluster.

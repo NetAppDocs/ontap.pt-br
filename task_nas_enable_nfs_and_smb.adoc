@@ -1,0 +1,121 @@
+---
+sidebar: sidebar 
+permalink: task_nas_enable_nfs_and_smb.html 
+keywords: ontap, netapp, provision nas storage, linux, windows, NFS, SMB, SMB, CIFS, enable NFS, enable SMB, configure DNS, modify storage VM, configure DNS, configure name server, configure Kerberos, map user names 
+summary: Modifique as VMs de storage para permitir que os servidores NFS e SMB forneçam dados a clientes Linux e Windows. 
+---
+= Habilite o storage nas para Windows e Linux usando NFS e SMB
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Crie ou modifique VMs de storage para permitir que os servidores NFS e SMB forneçam dados a clientes Linux e Windows.
+
+Habilite uma VM de storage nova ou existente para atender aos protocolos NFS e SMB usando este procedimento.
+
+image:workflow_nas_enable_nfs_and_smb.png["Resumo do fluxo de trabalho: 1 Ativar NFS 2 Ativar SMB 3 Política de exportação vol raiz aberta raiz 4 Configurar DNS 5 Configurar serviços de nomes 6 Configurar encriptação se necessário 7 Mapear nomes de utilizador UNIX e Windows, se necessário"]
+
+.Antes de começar
+Certifique-se de que anotou os detalhes de configuração de qualquer rede, autenticação ou serviços de segurança necessários no seu ambiente.
+
+.Passos
+. Habilite NFS e SMB em uma VM de storage.
++
+.. Para novas VMs de armazenamento: Clique em *Storage > Storage VMs*, clique em *Add*, insira um nome de VM de armazenamento e, na guia *SMB/CIFS, NFS, S3*, selecione *Enable SMB/CIFS* e *Enable NFS*.
+.. Introduza as seguintes informações:
++
+*** Nome e senha do administrador
+*** Nome do servidor
+*** Domínio do diretório ativo
+
+
+.. Confirme a unidade organizacional.
+.. Confirme os valores DNS.
+.. Confirme o idioma predefinido.
+.. Adicione interfaces de rede.
+.. Atualizar as informações da conta do administrador da VM de armazenamento (opcional).
+.. Para VMs de armazenamento existentes: Clique em *Storage > Storage VMs*, selecione uma VM de armazenamento e clique em *Settings*. Conclua as subetapas a seguir se NFS ou SMB ainda não estiver habilitado.
++
+*** Clique image:icon_gear.gif["Ícone ações"]em *NFS*.
+*** Clique image:icon_gear.gif["Ícone ações"]em *SMB*.
+
+
+
+
+. Abra a política de exportação do volume raiz da VM de storage:
++
+.. Clique em *Storage > volumes*, selecione o volume raiz da VM de armazenamento (que por padrão é _volume-name_root_) e clique na política exibida em *Export Policy*.
+.. Clique em *Add* para adicionar uma regra.
++
+*** Especificação do cliente `0.0.0.0/0`
+*** Protocolos de acesso: NFS
+*** Detalhes de acesso: Somente leitura NFS
+
+
+
+
+. Configurar DNS para resolução de nome de host:
++
+.. Clique em *Storage > Storage VMs*, selecione a VM de armazenamento, clique em *Settings* e,  em seguida, clique em image:icon_gear.gif["Ícone ações"]*DNS*.
+.. Quando a configuração DNS estiver concluída, mude para o servidor DNS e mapeie o servidor SMB.
++
+*** Criar entradas de pesquisa direta (A - Registro de endereço) e inversa (PTR - Registro de ponteiro) para mapear o nome do servidor SMB para o endereço IP da interface de rede de dados.
+*** Se você usar aliases NetBIOS, crie uma entrada de pesquisa de nome canônico de alias (CNAME resource record) para mapear cada alias para o endereço IP da interface de rede de dados do servidor SMB.
+
+
+
+
+. Configure os serviços de nomes conforme necessário:
++
+.. Clique em *Storage > Storage VMs*, selecione a VM de armazenamento, clique em *Settings* e clique image:icon_gear.gif["Ícone ações"] em for LDAP ou NIS.
+.. Inclua quaisquer alterações no arquivo de switch de serviços de nome: Clique image:icon_pencil.gif["Ícone de edição"]em *Name Services Switch*.
+
+
+. Configure a autenticação e a criptografia, se necessário:
++
+[role="tabbed-block"]
+====
+.Configurar TLS para clientes NFS
+--
+
+NOTE: O NFS em TLS está disponível no ONTAP 9.15,1 como prévia pública. Como oferta de prévia, o NFS em TLS não é compatível com workloads de produção no ONTAP 9.15,1.
+
+.Passos
+.. Consulte link:nfs-admin/tls-nfs-strong-security-concept.html["requisitos"^]o para NFS sobre TLS antes de começar.
+.. Clique em *Storage > Storage VMs*, selecione a VM de armazenamento e clique em *Settings*.
+.. No bloco *NFS*, clique em *NFS over TLS settings*.
+.. Na área *NFS over TLS settings*, selecione uma interface de rede NFS para a qual deseja ativar o TLS.
+.. Clique em image:icon_kabob.gif["Ícone de opções do menu"] para essa interface.
+.. Clique em *Ativar*.
+.. Na caixa de diálogo *Configuração TLS da interface de rede*, inclua um certificado para uso com TLS selecionando uma das seguintes opções:
++
+*** *Certificado instalado*: Escolha um certificado previamente instalado na lista suspensa.
+*** *Novo certificado*: Escolha um nome comum para o certificado.
+*** *Certificado assinado por CA externo*: Siga as instruções para colar o conteúdo do seu certificado e chave privada nas caixas.
+
+
+.. Clique em *Salvar*.
+
+
+--
+.Configurar Kerberos
+--
+.Passos
+.. Clique em *Storage > Storage VMs*, selecione a VM de armazenamento e clique em *Settings*.
+.. Clique image:icon_arrow.gif["Ícone de seta"]no mosaico Kerberos e, em seguida, clique em *Add*.
+
+
+--
+====
+. Mapeie nomes de usuário UNIX e Windows, se necessário: Clique image:icon_arrow.gif["Ícone de seta"]em *Mapeamento de nomes* e clique em *Adicionar*.
++
+Você deve fazer isso somente se o seu site tiver contas de usuário do Windows e UNIX que não mapeem implicitamente, ou seja, quando a versão minúscula de cada nome de usuário do Windows corresponder ao nome de usuário do UNIX. Você pode mapear nomes de usuários usando LDAP, NIS ou usuários locais. Se você tiver dois conjuntos de usuários que não correspondem, você deve configurar o mapeamento de nomes.
+
+

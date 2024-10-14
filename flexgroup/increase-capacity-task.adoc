@@ -1,0 +1,84 @@
+---
+permalink: flexgroup/increase-capacity-task.html 
+sidebar: sidebar 
+keywords: increase, size, flexgroup, volume, flex group 
+summary: Você pode aumentar o tamanho de um volume FlexGroup adicionando mais capacidade aos componentes existentes do volume FlexGroup ou expandindo o volume FlexGroup com novos componentes. 
+---
+= Aumente o tamanho de um volume FlexGroup
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode aumentar o tamanho de um volume FlexGroup adicionando mais capacidade aos componentes existentes do volume FlexGroup ou expandindo o volume FlexGroup com novos componentes.
+
+.O que você vai precisar
+Espaço suficiente deve estar disponível nos agregados.
+
+.Sobre esta tarefa
+Se você quiser adicionar mais espaço, você pode aumentar o tamanho coletivo do volume FlexGroup. Aumentar o tamanho de um volume FlexGroup redimensiona os constituintes existentes do volume FlexGroup.
+
+Se você quiser melhorar o desempenho, pode expandir o volume FlexGroup. Você pode querer expandir um volume FlexGroup e adicionar novos constituintes nas seguintes situações:
+
+* Novos nós foram adicionados ao cluster.
+* Novos agregados foram criados nos nós existentes.
+* Os componentes existentes do volume FlexGroup atingiram o tamanho máximo de FlexVol para o hardware e, portanto, o volume FlexGroup não pode ser redimensionado.
+
+
+Em versões anteriores ao ONTAP 9.3, não é possível expandir volumes do FlexGroup depois que um relacionamento do SnapMirror for estabelecido. Se você expandir o volume FlexGroup de origem depois de quebrar a relação SnapMirror em versões anteriores ao ONTAP 9.3, será necessário realizar uma transferência de linha de base para o volume FlexGroup de destino novamente. A partir do ONTAP 9.3, é possível expandir volumes do FlexGroup que estão em uma relação do SnapMirror.
+
+.Passo
+. Aumente o tamanho do volume FlexGroup aumentando a capacidade ou a performance do volume FlexGroup, conforme necessário:
++
+|===
+
+
+| Se você quiser aumentar a... | Então faça isso... 
+
+
+ a| 
+Capacidade do volume FlexGroup
+ a| 
+Redimensione os constituintes do volume FlexGroup:
+
+`volume modify -vserver vserver_name -volume fg_name -size new_size`
+
+
+
+ a| 
+Desempenho para o volume FlexGroup
+ a| 
+Expanda o volume FlexGroup adicionando novos constituintes:
+
+`+volume expand -vserver vserver_name -volume fg_name -aggr-list aggregate name,... [-aggr-list-multiplier constituents_per_aggr]+`
+
+O valor padrão do `-aggr-list-multiplier` parâmetro é 1.
+
+Para expandir um volume FlexGroup para FabricPool no ONTAP 9.5, todos os novos agregados usados devem ser FabricPool.
+
+|===
+
+
+Sempre que possível, você deve aumentar a capacidade de um volume FlexGroup. Se for necessário expandir um volume FlexGroup, adicione constituintes nas mesmas múltiplas que os constituintes do volume FlexGroup existente para garantir um desempenho consistente. Por exemplo, se o volume FlexGroup existente tiver 16 componentes com oito componentes por nó, você poderá expandir o volume FlexGroup existente em 8 ou 16 componentes.
+
+.Exemplos
+*Exemplo de aumento da capacidade dos constituintes existentes*
+
+O exemplo a seguir mostra como adicionar espaço de 20 TB a um volX de volume FlexGroup:
+
+[listing]
+----
+cluster1::> volume modify -vserver svm1 -volume volX -size +20TB
+----
+Se o volume FlexGroup tiver 16 constituintes, o espaço de cada constituinte é aumentado em 1,25 TB.
+
+*Exemplo de melhoria do desempenho adicionando novos constituintes*
+
+O exemplo a seguir mostra como adicionar mais dois constituintes ao volume volX do FlexGroup:
+
+[listing]
+----
+cluster1::> volume expand -vserver vs1 -volume volX -aggr-list aggr1,aggr2
+----
+A dimensão dos novos constituintes é a mesma dos componentes existentes.

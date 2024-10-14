@@ -1,0 +1,185 @@
+---
+permalink: consistency-groups/index.html 
+sidebar: sidebar 
+keywords: consistency group protection, application protection, metrocluster, write-order, application management, workload 
+summary: Um grupo de consistência é uma coleção de volumes organizados como uma única unidade, facilitando o gerenciamento e a proteção de workloads que abrangem vários volumes ou LUNs. 
+---
+= Visão geral dos grupos de consistência
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um grupo de consistência é uma coleção de volumes que são gerenciados como uma única unidade. No ONTAP, os grupos de consistência fornecem gerenciamento fácil e uma garantia de proteção para um workload de aplicações que abrange vários volumes.
+
+Use grupos de consistência para simplificar o gerenciamento de storage. Imagine que você tem um banco de dados importante abrangendo vinte LUNs. Você pode gerenciar os LUNs individualmente ou tratar os LUNs como um conjunto de dados solitário, organizando-os em um único grupo de consistência.
+
+Grupos de consistência facilitam o gerenciamento do workload de aplicações, com políticas de proteção locais e remotas facilmente configuradas e cópias Snapshot simultâneas de uma coleção de volumes em um momento consistente com falhas ou consistentes com aplicações. As cópias snapshot de um grupo de consistência permitem a restauração do workload de uma aplicação inteira.
+
+
+
+== Saiba mais sobre grupos de consistência
+
+Os grupos de consistência são compatíveis com qualquer FlexVol volume, independentemente do protocolo (nas, SAN ou NVMe) e podem ser gerenciados pela API REST do ONTAP ou no Gerenciador de sistema no item de menu *armazenamento > grupos de consistência*. A partir do ONTAP 9.14,1, os grupos de consistência podem ser gerenciados com a CLI do ONTAP.
+
+Grupos de consistência podem existir como entidades individuais - como uma coleção de volumes - ou em uma relação hierárquica, que consiste em outros grupos de consistência. Os volumes individuais podem ter sua própria política de Snapshot granular de volume. Além disso, pode haver uma política de Snapshot em todo o grupo de consistência. O grupo de consistência só pode ter uma relação de sincronização ativa do SnapMirror e uma política SnapMirror compartilhada, que pode ser usada para recuperar todo o grupo de consistência.
+
+O diagrama a seguir ilustra como você pode usar um grupo de consistência individual. Os dados de um aplicativo hospedado em `SVM1` dois volumes: `vol1` E `vol2`. Uma política de Snapshot no grupo de consistência captura cópias Snapshot dos dados a cada 15 minutos.
+
+image:consistency-group-single-diagram.gif["Um único grupo de consistência com seus volumes constituintes e a política de Snapshot local"]
+
+Workloads de aplicações maiores podem exigir vários grupos de consistência. Nessas situações, você pode criar grupos hierárquicos de consistência, em que um único grupo de consistência se torna os componentes filhos de um grupo de consistência pai. O grupo de consistência pai pode incluir até cinco grupos filhos. Assim como em grupos de consistência individuais, uma política de proteção de sincronização ativa remota do SnapMirror pode ser aplicada a toda a configuração de grupos de consistência (pai e filhos) para recuperar a carga de trabalho do aplicativo.
+
+No exemplo a seguir, um aplicativo é hospedado no `SVM1`. O administrador criou um grupo de consistência pai `SVM1_app` , que inclui dois grupos filhos de consistência: `SVM1appDataCG` Para os dados e `SVM1app_logCG` para os logs. Cada grupo de consistência filho tem sua própria política do Snapshot. Cópias snapshot dos volumes `SVM1appDataCG` são realizadas a cada 15 minutos. Os instantâneos de `SVM1app_logCG` são tirados por hora. O grupo de consistência pai `SVM1_app` tem uma política de sincronização ativa do SnapMirror que replica os dados para garantir a continuidade do serviço em caso de desastre.
+
+image:consistency-group-nested-diagram.gif["Um grupo de consistência aninhado com seus volumes associados"]
+
+A partir do ONTAP 9.12,1, os grupos de consistência suportam xref:clone-task.html[clonagem] e modificam os membros da consistência no xref:modify-task.html[adicionar ou remover volumes]Gerenciador do sistema e na API REST do ONTAP. A partir do ONTAP 9.12,1, a API REST do ONTAP também suporta:
+
+* Criação de grupos de consistência com novos volumes NFS, SMB ou namespaces NVMe.
+* Adição de volumes NFS, SMB ou namespaces NVMe novos ou existentes a grupos de consistência existentes.
+
+
+Para obter mais informações sobre a API REST do ONTAP, https://docs.netapp.com/us-en/ontap-automation/reference/api_reference.html#access-a-copy-of-the-ontap-rest-api-reference-documentation["Documentação de referência da API REST do ONTAP"] consulte .
+
+
+
+== Monitorar grupos de consistência
+
+A partir do ONTAP 9.13,1, os grupos de consistência oferecem monitoramento de capacidade e desempenho em tempo real e histórico, oferecendo insights sobre o desempenho de aplicativos e grupos de consistência individuais.
+
+Os dados de monitoramento são atualizados a cada cinco minutos e são mantidos por até um ano. Você pode acompanhar as métricas de:
+
+* Performance: IOPS, latência e taxa de transferência
+* Capacidade: Tamanho, lógico usado, disponível
+
+
+Você pode visualizar os dados de monitoramento na guia **Visão geral** do menu do grupo de consistência no System Manager ou solicitando-os na API REST. A partir do ONTAP 9.14,1, você pode visualizar métricas de grupo de consistência com a CLI usando o `consistency-group metrics show` comando.
+
+
+NOTE: No ONTAP 9.13,1, você só pode recuperar métricas históricas usando a API REST. A partir do ONTAP 9.14,1, métricas históricas também estão disponíveis no Gerenciador de sistemas.
+
+
+
+== Proteja grupos de consistência
+
+Grupos de consistência oferecem proteção consistente com as aplicações, garantindo a consistência dos dados em vários volumes ou LIFs. Ao criar uma cópia Snapshot de um grupo de consistência, uma "vedação" é estabelecida no grupo de consistência. A cerca inicia uma fila para e/S até que a operação Snapshot seja concluída, garantindo consistência pontual dos dados em todas as entidades do grupo de consistência. A vedação pode causar um pico transitório na latência durante as operações de criação do Snapshot, como uma política de snapshot agendada ou criar um snapshot com o System Manager. Para obter mais informações no contexto da API REST e da CLI, consulte a documentação da API REST do ONTAP e a página de manual da CLI.
+
+Os grupos de consistência oferecem proteção através de:
+
+* Políticas do Snapshot
+* xref:../snapmirror-active-sync/index.html[Sincronização ativa do SnapMirror]
+* <<mcc>> (Começando com ONTAP 9.11,1)
+* xref:../data-protection/snapmirror-disaster-recovery-concept.html[Assíncrono com SnapMirror] (Começando com ONTAP 9.13,1)
+* link:../data-protection/snapmirror-svm-replication-concept.html["Recuperação de desastres da SVM"] (Começando com ONTAP 9.14,1)
+
+
+Criar um grupo de consistência não ativa automaticamente a proteção. As políticas de proteção locais e remotas podem ser definidas ao criar ou depois de criar um grupo de consistência.
+
+Para configurar a proteção em um grupo de consistência, link:protect-task.html["Proteja um grupo de consistência"]consulte .
+
+Para utilizar a proteção remota, você deve atender aos requisitos xref:../snapmirror-active-sync/prerequisites-reference.html[Sincronização ativa do SnapMirror]do .
+
+
+NOTE: As relações de sincronização ativa do SnapMirror não podem ser estabelecidas em volumes montados para acesso nas.
+
+
+
+== Grupos de consistência nas configurações do MetroCluster
+
+A partir do ONTAP 9.11,1, é possível provisionar grupos de consistência com novos volumes em um cluster em uma configuração do MetroCluster. Esses volumes são provisionados em agregados espelhados.
+
+Depois que eles forem provisionados, você poderá mover volumes associados a grupos de consistência entre agregados espelhados e sem espelhamento. Portanto, os volumes associados a grupos de consistência podem ser localizados em agregados espelhados, agregados sem espelhamento ou ambos. É possível modificar agregados espelhados que contêm volumes associados a grupos de consistência para se tornarem sem espelhamento. Da mesma forma, você pode modificar agregados sem espelhamento contendo volumes associados a grupos de consistência para habilitar o espelhamento.
+
+Os volumes e as cópias Snapshot associadas a grupos de consistência colocados em agregados espelhados são replicados para o local remoto (local B). O conteúdo dos volumes no local B fornece uma garantia de ordem de gravação para o grupo de consistência, permitindo que você se recupere do local B em caso de desastre. Você pode acessar as cópias Snapshot do grupo de consistência usando o grupo de consistência com a API REST e o Gerenciador de sistema em clusters que executam o ONTAP 9.11,1 ou posterior. A partir do ONTAP 9.14,1, você também pode acessar cópias Snapshot com a CLI do ONTAP.
+
+Se alguns ou todos os volumes associados a um grupo de consistência estiverem localizados em agregados sem espelhamento que não estejam atualmente acessíveis, OBTENHA ou EXCLUA operações no grupo de consistência se comportarem como se os volumes locais ou agregados de hospedagem estivessem offline.
+
+
+
+=== Configurações de grupo de consistência para replicação
+
+Se o local B estiver executando o ONTAP 9.10,1 ou anterior, somente os volumes associados aos grupos de consistência localizados em agregados espelhados serão replicados para o local B. as configurações do grupo de consistência serão replicados apenas para o local B, se ambos os sites estiverem executando o ONTAP 9.11,1 ou posterior. Após o upgrade do local B para o ONTAP 9.11,1, os dados para grupos de consistência no local A que tenham todos os volumes associados colocados em agregados espelhados são replicados para o local B.
+
+
+NOTE: É recomendável manter pelo menos 20% de espaço livre para agregados espelhados para performance e disponibilidade ideais de storage. Embora a recomendação seja de 10% para agregados não espelhados, os 10% adicionais de espaço podem ser usados pelo sistema de arquivos para absorver alterações incrementais. Mudanças incrementais aumentam a utilização de espaço para agregados espelhados devido à arquitetura baseada em Snapshot copy-on-write da ONTAP. O não cumprimento destas práticas recomendadas pode ter um impactos negativo no desempenho.
+
+
+
+== Considerações sobre a atualização
+
+Ao atualizar para o ONTAP 9.10,1 ou posterior, os grupos de onistência criados com o SnapMirror ative Sync (anteriormente conhecido como SnapMirror Business Continuity) no ONTAP 9.8 e 9.9.1 são atualizados automaticamente e gerenciados em *armazenamento > grupos de consistência* no Gerenciador de sistemas ou na API REST do ONTAP para obter mais informações sobre a atualização do ONTAP 9.8 ou 9,9.1, link:../snapmirror-active-sync/upgrade-revert-task.html["Considerações sobre atualização e reversão da sincronização ativa do SnapMirror"]consulte .
+
+As cópias Snapshot criadas na API REST podem ser gerenciadas por meio da interface do Grupo de consistência do System Manager e pelos endpoints da API REST do grupo de consistência. A partir do ONTAP 9.14,1, snapshots de grupo de consistência também podem ser gerenciados com a CLI do ONTAP.
+
+
+NOTE: Cópias snapshot criadas com os comandos ONTAPI `cg-start` e `cg-commit` não são reconhecidas como snapshots de grupo de consistência e, portanto, não podem ser gerenciadas por meio da interface de grupo de consistência do Gerenciador do sistema ou dos pontos de extremidade do grupo de consistência na API REST do ONTAP. A partir do ONTAP 9.14,1, essas cópias Snapshot podem ser espelhadas para o volume de destino se você estiver usando uma política assíncrona do SnapMirror. Para obter mais informações, xref:protect-task.html#configure-snapmirror-asynchronous[Configurar o SnapMirror assíncrono]consulte .
+
+
+
+== Recursos suportados pelo lançamento
+
+[cols="3,1,1,1,1,1,1"]
+|===
+|  | ONTAP 9.15,1 | ONTAP 9.14,1 | ONTAP 9.13,1 | ONTAP 9.12,1 | ONTAP 9.11,1 | ONTAP 9.10,1 
+
+
+| Grupos hierárquicos de consistência | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 
+
+
+| Proteção local com cópias Snapshot | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 
+
+
+| Sincronização ativa do SnapMirror | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 
+
+
+| Suporte à MetroCluster | ✓ | ✓ | ✓ | ✓ | ✓ |  
+
+
+| Commits de duas fases (somente API REST) | ✓ | ✓ | ✓ | ✓ | ✓ |  
+
+
+| Tags de aplicativos e componentes | ✓ | ✓ | ✓ | ✓ |  |  
+
+
+| Grupos de consistência de clones | ✓ | ✓ | ✓ | ✓ |  |  
+
+
+| Adicionar e remover volumes | ✓ | ✓ | ✓ | ✓ |  |  
+
+
+| Crie CGS com novos volumes nas | ✓ | ✓ | ✓ | Somente API REST |  |  
+
+
+| Crie CGS com novos namespaces NVMe | ✓ | ✓ | ✓ | Somente API REST |  |  
+
+
+| Mover volumes entre grupos de consistência filho | ✓ | ✓ | ✓ |  |  |  
+
+
+| Modifique a geometria do grupo de consistência | ✓ | ✓ | ✓ |  |  |  
+
+
+| Monitorização | ✓ | ✓ | ✓ |  |  |  
+
+
+| Assíncrono SnapMirror (somente grupos de consistência únicos) | ✓ | ✓ | ✓ |  |  |  
+
+
+| Recuperação de desastres da SVM (somente grupos de consistência únicos) | ✓ | ✓ |  |  |  |  
+
+
+| Suporte CLI | ✓ | ✓ |  |  |  |  
+|===
+
+
+== Saiba mais sobre grupos de consistência
+
+video::j0jfXDcdyzE[youtube,width=848,height=480]
+.Mais informações
+* link:https://docs.netapp.com/us-en/ontap-automation/["Documentação de automação do ONTAP"^]
+* xref:../snapmirror-active-sync/index.html[Sincronização ativa do SnapMirror]
+* xref:../data-protection/snapmirror-disaster-recovery-concept.html[Noções básicas de recuperação de desastres assíncrona do SnapMirror]
+* link:https://docs.netapp.com/us-en/ontap-metrocluster/["Documentação do MetroCluster"]
+

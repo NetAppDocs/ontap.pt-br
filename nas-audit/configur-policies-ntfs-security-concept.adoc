@@ -1,0 +1,172 @@
+---
+permalink: nas-audit/configur-policies-ntfs-security-concept.html 
+sidebar: sidebar 
+keywords: configure, audit policies, ntfs security-style files, directories 
+summary: Antes de poder auditar operações de arquivo e diretório, você deve configurar políticas de auditoria nos arquivos e diretórios para os quais deseja coletar informações de auditoria. Isso é além de configurar e ativar a configuração de auditoria. Você pode configurar políticas de auditoria NTFS usando a guia Segurança do Windows ou usando a CLI do ONTAP. 
+---
+= Configurar políticas de auditoria em arquivos e diretórios de estilo de segurança NTFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de poder auditar operações de arquivo e diretório, você deve configurar políticas de auditoria nos arquivos e diretórios para os quais deseja coletar informações de auditoria. Isso é além de configurar e ativar a configuração de auditoria. Você pode configurar políticas de auditoria NTFS usando a guia Segurança do Windows ou usando a CLI do ONTAP.
+
+
+
+== Configurando diretivas de auditoria NTFS usando a guia Segurança do Windows
+
+Você pode configurar políticas de auditoria NTFS em arquivos e diretórios usando a guia *Segurança do Windows* na janela Propriedades do Windows. Este é o mesmo método usado ao configurar políticas de auditoria em dados residentes em um cliente Windows, que permite que você use a mesma interface GUI que você está acostumado a usar.
+
+.Antes de começar
+A auditoria deve ser configurada na máquina virtual de storage (SVM) que contém os dados aos quais você está aplicando as listas de controle de acesso do sistema (SACLs).
+
+.Sobre esta tarefa
+A configuração de diretivas de auditoria NTFS é feita adicionando entradas a SACLs NTFS que estão associadas a um descritor de segurança NTFS. O descritor de segurança é então aplicado a arquivos e diretórios NTFS. Essas tarefas são tratadas automaticamente pela GUI do Windows. O descritor de segurança pode conter listas de controle de acesso discricionárias (DACLs) para aplicar permissões de acesso a arquivos e pastas, SACLs para auditoria de arquivos e pastas ou SACLs e DACLs.
+
+Para definir políticas de auditoria NTFS usando a guia Segurança do Windows, execute as seguintes etapas em um host do Windows:
+
+.Passos
+. No menu *Ferramentas* no Windows Explorer, selecione *Mapear unidade de rede*.
+. Preencha a caixa *Map Network Drive*:
++
+.. Selecione uma letra *Drive*.
+.. Na caixa *pasta*, digite o nome do servidor SMB que contém o compartilhamento, mantendo os dados que deseja auditar e o nome do compartilhamento.
++
+Você pode especificar o endereço IP da interface de dados para o servidor SMB em vez do nome do servidor SMB.
+
++
+Se o nome do servidor SMB for ""SMB_SERVER"" e o compartilhamento for chamado "hare1", você deverá inserir `\\SMB_SERVER\share1`.
+
+.. Clique em *Finish*.
+
+
++
+A unidade selecionada está montada e pronta com a janela do Windows Explorer exibindo arquivos e pastas contidos no compartilhamento.
+
+. Selecione o ficheiro ou diretório para o qual pretende ativar o acesso de auditoria.
+. Clique com o botão direito do rato no ficheiro ou diretório e selecione *Propriedades*.
+. Selecione a guia *Segurança*.
+. Clique em *Avançado*.
+. Selecione a guia *Auditoria*.
+. Execute as ações desejadas:
++
+[cols="35,65"]
+|===
+
+
+| Se você quiser | Faça o seguinte 
+
+
+ a| 
+Configure a auditoria para um novo usuário ou grupo
+ a| 
+.. Clique em *Add*.
+.. Na caixa Digite o nome do objeto a ser selecionado, digite o nome do usuário ou grupo que deseja adicionar.
+.. Clique em *OK*.
+
+
+
+
+ a| 
+Remova a auditoria de um usuário ou grupo
+ a| 
+.. Na caixa Digite o nome do objeto a ser selecionado, selecione o usuário ou grupo que deseja remover.
+.. Clique em *Remover*.
+.. Clique em *OK*.
+.. Ignore o resto deste procedimento.
+
+
+
+
+ a| 
+Alterar a auditoria para um usuário ou grupo
+ a| 
+.. Na caixa Digite o nome do objeto a ser selecionado, selecione o usuário ou grupo que deseja alterar.
+.. Clique em *Editar*.
+.. Clique em *OK*.
+
+
+|===
++
+Se você estiver configurando a auditoria em um usuário ou grupo ou alterando a auditoria em um usuário ou grupo existente, a caixa Entrada de Auditoria para <object> será aberta.
+
+. Na caixa *aplicar a*, selecione como você deseja aplicar essa entrada de auditoria.
++
+Pode selecionar uma das seguintes opções:
+
++
+** *Esta pasta, subpastas e ficheiros*
+** *Esta pasta e subpastas*
+** *Somente esta pasta*
+** *Esta pasta e ficheiros*
+** *Somente subpastas e arquivos*
+** *Somente subpastas*
+** *Somente arquivos* se você estiver configurando a auditoria em um único arquivo, a caixa *aplicar a* não estará ativa. A configuração da caixa *Apply to* é padrão para *this object only*.
+
+
++
+[NOTE]
+====
+Como a auditoria exige recursos da SVM, selecione apenas o nível mínimo que forneça os eventos de auditoria que atendam aos seus requisitos de segurança.
+
+====
+. Na caixa *Access*, selecione o que deseja auditado e se deseja auditar eventos bem-sucedidos, eventos de falha ou ambos.
++
+** Para auditar eventos bem-sucedidos, selecione a caixa sucesso.
+** Para auditar eventos de falha, selecione a caixa Falha.
+
+
++
+Selecione apenas as ações que você precisa monitorar para atender aos requisitos de segurança. Para obter mais informações sobre esses eventos auditáveis, consulte a documentação do Windows. Você pode auditar os seguintes eventos:
+
++
+** * Controle total*
+** * Traverse pasta / executar arquivo *
+** *Lista de pastas / dados de leitura*
+** *Leia atributos*
+** *Leia atributos estendidos*
+** * Criar arquivos / escrever dados *
+** * Criar pastas / anexar dados*
+** * Escrever atributos*
+** *Escreva atributos estendidos*
+** *Excluir subpastas e arquivos*
+** *Excluir*
+** *Permissões de leitura*
+** *Alterar permissões*
+** *Assuma a propriedade*
+
+
+. Se você não quiser que a configuração de auditoria se propague para arquivos e pastas subsequentes do contentor original, marque a caixa *aplicar essas entradas de auditoria a objetos e/ou contentores dentro desse contentor somente*.
+. Clique em *aplicar*.
+. Depois de terminar de adicionar, remover ou editar entradas de auditoria, clique em *OK*.
++
+A caixa Entrada Auditoria para <object> fecha.
+
+. Na caixa *Auditoria*, selecione as configurações de herança para esta pasta.
++
+Selecione apenas o nível mínimo que fornece os eventos de auditoria que atendem aos seus requisitos de segurança. Você pode escolher uma das seguintes opções:
+
++
+** Selecione a caixa incluir entradas de auditoria herdáveis na caixa pai deste objeto.
+** Selecione a caixa Substituir todas as entradas de auditoria herdáveis existentes em todos os descendentes por entradas de auditoria herdáveis deste objeto.
+** Selecione ambas as caixas.
+** Selecione nenhuma das caixas. Se você estiver configurando SACLs em um único arquivo, a caixa Substituir todas as entradas de auditoria herdáveis existentes em todos os descendentes por entradas de auditoria herdáveis deste objeto não estará presente na caixa Auditoria.
+
+
+. Clique em *OK*.
++
+A caixa Auditoria fecha.
+
+
+
+
+
+== Configurar políticas de auditoria NTFS usando a CLI do ONTAP
+
+Você pode configurar políticas de auditoria em arquivos e pastas usando a CLI do ONTAP. Isso permite configurar políticas de auditoria NTFS sem a necessidade de se conetar aos dados usando um compartilhamento SMB em um cliente Windows.
+
+Você pode configurar políticas de auditoria NTFS usando a `vserver security file-directory` família de comandos.
+
+Você só pode configurar SACLs NTFS usando a CLI. A configuração de SACLs NFSv4 não é suportada com esta família de comandos ONTAP. Consulte as páginas de manual para obter mais informações sobre como usar esses comandos para configurar e adicionar SACLs NTFS a arquivos e pastas.

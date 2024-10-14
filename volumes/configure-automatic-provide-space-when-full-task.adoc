@@ -1,0 +1,46 @@
+---
+permalink: volumes/configure-automatic-provide-space-when-full-task.html 
+sidebar: sidebar 
+keywords: configure, volumes, automatically, provide, space, full, increase, size, automatic, grow, autogrow 
+summary: Quando o FlexVol volumes ficar cheio, o ONTAP pode tentar fornecer automaticamente mais espaço livre para o volume usando um de vários métodos diferentes. 
+---
+= Configure os volumes para fornecer automaticamente mais espaço quando estiverem cheios
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando o FlexVol volumes ficar cheio, o ONTAP pode usar vários métodos para tentar fornecer automaticamente mais espaço livre para o volume. Você escolhe quais métodos o ONTAP pode usar e em que ordem, dependendo dos requisitos impostos pela arquitetura de storage e aplicativo.
+
+.Sobre esta tarefa
+O ONTAP pode fornecer automaticamente mais espaço livre para um volume completo usando um ou ambos os seguintes métodos:
+
+* Aumente o tamanho do volume (conhecido como _crescimento automático_).
++
+Este método é útil se o volume contendo agregado tiver espaço suficiente para suportar um volume maior. Pode configurar o ONTAP para definir um tamanho máximo para o volume. O aumento é acionado automaticamente com base na quantidade de dados que estão sendo gravados no volume em relação à quantidade atual de espaço usado e quaisquer limites definidos.
+
++
+O crescimento automático não é acionado para suportar a criação de cópias Snapshot. Se você tentar criar uma cópia Snapshot e não houver espaço suficiente, a criação da cópia Snapshot falhará, mesmo com o crescimento automático ativado.
+
+* Exclua cópias Snapshot, arquivos FlexClone ou LUNs FlexClone.
++
+Por exemplo, você pode configurar o ONTAP para excluir automaticamente cópias Snapshot que não estão vinculadas a cópias Snapshot em volumes clonados ou LUNs, ou definir quais cópias snapshot deseja ONTAP excluir primeiro - suas cópias Snapshot mais antigas ou mais recentes. Você também pode determinar quando o ONTAP deve começar a excluir cópias snapshot - por exemplo, quando o volume está quase cheio ou quando a reserva de snapshot do volume está quase cheia.
+
+
+
+Se você ativar ambos os métodos, poderá especificar qual método o ONTAP tenta primeiro quando um volume está quase cheio. Se o primeiro método não fornecer espaço adicional suficiente para o volume, o ONTAP tenta o outro método em seguida.
+
+Por padrão, o ONTAP tenta aumentar primeiro o tamanho do volume. Na maioria dos casos, a configuração padrão é preferível, porque quando uma cópia Snapshot é excluída, ela não pode ser restaurada. No entanto, se você precisar evitar aumentar o tamanho de um volume sempre que possível, poderá configurar o ONTAP para excluir cópias Snapshot antes de aumentar o tamanho do volume.
+
+.Passos
+. Se você quiser que o ONTAP tente aumentar o tamanho do volume quando ele ficar cheio, ative a capacidade de crescimento automático para o volume usando o `volume autosize` comando com `grow` modo.
++
+Lembre-se de que quando o volume cresce, ele consome mais espaço livre de seu agregado associado. Se você estiver dependendo da capacidade do volume de crescer sempre que precisar, você deve monitorar o espaço livre no agregado associado e adicionar mais quando necessário.
+
+. Se você quiser que o ONTAP exclua cópias Snapshot, arquivos FlexClone ou LUNs FlexClone quando o volume ficar cheio, habilite o modo de operação para esses tipos de objetos.
+. Se você ativou o recurso de volume com crescimento automático e um ou mais recursos de transferência de dados, selecione o primeiro método que o ONTAP deve usar para fornecer espaço livre a um volume usando o `volume modify` comando com a `-space-mgmt-try-first` opção.
++
+Para especificar o aumento do tamanho do volume primeiro (o padrão), use `volume_grow`. Para especificar primeiro a exclusão de cópias Snapshot, use `snap_delete`o .
+
+

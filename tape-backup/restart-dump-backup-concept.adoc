@@ -1,0 +1,57 @@
+---
+permalink: tape-backup/restart-dump-backup-concept.html 
+sidebar: sidebar 
+keywords: restart, dump, backup, internal, external, tape, write, errors, power, outages, accidental, user, interruptions, internal, inconsistency 
+summary: Um backup de despejo às vezes não termina devido a erros internos ou externos, como erros de gravação de fita, interrupções de energia, interrupções acidentais de usuário ou inconsistência interna no sistema de armazenamento. Se o backup falhar por um desses motivos, você poderá reiniciá-lo. 
+---
+= Quando reiniciar um backup de despejo
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um backup de despejo às vezes não termina devido a erros internos ou externos, como erros de gravação de fita, interrupções de energia, interrupções acidentais de usuário ou inconsistência interna no sistema de armazenamento. Se o backup falhar por um desses motivos, você poderá reiniciá-lo.
+
+Você pode optar por interromper e reiniciar um backup para evitar períodos de tráfego intenso no sistema de armazenamento ou para evitar a concorrência por outros recursos limitados no sistema de armazenamento, como uma unidade de fita. Você pode interromper um backup longo e reiniciá-lo mais tarde se uma restauração (ou backup) mais urgente exigir a mesma unidade de fita. Os backups reiniciáveis persistem nas reinicializações. Você pode reiniciar um backup abortado para fita somente se as seguintes condições forem verdadeiras:
+
+* A cópia de segurança abortada está na fase IV
+* Todas as cópias Snapshot associadas que foram bloqueadas pelo comando dump estão disponíveis.
+* O histórico do ficheiro tem de estar ativado.
+
+
+Quando essa operação de despejo é abortada e deixada em um estado reiniciável, as cópias Snapshot associadas são bloqueadas. Essas cópias Snapshot são liberadas após o contexto de backup ser excluído. Pode visualizar a lista de contextos de cópia de segurança utilizando o `vserver services ndmp restartable backup show` comando.
+
+[listing]
+----
+cluster::> vserver services ndmpd restartable-backup show
+Vserver     Context Identifier                   Is Cleanup Pending?
+----------- ------------------------------------ -------------------
+vserver1 330e6739-0179-11e6-a299-005056bb4bc9 false
+vserver1 481025c1-0179-11e6-a299-005056bb4bc9 false
+vserver2 5cf10132-0179-11e6-a299-005056bb4bc9 false
+3 entries were displayed.
+
+cluster::> vserver services ndmpd restartable-backup show -vserver vserver1 -context-id 330e6739-0179-11e6-a299-005056bb4bc9
+
+                       Vserver: vserver1
+            Context Identifier: 330e6739-0179-11e6-a299-005056bb4bc9
+                   Volume Name: /vserver1/vol1
+           Is Cleanup Pending?: false
+            Backup Engine Type: dump
+Is Snapshot Copy Auto-created?: true
+                     Dump Path: /vol/vol1
+   Incremental Backup Level ID: 0
+                     Dump Name: /vserver1/vol1
+     Context Last Updated Time: 1460624875
+               Has Offset Map?: true
+                 Offset Verify: true
+       Is Context Restartable?: true
+              Is Context Busy?: false
+                  Restart Pass: 4
+              Status of Backup: 2
+            Snapshot Copy Name: snapshot_for_backup.1
+          State of the Context: 7
+
+cluster::>"
+----

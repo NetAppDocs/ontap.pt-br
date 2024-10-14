@@ -1,0 +1,229 @@
+---
+permalink: flexcache-writeback/flexcache-writeback-enable-task.html 
+sidebar: sidebar 
+keywords: creating, manage, disable, view, flexcache, flex cache, writeback, write-back, write back 
+summary: Habilite o modo de retorno do FlexCache no FlexCache volumes para fornecer melhor desempenho para ambientes de computação de borda e caches com workloads com gravação intensa. 
+---
+= Ative e gerencie o FlexCache write-back
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.15,1, é possível ativar o modo de gravação FlexCache em volumes FlexCache para fornecer melhor desempenho para ambientes de computação de borda e caches com cargas de trabalho com gravação intensa. Você também pode determinar se o write-back está habilitado em um volume FlexCache ou desativar o write-back no volume quando necessário.
+
+Quando o write-back está ativado no volume do cache, as solicitações de gravação são enviadas para o cache local em vez do volume de origem.
+
+.Antes de começar
+Tem de estar no modo de privilégio avançado.
+
+
+
+== Crie um novo volume FlexCache com a opção write-back ativada
+
+.Passos
+Você pode criar um novo volume FlexCache com a opção de gravação ativada usando o Gerenciador de sistema do ONTAP ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Se o volume FlexCache estiver em um cluster diferente do volume de origem, crie uma relação de par de cluster:
++
+.. No cluster local, clique em *proteção > Visão geral*.
+.. Expanda *Intercluster Settings*, clique em *Add Network interfaces* e adicione interfaces entre clusters ao cluster.
++
+Repita este procedimento no painel remoto.
+
+.. No cluster remoto, clique em *proteção > Visão geral*. Clique image:icon_kabob.gif["Ícone de opções do menu"]na seção Cluster Peers e clique em *Generate Passphrase*.
+.. Copie a frase-passe gerada e cole-a no cluster local.
+.. No cluster local, em Cluster Peers, clique em *Peer clusters* e emparelhe os clusters locais e remotos.
+
+
+. Se o volume FlexCache estiver em um cluster diferente do volume de origem, crie um relacionamento de pares SVM:
++
+Em *Storage VM Peers*, clique image:icon_kabob.gif["Ícone de opções do menu"] em e em *Peer Storage VMs* para fazer o peer nas VMs de armazenamento.
+
++
+Se o volume FlexCache estiver no mesmo cluster, não será possível criar um relacionamento de pares SVM usando o System Manager.
+
+. Selecione *armazenamento > volumes*.
+. Selecione *Adicionar*.
+. Selecione *mais Opções* e, em seguida, selecione *Adicionar como cache para um volume remoto*.
+. Selecione *Enable FlexCache write-back*.
+
+
+--
+.CLI
+--
+. Se o volume FlexCache a ser criado estiver em um cluster diferente, crie uma relação de par de cluster:
++
+.. No cluster de destino, crie uma relação de mesmo nível com o cluster de origem de proteção de dados:
++
+[source, cli]
+----
+cluster peer create -generate-passphrase -offer-expiration MM/DD/YYYY HH:MM:SS|1...7days|1...168hours -peer-addrs <peer_LIF_IPs> -initial-allowed-vserver-peers <svm_name>,..|* -ipspace <ipspace_name>
+----
++
+A partir do ONTAP 9.6, a criptografia TLS é ativada por padrão ao criar uma relação de par de cluster. A criptografia TLS é suportada para a comunicação entre clusters entre os volumes de origem e FlexCache. Você também pode desativar a criptografia TLS para o relacionamento de pares de cluster, se necessário.
+
++
+[listing]
+----
+cluster02::> cluster peer create -generate-passphrase -offer-expiration 2days -initial-allowed-vserver-peers *
+
+                     Passphrase: UCa+6lRVICXeL/gq1WrK7ShR
+                Expiration Time: 6/7/2017 08:16:10 EST
+  Initial Allowed Vserver Peers: *
+            Intercluster LIF IP: 192.140.112.101
+              Peer Cluster Name: Clus_7ShR (temporary generated)
+
+Warning: make a note of the passphrase - it cannot be displayed again.
+----
+.. No cluster de origem, autentique o cluster de origem no cluster de destino:
++
+[source, cli]
+----
+cluster peer create -peer-addrs <peer_LIF_IPs> -ipspace <ipspace>
+----
++
+[listing]
+----
+cluster01::> cluster peer create -peer-addrs 192.140.112.101,192.140.112.102
+
+Notice: Use a generated passphrase or choose a passphrase of 8 or more characters.
+        To ensure the authenticity of the peering relationship, use a phrase or sequence of characters that would be hard to guess.
+
+Enter the passphrase:
+Confirm the passphrase:
+
+Clusters cluster02 and cluster01 are peered.
+----
+
+
+. Se o volume FlexCache estiver em um SVM diferente daquele do volume de origem, crie um relacionamento de mesmo nível com `flexcache` o como aplicação:
++
+.. Se o SVM estiver em um cluster diferente, crie uma permissão SVM para os SVMs de peering:
++
+[source, cli]
+----
+vserver peer permission create -peer-cluster <cluster_name> -vserver <svm-name> -applications flexcache
+----
++
+O exemplo a seguir ilustra como criar uma permissão SVM peer que se aplica a todos os SVMs locais:
+
++
+[listing]
+----
+cluster1::> vserver peer permission create -peer-cluster cluster2 -vserver "*" -applications flexcache
+
+Warning: This Vserver peer permission applies to all local Vservers. After that no explict
+"vserver peer accept" command required for Vserver peer relationship creation request
+from peer cluster "cluster2" with any of the local Vservers. Do you want to continue? {y|n}: y
+----
+.. Crie o relacionamento entre pares SVM:
++
+[source, cli]
+----
+vserver peer create -vserver <local_SVM> -peer-vserver <remote_SVM> -peer-cluster <cluster_name> -applications flexcache
+----
+
+
+. Criar um volume FlexCache com write-back habilitado:
++
+[source, cli]
+----
+volume flexcache create -vserver <cache_vserver_name> -volume <cache_flexgroup_name> -aggr-list <list_of_aggregates> -origin-volume <origin flexgroup> -origin-vserver <origin_vserver name> -junction-path <junction_path> -is-writeback-enabled true
+----
+
+
+--
+====
+
+
+== Ative o FlexCache write-back em um volume FlexCache existente
+
+Você pode habilitar a gravação do FlexCache em um volume FlexCache existente usando o Gerenciador de sistemas do ONTAP ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *armazenamento > volumes* e selecione um volume FlexCache existente.
+. Na página Visão geral do volume, clique em *Editar* no canto superior direito.
+. Na janela *Editar volume*, selecione *Enable FlexCache write-back*.
+
+
+--
+.CLI
+--
+. Ativar o write-back em um volume FlexCache existente:
++
+[source, cli]
+----
+volume flexcache config modify -volume <cache_flexgroup_name> -is-writeback-enabled true
+----
+
+
+--
+====
+
+
+== Verifique se o FlexCache writeback está ativado
+
+.Passos
+Você pode usar o Gerenciador do sistema ou a CLI do ONTAP para determinar se o retorno de gravação do FlexCache está habilitado.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *armazenamento > volumes* e selecione um volume.
+. No volume *Visão geral*, localize *Detalhes do FlexCache* e verifique se o FlexCache write-back está definido como *Enabled* no volume do FlexCache.
+
+
+--
+.CLI
+--
+. Verifique se o FlexCache write-back está ativado:
++
+[source, cli]
+----
+volume flexcache config show -volume <cache_flexgroup_name> -fields is-writeback-enabled
+----
+
+
+--
+====
+
+
+== Desative a opção write-back em um volume FlexCache
+
+Antes de poder eliminar um volume FlexCache, tem de desativar o FlexCache write-back.
+
+.Passos
+Você pode usar o Gerenciador do sistema ou a CLI do ONTAP para desativar o retorno de gravação do FlexCache.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *armazenamento > volumes* e selecione um volume FlexCache existente que tenha o FlexCache write-back habilitado.
+. Na página Visão geral do volume, clique em *Editar* no canto superior direito.
+. Na janela *Editar volume*, desmarque *Ativar retorno de gravação do FlexCache*.
+
+
+--
+.CLI
+--
+. Desativar write-back:
++
+[source, cli]
+----
+volume flexcache config modify -volume <cache_vol_name> -is-writeback-enabled false
+----
+
+
+--
+====

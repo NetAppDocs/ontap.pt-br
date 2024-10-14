@@ -1,0 +1,83 @@
+---
+permalink: encryption-at-rest/restore-external-encryption-keys-93-later-task.html 
+sidebar: sidebar 
+keywords: restoring, external key management, encryption keys 
+summary: 'Você pode restaurar manualmente as chaves de criptografia de gerenciamento de chaves externas e "enviá-las para um nó diferente. Você pode querer fazer isso se estiver reiniciando um nó que estava inativo temporariamente quando criou as chaves para o cluster.' 
+---
+= Restaurar chaves de criptografia de gerenciamento de chaves externas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode restaurar manualmente as chaves de criptografia de gerenciamento de chaves externas e enviá-las para um nó diferente. Você pode querer fazer isso se estiver reiniciando um nó que estava inativo temporariamente quando criou as chaves para o cluster.
+
+.Sobre esta tarefa
+No ONTAP 9.6 e posterior, você pode usar o `security key-manager key query -node node_name` comando para verificar se sua chave precisa ser restaurada.
+
+No ONTAP 9.5 e anteriores, você pode usar o `security key-manager key show` comando para verificar se sua chave precisa ser restaurada.
+
+
+NOTE: Se você estiver usando o NSE em um sistema com um módulo Flash Cache, também deverá ativar o NVE ou NAE. O NSE não criptografa dados que residem no módulo Flash Cache.
+
+.Antes de começar
+Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
+
+.Passos
+. Se você estiver executando o ONTAP 9.8 ou posterior e o volume raiz estiver criptografado, faça o seguinte:
++
+Se você estiver executando o ONTAP 9.7 ou anterior, ou se estiver executando o ONTAP 9.8 ou posterior e o volume raiz não estiver criptografado, pule esta etapa.
+
++
+.. Defina os bototargs
+`setenv kmip.init.ipaddr <ip-address>`
+`setenv kmip.init.netmask <netmask>`
+`setenv kmip.init.gateway <gateway>`
+`setenv kmip.init.interface e0M`
+`boot_ontap`
+.. Inicialize o nó no menu de inicialização e selecione a opção `(11) Configure node for external key management`.
+.. Siga as instruções para inserir o certificado de gerenciamento.
++
+Depois que todas as informações do certificado de gerenciamento forem inseridas, o sistema retornará ao menu de inicialização.
+
+.. No menu de inicialização, selecione a opção `(1) Normal Boot`.
+
+
+. Restaure a chave:
++
+[cols="35,65"]
+|===
+
+
+| Para esta versão ONTAP... | Use este comando... 
+
+
+ a| 
+ONTAP 9 F.6 e mais tarde
+ a| 
+`security key-manager external restore -vserver SVM -node node -key-server host_name|IP_address:port -key-id key_id -key-tag key_tag`
+
+
+
+ a| 
+ONTAP 9 F.5 e anteriores
+ a| 
+`security key-manager restore -node node -address IP_address -key-id key_id -key-tag key_tag`
+
+|===
++
+[NOTE]
+====
+`node` o padrão é todos os nós. Para obter a sintaxe completa do comando, consulte as páginas man. Este comando não é suportado quando o gerenciamento de chaves integradas está habilitado.
+
+====
++
+O seguinte comando ONTAP 9.6 restaura chaves de autenticação de gerenciamento de chaves externas para todos os nós no `cluster1`:
+
++
+[listing]
+----
+clusterl::> security key-manager external restore
+----
+

@@ -1,0 +1,82 @@
+---
+sidebar: sidebar 
+permalink: s3-snapmirror/restore-remote-destination-task.html 
+keywords: restore a bucket from the destination storage VM remote cluster, source bucket data lost or corrupt, snapmirror restore, restore data, restore to destination bucket, remote cluster, snapmirror restore back up, snapmirror, bucket, restore to new bucket, storage vm, snapmirror data loss 
+summary: Se os dados em um bucket de origem forem perdidos ou corrompidos, você poderá preencher novamente os dados restaurando a partir de um bucket de destino. 
+---
+= Restaurar um bucket da VM de armazenamento de destino (cluster remoto)
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se os dados em um bucket de origem forem perdidos ou corrompidos, você poderá preencher novamente os dados restaurando objetos de um bucket de destino.
+
+.Sobre esta tarefa
+Você pode restaurar o intervalo de destino para um bucket existente ou um novo bucket. O intervalo de destino para a operação de restauração deve ser maior do que o espaço lógico usado do intervalo de destino.
+
+Se você usar um bucket existente, ele deve estar vazio ao iniciar uma operação de restauração. Restaurar não "reverte" um balde no tempo; em vez disso, ele preenche um balde vazio com seu conteúdo anterior.
+
+A operação de restauração deve ser iniciada a partir do cluster remoto.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+Restaure os dados de cópia de segurança:
+
+. Clique em *proteção > relacionamentos* e selecione *SnapMirror S3*.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"] em e selecione *Restore*.
+. Em *Source*, selecione *existing Bucket* (o padrão) ou *New Bucket*.
++
+** Para restaurar para um *Bucket existente* (o padrão), execute estas ações:
++
+*** Selecione o cluster e a VM de armazenamento para procurar o bucket existente.
+*** Selecione o balde existente.
+*** Copie e cole o conteúdo do certificado da CA do servidor _destination_ S3.
+
+
+** Para restaurar um *novo balde*, insira os seguintes valores:
++
+*** O cluster e a VM de storage para hospedar o novo bucket.
+*** Nome, capacidade e nível de serviço de performance do novo bucket. Consulte link:../s3-config/storage-service-definitions-reference.html["Níveis de serviço de storage"] para obter mais informações.
+*** O conteúdo do certificado de CA do servidor _destination_ S3.
+
+
+
+
+. Em *destino*, copie e cole o conteúdo do certificado da CA do servidor _source_ S3.
+. Clique em *proteção > relacionamentos* para monitorar o progresso da restauração.
+
+
+.Restaure os baldes bloqueados
+A partir do ONTAP 9.14,1, você pode fazer backup de buckets bloqueados e restaurá-los conforme necessário.
+
+Você pode restaurar um bucket bloqueado por objeto para um bucket novo ou existente. Você pode selecionar um bucket bloqueado por objeto como destino nos seguintes cenários:
+
+* *Restaurar para um novo bucket*: Quando o bloqueio de objetos está ativado, um bucket pode ser restaurado criando um bucket que também tem o bloqueio de objetos ativado. Ao restaurar um bucket bloqueado, o modo de bloqueio de objetos e o período de retenção do bucket original são replicados. Também pode definir um período de retenção de bloqueio diferente para o novo balde. Este período de retenção é aplicado a objetos não bloqueados de outras fontes.
+* *Restaurar para um bucket existente*: Um bucket bloqueado por objeto pode ser restaurado para um bucket existente, desde que o controle de versão e um modo de bloqueio de objeto semelhante estejam ativados no bucket existente. O período de retenção do balde original é mantido.
+* *Restaurar bucket não bloqueado*: Mesmo que o bloqueio de objetos não esteja habilitado em um bucket, você pode restaurá-lo para um bucket que tenha o bloqueio de objetos ativado e esteja no cluster de origem. Quando você restaura o bucket, todos os objetos não bloqueados ficam bloqueados e o modo de retenção e a posse do bucket de destino se aplicam a eles.
+
+
+--
+.CLI
+--
+. Crie o novo intervalo de destino para restauração. Para obter mais informações, link:create-cloud-backup-new-bucket-task.html["Criar um relacionamento de backup para um novo bucket (destino na nuvem)"]consulte .
+. Inicie uma operação de restauração para o intervalo de destino:
+`snapmirror restore -source-path _svm_name_:/bucket/_bucket_name_  -destination-path _svm_name_:/bucket/_bucket_name_`
+
+
+.Exemplo
+[listing]
+----
+dest_cluster::> snapmirror restore -source-path src_vs1:/bucket/test-bucket -destination-path dest_vs1:/bucket/test-bucket-mirror
+----
+--
+====

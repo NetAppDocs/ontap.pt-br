@@ -1,0 +1,69 @@
+---
+permalink: nfs-admin/modify-nfsv3-nfsv4-tcp-maximum-transfer-size-task.html 
+sidebar: sidebar 
+keywords:  
+summary: Você pode modificar a opção -tcp-max-xfer-size para configurar tamanhos máximos de transferência para todas as conexões TCP usando os protocolos NFSv3 e NFSv4.x. 
+---
+= Modifique o tamanho máximo de transferência do TCP NFSv3 e NFSv4
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode modificar a `-tcp-max-xfer-size` opção para configurar tamanhos máximos de transferência para todas as conexões TCP usando os protocolos NFSv3 e NFSv4.x.
+
+.Sobre esta tarefa
+Você pode modificar essas opções individualmente para cada máquina virtual de storage (SVM).
+
+A partir do ONTAP 9, as `v3-tcp-max-read-size` opções e `v3-tcp-max-write-size` são obsoletas. Você deve usar a `-tcp-max-xfer-size` opção em vez disso.
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+`set -privilege advanced`
+
+. Execute uma das seguintes ações:
++
+[cols="2*"]
+|===
+| Se você quiser... | Digite o comando... 
+
+
+ a| 
+Modifique o tamanho máximo de transferência do TCP NFSv3 ou NFSv4
+ a| 
+`vserver nfs modify -vserver vserver_name -tcp-max-xfer-size integer_max_xfer_size`
+
+|===
++
+[cols="3*"]
+|===
+| Opção | Alcance | Padrão 
+
+
+ a| 
+`-tcp-max-xfer-size`
+ a| 
+8192 a 1048576 bytes
+ a| 
+65536 bytes
+
+|===
++
+[NOTE]
+====
+O tamanho máximo de transferência que você inserir deve ser um múltiplo de 4 KB (4096 bytes). As solicitações que não estão alinhadas corretamente afetam negativamente o desempenho.
+
+====
+. Use o `vserver nfs show -fields tcp-max-xfer-size` comando para verificar as alterações.
+. Se algum cliente usar montagens estáticas, desmonte e remonte para que o novo tamanho de parâmetro entre em vigor.
+
+
+.Exemplo
+O comando a seguir define o tamanho máximo de transferência TCP NFSv3 e NFSv4.x para 1048576 bytes no SVM chamado VS1:
+
+[listing]
+----
+vs1::> vserver nfs modify -vserver vs1 -tcp-max-xfer-size 1048576
+----

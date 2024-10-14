@@ -1,0 +1,133 @@
+---
+permalink: snaplock/initialize-complianceclock-task.html 
+sidebar: sidebar 
+keywords: snaplock, complianceclock, compliance clock, initialize, worm, retention, period, node, ntp, reset, resynchronize 
+summary: O SnapLock ComplianceClock garante contra adulteração que pode alterar o período de retenção para arquivos WORM. Você deve inicializar o relógio de conformidade do sistema em cada nó que hospeda um agregado SnapLock. 
+---
+= Inicialize o Relógio de conformidade
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O SnapLock usa o _volume Compliance Clock_ para garantir contra adulteração que pode alterar o período de retenção de arquivos WORM. Você deve primeiro inicializar o _System ComplianceClock_ em cada nó que hospeda um agregado SnapLock.
+
+A partir do ONTAP 9.14,1, é possível inicializar ou reinicializar o Relógio de conformidade do sistema quando não houver volumes SnapLock ou nenhum volume com o bloqueio de cópia Snapshot ativado. A capacidade de reinicializar permite que os administradores de sistema redefinam o relógio de conformidade do sistema em casos em que ele pode ter sido inicializado incorretamente ou corrigir a deriva de clock no sistema. No ONTAP 9.13,1 e versões anteriores, depois de inicializar o Relógio de conformidade em um nó, você não poderá iniciá-lo novamente.
+
+.Antes de começar
+Para reinicializar o Relógio de conformidade:
+
+* Todos os nós no cluster devem estar no estado de integridade.
+* Todos os volumes devem estar online.
+* Nenhum volume pode estar presente na fila de recuperação.
+* Nenhum volume SnapLock pode estar presente.
+* Nenhum volume com bloqueio de cópia Snapshot ativado pode estar presente.
+
+
+Requisitos gerais para inicializar o Relógio de conformidade:
+
+* Você deve ser um administrador de cluster para executar esta tarefa.
+* link:../system-admin/install-license-task.html["A licença SnapLock deve ser instalada no nó"].
+
+
+.Sobre esta tarefa
+O tempo no relógio de conformidade do sistema é herdado pelo _volume Compliance Clock_, o último dos quais controla o período de retenção para arquivos WORM no volume. O volume Compliance Clock é inicializado automaticamente quando você cria um novo volume SnapLock.
+
+[NOTE]
+====
+A configuração inicial do relógio de conformidade do sistema baseia-se no relógio do sistema de hardware atual. Por esse motivo, você deve verificar se a hora e o fuso horário do sistema estão corretos antes de inicializar o relógio de conformidade do sistema em cada nó. Depois de inicializar o relógio de conformidade do sistema em um nó, você não poderá iniciá-lo novamente quando os volumes SnapLock ou volumes com bloqueio ativado estiverem presentes.
+
+====
+.Passos
+Você pode usar a CLI do ONTAP para inicializar o Relógio de conformidade ou, a partir do ONTAP 9.12,1, você pode usar o Gerenciador do sistema para inicializar o Relógio de conformidade.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *Cluster > Overview*.
+. Na seção *nodes*, clique em *Initialize SnapLock Compliance Clock*.
+. Para exibir a coluna *Relógio de conformidade* e verificar se o Relógio de conformidade foi inicializado, na seção *Cluster > Visão geral > nós*, clique em *Mostrar/Ocultar* e selecione *Relógio SnapLock Compliance*.
+
+
+--
+--
+.CLI
+. Inicializar o relógio de conformidade do sistema:
++
+`*snaplock compliance-clock initialize -node _node_name_*`
+
++
+O comando a seguir inicializa o relógio de conformidade do sistema em `node1`:
+
++
+[listing]
+----
+cluster1::> snaplock compliance-clock initialize -node node1
+----
+. Quando solicitado, confirme se o relógio do sistema está correto e se deseja inicializar o Relógio de conformidade:
++
+[listing]
+----
+Warning: You are about to initialize the secure ComplianceClock of
+the node "node1" to the current value of the node's system clock.
+This procedure can be performed only once on a given node, so you
+should ensure that the system time is set correctly before proceeding.
+
+The current node's system clock is: Mon Apr 25 06:04:10 GMT 2016
+
+Do you want to continue? (y|n): y
+----
+. Repita este procedimento para cada nó que hospeda um agregado SnapLock.
+
+
+--
+====
+
+
+== Ativar a ressincronização do relógio de conformidade para um sistema configurado por NTP
+
+Pode ativar a funcionalidade de sincronização da hora do Relógio SnapLock Compliance quando um servidor NTP está configurado.
+
+.O que você vai precisar
+* Esta funcionalidade está disponível apenas no nível de privilégio avançado.
+* Você deve ser um administrador de cluster para executar esta tarefa.
+* link:../system-admin/install-license-task.html["A licença SnapLock deve ser instalada no nó"].
+* Esse recurso está disponível somente para plataformas Cloud Volumes ONTAP, ONTAP Select e VSIM.
+
+
+.Sobre esta tarefa
+Quando o daemon de relógio seguro SnapLock deteta uma inclinação além do limite, o ONTAP usa a hora do sistema para redefinir os relógios de conformidade do sistema e do volume. Um período de 24 horas é definido como o limite de inclinação. Isso significa que o relógio de conformidade do sistema é sincronizado com o relógio do sistema somente se o desvio tiver mais de um dia de idade.
+
+O daemon SnapLock secure clock deteta um desvio e altera o Relógio de conformidade para a hora do sistema. Qualquer tentativa de modificar a hora do sistema para forçar o Relógio de conformidade a sincronizar com a hora do sistema falha, uma vez que o Relógio de conformidade sincroniza com a hora do sistema apenas se a hora do sistema for sincronizada com a hora NTP.
+
+.Passos
+. Ative o recurso de sincronização da hora do Relógio SnapLock Compliance quando um servidor NTP está configurado:
++
+`*snaplock compliance-clock ntp*`
+
++
+O comando a seguir habilita o recurso de sincronização da hora do relógio de conformidade do sistema:
+
++
+[listing]
+----
+cluster1::*> snaplock compliance-clock ntp modify -is-sync-enabled true
+----
+. Quando solicitado, confirme se os servidores NTP configurados são confiáveis e se o canal de comunicação é seguro para habilitar o recurso:
+. Verifique se o recurso está ativado:
++
+`*snaplock compliance-clock ntp show*`
+
++
+O comando a seguir verifica se o recurso de sincronização da hora do relógio de conformidade do sistema está ativado:
+
++
+[listing]
+----
+cluster1::*> snaplock compliance-clock ntp show
+
+Enable clock sync to NTP system time: true
+----
+

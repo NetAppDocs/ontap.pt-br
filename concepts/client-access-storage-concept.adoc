@@ -1,0 +1,77 @@
+---
+permalink: concepts/client-access-storage-concept.html 
+sidebar: sidebar 
+keywords: client authentication, authorization, oauth 2.0, oauth2 
+summary: O ONTAP autentica uma máquina cliente e um usuário verificando suas identidades com uma fonte confiável. O ONTAP autoriza um usuário a acessar um arquivo ou diretório comparando as credenciais do usuário com as permissões configuradas no arquivo ou diretório. 
+---
+= Autenticação e autorização do cliente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP usa métodos padrão para proteger o acesso do cliente e do administrador ao armazenamento e para proteger contra vírus. Tecnologias avançadas estão disponíveis para criptografia de dados em repouso e para storage WORM.
+
+O ONTAP autentica uma máquina cliente e um usuário verificando suas identidades com uma fonte confiável. O ONTAP autoriza um usuário a acessar um arquivo ou diretório comparando as credenciais do usuário com as permissões configuradas no arquivo ou diretório.
+
+
+
+== Autenticação
+
+Você pode criar contas de usuário locais ou remotas:
+
+* Uma conta local é aquela em que as informações da conta residem no sistema de armazenamento.
+* Uma conta remota é aquela em que as informações de conta são armazenadas em um controlador de domínio do ative Directory, um servidor LDAP ou um servidor NIS.
+
+
+O ONTAP usa serviços de nomes locais ou externos para procurar informações de mapeamento de nome, usuário, grupo, grupo netgroup e nome do host. O ONTAP oferece suporte aos seguintes serviços de nomes:
+
+* Usuários locais
+* DNS
+* Domínios NIS externos
+* Domínios LDAP externos
+
+
+Uma tabela _name Service switch_ especifica as fontes para procurar informações de rede e a ordem na qual pesquisá-las (fornecendo a funcionalidade equivalente do arquivo /etc/nsswitch.conf em sistemas UNIX). Quando um cliente nas se coneta ao SVM, o ONTAP verifica os serviços de nome especificados para obter as informações necessárias.
+
+|===
+
+
+ a| 
+*_Kerberos support_* Kerberos é um protocolo de autenticação de rede que fornece "autenticação de conexão", criptografando senhas de usuário em implementações cliente-servidor. O ONTAP suporta autenticação Kerberos 5 com verificação de integridade (krb5i) e autenticação Kerberos 5 com verificação de privacidade (krb5p).
+
+|===
+
+
+== Autorização
+
+O ONTAP avalia três níveis de segurança para determinar se uma entidade está autorizada a executar uma ação solicitada em arquivos e diretórios localizados em um SVM. O acesso é determinado pelas permissões efetivas após a avaliação dos níveis de segurança:
+
+* Segurança de exportação (NFS) e compartilhamento (SMB)
++
+A segurança de exportação e compartilhamento se aplica ao acesso do cliente a uma determinada exportação NFS ou compartilhamento SMB. Os usuários com Privileges administrativo podem gerenciar a segurança de exportação e compartilhamento a partir de clientes SMB e NFS.
+
+* Segurança de arquivo e diretório do Access Guard no nível de armazenamento
++
+A segurança do Access Guard no nível de storage se aplica ao acesso de clientes SMB e NFS aos volumes SVM. Apenas as permissões de acesso NTFS são suportadas. Para que o ONTAP execute verificações de segurança em usuários UNIX para obter acesso a dados em volumes para os quais o Guarda de Acesso em nível de storage foi aplicado, o usuário do UNIX deve mapear para um usuário do Windows na SVM que possua o volume.
+
+* Segurança nativa em nível de arquivo NTFS, UNIX e NFSv4
++
+A segurança de nível de arquivo nativo existe no arquivo ou diretório que representa o objeto de storage. Você pode definir a segurança no nível do arquivo de um cliente. As permissões de arquivo são efetivas independentemente de SMB ou NFS serem usados para acessar os dados.
+
+
+
+
+
+== Autenticação com SAML
+
+O ONTAP suporta a linguagem de marcação de asserção de Segurança (SAML) para autenticação de usuários remotos. Vários provedores de identidade populares (IDPs) são suportados. Para obter mais informações sobre IDPs suportados e instruções para ativar a autenticação SAML, link:../system-admin/configure-saml-authentication-task.html["Configurar a autenticação SAML"^]consulte .
+
+
+
+== OAuth 2,0 com clientes API REST do ONTAP
+
+O suporte para a estrutura de autorização aberta (OAuth 2,0) está disponível a partir do ONTAP 9.14. Você só pode usar o OAuth 2,0 para tomar decisões de autorização e controle de acesso quando o cliente usa a API REST para acessar o ONTAP. No entanto, você pode configurar e ativar o recurso com qualquer uma das interfaces administrativas do ONTAP, incluindo a CLI, o Gerenciador de sistema e a API REST.
+
+Os recursos padrão do OAuth 2,0 são suportados juntamente com vários servidores de autorização populares. Você pode aprimorar ainda mais a segurança do ONTAP usando tokens de acesso restritos ao remetente baseados no TLS mútuo. E há uma ampla variedade de opções de autorização disponíveis, incluindo escopos autônomos, bem como integração com as funções REST do ONTAP e definições de usuário local. Consulte link:../authentication/overview-oauth2.html["Visão geral da implementação do ONTAP OAuth 2,0"] para obter mais informações.

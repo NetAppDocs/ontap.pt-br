@@ -1,0 +1,108 @@
+---
+permalink: s3-config/configure-access-ldap.html 
+sidebar: sidebar 
+keywords: tr-4814, generate, ldap, s3, access keys, secret keys using API 
+summary: As chaves para acessar clientes S3 podem ser regeneradas por S3 usuários usando a API. 
+---
+= Configurar o acesso S3 para serviços de diretório externo
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.14,1, os serviços para diretórios externos foram integrados ao armazenamento de objetos ONTAP S3. Essa integração simplifica o gerenciamento de usuários e acessos por meio de serviços de diretório externos.
+
+Você pode fornecer grupos de usuários pertencentes a um serviço de diretório externo com acesso ao ambiente de storage de objetos do ONTAP. O LDAP (Lightweight Directory Access Protocol) é uma interface para comunicação com serviços de diretório, como o ative Directory, que fornece um banco de dados e serviços para gerenciamento de identidade e acesso (IAM). Para fornecer acesso, é necessário configurar grupos LDAP no ambiente do ONTAP S3. Depois de configurar o acesso, os membros do grupo têm permissões para buckets do ONTAP S3. Para obter informações sobre LDAP, link:../nfs-config/using-ldap-concept.html["Visão geral do uso do LDAP"]consulte .
+
+Você também pode configurar grupos de usuários do ative Directory para o modo de vinculação rápida, para que as credenciais de usuário possam ser validadas e aplicativos S3 de terceiros e de código aberto possam ser autenticados por conexões LDAP.
+
+.Antes de começar
+Antes de configurar grupos LDAP e ativar o modo de ligação rápida para acesso a grupos, certifique-se de que o seguinte é:
+
+. Uma VM de armazenamento habilitada para S3 contendo um servidor S3 foi criada. link:../s3-config/create-svm-s3-task.html["Criar um SVM para S3"]Consulte .
+. Um bucket foi criado nessa VM de storage. link:../s3-config/create-bucket-task.html["Crie um bucket"]Consulte .
+. O DNS está configurado na VM de armazenamento. link:../networking/configure_dns_services_manual.html["Configurar serviços DNS"]Consulte .
+. Um certificado de autoridade de certificação raiz (CA) autoassinado do servidor LDAP é instalado na VM de armazenamento. link:../nfs-config/install-self-signed-root-ca-certificate-svm-task.html["Instale o certificado de CA raiz autoassinado no SVM"]Consulte .
+. Um cliente LDAP é configurado com TLS habilitado no SVM. link:../nfs-config/create-ldap-client-config-task.html["Crie uma configuração de cliente LDAP"]Consulte e link:../nfs-config/enable-ldap-svms-task.html["Associe a configuração do cliente LDAP a SVMs para obter informações"].
+
+
+
+
+== Configurar o acesso S3 para serviços de diretório externo
+
+. Especifique LDAP como o banco de dados _name Service_ do SVM para o grupo e a senha para LDAP:
++
+[listing]
+----
+ns-switch modify -vserver <vserver-name> -database group -sources files,ldap
+ns-switch modify -vserver <vserver-name> -database passwd -sources files,ldap
+----
++
+Para obter mais informações sobre esse comando, consulte o link:https://docs.netapp.com/us-en/ontap-cli/vserver-services-name-service-ns-switch-modify.html["serviços de svm name-service ns-switch modificar"] comando.
+
+. Crie uma declaração de política de bucket do armazenamento de objetos com o `principal` conjunto para o grupo LDAP ao qual você deseja conceder acesso:
++
+[listing]
+----
+object-store-server bucket policy statement create -bucket <bucket-name> -effect allow -principal nasgroup/<ldap-group-name> -resource <bucket-name>, <bucket-name>/*
+----
++
+Exemplo: O exemplo a seguir cria uma declaração de política de bucket para `buck1`. A política permite o acesso do grupo LDAP `group1` ao recurso (bucket e seus objetos `buck1`) .
+
++
+[listing]
+----
+vserver object-store-server bucket policy add-statement -bucket buck1 -effect allow -action
+GetObject,PutObject,DeleteObject,ListBucket,GetBucketAcl,GetObjectAcl,ListBucketMultipartUploads,ListMultipartUploadParts, ListBucketVersions,GetObjectTagging,PutObjectTagging,DeleteObjectTagging,GetBucketVersioning,PutBucketVersioning -principal nasgroup/group1 -resource buck1, buck1/*
+----
+. Verifique se um usuário do grupo LDAP `group1` é capaz de executar operações S3 do cliente S3.
+
+
+
+
+== Use o modo LDAP fast bind para autenticação
+
+. Especifique LDAP como o banco de dados _name Service_ do SVM para o grupo e a senha para LDAP:
++
+[listing]
+----
+ns-switch modify -vserver <vserver-name> -database group -sources files,ldap
+ns-switch modify -vserver <vserver-name> -database passwd -sources files,ldap
+----
++
+Para obter mais informações sobre esse comando, consulte o link:https://docs.netapp.com/us-en/ontap-cli/vserver-services-name-service-ns-switch-modify.html["serviços de svm name-service ns-switch modificar"] comando.
+
+. Certifique-se de que um usuário LDAP acessando o bucket do S3 tenha permissões definidas nas políticas de bucket. Para obter mais informações, link:../s3-config/create-modify-bucket-policy-task.html["Modificar uma política de bucket"]consulte .
+. Verifique se um usuário do grupo LDAP pode executar as seguintes operações:
++
+.. Configure a chave de acesso no cliente S3 neste formato:
+`"NTAPFASTBIND" + base64-encode(user-name:password)` Exemplo `"NTAPFASTBIND"`: base64-encode(ldapuser:password), o que resulta em  `NTAPFASTBINDbGRhcHVzZXI6cGFzc3dvcmQ=`
++
+
+NOTE: O cliente S3 pode pedir uma chave secreta. Na ausência de uma chave secreta, qualquer senha de pelo menos 16 carateres pode ser inserida.
+
+.. Execute operações S3 básicas do cliente S3 para o qual o usuário tem permissões.
+
+
+
+
+
+
+=== Autenticação de recursos para o ative Directory para usuários sem UID e GID
+
+Se o nasgroup especificado na declaração bucket-policy ou os usuários que fazem parte do nasgroup não tiverem UID e GID definidos, as pesquisas falharão quando esses atributos não forem encontrados.
+
+Para evitar falhas de pesquisa, o NetApp recomenda o uso de domínios confiáveis para autorização de recursos no formato UPN: Nasgroup/group@trusted_domain.com
+
+
+
+=== Para gerar as chaves de acesso do usuário para usuários de domínio confiáveis quando o LDAP fast bind não é usado
+
+Use o `s3/services/<svm_uuid>/users` endpoint com usuários especificados no formato UPN. Exemplo:
+
+[listing]
+----
+$curl -siku FQDN\\user:<user_name> -X POST https://<LIF_IP_Address>/api/protocols/s3/services/<SVM_UUID>/users -d {"comment":"<S3_user_name>", "name":<user[@fqdn](https://github.com/fqdn)>,"<key_time_to_live>":"PT6H3M"}'
+----

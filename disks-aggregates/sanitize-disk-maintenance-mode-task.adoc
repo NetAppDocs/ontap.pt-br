@@ -1,0 +1,214 @@
+---
+permalink: disks-aggregates/sanitize-disk-maintenance-mode-task.html 
+sidebar: sidebar 
+keywords: sanitize, disk, maintenance mode, nodeshell, node shell, sanitization 
+summary: Começando com ONTAP 9.6, você pode executar a sanitização de disco no modo de manutenção. Isso permite remover dados de um disco ou de um conjunto de discos em sistemas desativados ou inoperáveis para que os dados nunca possam ser recuperados. 
+---
+= Sanitize um disco
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A limpeza de um disco permite remover dados de um disco ou de um conjunto de discos em sistemas desativados ou inoperáveis para que os dados nunca possam ser recuperados.
+
+Dois métodos estão disponíveis para higienizar discos usando a CLI:
+
+.Sanitize um disco com os comandos do modo de manutenção& n.o 8220; (versões ONTAP 9.8221 e posteriores)
+[%collapsible]
+====
+Começando com ONTAP 9.6, você pode executar a sanitização de disco no modo de manutenção.
+
+.Antes de começar
+* Os discos não podem ser discos com autocriptografia (SED).
++
+Você deve usar o `storage encryption disk sanitize` comando para higienizar um SED.
+
++
+link:../encryption-at-rest/index.html["Criptografia de dados em repouso"]
+
+
+
+.Passos
+. Arranque no modo de manutenção.
++
+.. Saia do shell atual entrando `halt`em .
++
+O prompt Loader é exibido.
+
+.. Entre no modo de manutenção entrando `boot_ontap maint`em .
++
+Depois de algumas informações serem exibidas, o prompt do modo de manutenção é exibido.
+
+
+
+. Se os discos que você deseja limpar estiverem particionados, desparticione cada disco:
++
+
+NOTE: O comando para desparticionar um disco só está disponível no nível de diag e só deve ser executado sob supervisão de suporte NetApp. É altamente recomendável que você entre em Contato com o suporte da NetApp antes de prosseguir. Você também pode consultar o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Systems/FAS_Systems/How_to_unpartition_a_spare_drive_in_ONTAP["Como desparticionar uma unidade sobressalente no ONTAP"^]
+
++
+`disk unpartition _disk_name_`
+
+. Higienizar os discos especificados:
++
+`disk sanitize start [-p _pattern1_|-r [-p _pattern2_|-r [-p _pattern3_|-r]]] [-c _cycle_count_] _disk_list_`
+
++
+
+NOTE: Não desligue a alimentação do nó, interrompa a conectividade do storage ou remova os discos de destino durante a limpeza. Se a limpeza for interrompida durante a fase de formatação, a fase de formatação deve ser reiniciada e pode ser concluída antes que os discos sejam higienizados e prontos para serem devolvidos ao pool sobressalente. Se você precisar abortar o processo de sanitização, você pode fazê-lo usando o `disk sanitize abort` comando. Se os discos especificados estiverem passando pela fase de formatação da sanitização, o cancelamento não ocorrerá até que a fase esteja concluída.
+
++
+ `-p` `_pattern1_` `-p` `_pattern2_` `-p` `_pattern3_` especifica um ciclo de um a três padrões de substituição de bytes hexadecimais definidos pelo usuário que podem ser aplicados sucessivamente aos discos que estão sendo higienizados. O padrão padrão padrão é três passagens, usando 0x55 para a primeira passagem, 0xaa para a segunda passagem e 0x3c para a terceira passagem.
+
++
+`-r` substitui uma substituição padronizada por uma substituição aleatória para qualquer ou todos os passes.
+
++
+`-c` `_cycle_count_` especifica o número de vezes que os padrões de substituição especificados são aplicados. O valor padrão é um ciclo. O valor máximo é de sete ciclos.
+
++
+`_disk_list_` Especifica uma lista separada por espaço das IDs dos discos sobressalentes a serem higienizados.
+
+. Se desejar, verifique o estado do processo de sanitização de disco:
++
+`disk sanitize status [_disk_list_]`
+
+. Depois que o processo de sanitização estiver concluído, retorne os discos ao status de reserva para cada disco:
++
+`disk sanitize release _disk_name_`
+
+. Sair do modo de manutenção.
+
+
+====
+.Higienize um disco com os comandos e n.o 8220;nodeshell& n.o 8221; (todas as versões do ONTAP 9)
+[%collapsible]
+====
+Para todas as versões do ONTAP 9, quando a sanitização de disco é ativada usando comandos nodeshell, alguns comandos ONTAP de baixo nível são desativados. Depois que a sanitização de disco estiver ativada em um nó, ela não poderá ser desativada.
+
+.Antes de começar
+* Os discos devem ser discos sobressalentes; eles devem ser de propriedade de um nó, mas não usados em um nível local (agregado).
++
+Se os discos forem particionados, nenhuma partição poderá ser usada em um nível local (agregado).
+
+* Os discos não podem ser discos com autocriptografia (SED).
++
+Você deve usar o `storage encryption disk sanitize` comando para higienizar um SED.
+
++
+link:../encryption-at-rest/index.html["Criptografia de dados em repouso"]
+
+* Os discos não podem fazer parte de um pool de armazenamento.
+
+
+.Passos
+. Se os discos que você deseja limpar estiverem particionados, desparticione cada disco:
++
+--
+
+NOTE: O comando para desparticionar um disco só está disponível no nível de diag e só deve ser executado sob supervisão de suporte NetApp. **É altamente recomendável que você entre em Contato com o suporte da NetApp antes de prosseguir.** Você também pode consultar o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Systems/FAS_Systems/How_to_unpartition_a_spare_drive_in_ONTAP["Como desparticionar uma unidade sobressalente no ONTAP"^].
+
+--
++
+`disk unpartition _disk_name_`
+
+. Introduza o nodeshell para o nó que possui os discos que pretende higienizar:
++
+`system node run -node _node_name_`
+
+. Ativar sanitização de disco:
++
+`options licensed_feature.disk_sanitization.enable on`
+
++
+Você é solicitado a confirmar o comando porque ele é irreversível.
+
+. Mude para o nível de privilégio avançado nodeshell:
++
+`priv set advanced`
+
+. Higienizar os discos especificados:
++
+`disk sanitize start [-p pattern1|-r [-p pattern2|-r [-p pattern3|-r]]] [-c cycle_count] disk_list`
+
++
+
+NOTE: Não desligue a alimentação do nó, interrompa a conectividade do storage ou remova os discos de destino durante a limpeza. Se a limpeza for interrompida durante a fase de formatação, a fase de formatação deve ser reiniciada e pode ser concluída antes que os discos sejam higienizados e prontos para serem devolvidos ao pool sobressalente. Se você precisar abortar o processo de sanitização, você pode fazê-lo usando o comando Disk Sanitize abort. Se os discos especificados estiverem passando pela fase de formatação da sanitização, o cancelamento não ocorrerá até que a fase esteja concluída.
+
++
+`-p pattern1 -p pattern2 -p pattern3` especifica um ciclo de um a três padrões de substituição de bytes hexadecimais definidos pelo usuário que podem ser aplicados sucessivamente aos discos que estão sendo higienizados. O padrão padrão padrão é três passagens, usando 0x55 para a primeira passagem, 0xaa para a segunda passagem e 0x3c para a terceira passagem.
+
++
+`-r` substitui uma substituição padronizada por uma substituição aleatória para qualquer ou todos os passes.
+
++
+`-c cycle_count` especifica o número de vezes que os padrões de substituição especificados são aplicados.
+
++
+O valor padrão é um ciclo. O valor máximo é de sete ciclos.
+
++
+`disk_list` Especifica uma lista separada por espaço das IDs dos discos sobressalentes a serem higienizados.
+
+. Se pretender verificar o estado do processo de sanitização de disco:
++
+`disk sanitize status [disk_list]`
+
+. Depois de concluir o processo de sanitização, devolva os discos ao estado de reserva:
++
+`disk sanitize release _disk_name_`
+
+. Retornar ao nível de privilégio de administrador nodeshell:
++
+`priv set admin`
+
+. Voltar à CLI do ONTAP:
++
+`exit`
+
+. Determine se todos os discos foram retornados ao status de reserva:
++
+`storage aggregate show-spare-disks`
+
++
+[cols="1,2"]
+|===
+
+
+| Se... | Então... 
+
+
+| Todos os discos higienizados são listados como peças sobressalentes | Você está pronto. Os discos são higienizados e em estado sobressalente. 
+
+
+| Alguns dos discos higienizados não são listados como sobressalentes  a| 
+Execute as seguintes etapas:
+
+.. Entrar no modo de privilégio avançado:
++
+`set -privilege advanced`
+
+.. Atribua os discos higienizados não atribuídos ao nó apropriado para cada disco:
++
+`storage disk assign -disk _disk_name_ -owner _node_name_`
+
+.. Retorne os discos ao status de reserva para cada disco:
++
+`storage disk unfail -disk _disk_name_ -s -q`
+
+.. Voltar ao modo administrativo:
++
+`set -privilege admin`
+
+
+
+|===
+
+
+====
+.Resultado
+Os discos especificados são higienizados e designados como hot spares. Os números de série dos discos higienizados são gravados em `/etc/log/sanitized_disks`.
+
+Os logs de sanitização dos discos especificados, que mostram o que foi concluído em cada disco, são gravados no `/mroot/etc/log/sanitization.log`.

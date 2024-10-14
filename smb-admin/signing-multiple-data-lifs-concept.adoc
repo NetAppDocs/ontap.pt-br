@@ -1,0 +1,31 @@
+---
+permalink: smb-admin/signing-multiple-data-lifs-concept.html 
+sidebar: sidebar 
+keywords: enable, disable, require, smb, sign, server, guideline, lifs, configuration, svm, guidelines for smb signing when multiple data lifs are configured 
+summary: Se você ativar ou desativar a assinatura SMB necessária no servidor SMB, você deve estar ciente das diretrizes para várias configurações LIFS de dados para um SVM. 
+---
+= Diretrizes para assinatura SMB quando vários dados LIFS são configurados
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você ativar ou desativar a assinatura SMB necessária no servidor SMB, você deve estar ciente das diretrizes para várias configurações LIFS de dados para um SVM.
+
+Quando você configura um servidor SMB, pode haver várias LIFs de dados configuradas. Nesse caso, o servidor DNS contém várias `A` entradas de Registro para o servidor CIFS, todas usando o mesmo nome de host do servidor SMB, mas cada uma com um endereço IP exclusivo. Por exemplo, um servidor SMB que tem duas LIFs de dados configuradas pode ter as seguintes entradas de Registro DNS `A`:
+
+[listing]
+----
+10.1.1.128 A VS1.IEPUB.LOCAL VS1
+10.1.1.129 A VS1.IEPUB.LOCAL VS1
+----
+O comportamento normal é que, ao alterar a configuração de assinatura SMB necessária, apenas novas conexões de clientes são afetadas pela alteração na configuração de assinatura SMB. No entanto, há uma exceção a esse comportamento. Há um caso em que um cliente tem uma conexão existente com um compartilhamento, e o cliente cria uma nova conexão com o mesmo compartilhamento após a configuração ser alterada, mantendo a conexão original. Nesse caso, tanto a conexão SMB nova quanto a existente adotam os novos requisitos de assinatura SMB.
+
+Considere o seguinte exemplo:
+
+. Client1 coneta-se a um compartilhamento sem a assinatura SMB necessária usando o caminho `O:\`.
+. O administrador de armazenamento modifica a configuração do servidor SMB para exigir assinatura SMB.
+. O Client1 coneta-se ao mesmo compartilhamento com a assinatura SMB necessária usando o caminho `S:\` (mantendo a conexão usando o caminho `O:\`).
+. O resultado é que a assinatura SMB é usada ao acessar dados `O:\` nas unidades e `S:\` .
+

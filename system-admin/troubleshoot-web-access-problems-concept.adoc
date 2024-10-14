@@ -1,0 +1,114 @@
+---
+permalink: system-admin/troubleshoot-web-access-problems-concept.html 
+sidebar: sidebar 
+keywords: troubleshoot, web, services, access, problems, lif, firewall, policy, protocol, engin, digital, certificate, user, access, authorization 
+summary: Os erros de configuração causam problemas de acesso ao serviço da Web. Você pode resolver os erros garantindo que o LIF, a política de firewall, o mecanismo de protocolo da Web, os serviços da Web, os certificados digitais e a autorização de acesso do usuário estejam configurados corretamente. 
+---
+= Solucionar problemas de acesso ao serviço da Web
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os erros de configuração causam problemas de acesso ao serviço da Web. Você pode resolver os erros garantindo que o LIF, a política de firewall, o mecanismo de protocolo da Web, os serviços da Web, os certificados digitais e a autorização de acesso do usuário estejam configurados corretamente.
+
+A tabela a seguir ajuda a identificar e tratar erros de configuração do serviço da Web:
+
+|===
+| Este problema de acesso... | Ocorre devido a este erro de configuração... | Para resolver o erro... 
+
+
+ a| 
+O navegador da Web retorna um `unable to connect` erro ou `failure to establish a connection` quando você tenta acessar um serviço da Web.
+ a| 
+Seu LIF pode estar configurado incorretamente.
+ a| 
+Certifique-se de que você pode fazer ping no LIF que fornece o serviço da Web.
+
+[NOTE]
+====
+Você usa o `network ping` comando para fazer ping em um LIF. Para obter informações sobre a configuração de rede, consulte o _Network Management Guide_.
+
+====
+
+
+ a| 
+O firewall pode estar configurado incorretamente.
+ a| 
+Certifique-se de que uma política de firewall esteja configurada para suportar HTTP ou HTTPS e que a política esteja atribuída ao LIF que fornece o serviço da Web.
+
+[NOTE]
+====
+Você usa os `system services firewall policy` comandos para gerenciar políticas de firewall. Você usa o `network interface modify` comando com o `-firewall-policy` parâmetro para associar uma política a um LIF.
+
+====
+
+
+ a| 
+Seu mecanismo de protocolo da Web pode estar desativado.
+ a| 
+Certifique-se de que o mecanismo de protocolo da Web está ativado para que os serviços da Web estejam acessíveis.
+
+[NOTE]
+====
+Você usa os `system services web` comandos para gerenciar o mecanismo de protocolo da Web para o cluster.
+
+====
+
+
+ a| 
+Seu navegador retorna um `not found` erro quando você tenta acessar um serviço da Web.
+ a| 
+O serviço da Web pode estar desativado.
+ a| 
+Certifique-se de que cada serviço Web ao qual você deseja permitir acesso esteja ativado individualmente.
+
+[NOTE]
+====
+Você usa o `vserver services web modify` comando para habilitar um serviço da Web para acesso.
+
+====
+
+
+ a| 
+O navegador da Web não consegue fazer login em um serviço da Web com o nome de conta e a senha de um usuário.
+ a| 
+O utilizador não pode ser autenticado, o método de acesso não está correto ou o utilizador não está autorizado a aceder ao serviço Web.
+ a| 
+Certifique-se de que a conta de utilizador existe e está configurada com o método de acesso e o método de autenticação corretos. Além disso, certifique-se de que a função do utilizador está autorizada a aceder ao serviço Web.
+
+[NOTE]
+====
+Você usa os `security login` comandos para gerenciar contas de usuário e seus métodos de acesso e métodos de autenticação. Acessar o serviço da Web da API do ONTAP requer o `ontapi` método de acesso. O acesso a todos os outros serviços da Web requer o `http` método de acesso. Você usa os `vserver services web access` comandos para gerenciar o acesso de uma função a um serviço da Web.
+
+====
+
+
+ a| 
+Você se coneta ao serviço da Web com HTTPS e o navegador da Web indica que sua conexão foi interrompida.
+ a| 
+Talvez você não tenha o SSL ativado no cluster ou na máquina virtual de armazenamento (SVM) que fornece o serviço da Web.
+ a| 
+Certifique-se de que o cluster ou SVM tenha SSL habilitado e que o certificado digital seja válido.
+
+[NOTE]
+====
+Você usa os `security ssl` comandos para gerenciar a configuração SSL para servidores HTTP e o `security certificate show` comando para exibir informações de certificado digital.
+
+====
+
+
+ a| 
+Você se coneta ao serviço da Web com HTTPS e o navegador da Web indica que a conexão não é confiável.
+ a| 
+Você pode estar usando um certificado digital autoassinado.
+ a| 
+Certifique-se de que o certificado digital associado ao cluster ou SVM seja assinado por uma CA confiável.
+
+[NOTE]
+====
+Use o `security certificate generate-csr` comando para gerar uma solicitação de assinatura de certificado digital e o `security certificate install` comando para instalar um certificado digital assinado pela CA. Use os `security ssl` comandos para gerenciar a configuração SSL do cluster ou SVM que fornece o serviço da Web.
+
+====
+|===

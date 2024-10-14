@@ -1,0 +1,83 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/recover-unplanned-failover-task.html 
+keywords: fan-out, snapmirror active sync, unplanned failover 
+summary: 'Uma operação automática de failover não planejado (AUFO) ocorre quando o cluster primário está inativo ou isolado. Quando isso ocorre, o cluster secundário é convertido para o primário e começa a servir clientes.' 
+---
+= Recuperar de operações automáticas de failover não planejadas
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Uma operação automática de failover não planejado (AUFO) ocorre quando o cluster primário está inativo ou isolado. O Mediador ONTAP deteta quando ocorre um failover e executa um failover automático não planejado para o cluster secundário. O cluster secundário é convertido para o primário e começa a servir os clientes. Esta operação é realizada apenas com a ajuda do Mediador ONTAP.
+
+
+NOTE: Após o failover automático não planejado, é importante reexaminar os caminhos de e/S LUN do host para que não haja perda de caminhos de e/S.
+
+
+
+== Restabeleça o relacionamento de proteção após um failover não planejado
+
+É possível restabelecer a relação de proteção usando o Gerenciador de sistema ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+
+IMPORTANT: Do ONTAP 9.8 ao 9.14.1, a sincronização ativa do SnapMirror é chamada de continuidade de negócios do SnapMirror (SM-BC).
+
+. Navegue até *proteção > relacionamentos* e aguarde que o estado da relação mostre "InSync".
+. Para retomar as operações no cluster de origem original, clique image:icon_kabob.gif["Ícone de opções do menu"] e selecione *failover*.
+
+
+--
+.CLI
+--
+Você pode monitorar o status do failover automático não planejado usando o `snapmirror failover show` comando.
+
+Por exemplo:
+
+....
+ClusterB::> snapmirror failover show -instance
+Start Time: 9/23/2020 22:03:29
+         Source Path: vs1:/cg/scg3
+    Destination Path: vs3:/cg/dcg3
+     Failover Status: completed
+        Error Reason:
+            End Time: 9/23/2020 22:03:30
+Primary Data Cluster: cluster-2
+Last Progress Update: -
+       Failover Type: unplanned
+  Error Reason codes: -
+....
+Consulte link:https://docs.netapp.com/us-en/ontap-ems-9131/smbc-aufo-events.html["Referência da EMS"^]para obter informações sobre mensagens de eventos e sobre ações corretivas.
+
+--
+====
+
+
+== Retomar a proteção em uma configuração de fan-out após o failover
+
+A partir do ONTAP 9.15,1, o SnapMirror ative Sync suporta reconfiguração automática na etapa fan-out após um evento de failover. Para obter mais informações, link:interoperability-reference.html#fan-out-configurations["configurações de fan-out"]consulte .
+
+Se você estiver usando o ONTAP 9.14,1 ou anterior e tiver um failover no cluster secundário na relação de sincronização ativa do SnapMirror, o destino assíncrono do SnapMirror não será saudável. Você deve restaurar manualmente a proteção excluindo e recriando a relação com o endpoint assíncrono do SnapMirror.
+
+.Passos
+. Verifique se o failover foi concluído com êxito:
+`snapmirror failover show`
+. No endpoint assíncrono do SnapMirror, exclua o endpoint de fan-out:
+`snapmirror delete -destination-path _destination_path_`
+. No terceiro site, crie relações assíncronas do SnapMirror entre o novo volume primário de sincronização ativa do SnapMirror e o volume de destino de saída de ventoinha assíncrona:
+`snapmirror create -source-path _source_path_ -destination-path _destination_path_ -policy MirrorAllSnapshots -schedule _schedule_`
+. Ressincronizar a relação:
+`snapmirror resync -destination-path _destination_path_`
+. Verifique o status e a saúde da relação:
+`snapmirror show`
+

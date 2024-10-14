@@ -1,0 +1,101 @@
+---
+permalink: nfs-admin/flush-export-policy-caches-task.html 
+sidebar: sidebar 
+keywords: flush, export, policy, cache 
+summary: 'A lavagem manual de caches de política de exportação (flush de cache de política de exportação vserver) remove informações potencialmente desatualizadas e força o ONTAP a recuperar informações atuais dos recursos externos apropriados. Isso pode ajudar a resolver uma variedade de problemas relacionados ao acesso do cliente às exportações NFS.' 
+---
+= Lavar caches de política de exportação
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP usa vários caches de política de exportação para armazenar informações relacionadas a políticas de exportação para acesso mais rápido. A eliminação de caches de política de exportação manualmente (`vserver export-policy cache flush`) remove informações potencialmente desatualizadas e força o ONTAP a recuperar informações atuais dos recursos externos apropriados. Isso pode ajudar a resolver uma variedade de problemas relacionados ao acesso do cliente às exportações NFS.
+
+.Sobre esta tarefa
+As informações de cache de política de exportação podem estar desatualizadas devido aos seguintes motivos:
+
+* Uma alteração recente às regras de política de exportação
+* Uma alteração recente nos registos de nome de anfitrião nos servidores de nomes
+* Uma alteração recente para entradas de netgroup em servidores de nomes
+* Recuperando-se de uma interrupção de rede que impedia que os netgroups fossem totalmente carregados
+
+
+.Passos
+. Se você não tiver o cache do serviço de nomes habilitado, execute uma das seguintes ações no modo de privilégio avançado:
++
+[cols="2*"]
+|===
+| Se você quiser flush... | Digite o comando... 
+
+
+ a| 
+Todos os caches de política de exportação (exceto showmount)
+ a| 
+`vserver export-policy cache flush -vserver vserver_name`
+
+
+
+ a| 
+As regras de política de exportação acedem à cache
+ a| 
+`vserver export-policy cache flush -vserver vserver_name -cache access` Você pode incluir o parâmetro opcional `-node` para especificar o nó no qual deseja limpar o cache de acesso.
+
+
+
+ a| 
+O cache do nome do host
+ a| 
+`vserver export-policy cache flush -vserver vserver_name -cache host`
+
+
+
+ a| 
+O cache netgroup
+ a| 
+`vserver export-policy cache flush -vserver vserver_name -cache netgroup` O processamento de netgroups é intensivo em recursos. Você só deve limpar o cache do netgroup se estiver tentando resolver um problema de acesso de cliente causado por um netgroup obsoleto.
+
+
+
+ a| 
+O cache showmount
+ a| 
+`vserver export-policy cache flush -vserver vserver_name -cache showmount`
+
+|===
+. Se o cache do serviço de nomes estiver ativado, execute uma das seguintes ações:
++
+[cols="2*"]
+|===
+| Se você quiser flush... | Digite o comando... 
+
+
+ a| 
+As regras de política de exportação acedem à cache
+ a| 
+`vserver export-policy cache flush -vserver vserver_name -cache access` Você pode incluir o parâmetro opcional `-node` para especificar o nó no qual deseja limpar o cache de acesso.
+
+
+
+ a| 
+O cache do nome do host
+ a| 
+`vserver services name-service cache hosts forward-lookup delete-all`
+
+
+
+ a| 
+O cache netgroup
+ a| 
+`vserver services name-service cache netgroups ip-to-netgroup delete-all` `vserver services name-service cache netgroups members delete-all` O processamento de netgroups é intensivo em recursos. Você só deve limpar o cache do netgroup se estiver tentando resolver um problema de acesso de cliente causado por um netgroup obsoleto.
+
+
+
+ a| 
+O cache showmount
+ a| 
+`vserver export-policy cache flush -vserver vserver_name -cache showmount`
+
+|===
+

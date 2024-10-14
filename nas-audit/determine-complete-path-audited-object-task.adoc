@@ -1,0 +1,48 @@
+---
+permalink: nas-audit/determine-complete-path-audited-object-task.html 
+sidebar: sidebar 
+keywords: determine, complete path, audited object 
+summary: 'O caminho do objeto impresso na tag <ObjectName> para um Registro de auditoria contém o nome do volume (entre parênteses) e o caminho relativo da raiz do volume que contém. Se você quiser determinar o caminho completo do objeto auditado, incluindo o caminho de junção, há certas etapas que você deve seguir.' 
+---
+= Determine qual é o caminho completo para o objeto auditado
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O caminho do objeto impresso na `<ObjectName>` tag para um Registro de auditoria contém o nome do volume (entre parênteses) e o caminho relativo da raiz do volume que contém. Se você quiser determinar o caminho completo do objeto auditado, incluindo o caminho de junção, há certas etapas que você deve seguir.
+
+.Passos
+. Determine qual é o nome do volume e o caminho relativo para o objeto auditado olhando para a `<ObjectName>` tag no evento de auditoria.
++
+Neste exemplo, o nome do volume é "ATA1" e o caminho relativo para o arquivo é `/dir1/file.txt`:
+
++
+`<Data Name="ObjectName">` `(data1);/dir1/file.txt` `</Data>`
+
+. Usando o nome do volume determinado na etapa anterior, determine qual é o caminho de junção para o volume que contém o objeto auditado:
++
+Neste exemplo, o nome do volume é "ATA1" e o caminho de junção para o volume que contém o objeto auditado é `/data/data1`:
+
++
+`volume show -junction -volume data1`
+
++
+[listing]
+----
+
+                                Junction                    Junction
+Vserver   Volume       Language Active    Junction Path     Path Source
+--------- ------------ -------- --------  ----------------- -----------
+vs1       data1        en_US.UTF-8
+                                true      /data/data1       RW_volume
+----
+. Determine o caminho completo para o objeto auditado anexando o caminho relativo encontrado na `<ObjectName>` tag para o caminho de junção para o volume.
++
+Neste exemplo, o caminho de junção para o volume:
+
++
+`/data/data1/dir1/file.text`
+
+

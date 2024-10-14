@@ -1,0 +1,164 @@
+---
+permalink: smb-admin/enable-disable-aes-encryption-kerberos-task.html 
+sidebar: sidebar 
+keywords: advantage, security, kerberos-based, communication, aes-256, aes-128, aes, encryption, active, directory, ad, kdc, cifs, smb 
+summary: 'Para aproveitar a segurança mais forte com a comunicação baseada no Kerberos, você pode ativar a criptografia AES-256 e AES-128 no servidor SMB. Se você não quiser que o servidor SMB selecione os tipos de criptografia AES para comunicação baseada em Kerberos com o KDC do ative Directory (AD), você pode desativar a criptografia AES. Por predefinição, a encriptação AES está desativada.' 
+---
+= Ativar ou desativar a encriptação AES para comunicação baseada no Kerberos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para aproveitar a segurança mais forte com a comunicação baseada no Kerberos, você deve usar a criptografia AES-256 e AES-128 no servidor SMB. A partir do ONTAP 9.13,1, a encriptação AES é ativada por predefinição. Se você não quiser que o servidor SMB selecione os tipos de criptografia AES para comunicação baseada em Kerberos com o KDC do ative Directory (AD), você pode desativar a criptografia AES.
+
+Se a encriptação AES está ativada por predefinição e se tem a opção de especificar tipos de encriptação depende da versão do ONTAP.
+
+[cols="3"]
+|===
+| Versão de ONTAP | A encriptação AES está ativada ... | Você pode especificar tipos de criptografia? 
+
+
+| 9.13.1 e mais tarde | Por padrão | Sim 
+
+
+| 9.12.1 | Manualmente | Sim 
+
+
+| 9.11.1 e anteriores | Manualmente | Não 
+|===
+A partir do ONTAP 9.12,1, a criptografia AES é ativada e desativada usando a `-advertised-enc-types` opção, que permite especificar os tipos de criptografia anunciados para o AD KDC. A configuração padrão é `rc4` e `des`, mas quando um tipo AES é especificado, a criptografia AES é ativada. Você também pode usar a opção para desativar explicitamente os tipos de criptografia RC4 e DES mais fracos. No ONTAP 9.11,1 e anterior, você deve usar a `-is-aes-encryption-enabled` opção para ativar e desativar a criptografia AES e os tipos de criptografia não podem ser especificados.
+
+Para melhorar a segurança, a máquina virtual de armazenamento (SVM) altera a senha da conta de máquina no AD sempre que a opção de segurança AES é modificada. A alteração da senha pode exigir credenciais administrativas do AD para a unidade organizacional (ou) que contém a conta da máquina.
+
+Se um SVM for configurado como um destino de recuperação de desastres em que a identidade não seja preservada (a `-identity-preserve` opção está definida como `false` na configuração do SnapMirror), as configurações de segurança do servidor SMB não padrão não serão replicadas para o destino. Se você ativou a criptografia AES no SVM de origem, será necessário habilitá-la manualmente.
+
+.Passos
+[role="tabbed-block"]
+====
+.ONTAP 9.12,1 e posterior
+--
+. Execute uma das seguintes ações:
++
+|===
+| Se você quiser que os tipos de criptografia AES para comunicação Kerberos sejam... | Digite o comando... 
+
+
+ a| 
+Ativado
+ a| 
+`vserver cifs security modify -vserver vserver_name -advertised-enc-types aes-128,aes-256`
+
+
+
+ a| 
+Desativado
+ a| 
+`vserver cifs security modify -vserver vserver_name -advertised-enc-types des,rc4`
+
+|===
++
+*Nota:* a `-is-aes-encryption-enabled` opção está obsoleta no ONTAP 9.12,1 e pode ser removida em uma versão posterior.
+
+. Verifique se a criptografia AES está ativada ou desativada conforme desejado: `vserver cifs security show -vserver vserver_name -fields advertised-enc-types`
+
+
+.Exemplos
+O exemplo a seguir habilita os tipos de criptografia AES para o servidor SMB no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs security modify -vserver vs1 -advertised-enc-types aes-128,aes-256
+
+cluster1::> vserver cifs security show -vserver vs1 -fields advertised-enc-types
+
+vserver  advertised-enc-types
+-------- --------------------
+vs1      aes-128,aes-256
+----
+O exemplo a seguir habilita os tipos de criptografia AES para o servidor SMB no SVM VS2. O administrador é solicitado a inserir as credenciais administrativas do AD para a UO que contém o servidor SMB.
+
+[listing]
+----
+cluster1::> vserver cifs security modify -vserver vs2 -advertised-enc-types aes-128,aes-256
+
+Info: In order to enable SMB AES encryption, the password for the SMB server
+machine account must be reset. Enter the username and password for the
+SMB domain "EXAMPLE.COM".
+
+Enter your user ID: administrator
+
+Enter your password:
+
+cluster1::> vserver cifs security show -vserver vs2 -fields advertised-enc-types
+
+vserver  advertised-enc-types
+-------- --------------------
+vs2      aes-128,aes-256
+----
+--
+.ONTAP 9.11,1 e anteriores
+--
+. Execute uma das seguintes ações:
++
+|===
+| Se você quiser que os tipos de criptografia AES para comunicação Kerberos sejam... | Digite o comando... 
+
+
+ a| 
+Ativado
+ a| 
+`vserver cifs security modify -vserver vserver_name -is-aes-encryption-enabled true`
+
+
+
+ a| 
+Desativado
+ a| 
+`vserver cifs security modify -vserver vserver_name -is-aes-encryption-enabled false`
+
+|===
+. Verifique se a criptografia AES está ativada ou desativada conforme desejado: `vserver cifs security show -vserver vserver_name -fields is-aes-encryption-enabled`
++
+O `is-aes-encryption-enabled` campo é exibido `true` se a criptografia AES estiver ativada e `false` se estiver desativada.
+
+
+
+.Exemplos
+O exemplo a seguir habilita os tipos de criptografia AES para o servidor SMB no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs security modify -vserver vs1 -is-aes-encryption-enabled true
+
+cluster1::> vserver cifs security show -vserver vs1 -fields is-aes-encryption-enabled
+
+vserver  is-aes-encryption-enabled
+-------- -------------------------
+vs1      true
+----
+O exemplo a seguir habilita os tipos de criptografia AES para o servidor SMB no SVM VS2. O administrador é solicitado a inserir as credenciais administrativas do AD para a UO que contém o servidor SMB.
+
+[listing]
+----
+cluster1::> vserver cifs security modify -vserver vs2 -is-aes-encryption-enabled true
+
+Info: In order to enable SMB AES encryption, the password for the CIFS server
+machine account must be reset. Enter the username and password for the
+SMB domain "EXAMPLE.COM".
+
+Enter your user ID: administrator
+
+Enter your password:
+
+cluster1::> vserver cifs security show -vserver vs2 -fields is-aes-encryption-enabled
+
+vserver  is-aes-encryption-enabled
+-------- -------------------------
+vs2      true
+----
+--
+====
+.Informações relacionadas
+https://kb.netapp.com/on-prem/ontap/da/NAS/NAS-KBs/Domain_user_fails_to_login_cluster_with_Domain-Tunnel["O usuário de domínio não consegue fazer login no cluster com Domain-Tunnel"^]

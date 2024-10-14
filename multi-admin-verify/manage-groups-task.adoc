@@ -1,0 +1,165 @@
+---
+sidebar: sidebar 
+permalink: multi-admin-verify/manage-groups-task.html 
+keywords: ontap, mav, multi, admin, multi admin verify, verification, administrator, approval groups, manage, system, manager, cli, approvers, access, protected, operation 
+summary: 'Antes de ativar a verificação multi-admin (MAV), você deve criar um grupo de aprovação de administrador contendo um ou mais administradores para receber autoridade de aprovação ou veto.' 
+---
+= Gerenciar grupos de aprovação de administrador
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de ativar a verificação multi-admin (MAV), você deve criar um grupo de aprovação de administrador contendo um ou mais administradores para receber autoridade de aprovação ou veto. Depois de ativar a verificação multi-admin, quaisquer modificações na associação ao grupo de aprovação requerem a aprovação de um dos administradores qualificados existentes.
+
+.Sobre esta tarefa
+Você pode adicionar administradores existentes a um grupo MAV ou criar novos administradores.
+
+A funcionalidade MAV homenageia as configurações de controle de acesso baseado em função (RBAC) existentes. Os potenciais administradores do MAV devem ter privilégios suficientes para executar operações protegidas antes de serem adicionados aos grupos de administradores do MAV. link:../authentication/create-svm-user-accounts-task.html["Saiba mais sobre o RBAC."]
+
+Você pode configurar o MAV para alertar os administradores do MAV de que as solicitações de aprovação estão pendentes. Para fazer isso, você deve configurar notificações por e-mail - em particular, os `Mail From` parâmetros e `Mail Server` - ou você pode limpar esses parâmetros para desativar a notificação. Sem alertas de e-mail, os administradores do MAV devem verificar a fila de aprovação manualmente.
+
+
+
+== Procedimento do System Manager
+
+Se pretender criar um grupo de aprovação MAV pela primeira vez, consulte o procedimento do Gestor do sistema para link:enable-disable-task.html#system-manager-procedure["ative a verificação de vários administradores."]
+
+Para modificar um grupo de aprovação existente ou criar um grupo de aprovação adicional:
+
+. Identifique os administradores para receber a verificação de vários administradores.
++
+.. Clique em *Cluster > Settings.*
+.. Clique image:icon_arrow.gif["Ícone de seta"] ao lado de *usuários e funções.*
+.. Clique image:icon_add.gif["Adicionar ícone"]em *Users.*
+.. Modifique a lista conforme necessário.
++
+Para obter mais informações, consulte link:../task_security_administrator_access.html["Controle o acesso do administrador."]
+
+
+
+. Criar ou modificar o grupo de aprovação MAV:
++
+.. Clique em *Cluster > Settings.*
+.. Clique image:icon_arrow.gif["Ícone de seta"] ao lado de *aprovação Multi-Admin* na seção *Segurança*. (Você verá o image:icon_gear.gif["Ícone ações"] ícone se o MAV ainda não estiver configurado.)
++
+*** Nome: Introduza um nome de grupo.
+*** Aprovadores: Selecione aprovadores de uma lista de usuários.
+*** Endereço de e-mail: Insira o(s) endereço(s) de e-mail.
+*** Grupo padrão: Selecione um grupo.
+
+
+
+
+
+
+A aprovação MAV é necessária para editar uma configuração existente assim que o MAV estiver ativado.
+
+
+
+== Procedimento CLI
+
+. Verifique se os valores foram definidos para `Mail From` os parâmetros e. `Mail Server` Introduza:
++
+`event config show`
+
++
+O visor deve ser semelhante ao seguinte:
+
++
+[listing]
+----
+cluster01::> event config show
+                           Mail From:  admin@localhost
+                         Mail Server:  localhost
+                           Proxy URL:  -
+                          Proxy User:  -
+ Publish/Subscribe Messaging Enabled:  true
+----
++
+Para configurar estes parâmetros, introduza:
+
++
+`event config modify -mail-from _email_address_ -mail-server _server_name_`
+
+. Identifique os administradores para receber a verificação de vários administradores
++
+[cols="50,50"]
+|===
+| Se você quiser... | Introduza este comando 
+
+
+| Exibir administradores atuais  a| 
+`security login show`
+
+
+
+| Modifique as credenciais dos administradores atuais  a| 
+`security login modify _<parameters>_`
+
+
+
+| Crie novas contas de administrador  a| 
+`security login create -user-or-group-name _admin_name_ -application ssh -authentication-method password`
+
+|===
+. Crie o grupo de aprovação MAV:
++
+`security multi-admin-verify approval-group create [ -vserver _svm_name_] -name _group_name_ -approvers _approver1_[,_approver2_…] [[-email _address1_], _address1_...]`
+
++
+** `-vserver` - Somente o administrador SVM é suportado nesta versão.
+** `-name` - O nome do grupo MAV, até 64 carateres.
+** `-approvers` - A lista de um ou mais aprovadores.
+** `-email` - Um ou mais endereços de e-mail que são notificados quando uma solicitação é criada, aprovada, vetada ou executada.
++
+*Exemplo:* o comando a seguir cria um grupo MAV com dois membros e endereços de e-mail associados.
+
++
+[listing]
+----
+cluster-1::> security multi-admin-verify approval-group create -name mav-grp1 -approvers pavan,julia -email pavan@myfirm.com,julia@myfirm.com
+----
+
+
+. Verificar a criação e a associação do grupo:
++
+`security multi-admin-verify approval-group show`
+
++
+*Exemplo:*
+
++
+[listing]
+----
+cluster-1::> security multi-admin-verify approval-group show
+Vserver  Name        Approvers        Email
+-------  ---------------- ------------------  ------------------------------------------------------------
+svm-1    mav-grp1   pavan,julia      email pavan@myfirm.com,julia@myfirm.com
+----
+
+
+Use esses comandos para modificar a configuração inicial do grupo MAV.
+
+*Nota:* todos exigem aprovação do administrador do MAV antes da execução.
+
+[cols="50,50"]
+|===
+| Se você quiser... | Introduza este comando 
+
+
+| Modifique as caraterísticas do grupo ou modifique as informações de membros existentes  a| 
+`security multi-admin-verify approval-group modify [_parameters_]`
+
+
+
+| Adicionar ou remover membros  a| 
+`security multi-admin-verify approval-group replace [-vserver _svm_name_] -name _group_name_ [-approvers-to-add _approver1_[,_approver2_…]][-approvers-to-remove _approver1_[,_approver2_…]]`
+
+
+
+| Eliminar um grupo  a| 
+`security multi-admin-verify approval-group delete [-vserver _svm_name_] -name _group_name_`
+
+|===

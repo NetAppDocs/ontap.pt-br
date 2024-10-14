@@ -1,0 +1,52 @@
+---
+permalink: volumes/default-quotas-concept.html 
+sidebar: sidebar 
+keywords: default quotas, quotas, quota, default 
+summary: Você pode usar cotas padrão para aplicar uma cota a todas as instâncias de um determinado tipo de cota. As cotas padrão também permitem que você modifique as cotas facilmente. 
+---
+= Como funcionam as cotas padrão
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar cotas padrão para aplicar uma cota a todas as instâncias de um determinado tipo de cota. Por exemplo, uma cota de usuário padrão afeta todos os usuários do sistema para o FlexVol volume ou qtree especificado. Além disso, as cotas padrão permitem que você modifique suas cotas facilmente.
+
+Você pode usar cotas padrão para aplicar automaticamente um limite a um grande conjunto de metas de cota sem ter que criar cotas separadas para cada alvo. Por exemplo, se você quiser limitar a maioria dos usuários a 10 GB de espaço em disco, você pode especificar uma cota de usuário padrão de 10 GB de espaço em disco em vez de criar uma cota para cada usuário. Se você tiver usuários específicos para os quais deseja aplicar um limite diferente, você pode criar cotas explícitas para esses usuários. (Cotas explícitas - cotas com um alvo específico ou lista de metas --substituem cotas padrão.)
+
+Além disso, as cotas padrão permitem que você use o redimensionamento em vez de reinicialização quando você deseja que as alterações de cota entrem em vigor. Por exemplo, se você adicionar uma cota de usuário explícita a um volume que já tenha uma cota de usuário padrão, será possível ativar a nova cota redimensionando.
+
+As cotas padrão podem ser aplicadas a todos os três tipos de destino de cota (usuários, grupos e qtrees).
+
+As cotas padrão não têm necessariamente limites especificados; uma cota padrão pode ser uma cota de rastreamento.
+
+Uma cota é indicada por um destino que é uma string vazia (""") ou um asterisco (*), dependendo do contexto:
+
+* Quando você cria uma cota usando o `volume quota policy rule create` comando, definir o `-target` parâmetro para uma string vazia ("") cria uma cota padrão.
+* No `volume quota policy rule create` comando, o `-qtree` parâmetro especifica o nome da qtree à qual a regra de cota se aplica. Este parâmetro não é aplicável a regras de tipo de árvore. Para regras de tipo de usuário ou grupo no nível de volume, este parâmetro deve conter "".
+* Na saída `volume quota policy rule show` do comando, uma cota padrão aparece com uma string vazia ("") como destino.
+* Na saída do `volume quota report` comando, uma cota padrão aparece com um asterisco (*) como o especificador de ID e cota.
+
+
+
+
+== Exemplo de cota de usuário padrão
+
+A regra de cota a seguir usa uma cota de usuário padrão para aplicar um limite de 50 MB a cada usuário para vol1:
+
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -volume vol1 -policy-name default -type user -target "" -qtree "" -disk-limit 50m
+
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol1
+
+Vserver: vs0               Policy: default           Volume: vol1
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   ""        ""      off          50MB        -       -        -          -
+----
+Se qualquer usuário no sistema inserir um comando que faria com que os dados desse usuário ocupem mais de 50 MB em vol1 (por exemplo, escrevendo em um arquivo de um editor), o comando falhará.

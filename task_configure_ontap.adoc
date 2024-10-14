@@ -1,0 +1,147 @@
+---
+sidebar: sidebar 
+permalink: task_configure_ontap.html 
+keywords: install, installing, cluster, set up, setup, configure, disk, data ports, guided setup, local tiers, aggregate, vserver, volume, configuring ONTAP on a new cluster, configuring a new cluster, assign a node-management IP address, node, DNS server, host name, hostname, NTP server, synchronize time, create a local tier, configure protocol, SSD, provision storage, add LUN, add volume, add namespace, volume, vserver, configure ONTAP on a new cluster, configuration 
+summary: O System Manager fornece um fluxo de trabalho simples e fácil para configurar o cluster e o armazenamento de dados. 
+---
+= Configure o ONTAP em um novo cluster com o Gerenciador do sistema
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+O System Manager fornece um fluxo de trabalho simples e fácil para configurar um novo cluster e configurar o armazenamento.
+
+.Sobre esta tarefa
+Este procedimento aplica-se aos sistemas FAS, AFF e ASA atuais. Se tiver um sistema ASA R2 (ASA A1K, ASA A70 ou ASA A90), siga link:https://docs.netapp.com/us-en/asa-r2/install-setup/initialize-ontap-cluster.html["estes passos"^] para utilizar o Gestor de sistema para configurar um cluster ONTAP. Os sistemas ASA R2 fornecem uma experiência de ONTAP simplificada específica para clientes somente SAN.
+
+Em alguns casos, como certas implantações do MetroCluster ou clusters que exigem endereçamento de rede IPv6, talvez seja necessário usar a CLI do ONTAP para configurar um novo cluster. Clique link:./software_setup/concept_set_up_the_cluster.html["aqui"] para obter mais detalhes sobre esses requisitos, bem como as etapas para a configuração do cluster com a CLI do ONTAP.
+
+.Antes de começar
+* Você deve ter instalado, cabeado e ligado o novo sistema de storage de acordo com as instruções de instalação e configuração do modelo da sua plataforma. Consulte https://docs.netapp.com/us-en/ontap-systems/index.html["Documentação do AFF e do FAS"^] .
+* As interfaces de rede do cluster devem ser configuradas em cada nó do cluster para comunicação intra-cluster.
+* Você deve estar ciente dos seguintes requisitos de suporte do System Manager:
++
+** Quando você configura o gerenciamento de nós manualmente usando a CLI, o System Manager oferece suporte a apenas IPv4 GbE e não oferece suporte a IPv6 GbE. No entanto, se iniciar o System Manager após concluir a configuração de hardware utilizando DHCP com um endereço IP atribuído automaticamente e com a deteção do Windows, o System Manager pode configurar um endereço de gestão IPv6.
++
+No ONTAP 9.6 e versões anteriores, o Gerenciador de sistema não oferece suporte a implantações que exigem rede IPv6G.
+
+** O suporte à configuração do MetroCluster é para configurações IP do MetroCluster com dois nós em cada local.
++
+No ONTAP 9.7 e versões anteriores, o Gerenciador de sistema não oferece suporte à nova configuração de cluster para configurações do MetroCluster.
+
+
+
+* Você deve reunir as seguintes informações:
++
+** Endereço IP de gerenciamento de cluster
+** Máscara de sub-rede da rede
+** Endereço IP do gateway de rede
+** Endereços IP do servidor DNS (Domain Name Services)
+** Endereços IP do servidor de Protocolo de tempo de rede
+
+
+
+
+image:workflow_configure_ontap_on_new_cluster.gif["Etapas para configurar o ONTAP em um novo cluster com o Gerenciador do sistema"]
+
+
+
+== Atribua um endereço IP de gerenciamento de nó
+
+
+
+=== Sistema Windows
+
+Você deve conetar seu computador Windows à mesma sub-rede que os controladores. Isso atribuirá automaticamente um endereço IP de gerenciamento de nó ao seu sistema.
+
+.Passo
+. No sistema Windows, abra a unidade *Network* para descobrir os nós.
+. Clique duas vezes no nó para iniciar o assistente de configuração do cluster.
+
+
+
+
+=== Outros sistemas
+
+Você deve configurar o endereço IP de gerenciamento de nós para um dos nós do cluster. Você pode usar esse endereço IP de gerenciamento de nó para iniciar o assistente de configuração de cluster.
+
+Consulte link:./software_setup/task_create_the_cluster_on_the_first_node.html["Criando o cluster no primeiro nó"] para obter informações sobre como atribuir um endereço IP de gerenciamento de nó.
+
+
+
+== Inicialize o cluster
+
+Inicializar o cluster definindo uma senha administrativa para o cluster e configurando as redes de gerenciamento de cluster e de gerenciamento de nós. Você também pode configurar serviços como um servidor DNS para resolver nomes de host e um servidor NTP para sincronizar a hora.
+
+.Passos
+. Em um navegador da Web, insira o endereço IP de gerenciamento de nós que você configurou: "https://node-management-IP"[]
++
+O System Manager descobre automaticamente os nós restantes no cluster.
+
+. Em *Initialize storage system*, insira o nome do cluster e a senha de administrador.
+. Em *rede*, insira o endereço IP de gerenciamento de cluster, a máscara de sub-rede e o gateway.
+. Se você quiser usar o serviço de nome de domínio para resolver nomes de host, selecione *Use Domain Name Service (DNS)*; em seguida, insira as informações do servidor DNS.
+. Se pretender utilizar o NTP (Network Time Protocol) para manter os tempos sincronizados no cluster, em *outros*, selecione *utilizar serviços de tempo (NTP)* e, em seguida, introduza as informações do servidor NTP.
+. Clique em *Enviar*.
+
+
+.O que vem a seguir
+Depois de inicializar o cluster, você pode link:./software_setup/task_check_cluster_with_config_advisor.html["Execute o Active IQ Config Advisor para validar sua configuração e verificar se há erros de configuração comuns"].
+
+
+
+== Crie seu nível local
+
+Crie camadas locais a partir dos discos ou SSDs disponíveis em seus nós. O System Manager calcula automaticamente a melhor configuração de camada com base no seu hardware.
+
+.Passos
+. Clique em *Dashboard* e, em seguida, clique em *Prepare Storage*.
++
+Aceite a recomendação de storage do seu nível local.
+
+
+
+
+
+== Configurar protocolos
+
+Dependendo das licenças ativadas no cluster, pode ativar os protocolos pretendidos no cluster. Em seguida, você cria interfaces de rede usando as quais você pode acessar o storage.
+
+.Passos
+. Clique em *Dashboard* e, em seguida, clique em *Configure Protocols*.
++
+** Ativar iSCSI ou FC para acesso SAN.
+** Habilite NFS ou SMB para acesso nas.
+** Habilite o NVMe para acesso FC-NVMe.
+
+
+
+
+
+
+== Provisionamento de storage
+
+Depois de configurar protocolos, você pode provisionar o storage. As opções que você vê dependem das licenças que estão instaladas.
+
+.Passos
+. Clique em *Dashboard* e, em seguida, clique em *provision Storage*.
++
+** Para link:concept_san_provision_overview.html["Provisione acesso SAN"], clique em *Add LUNs*.
+** Para link:concept_nas_provision_overview.html["Provisionamento de acesso nas"], clique em *Add volumes*.
+** Para link:concept_nvme_provision_overview.html["Provisionamento de storage NVMe"], clique em *Add Namespaces*.
+
+
+
+
+
+
+== Configure o ONTAP em um novo vídeo de cluster
+
+video::6WjyADPXDZ0[youtube,width=848,height=480]

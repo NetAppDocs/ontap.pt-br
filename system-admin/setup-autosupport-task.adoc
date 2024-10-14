@@ -1,0 +1,185 @@
+---
+sidebar: sidebar 
+permalink: system-admin/setup-autosupport-task.html 
+keywords: autosupport, set up autosupport, technical support 
+summary: Configure um cluster do ONTAP para entregar mensagens do AutoSupport ao suporte técnico da NetApp e enviar cópias de e-mail para sua organização interna de suporte. 
+---
+= Configure o AutoSupport
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar um cluster do ONTAP para entregar mensagens do AutoSupport ao suporte técnico da NetApp e enviar cópias de e-mail para sua organização de suporte interno. Como parte disso, você também pode testar a configuração antes de usá-la em um ambiente de produção.
+
+.Sobre esta tarefa
+A partir do ONTAP 9.5, você ativa e configura o AutoSupport para todos os nós de um cluster simultaneamente. Quando um novo nó entra no cluster, o nó herda automaticamente a mesma configuração do AutoSupport. Para dar suporte a isso, o escopo do comando CLI `system node autosupport modify` é no nível do cluster. A `-node` opção de comando é mantida para compatibilidade com versões anteriores, mas é ignorada.
+
+
+NOTE: No ONTAP 9.4 e versões anteriores, o comando `system node autosupport modify` é específico para cada nó. Se o cluster estiver executando o ONTAP 9.4 ou anterior, será necessário habilitar e configurar o AutoSupport em cada nó do cluster.
+
+.Antes de começar
+A configuração de transporte recomendada para entregar mensagens AutoSupport para o NetApp é HTTPS (HTTP com TLS). Esta opção fornece os recursos mais robustos e a melhor segurança.
+
+Consulte link:requirements-autosupport-reference.html["Prepare-se para usar o AutoSupport"] para obter mais informações antes de configurar o cluster do ONTAP.
+
+.Passos
+. Certifique-se de que o AutoSupport está ativado:
++
+[listing]
+----
+system node autosupport modify -state enable
+----
+. Se você quiser que o suporte técnico da NetApp receba mensagens do AutoSupport, use o seguinte comando:
++
+[listing]
+----
+system node autosupport modify -support enable
+----
++
+Você deve habilitar essa opção se quiser habilitar o AutoSupport para trabalhar com o AutoSupport OnDemand ou se quiser fazer upload de arquivos grandes, como arquivos de despejo de núcleo e arquivamento de desempenho, para suporte técnico ou um URL especificado.
+
+. Se o suporte técnico da NetApp estiver habilitado para receber mensagens AutoSupport, especifique qual protocolo de transporte usar para as mensagens.
++
+Você pode escolher entre as seguintes opções:
+
++
+|===
+
+
+| Se você quiser... | Em seguida, defina os seguintes parâmetros `system node autosupport modify` do comando... 
+
+
+ a| 
+Utilize o protocolo HTTPS predefinido
+ a| 
+.. Defina `-transport` para `https`.
+.. Se você usar um proxy, defina `-proxy-url` o URL do seu proxy. Esta configuração suporta a comunicação com o AutoSupport OnDemand e carregamentos de ficheiros grandes.
+
+
+
+
+ a| 
+Utilize SMTP
+ a| 
+Defina `-transport` para `smtp`.
+
+Esta configuração não suporta o AutoSupport OnDemand ou carregamentos de ficheiros grandes.
+
+|===
+. Se você quiser que sua organização de suporte interna ou um parceiro de suporte recebam mensagens do AutoSupport, execute as seguintes ações:
++
+.. Identifique os destinatários em sua organização definindo os seguintes parâmetros `system node autosupport modify` do comando:
++
+|===
+
+
+| Definir este parâmetro... | Para isso... 
+
+
+ a| 
+`-to`
+ a| 
+Até cinco endereços de e-mail individuais separados por vírgulas ou listas de distribuição em sua organização de suporte interno que receberão as principais mensagens do AutoSupport
+
+
+
+ a| 
+`-noteto`
+ a| 
+Até cinco endereços de e-mail individuais separados por vírgulas ou listas de distribuição em sua organização de suporte interno que receberão uma versão abreviada das principais mensagens AutoSupport projetadas para telefones celulares e outros dispositivos móveis
+
+
+
+ a| 
+`-partner-address`
+ a| 
+Até cinco endereços de e-mail individuais separados por vírgulas ou listas de distribuição na sua organização de parceiros de suporte que receberão todas as mensagens do AutoSupport
+
+|===
+.. Verifique se os endereços estão corretamente configurados listando os destinos usando o `system node autosupport destinations show` comando.
+
+
+. Se você estiver enviando mensagens para sua organização de suporte interno ou escolher transporte SMTP para mensagens para suporte técnico, configure SMTP definindo os seguintes parâmetros `system node autosupport modify` do comando:
++
+** Defina `-mail-hosts` como um ou mais hosts de e-mail, separados por vírgulas.
++
+Você pode definir um máximo de cinco.
+
++
+Você pode configurar um valor de porta para cada host de e-mail especificando dois pontos e um número de porta após o nome do host de e-mail: Por exemplo, `mymailhost.example.com:5678`, onde 5678 é a porta para o host de e-mail.
+
+** Defina `-from` para o endereço de e-mail que envia a mensagem AutoSupport.
+
+
+. Configure o DNS.
+. Opcionalmente, adicione opções de comando se você quiser alterar configurações específicas:
++
+|===
+
+
+| Se você quiser fazer isso... | Em seguida, defina os seguintes parâmetros `system node autosupport modify` do comando... 
+
+
+ a| 
+Oculte dados privados removendo, mascarando ou codificando dados confidenciais nas mensagens
+ a| 
+Defina `-remove-private-data` para `true`. Se você mudar de `false` para `true`, todo o histórico do AutoSupport e todos os arquivos associados serão excluídos.
+
+
+
+ a| 
+Pare de enviar dados de desempenho em mensagens AutoSupport periódicas
+ a| 
+Defina `-perf` para `false`.
+
+|===
+. Se você estiver usando SMTP para entregar mensagens do AutoSupport ao NetApp, você pode opcionalmente ativar o TLS para maior segurança.
++
+.. Apresentar os valores disponíveis para o novo parâmetro:
++
+[listing]
+----
+cluster1::> system node autosupport modify -smtp-encryption ?
+----
+.. Ativar TLS para envio de mensagens SMTP:
++
+[listing]
+----
+cluster1::> system node autosupport modify -smtp-encryption start_tls
+----
+.. Apresentar a configuração atual:
++
+[listing]
+----
+cluster1::> system node autosupport show -fields smtp-encryption
+----
+
+
+. Verificar a configuração geral utilizando o `system node autosupport show` comando com o `-node` parâmetro.
+. Verifique a operação do AutoSupport usando o `system node autosupport check show` comando.
++
+Se algum problema for relatado, use o `system node autosupport check show-details` comando para exibir mais informações.
+
+. Teste se as mensagens AutoSupport estão sendo enviadas e recebidas:
++
+.. Utilize o `system node autosupport invoke` comando com o `-type` parâmetro definido para `test`:
++
+[listing]
+----
+cluster1::> system node autosupport invoke -type test -node node1
+----
+.. Confirme se o NetApp está recebendo suas mensagens do AutoSupport:
++
+[listing]
+----
+system node autosupport history show -node local
+----
++
+O estado da mensagem AutoSupport de saída mais recente deverá eventualmente mudar para para para `sent-successful` todos os destinos de protocolo apropriados.
+
+.. Opcionalmente, confirme se as mensagens do AutoSupport estão sendo enviadas para sua organização de suporte interna ou para seu parceiro de suporte verificando o e-mail de qualquer endereço configurado para os `-to` parâmetros , `-noteto` ou `-partner-address` do `system node autosupport modify` comando.
+
+
+

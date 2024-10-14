@@ -1,0 +1,91 @@
+---
+sidebar: sidebar 
+permalink: networking/add_or_remove_ip_addresses_from_a_subnet.html 
+keywords: adding, add, create, creating, remove, removing, delete, deleting, ip, internet, protocol, address, addresses, subnet, add or remove ip addresses from a subnet, force update lif associations, network subnet add ranges, network subnet remove ranges 
+summary: Adicione endereços IP ao criar uma sub-rede ou adicione ou remova endereços IP a uma sub-rede que sai 
+---
+= Adicione ou remova endereços IP de uma sub-rede
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode adicionar endereços IP ao criar inicialmente uma sub-rede ou adicionar endereços IP a uma sub-rede que já existe. Você também pode remover endereços IP de uma sub-rede existente. Isso permite alocar apenas os endereços IP necessários para SVMs.
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Começando com ONTAP 9.12,0, você pode usar o Gerenciador do sistema para adicionar ou remover endereços IP de ou para uma sub-rede*
+
+.Passos
+. Selecione *rede > Visão geral > sub-redes*.
+. Selecione image:icon_kabob.gif["Ícone de opções do menu"]*> Editar* ao lado da sub-rede que deseja alterar.
+. Adicionar ou remover endereços IP.
+. Salve suas alterações.
++
+.. Se o endereço IP ou intervalo introduzido já for utilizado por uma interface, é apresentada a seguinte mensagem:
+`An IP address in this range is already in use by a LIF. Associate the LIF with this subnet?`
+.. Quando você clica em *OK*, o LIF existente será associado à sub-rede.
+
+
+
+
+--
+.CLI
+--
+*Use a CLI para adicionar ou remover endereços IP de ou para uma sub-rede*
+
+.Sobre esta tarefa
+Ao adicionar endereços IP, você receberá um erro se qualquer processador de serviço ou interfaces de rede estiver usando os endereços IP no intervalo que está sendo adicionado. Se pretender associar quaisquer interfaces endereçadas manualmente à sub-rede atual, pode definir a `-force-update-lif-associations` opção como `true`.
+
+Ao remover endereços IP, você receberá um erro se qualquer processador de serviço ou interfaces de rede estiver usando os endereços IP sendo removidos. Se pretender que as interfaces continuem a utilizar os endereços IP após serem removidos da sub-rede, pode definir a `-force-update-lif-associations` opção como `true`.
+
+.Passo
+Adicionar ou remover endereços IP de uma sub-rede:
+
+[cols="30,70"]
+|===
+
+
+| Se você quiser... | Use este comando... 
+
+
+ a| 
+Adicione endereços IP a uma sub-rede
+ a| 
+extensões de sub-rede
+
+
+
+ a| 
+Remover endereços IP de uma sub-rede
+ a| 
+remover-intervalos de sub-rede
+
+|===
+Para obter mais informações sobre esses comandos, consulte as páginas man.
+
+O comando a seguir adiciona endereços IP 192.0.2.82 a 192.0.2.85 à sub-rede SUB1:
+
+....
+network subnet add-ranges -subnet-name <sub1> -ip-ranges <192.0.2.82-192.0.2.85>
+....
+O seguinte comando remove o endereço IP 198.51.100.9 da sub-rede sub3:
+
+....
+network subnet remove-ranges -subnet-name <sub3> -ip-ranges <198.51.100.9>
+....
+Se o intervalo atual inclui 1 a 10 e 20 a 40, e você deseja adicionar 11 a 19 e 41 a 50 (basicamente permitindo 1 a 50), você pode sobrepor o intervalo existente de endereços usando o seguinte comando. Este comando adiciona apenas os novos endereços e não afeta os endereços existentes:
+
+....
+network subnet add-ranges -subnet-name <sub3> -ip-ranges <198.51.10.1-198.51.10.50>
+....
+--
+====

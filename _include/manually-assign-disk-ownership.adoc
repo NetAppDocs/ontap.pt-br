@@ -1,0 +1,92 @@
+= 
+:allow-uri-read: 
+
+
+.Sobre esta tarefa
+* Se você estiver atribuindo manualmente a propriedade de um par de HA que não está sendo inicializado e não tiver apenas DS460C gavetas, use a opção 1.
+* Se você estiver inicializando um par de HA com apenas DS460C gavetas, use a opção 2 para atribuir manualmente a propriedade para as unidades raiz.
+
+
+.Opção 1: Maioria dos pares de HA
+[%collapsible]
+====
+Para um par de HA que não está sendo inicializado e não tem apenas DS460C gavetas, use este procedimento para atribuir manualmente a propriedade.
+
+.Sobre esta tarefa
+* Os discos para os quais você está atribuindo propriedade devem estar em uma gaveta que esteja fisicamente cabeada para o nó ao qual você está atribuindo propriedade.
+* Se você estiver usando discos em um nível local (agregado):
++
+** Os discos devem ser de propriedade de um nó antes que possam ser usados em um nível local (agregado).
+** Não é possível reatribuir a propriedade de um disco que esteja em uso em um nível local (agregado).
+
+
+
+
+.Passos
+. Use a CLI para exibir todos os discos não possuídos:
++
+`storage disk show -container-type unassigned`
+
+. Atribuir cada disco:
++
+`storage disk assign -disk _disk_name_ -owner _owner_name_`
+
++
+Você pode usar o caractere curinga para atribuir mais de um disco de uma vez. Se você estiver reatribuindo um disco sobressalente que já é de propriedade de um nó diferente, você deve usar a opção "'-force".
+
+
+
+====
+.Opção 2: Um par de HA com apenas DS460C gavetas
+[%collapsible]
+====
+Para um par de HA que você está inicializando e que tenha apenas DS460C gavetas, use este procedimento para atribuir manualmente a propriedade das unidades raiz.
+
+.Sobre esta tarefa
+* Ao inicializar um par de HA que tenha apenas DS460C gavetas, você deve atribuir manualmente as unidades raiz para estar em conformidade com a política de meia gaveta.
++
+Após a inicialização do par de HA (inicialização), a atribuição automática da propriedade do disco é ativada automaticamente e usa a política de meia gaveta para atribuir propriedade às unidades restantes (exceto as unidades raiz) e a quaisquer unidades adicionadas no futuro, como a substituição de discos com falha, a resposta a uma mensagem de "peças sobressalentes baixas" ou a adição de capacidade.
+
++
+Saiba mais sobre a política de meia gaveta no link:disk-autoassignment-policy-concept.html["Sobre a atribuição automática de propriedade de disco"]tópico .
+
+* O RAID precisa de um mínimo de 10 unidades para cada par de HA (5 TB para cada nó) para quaisquer unidades NL-SAS superiores a 8TB TB em uma gaveta de DS460C TB.
+
+
+.Passos
+. Se as DS460C gavetas não estiverem totalmente preenchidas, execute as seguintes etapas; caso contrário, vá para a próxima etapa.
++
+.. Primeiro, instale unidades na linha dianteira (compartimentos de unidades 0, 3, 6 e 9) de cada gaveta.
++
+A instalação de acionamentos na fila dianteira de cada gaveta permite um fluxo de ar adequado e evita o superaquecimento.
+
+.. Para as unidades restantes, distribua-as uniformemente em cada gaveta.
++
+Encha as linhas da gaveta da frente para trás. Se você não tiver unidades suficientes para preencher linhas, instale-as em pares para que as unidades ocupem o lado esquerdo e direito de uma gaveta uniformemente.
+
++
+A ilustração a seguir mostra a numeração do compartimento de unidades e os locais em uma gaveta DS460C.
+
++
+image:dwg_trafford_drawer_with_hdds_callouts.gif["Esta ilustração mostra a numeração do compartimento da unidade e as localizações em uma gaveta DS460C"]
+
+
+
+. Faça login no clustershell usando o LIF de gerenciamento de nó ou LIF de gerenciamento de cluster.
+. Atribua manualmente as unidades raiz em cada gaveta para estar em conformidade com a política de meia gaveta usando as seguintes subetapas:
++
+A política de meia gaveta atribui a metade esquerda das unidades de uma gaveta (compartimentos 0 a 5) ao nó A e a metade direita das unidades de uma gaveta (compartimentos 6 a 11) ao nó B.
+
++
+.. Exibir todos os discos não possuídos:
+`storage disk show -container-type unassigned``
+.. Atribuir os discos raiz:
+`storage disk assign -disk disk_name -owner owner_name`
++
+Você pode usar o caractere curinga para atribuir mais de um disco de cada vez.
+
+
+
+
+
+====

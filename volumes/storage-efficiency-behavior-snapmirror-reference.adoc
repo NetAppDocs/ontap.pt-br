@@ -1,0 +1,43 @@
+---
+permalink: volumes/storage-efficiency-behavior-snapmirror-reference.html 
+sidebar: sidebar 
+keywords: storage, efficiency, temperature, change, efficient, snapmirror, volume, move 
+summary: O comportamento de eficiência de storage pode ser afetado por outras operações de storage ativas ou iniciadas ao mesmo tempo. 
+---
+= Comportamento de eficiência de storage com movimentação de volume e operações de SnapMirror
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O comportamento da eficiência de storage pode ser afetado por outras operações de storage ativas ou iniciadas ao mesmo tempo. Você deve estar ciente do impacto dessas operações na eficiência de storage.
+
+Há várias situações em que a eficiência de storage em um volume pode ser afetada por outras operações. Isso inclui quando você realiza uma movimentação de volume ou operação SnapMirror e o que acontece quando você executa uma quebra de SnapMirror e ativa manualmente a eficiência de storage sensível à temperatura (SSE) depende do tipo de eficiência no volume de origem.
+
+A tabela a seguir descreve o comportamento de um volume de origem e de um volume de destino quando você executa uma dessas operações.
+
+[cols="1,1,1,2,1,1,2"]
+|===
+
+
+| Eficiência do volume de origem 3+| Comportamento padrão do volume de destino 3+| Comportamento padrão depois de ativar manualmente o TSSE (após o SnapMirror Break) 
+
+
+|  | *Tipo de eficiência de armazenamento* | *Novas gravações* | * Compressão de dados frios* | *Tipo de eficiência de armazenamento* | *Novas gravações* | * Compressão de dados frios* 
+
+
+| Sem eficiência de storage (provavelmente FAS) | Compactação de arquivos | A compressão de ficheiros é tentada em linha em dados recentemente gravados | Sem compactação de dados inativos, os dados permanecem como eles estão | TSSE com algoritmo de varredura de dados frios como ZSTD | A compressão em linha 8K é tentada no formato TSSE | *Dados compatados*: N/A * dados descompactados*: Compressão 32K tentada após os dias de limite cumpridos e *dados recém-escritos*: Compressão 32K tentada após os dias de limite cumpridos 
+
+
+| Sem eficiência de storage (provavelmente FAS) | Compactação de arquivos em plataformas da série C usando ONTAP 9.11.1P10 ou ONTAP 9.12.1P3 | Nenhuma compressão de dados inativos habilitada por TSSE | *File Compressed data*: N/A. | TSSE com algoritmo de varredura de dados frios como ZSTD | Compressão in-line de 8K TB | *Dados compatados*: N/A * dados descompactados*: Compressão 32K tentada após os dias de limite cumpridos e *dados recém-escritos*: Compressão 32K tentada após os dias de limite cumpridos 
+
+
+| Sem eficiência de storage (provavelmente FAS) | TSSE em plataformas da série C usando ONTAP 9.12.1P4 e posterior ou ONTAP 9.13,1 e posterior | A compressão em linha 8K é tentada no formato TSSE | *Dados compatados*: N/A * dados descompactados*: Compressão 32K tentada após os dias de limite cumpridos e *dados recém-escritos*: Compressão 32K tentada após os dias de limite cumpridos | TSSE com algoritmo de varredura de dados frios como ZSTD | A compressão em linha 8K é tentada no formato TSSE | *Dados compatados*: N/A * dados descompactados*: Compressão 32K tentada após os dias de limite cumpridos e *dados recém-escritos*: Compressão 32K tentada após os dias de limite cumpridos 
+
+
+| Grupo de compressão de ficheiros | O mesmo que a fonte | A compressão de ficheiros é tentada em linha em dados recentemente gravados | Sem compactação de dados inativos, os dados permanecem como eles estão | TSSE com algoritmo de varredura de dados frios como ZSTD | A compressão em linha 8K é tentada no formato TSSE | *File Compressed data*: Not Compressed * Uncompressed data*: A compressão 32K é tentada após os dias de limite cumpridos e *dados recém-escritos*: A compressão 32K é tentada após os dias de limite cumpridos 
+
+
+| Verificação de dados frios TSSE | TSSE usando o mesmo algoritmo de compressão que o volume de origem (LZOPro->LZOPro e ZSTD->ZSTD) | Tentativa de compressão em linha 8K no formato TSSE | Tentativa de compressão de 32K com LzoPro após os dias limite, a frieza baseada é atendida tanto nos dados existentes quanto nos dados recém-gravados. | O TSSE está ativado. Nota: O algoritmo de varredura de dados frios LZOPro pode ser alterado para ZSTD. | A compressão em linha 8K é tentada no formato TSSE | A compressão de 32K é tentada após os dias limite, a frieza é atendida tanto nos dados existentes quanto nos dados recém-gravados. 
+|===

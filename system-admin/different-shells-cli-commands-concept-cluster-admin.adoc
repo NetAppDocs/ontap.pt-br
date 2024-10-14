@@ -1,0 +1,104 @@
+---
+permalink: system-admin/different-shells-cli-commands-concept-cluster-admin.html 
+sidebar: sidebar 
+keywords: diag, secd, different, shells, cli, commands, cluster, administrators, clustershell, nodeshell, systemshell, display, list, help 
+summary: O cluster tem três shells diferentes para comandos CLI, o clustershell, o nodeshell e o systemshell. Os shells são para finalidades diferentes, e cada um deles tem um conjunto de comandos diferente. 
+---
+= Sobre os diferentes shells para a visão geral dos comandos CLI (somente administradores de cluster)
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O cluster tem três shells diferentes para comandos CLI, o _clustershell_, o _nodeshell_ e o _systemshell_. Os shells são para finalidades diferentes, e cada um deles tem um conjunto de comandos diferente.
+
+* O clustershell é o shell nativo que é iniciado automaticamente quando você faz login no cluster.
++
+Ele fornece todos os comandos que você precisa para configurar e gerenciar o cluster. A ajuda CLI do clustershell (acionada pelo `?` prompt do clustershell) exibe comandos disponíveis do clustershell. O `man _command_name_` comando no clustershell exibe a página de manual para o comando clustershell especificado.
+
+* O nodeshell é um shell especial para comandos que entram em efeito apenas no nível do nó.
++
+O nodeshell é acessível através do `system node run` comando.
+
++
+A ajuda da CLI nodeshell (acionada por `?` ou `help` no prompt nodeshell) exibe os comandos nodeshell disponíveis. O `man _command_name_` comando no nodeshell exibe a página man para o comando nodeshell especificado.
+
++
+Muitos comandos e opções de nodeshell comumente usados são tunneled ou aliased no clustershell e podem ser executados também a partir do clustershell.
+
+* O systemshell é um shell de baixo nível que é usado apenas para fins de diagnóstico e solução de problemas.
++
+A estrutura do sistema e a conta "diag" associada destinam-se a fins de diagnóstico de baixo nível. Seu acesso requer o nível de privilégio de diagnóstico e é reservado apenas para o suporte técnico para executar tarefas de solução de problemas.
+
+
+
+
+
+== Acesso de comandos e opções nodeshell no clustershell
+
+Os comandos e opções Nodeshell são acessíveis através do nodeshell:
+
+`system node run –node _nodename_`
+
+Muitos comandos e opções de nodeshell comumente usados são tunneled ou aliased no clustershell e podem ser executados também a partir do clustershell.
+
+As opções Nodeshell que são suportadas no clustershell podem ser acessadas usando o `vserver options clustershell` comando. Para ver essas opções, você pode fazer um dos seguintes procedimentos:
+
+* Consulte a CLI do clustershell com `vserver options -vserver _nodename_or_clustername_ -option-name ?`
+* Acesse a `vserver options` página man na CLI do clustershell com `man vserver options`
+
+
+Se você inserir um comando nodeshell ou legacy ou opção no clustershell, e o comando ou opção tiver um comando conclustershell equivalente, o ONTAP informa você sobre o comando conclustershell a ser usado.
+
+Se você inserir um comando nodeshell ou legacy ou uma opção que não é suportada no clustershell, o ONTAP informa o status "'não suportado'" para o comando ou opção.
+
+
+
+== Exibir comandos nodeshell disponíveis
+
+Você pode obter uma lista de comandos nodeshell disponíveis usando a ajuda CLI do nodeshell.
+
+.Passos
+. Para acessar o nodeshell, digite o seguinte comando no prompt do sistema do clustershell:
++
+`*system node run -node {_nodename_|local}*`
+
++
+`local` é o nó usado para acessar o cluster.
+
++
+[NOTE]
+====
+O `system node run` comando tem um comando alias, `run`.
+
+====
+. Digite o seguinte comando no nodeshell para ver a lista de comandos nodeshell disponíveis:
++
+`*[_commandname_] help*`
+
++
+ `_commandname_` é o nome do comando cuja disponibilidade você deseja exibir. Se você não incluir `_commandname_`, a CLI exibirá todos os comandos nodeshell disponíveis.
+
++
+Você insere `exit` ou digita Ctrl-d para retornar à CLI do clustershell.
+
+
+
+.Exemplo de exibição de comandos nodeshell disponíveis
+O exemplo a seguir acessa o nodeshell de um nó chamado node2 e exibe informações para o comando nodeshell `environment` :
+
+[listing]
+----
+cluster1::> system node run -node node2
+Type 'exit' or 'Ctrl-D' to return to the CLI
+
+node2> environment help
+Usage: environment status |
+     [status] [shelf [<adapter>[.<shelf-number>]]] |
+     [status] [shelf_log] |
+     [status] [shelf_stats] |
+     [status] [shelf_power_status] |
+     [status] [chassis [all | list-sensors | Temperature | PSU 1 |
+     PSU 2 | Voltage | SYS FAN | NVRAM6-temperature-3 | NVRAM6-battery-3]]
+----

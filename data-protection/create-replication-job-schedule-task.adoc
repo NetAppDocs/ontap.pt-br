@@ -1,0 +1,68 @@
+---
+permalink: data-protection/create-replication-job-schedule-task.html 
+sidebar: sidebar 
+keywords: create, replication, job, schedule 
+summary: Você pode usar o System Manager ou o comando cron create de agendamento de tarefa para criar um cronograma de trabalho de replicação. 
+---
+= Criar um agendamento de trabalho de replicação
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O agendamento de trabalhos determina quando o SnapMirror atualiza automaticamente a relação de proteção de dados à qual o agendamento é atribuído. Você pode usar o System Manager ou o `job schedule cron create` comando para criar uma agenda de trabalho de replicação.
+
+.Sobre esta tarefa
+Você atribui um agendamento de trabalho ao criar um relacionamento de proteção de dados. Se não atribuir uma agenda de trabalhos, tem de atualizar a relação manualmente.
+
+.Passos
+Você pode criar uma programação de trabalho de replicação usando o Gerenciador de sistema ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *proteção > Visão geral* e expanda *configurações de política local*.
+. No painel *horários*, clique image:icon_arrow.gif["Ícone de seta"]em .
+. Na janela *horários*, clique image:icon_add.gif["Adicionar ícone"]em .
+. Na janela *Adicionar agendamento*, insira o nome da programação e escolha o contexto e o tipo de agendamento.
+. Clique em *Salvar*.
+
+
+--
+.CLI
+--
+. Criar uma agenda de trabalhos:
++
+[source, cli]
+----
+job schedule cron create -name <job_name> -month <month> -dayofweek <day_of_week> -day <day_of_month> -hour <hour> -minute <minute>
+----
++
+Para `-month`, , `-dayofweek`, e `-hour`, é possível especificar `all` para executar o trabalho todos os meses, dia da semana e hora, respetivamente.
+
++
+A partir do ONTAP 9.10,1, você pode incluir o SVM para sua agenda de trabalho:
+
++
+[listing, subs="+quotes"]
+----
+job schedule cron create -name <job_name> *-vserver <Vserver_name>* -month <month> -dayofweek <day_of_week> -day <day_of_month> -hour <hour> -minute <minute>
+----
++
+
+NOTE: O cronograma mínimo com suporte (RPO) para volumes FlexVol em uma relação de volume SnapMirror é de 5 minutos. O cronograma mínimo com suporte (RPO) para volumes FlexGroup em uma relação de volume SnapMirror é de 30 minutos.
+
++
+O exemplo a seguir cria um horário de trabalho chamado `my_weekly` que é executado aos sábados às 3:00 da manhã:
+
++
+[listing]
+----
+cluster_dst::> job schedule cron create -name my_weekly -dayofweek "Saturday" -hour 3 -minute 0
+----
+
+
+--
+====

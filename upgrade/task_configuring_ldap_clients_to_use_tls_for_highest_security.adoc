@@ -1,0 +1,47 @@
+---
+permalink: upgrade/task_configuring_ldap_clients_to_use_tls_for_highest_security.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, configuring, configure, ldap, clients, servers, tls, security 
+summary: Antes de atualizar o ONTAP, configure clientes LDAP usando o SSLv3 para comunicações seguras com servidores LDAP para usar o TLS. O SSL não estará disponível após a atualização. 
+---
+= Configure os clientes LDAP para usar TLS para maior segurança
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de atualizar o ONTAP, você deve configurar clientes LDAP usando o SSLv3 para comunicações seguras com servidores LDAP para usar o TLS. O SSL não estará disponível após a atualização.
+
+Por padrão, as comunicações LDAP entre aplicativos cliente e servidor não são criptografadas. Você deve proibir o uso de SSL e impor o uso de TLS.
+
+.Passos
+. Verifique se os servidores LDAP no seu ambiente suportam TLS.
++
+Se não o fizerem, não prossiga. Você deve atualizar seus servidores LDAP para uma versão que suporte TLS.
+
+. Verifique quais configurações de cliente LDAP do ONTAP têm LDAP em SSL/TLS ativado:
++
+[source, cli]
+----
+vserver services name-service ldap client show
+----
++
+Se não houver nenhum, você pode pular os passos restantes. No entanto, você deve considerar o uso de LDAP sobre TLS para melhor segurança.
+
+. Para cada configuração de cliente LDAP, desative o SSL para impor o uso de TLS:
++
+[source, cli]
+----
+vserver services name-service ldap client modify -vserver <vserver_name> -client-config <ldap_client_config_name> -allow-ssl false
+----
+. Verifique se o uso de SSL não é mais permitido para nenhum cliente LDAP:
++
+[source, cli]
+----
+vserver services name-service ldap client show
+----
+
+
+.Informações relacionadas
+link:../nfs-admin/index.html["Gerenciamento de NFS"]

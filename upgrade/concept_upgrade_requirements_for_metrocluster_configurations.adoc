@@ -1,0 +1,61 @@
+---
+permalink: upgrade/concept_upgrade_requirements_for_metrocluster_configurations.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, update, requirements, metrocluster, configuration, mcc, general, normal, operations, switchover 
+summary: Antes de atualizar o software ONTAP em uma configuração do MetroCluster, os clusters precisam atender a certos requisitos . 
+---
+= Requisitos de atualização do ONTAP para configurações do MetroCluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de atualizar o software ONTAP em uma configuração do MetroCluster, os clusters precisam atender a certos requisitos.
+
+* Ambos os clusters precisam estar executando a mesma versão do ONTAP.
++
+Você pode verificar a versão do ONTAP usando o comando version.
+
+* Se você estiver executando uma atualização principal do ONTAP, a configuração do MetroCluster deve estar no modo normal.
+* Se você estiver executando uma atualização do patch ONTAP, a configuração do MetroCluster pode estar no modo normal ou switchover.
+* Para todas as configurações, exceto clusters de dois nós, é possível atualizar ambos os clusters sem interrupções ao mesmo tempo.
++
+Para a atualização sem interrupções em clusters de dois nós, os clusters precisam ser atualizados um nó de cada vez.
+
+* Os agregados em ambos os clusters não podem estar no status RAID de ressincronização.
++
+Durante a recuperação de MetroCluster, os agregados espelhados são ressincronizados. Você pode verificar se a configuração do MetroCluster está nesse estado usando o `storage aggregate plex show -in-progress true` comando. Se algum agregado estiver sendo sincronizado, você não deve executar uma atualização até que a ressincronização esteja concluída.
+
+* As operações de switchover negociadas falharão enquanto a atualização estiver em andamento.
++
+Para evitar problemas com operações de atualização ou reversão, não tente um switchover não planejado durante uma operação de atualização ou reversão, a menos que todos os nós em ambos os clusters estejam executando a mesma versão do ONTAP.
+
+
+
+
+
+== Requisitos de configuração para operação normal do MetroCluster
+
+* Os LIFs do SVM de origem devem estar ativos e localizados em seus nós domésticos.
++
+Os LIFs de dados para as SVMs de destino não precisam estar ativos ou estar em seus nós iniciais.
+
+* Todos os agregados no local devem estar online.
+* Todos os volumes de raiz e de dados pertencentes às SVMs do cluster local devem estar online.
+
+
+
+
+== Requisitos de configuração para o switchover do MetroCluster
+
+* Todos os LIFs devem estar ativos e localizados em seus nós domésticos.
+* Todos os agregados precisam estar online, exceto os agregados de raiz no local de DR.
++
+Os agregados de raiz no local de DR ficam offline durante certas fases de switchover.
+
+* Todos os volumes devem estar online.
+
+
+.Informações relacionadas
+link:task_verifying_the_networking_and_storage_status_for_metrocluster_cluster_is_ready.html["Verificando o status de rede e armazenamento para configurações do MetroCluster"]

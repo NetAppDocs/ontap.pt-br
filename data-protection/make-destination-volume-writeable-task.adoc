@@ -1,0 +1,113 @@
+---
+permalink: data-protection/make-destination-volume-writeable-task.html 
+sidebar: sidebar 
+keywords: destination, volume, writeable, write, serve data, snapmirror, quiesce, pause, abort, transfers 
+summary: Você precisa fazer com que o volume de destino seja gravável antes de poder fornecer dados do volume para os clientes. 
+---
+= Torne o volume de destino gravável
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa fazer com que o volume de destino seja gravável antes de poder fornecer dados do volume para os clientes. Para servir dados de um destino espelhado quando uma origem ficar indisponível, pare as transferências agendadas para o destino e, em seguida, quebre a relação SnapMirror para tornar o destino gravável.
+
+.Sobre esta tarefa
+É necessário executar essa tarefa a partir do SVM de destino ou do cluster de destino.
+
+.Passos
+Você pode usar o Gerenciador do sistema ou a CLI do ONTAP para tornar um volume de destino gravável.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione a relação de proteção: Clique em *proteção > relacionamentos* e, em seguida, clique no nome do volume desejado.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"]em .
+. Parar transferências agendadas : clique em *Pausar*.
+. Deixe o destino gravável: Clique em *Break*.
+. Vá para a página principal *relacionamentos* para verificar se o estado da relação é exibido como "quebrado".
+
+
+.Próximas etapas
+Você precisa link:resynchronize-relationship-task.html["ressincronizar a relação de replicação reversa"] depois de fazer um volume de destino gravável.
+
+Quando o volume de origem desativado estiver novamente disponível, você deverá voltar a sincronizar a relação novamente para copiar os dados atuais para o volume de origem original.
+
+--
+.CLI
+--
+. Parar transferências programadas para o destino:
++
+[source, cli]
+----
+snapmirror quiesce -source-path <SVM:volume|cluster://SVM/volume> -destination-path <SVM:volume|cluster://SVM/volume>
+----
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir interrompe as transferências agendadas entre o volume de origem `volA` ligado `svm1` e o volume de destino `volA_dst` no `svm_backup`:
+
++
+[listing]
+----
+cluster_dst::> snapmirror quiesce -source-path svm1:volA -destination-path svm_backup:volA_dst
+----
+. Parar transferências contínuas para o destino:
++
+[source, cli]
+----
+snapmirror abort -source-path <SVM:volume|cluster://SVM/volume> -destination-path <SVM:volume|cluster://SVM/volume>
+----
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+
+NOTE: Esta etapa não é necessária para relacionamentos síncronos do SnapMirror (suportado a partir do ONTAP 9.5).
+
++
+O exemplo a seguir interrompe as transferências contínuas entre o volume de origem `volA` ligado `svm1` e o volume de destino `volA_dst` no `svm_backup`:
+
++
+[listing]
+----
+cluster_dst::> snapmirror abort -source-path svm1:volA -destination-path svm_backup:volA_dst
+----
+. Quebre a relação de DR do SnapMirror:
++
+[source, cli]
+----
+snapmirror break -source-path <SVM:volume|cluster://SVM/volume> -destination-path <SVM:volume|cluster://SVM/volume>
+----
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir rompe a relação entre o volume de origem `volA` ligado `svm1` e o volume de destino `volA_dst` no `svm_backup`:
+
++
+[listing]
+----
+cluster_dst::> snapmirror break -source-path svm1:volA -destination-path svm_backup:volA_dst
+----
+
+
+.Próximas etapas
+Você precisa link:resynchronize-relationship-task.html["ressincronize a relação de replicação"] depois de fazer um volume de destino gravável.
+
+--
+====
+
+
+== Outras maneiras de fazer isso em ONTAP
+
+[cols="2"]
+|===
+| Para executar estas tarefas com... | Veja este conteúdo... 
+
+
+| System Manager Classic (disponível com o ONTAP 9.7 e versões anteriores) | link:https://docs.netapp.com/us-en/ontap-system-manager-classic/volume-disaster-recovery/index.html["Visão geral da recuperação de desastres de volume"^] 
+|===

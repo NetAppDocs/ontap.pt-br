@@ -1,0 +1,191 @@
+---
+permalink: nfs-config/create-ldap-client-config-task.html 
+sidebar: sidebar 
+keywords: create, ldap, client, configuration 
+summary: Se você quiser que o ONTAP acesse os servidores LDAP externos em seu ambiente, primeiro configure um cliente LDAP no sistema de storage. 
+---
+= Crie uma configuração de cliente LDAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você quiser que o ONTAP acesse os serviços LDAP ou ative Directory externos em seu ambiente, primeiro é necessário configurar um cliente LDAP no sistema de armazenamento.
+
+.O que você vai precisar
+Um dos três primeiros servidores na lista de domínios resolvidos do ative Directory deve estar ativo e fornecendo dados. Caso contrário, esta tarefa falha.
+
+[NOTE]
+====
+Existem vários servidores, dos quais mais de dois servidores estão inativos a qualquer momento.
+
+====
+.Passos
+. Consulte o administrador LDAP para determinar os valores de configuração apropriados para o `vserver services name-service ldap client create` comando:
++
+.. Especifique uma conexão baseada em domínio ou baseada em endereço para servidores LDAP.
++
+As `-ad-domain` opções e `-servers` são mutuamente exclusivas.
+
++
+*** Utilize a `-ad-domain` opção para ativar a deteção de servidor LDAP no domínio do ative Directory.
++
+**** Você pode usar a `-restrict-discovery-to-site` opção para restringir a descoberta de servidor LDAP ao site padrão CIFS para o domínio especificado. Se você usar essa opção, também precisará especificar o site padrão CIFS com `-default-site`.
+
+
+*** Você pode usar a `-preferred-ad-servers` opção para especificar um ou mais servidores preferenciais do ative Directory por endereço IP em uma lista delimitada por vírgulas. Depois que o cliente é criado, você pode modificar esta lista usando o `vserver services name-service ldap client modify` comando.
+*** Use a `-servers` opção para especificar um ou mais servidores LDAP (ative Directory ou UNIX) por endereço IP em uma lista delimitada por vírgulas.
++
+[NOTE]
+====
+A `-servers` opção está obsoleta no ONTAP 9.2. A partir de ONTAP 9.2, o `-ldap-servers` campo substitui o `-servers` campo. Este campo pode ter um nome de host ou um endereço IP para o servidor LDAP.
+
+====
+
+
+.. Especifique um esquema LDAP padrão ou personalizado.
++
+A maioria dos servidores LDAP pode usar os esquemas somente leitura padrão fornecidos pelo ONTAP. É melhor usar esses esquemas padrão, a menos que haja um requisito para fazer o contrário. Nesse caso, você pode criar seu próprio esquema copiando um esquema padrão (eles são somente leitura) e, em seguida, modificando a cópia.
+
++
+Esquemas predefinidos:
+
++
+*** MS-AD-BIS
++
+Baseado em RFC-2307bis, este é o esquema LDAP preferido para a maioria das implantações padrão do Windows 2012 e LDAP posteriores.
+
+*** `AD-IDMU`
++
+Baseado no ative Directory Identity Management para UNIX, esse esquema é apropriado para a maioria dos servidores Windows 2008, Windows 2012 e AD posteriores.
+
+*** `AD-SFU`
++
+Baseado nos Serviços do ative Directory para UNIX, esse esquema é apropriado para a maioria dos servidores do Windows 2003 e AD anteriores.
+
+*** `RFC-2307`
++
+Baseado em RFC-2307 (_an Approach for using LDAP as Network Information Service_), este esquema é apropriado para a maioria dos servidores UNIX AD.
+
+
+
+.. Selecione vincular valores.
++
+*** `-min-bind-level {anonymous|simple|sasl}` especifica o nível mínimo de autenticação bind.
++
+O valor padrão é `*anonymous*`.
+
+*** `-bind-dn _LDAP_DN_` especifica o usuário de vinculação.
++
+Para servidores do ative Directory, você deve especificar o usuário no formulário conta (DOMÍNIO/usuário) ou principal (user@domain.com). Caso contrário, você deve especificar o usuário em forma de nome distinto.
+
+*** `-bind-password _password_` especifica a senha de vinculação.
+
+
+.. Selecione as opções de segurança da sessão, se necessário.
++
+Pode ativar a assinatura e a selagem LDAP ou o LDAP através de TLS, se necessário pelo servidor LDAP.
+
++
+*** `--session-security {none|sign|seal}`
++
+Você pode ativar assinatura (`sign`, integridade de dados), assinatura e vedação (`seal`, integridade e criptografia de dados) ou nenhum  `none`, sem assinatura ou vedação). O valor padrão é `none`.
+
++
+Você também deve definir `-min-bind-level` {`sasl`, a menos que você queira que a autenticação de vinculação retorne `*anonymous*` ou `*simple*` se a vinculação de assinatura e vedação falhar.
+
+*** `-use-start-tls` {`true`|`false`Selecione
++
+Se definido como `*true*` e o servidor LDAP o suportar, o cliente LDAP utiliza uma ligação TLS encriptada ao servidor. O valor padrão é `*false*`. Você deve instalar um certificado de CA raiz autoassinado do servidor LDAP para usar essa opção.
+
++
+[NOTE]
+====
+Se a VM de armazenamento tiver um servidor SMB adicionado a um domínio e o servidor LDAP for um dos controladores de domínio do domínio inicial do servidor SMB, poderá modificar a `-session-security-for-ad-ldap` opção utilizando o `vserver cifs security modify` comando.
+
+====
+
+
+.. Selecione valores de porta, consulta e base.
++
+Os valores padrão são recomendados, mas você deve verificar com o administrador LDAP se eles são apropriados para o seu ambiente.
+
++
+*** `-port _port_` Especifica a porta do servidor LDAP.
++
+O valor padrão é `389`.
+
++
+Se pretender utilizar Iniciar TLS para proteger a ligação LDAP, tem de utilizar a porta predefinida 389. Iniciar TLS começa como uma conexão de texto simples através da porta padrão LDAP 389, e essa conexão é então atualizada para TLS. Se você alterar a porta, Iniciar TLS falhará.
+
+*** `-query-timeout _integer_` especifica o tempo limite da consulta em segundos.
++
+O intervalo permitido é de 1 a 10 segundos. O valor padrão é `3` segundos.
+
+*** `-base-dn _LDAP_DN_` Especifica o DN base.
++
+Vários valores podem ser inseridos se necessário (por exemplo, se a busca por referência LDAP estiver ativada). O valor padrão é `""` (root).
+
+*** `-base-scope` {`base`|`onelevel`|`subtree`especifica o escopo de pesquisa base.
++
+O valor padrão é `subtree`.
+
+*** `-referral-enabled` {`true`|`false`Especifica se a busca por referência LDAP está ativada.
++
+A partir do ONTAP 9.5, isso permite que o cliente LDAP ONTAP consulte solicitações de pesquisa para outros servidores LDAP se uma resposta de referência LDAP for retornada pelo servidor LDAP primário indicando que os Registros desejados estão presentes nos servidores LDAP referidos. O valor padrão é `*false*`.
+
++
+Para pesquisar Registros presentes nos servidores LDAP referidos, o base-DN dos Registros referidos deve ser adicionado ao base-DN como parte da configuração do cliente LDAP.
+
+
+
+
+
+. Crie uma configuração de cliente LDAP na VM de armazenamento:
++
+`vserver services name-service ldap client create -vserver _vserver_name_ -client-config _client_config_name_ {-servers _LDAP_server_list_ | -ad-domain _ad_domain_} -preferred-ad-servers _preferred_ad_server_list_ -restrict-discovery-to-site {true|false} -default-site _CIFS_default_site_ -schema _schema_ -port 389 -query-timeout 3 -min-bind-level {anonymous|simple|sasl} -bind-dn _LDAP_DN_ -bind-password _password_ -base-dn _LDAP_DN_ -base-scope subtree -session-security {none|sign|seal} [-referral-enabled {true|false}]`
+
++
+[NOTE]
+====
+Você deve fornecer o nome da VM de armazenamento ao criar uma configuração de cliente LDAP.
+
+====
+. Verifique se a configuração do cliente LDAP foi criada com sucesso:
++
+`vserver services name-service ldap client show -client-config client_config_name`
+
+
+
+.Exemplos
+O comando a seguir cria uma nova configuração de cliente LDAP chamada ldap1 para que a VM de armazenamento VS1 funcione com um servidor do ative Directory para LDAP:
+
+[listing]
+----
+cluster1::> vserver services name-service ldap client create -vserver vs1 -client-config ldapclient1 -ad-domain addomain.example.com -schema AD-SFU -port 389 -query-timeout 3 -min-bind-level simple -base-dn DC=addomain,DC=example,DC=com -base-scope subtree -preferred-ad-servers 172.17.32.100
+----
+O comando a seguir cria uma nova configuração de cliente LDAP chamada ldap1 para que a VM de armazenamento VS1 funcione com um servidor do ative Directory para LDAP no qual a assinatura e a vedação são necessárias, e a descoberta de servidor LDAP é restrita a um site específico para o domínio especificado:
+
+[listing]
+----
+cluster1::> vserver services name-service ldap client create -vserver vs1 -client-config ldapclient1 -ad-domain addomain.example.com -restrict-discovery-to-site true -default-site cifsdefaultsite.com -schema AD-SFU -port 389 -query-timeout 3 -min-bind-level sasl -base-dn DC=addomain,DC=example,DC=com -base-scope subtree -preferred-ad-servers 172.17.32.100 -session-security seal
+----
+O comando a seguir cria uma nova configuração de cliente LDAP chamada ldap1 para que a VM de armazenamento VS1 funcione com um servidor do ative Directory para LDAP onde a busca por referência LDAP é necessária:
+
+[listing]
+----
+cluster1::> vserver services name-service ldap client create -vserver vs1 -client-config ldapclient1 -ad-domain addomain.example.com -schema AD-SFU -port 389 -query-timeout 3 -min-bind-level sasl -base-dn "DC=adbasedomain,DC=example1,DC=com; DC=adrefdomain,DC=example2,DC=com" -base-scope subtree -preferred-ad-servers 172.17.32.100 -referral-enabled true
+----
+O comando a seguir modifica a configuração do cliente LDAP chamada ldap1 para a VM de armazenamento VS1 especificando o DN base:
+
+[listing]
+----
+cluster1::> vserver services name-service ldap client modify -vserver vs1 -client-config ldap1 -base-dn CN=Users,DC=addomain,DC=example,DC=com
+----
+O comando a seguir modifica a configuração do cliente LDAP chamada ldap1 para a VM de armazenamento VS1, ativando a busca de referência:
+
+[listing]
+----
+cluster1::> vserver services name-service ldap client modify -vserver vs1 -client-config ldap1 -base-dn "DC=adbasedomain,DC=example1,DC=com; DC=adrefdomain,DC=example2,DC=com"  -referral-enabled true
+----

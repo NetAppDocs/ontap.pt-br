@@ -1,0 +1,58 @@
+---
+permalink: s3-config/assess-physical-storage-requirements-task.html 
+sidebar: sidebar 
+keywords: tr-4814, s3, assess, physical, storage, requirements, cloud volumes ontap 
+summary: Antes de provisionar o storage S3 para clientes, você deve garantir que haja espaço suficiente em agregados existentes para o novo armazenamento de objetos. Se não houver, você poderá adicionar discos a agregados existentes ou criar novos agregados do tipo e local desejados. 
+---
+= Avaliar os requisitos de armazenamento físico
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de provisionar o storage S3 para clientes, você deve garantir que haja espaço suficiente em agregados existentes para o novo armazenamento de objetos. Se não houver, você poderá adicionar discos a agregados existentes ou criar novos agregados do tipo e local desejados.
+
+.Sobre esta tarefa
+Quando você cria um bucket do S3 em um SVM habilitado para S3, um volume do FlexGroup é link:../s3-config/architecture.html#automatic-flexgroup-sizing-with-ontap-9-14-1-and-later["criado automaticamente"^]compatível com o bucket. Você pode permitir ao ONTAP Select os agregados subjacentes e componentes do FlexGroup automaticamente (o padrão) ou selecionar os agregados subjacentes e componentes do FlexGroup você mesmo.
+
+Se você decidir especificar os agregados e componentes do FlexGroup -- por exemplo, se você tiver requisitos de desempenho específicos para os discos subjacentes -- você deve garantir que sua configuração agregada esteja de acordo com as diretrizes de práticas recomendadas para o provisionamento de um volume FlexGroup. Saiba mais:
+
+* link:../flexgroup/index.html["Gerenciamento de volumes do FlexGroup"]
+* https://www.netapp.com/pdf.html?item=/media/17251-tr4571apdf.pdf["Relatório técnico da NetApp 4571-a: Melhores práticas de volume da NetApp ONTAP FlexGroup"^]
+
+
+Se você estiver atendendo buckets do Cloud Volumes ONTAP, é altamente recomendável que você selecione manualmente os agregados subjacentes para garantir que eles estejam usando apenas um nó. O uso de agregados de ambos os nós pode afetar o desempenho, porque os nós estarão em zonas de disponibilidade geograficamente separadas e, portanto, suscetíveis a problemas de latência. Saiba mais link:create-bucket-task.html["Criando buckets para Cloud Volumes ONTAP"]sobre .
+
+Você pode usar o servidor ONTAP S3 para criar uma camada de capacidade FabricPool local, ou seja, no mesmo cluster que a camada de performance. Isso pode ser útil, por exemplo, se você tiver discos SSD conetados a um par de HA e quiser categorizar dados _cold_ em discos HDD em outro par de HA. Nesse caso de uso, o servidor S3 e o bucket que contém o nível de capacidade local devem, portanto, estar em um par de HA diferente do nível de performance. A disposição em camadas local não é compatível com clusters de um ou dois nós.
+
+.Passos
+. Exibir espaço disponível em agregados existentes:
++
+`storage aggregate show`
+
++
+Se houver um agregado com espaço suficiente ou localização do nó necessária, Registre seu nome para sua configuração do S3.
+
++
+[listing]
+----
+cluster-1::> storage aggregate show
+Aggregate     Size Available Used% State   #Vols  Nodes  RAID Status
+--------- -------- --------- ----- ------- ------ ------ -----------
+aggr_0     239.0GB   11.13GB   95% online       1 node1  raid_dp,
+                                                         normal
+aggr_1     239.0GB   11.13GB   95% online       1 node1  raid_dp,
+                                                         normal
+aggr_2     239.0GB   11.13GB   95% online       1 node2  raid_dp,
+                                                         normal
+aggr_3     239.0GB   11.13GB   95% online       1 node2  raid_dp,
+                                                         normal
+aggr_4     239.0GB   238.9GB   95% online       5 node3  raid_dp,
+                                                         normal
+aggr_5     239.0GB   239.0GB   95% online       4 node4  raid_dp,
+                                                         normal
+6 entries were displayed.
+----
+. Se não houver agregados com espaço suficiente ou localização de nó necessária, adicione discos a um agregado existente usando o `storage aggregate add-disks` comando ou crie um novo agregado usando o `storage aggregate create` comando.
+

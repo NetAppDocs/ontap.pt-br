@@ -1,0 +1,86 @@
+---
+permalink: nfs-admin/mount-unmount-existing-volumes-nas-namespace-task.html 
+sidebar: sidebar 
+keywords: mount, unmount, exist, volume, nas, namespace 
+summary: 'Um volume deve ser montado no namespace nas antes de poder configurar o acesso do cliente nas aos dados contidos nos volumes de máquina virtual de storage (SVM). Você pode montar um volume em um ponto de junção se ele não estiver montado no momento. Você também pode desmontar volumes.' 
+---
+= Montar ou desmontar volumes existentes no namespace nas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um volume deve ser montado no namespace nas antes de poder configurar o acesso do cliente nas aos dados contidos nos volumes de máquina virtual de storage (SVM). Você pode montar um volume em um ponto de junção se ele não estiver montado no momento. Você também pode desmontar volumes.
+
+.Sobre esta tarefa
+Se você desmontar e colocar um volume off-line, todos os dados dentro do ponto de junção, incluindo dados em volumes com pontos de junção contidos no namespace do volume não montado, ficarão inacessíveis para clientes nas.
+
+[NOTE]
+====
+Para interromper o acesso de cliente nas a um volume, não é suficiente simplesmente desmontar o volume. Você deve colocar o volume off-line ou tomar outras medidas para garantir que os caches de manipulação de arquivos do lado do cliente sejam invalidados. Para obter mais informações, consulte o seguinte artigo da base de dados de Conhecimento:
+
+https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/NFSv3_clients_still_have_access_to_a_volume_after_being_removed_from_the_namespace_in_ONTAP["Os clientes NFSv3 ainda têm acesso a um volume depois de serem removidos do namespace no ONTAP"]
+
+====
+Quando você desmontar e off-line um volume, os dados dentro do volume não são perdidos. Além disso, políticas de exportação de volume existentes e compartilhamentos SMB criados no volume ou em diretórios e pontos de junção dentro do volume não montado são retidos. Se você remontar o volume não montado, os clientes nas poderão acessar os dados contidos no volume usando políticas de exportação e compartilhamentos SMB existentes.
+
+.Passos
+. Execute a ação desejada:
++
+[cols="2*"]
+|===
+| Se você quiser... | Digite os comandos... 
+
+
+ a| 
+Monte um volume
+ a| 
+`volume mount -vserver _svm_name_ -volume _volume_name_ -junction-path _junction_path_`
+
+
+
+ a| 
+Desmontar um volume
+ a| 
+`volume unmount -vserver _svm_name_ -volume _volume_name_`
+
+`volume offline -vserver _svm_name_ -volume _volume_name_`
+
+|===
+. Verifique se o volume está no estado de montagem desejado:
++
+`volume show -vserver _svm_name_ -volume _volume_name_ -fields state,junction-path,junction-active`
+
+
+
+.Exemplos
+O exemplo a seguir monta um volume chamado "vendas" localizado na SVM "VS1" no ponto de junção ""/vendas":
+
+[listing]
+----
+cluster1::> volume mount -vserver vs1 -volume sales -junction-path /sales
+
+cluster1::> volume show -vserver vs1 state,junction-path,junction-active
+
+vserver   volume     state     junction-path   junction-active
+--------- ---------- -------- --------------- ----------------
+vs1       data       online    /data           true
+vs1       home4      online    /eng/home       true
+vs1       sales      online    /sales          true
+----
+O exemplo a seguir desmonta e fica offline um volume chamado "data" localizado na SVM "'VS1":
+
+[listing]
+----
+cluster1::> volume unmount -vserver vs1 -volume data
+cluster1::> volume offline -vserver vs1 -volume data
+
+cluster1::> volume show -vserver vs1 -fields state,junction-path,junction-active
+
+vserver   volume     state     junction-path   junction-active
+--------- ---------- --------- --------------- ---------------
+vs1       data       offline   -               -
+vs1       home4      online    /eng/home       true
+vs1       sales      online    /sales          true
+----

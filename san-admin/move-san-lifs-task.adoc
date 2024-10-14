@@ -1,0 +1,43 @@
+---
+permalink: san-admin/move-san-lifs-task.html 
+sidebar: sidebar 
+keywords: move, san, lifs 
+summary: 'Se um nó precisar ficar offline, você pode mover um SAN LIF para preservar suas informações de configuração, como o WWPN, e evitar o zoneamento da malha do switch. Como um LIF SAN deve ser colocado off-line antes de ser movido, o tráfego de host deve confiar no software de multipathing de host para fornecer acesso sem interrupções ao LUN. É possível mover SAN LIFs para qualquer nó em um cluster, mas não é possível mover os SAN LIFs entre máquinas virtuais de armazenamento (SVMs).' 
+---
+= Mova um SAN LIF
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se um nó precisar ficar offline, você pode mover um SAN LIF para preservar suas informações de configuração, como o WWPN, e evitar o zoneamento da malha do switch. Como um LIF SAN deve ser colocado off-line antes de ser movido, o tráfego de host deve confiar no software de multipathing de host para fornecer acesso sem interrupções ao LUN. É possível mover SAN LIFs para qualquer nó em um cluster, mas não é possível mover os SAN LIFs entre máquinas virtuais de armazenamento (SVMs).
+
+.O que você vai precisar
+Se o LIF for um membro de um conjunto de portas, o LIF deve ter sido removido do conjunto de portas antes que o LIF possa ser movido para um nó diferente.
+
+.Sobre esta tarefa
+O nó de destino e a porta física de um LIF que você deseja mover devem estar na mesma malha FC ou rede Ethernet. Se você mover um LIF para uma malha diferente que não tenha sido corretamente zoneada ou se você mover um LIF para uma rede Ethernet que não tenha conetividade entre o iniciador iSCSI e o destino, o LUN ficará inacessível quando você o colocar novamente on-line.
+
+.Passos
+. Veja o status administrativo e operacional do LIF:
++
+`network interface show -vserver _vserver_name_`
+
+. Altere o status do LIF para `down` (offline):
++
+`network interface modify -vserver _vserver_name_ -lif _LIF_name_ -status-admin down`
+
+. Atribua ao LIF um novo nó e porta:
++
+`network interface modify -vserver _vserver_name_ -lif _LIF_name_ -home-node _node_name_ -home-port _port_name_`
+
+. Altere o status do LIF para `up` (online):
++
+`network interface modify -vserver _vserver_name_ -lif _LIF_name_ -status-admin up`
+
+. Verifique as alterações:
++
+`network interface show -vserver _vserver_name_`
+
+

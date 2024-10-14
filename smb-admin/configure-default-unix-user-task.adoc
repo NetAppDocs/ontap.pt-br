@@ -1,0 +1,77 @@
+---
+permalink: smb-admin/configure-default-unix-user-task.html 
+sidebar: sidebar 
+keywords: configure, unix, user, map, fail, individual, windows, authentication, non-mapped, configure the default unix user 
+summary: Você pode configurar o usuário UNIX padrão para usar se todas as outras tentativas de mapeamento falharem para um usuário ou se não quiser mapear usuários individuais entre UNIX e Windows. Alternativamente, se você quiser que a autenticação de usuários não mapeados falhe, você não deve configurar o usuário UNIX padrão. 
+---
+= Configure o usuário UNIX padrão
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar o usuário UNIX padrão para usar se todas as outras tentativas de mapeamento falharem para um usuário ou se não quiser mapear usuários individuais entre UNIX e Windows. Alternativamente, se você quiser que a autenticação de usuários não mapeados falhe, você não deve configurar o usuário UNIX padrão.
+
+.Sobre esta tarefa
+Por padrão, o nome do usuário UNIX padrão é "'pcuser'", o que significa que, por padrão, o mapeamento de usuário para o usuário UNIX padrão está habilitado. Você pode especificar outro nome para usar como usuário UNIX padrão. O nome especificado deve existir nos bancos de dados do serviço de nomes configurados para a máquina virtual de storage (SVM). Se essa opção for definida como uma cadeia de carateres nula, ninguém poderá acessar o servidor CIFS como um usuário padrão UNIX. Ou seja, cada usuário deve ter uma conta no banco de dados de senhas antes de poder acessar o servidor CIFS.
+
+Para que um usuário se conete ao servidor CIFS usando a conta de usuário UNIX padrão, o usuário deve atender aos seguintes pré-requisitos:
+
+* O utilizador está autenticado.
+* O usuário está no banco de dados de usuários do Windows local do servidor CIFS, no domínio doméstico do servidor CIFS ou em um domínio confiável (se pesquisas de mapeamento de nomes de vários domínios estiverem ativadas no servidor CIFS).
+* O nome de usuário não é explicitamente mapeado para uma cadeia de carateres nula.
+
+
+.Passos
+. Configure o usuário UNIX padrão:
++
+|===
+| Se você quiser ... | Introduza ... 
+
+
+ a| 
+Use o usuário padrão do UNIX "'pcuser'"
+ a| 
+`vserver cifs options modify -default-unix-user pcuser`
+
+
+
+ a| 
+Use outra conta de usuário UNIX como usuário padrão
+ a| 
+`vserver cifs options modify -default-unix-user _user_name_`
+
+
+
+ a| 
+Desative o usuário UNIX padrão
+ a| 
+`vserver cifs options modify -default-unix-user ""`
+
+|===
++
+`vserver cifs options modify -default-unix-user pcuser`
+
+. Verifique se o usuário UNIX padrão está configurado corretamente: `vserver cifs options show -vserver _vserver_name_`
++
+No exemplo a seguir, tanto o usuário UNIX padrão quanto o usuário UNIX convidado no SVM VS1 são configurados para usar o usuário UNIX "'pcuser'":
+
++
+`vserver cifs options show -vserver vs1`
+
++
+[listing]
+----
+
+Vserver: vs1
+
+  Client Session Timeout : 900
+  Default Unix Group     : -
+  Default Unix User      : pcuser
+  Guest Unix User        : pcuser
+  Read Grants Exec       : disabled
+  Read Only Delete       : disabled
+  WINS Servers           : -
+----
+

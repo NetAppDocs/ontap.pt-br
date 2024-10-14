@@ -1,0 +1,211 @@
+---
+permalink: peering/create-cluster-relationship-93-later-task.html 
+sidebar: sidebar 
+keywords: create, cluster, peer, relationship, System Manager, cli 
+summary: Crie um relacionamento de pares de cluster entre um cluster local e remoto antes de proteger seus dados, replicando-os em um cluster remoto para fins de backup de dados e recuperação de desastres. 
+---
+= Crie um relacionamento de pares de cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de proteger seus dados replicando-os em um cluster remoto para fins de backup de dados e recuperação de desastres, você deve criar um relacionamento de peers de clusters entre o cluster local e o cluster remoto.
+
+.Sobre esta tarefa
+Este procedimento aplica-se aos sistemas FAS, AFF e ASA atuais. Se você tiver um sistema ASA R2 (ASA A1K, ASA A70 ou ASA A90), siga link:https://docs.netapp.com/us-en/asa-r2/data-protection/snapshot-replication.html["estes passos"^] para criar a replicação de snapshot de configuração. Os sistemas ASA R2 fornecem uma experiência de ONTAP simplificada específica para clientes somente SAN.
+
+Várias políticas de proteção padrão estão disponíveis. Você deve ter criado suas políticas de proteção se quiser usar políticas personalizadas.
+
+.Antes de começar
+* Se você estiver usando a CLI do ONTAP, crie LIFs entre clusters em todos os nós dos clusters que estão sendo direcionados usando um dos seguintes métodos:
++
+** link:configure-intercluster-lifs-share-data-ports-task.html["Configurar LIFs entre clusters em portas de dados compartilhados"]
+** link:configure-intercluster-lifs-use-dedicated-ports-task.html["Configurar LIFs entre clusters em portas de dados dedicadas"]
+** link:configure-intercluster-lifs-use-ports-own-networks-task.html["Configurar LIFs entre clusters em IPspaces personalizados"]
+
+
+* Os clusters precisam estar executando o ONTAP 9.3 ou posterior. (Se os clusters estiverem executando o ONTAP 9.2 ou anterior, consulte os procedimentos em link:https://library.netapp.com/ecm/ecm_download_file/ECMLP2494079["este documento arquivado"^].)
+
+
+.Passos
+Execute esta tarefa usando o Gerenciador de sistema do ONTAP ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. No cluster local, clique em *Cluster > Settings*.
+. Na seção *Configurações de cluster*, clique em *Adicionar interfaces de rede* e insira o endereço IP e a máscara de sub-rede para adicionar interfaces de rede entre clusters para o cluster.
++
+Repita este passo no painel remoto.
+
+. No cluster remoto, clique em *Cluster > Settings*.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"] na secção *Cluster Peers* e selecione *Generate Passphrase* (gerar frase-passe).
+. Selecione a versão remota do cluster do ONTAP.
+. Copie a frase-passe gerada.
+. No cluster local, em *Cluster Peers*, clique image:icon_kabob.gif["Ícone de opções do menu"] e selecione *Peer cluster*.
+. Na janela *cluster de pares*, cole a frase-passe e clique em *Iniciar peering de cluster*.
+
+
+--
+.CLI
+--
+. No cluster de destino, crie uma relação de pares com o cluster de origem:
++
+[source, cli]
+----
+cluster peer create -generate-passphrase -offer-expiration <MM/DD/YYYY HH:MM:SS|1...7days|1...168hours> -peer-addrs <peer_LIF_IPs> -initial-allowed-vserver-peers <svm_name|*> -ipspace <ipspace>
+----
++
+Se você especificar ambos `-generate-passphrase` e `-peer-addrs`, somente o cluster cujos LIFs entre clusters são especificados em `-peer-addrs` poderá usar a senha gerada.
+
++
+Você pode ignorar a `-ipspace` opção se não estiver usando um IPspace personalizado. Para obter a sintaxe completa do comando, consulte a página man.
+
++
+Se você estiver criando o relacionamento de peering no ONTAP 9.6 ou posterior e não quiser que as comunicações de peering entre clusters sejam criptografadas, use a `-encryption-protocol-proposed none` opção para desativar a criptografia.
+
++
+O exemplo a seguir cria um relacionamento de peer de cluster com um cluster remoto não especificado e pré-autoriza relacionamentos entre pares com SVMs e `vs1` `vs2` no cluster local:
+
++
+[listing]
+----
+cluster02::> cluster peer create -generate-passphrase -offer-expiration 2days -initial-allowed-vserver-peers vs1,vs2
+
+                     Passphrase: UCa+6lRVICXeL/gq1WrK7ShR
+                Expiration Time: 6/7/2017 08:16:10 EST
+  Initial Allowed Vserver Peers: vs1,vs2
+            Intercluster LIF IP: 192.140.112.101
+              Peer Cluster Name: Clus_7ShR (temporary generated)
+
+Warning: make a note of the passphrase - it cannot be displayed again.
+----
++
+O exemplo a seguir cria um relacionamento de peer de cluster com o cluster remoto nos endereços IP de LIF 192.140.112.103 e 192.140.112.104 e pré-autoriza um relacionamento de pares com qualquer SVM no cluster local:
+
++
+[listing]
+----
+cluster02::> cluster peer create -generate-passphrase -peer-addrs 192.140.112.103,192.140.112.104 -offer-expiration 2days -initial-allowed-vserver-peers *
+
+                     Passphrase: UCa+6lRVICXeL/gq1WrK7ShR
+                Expiration Time: 6/7/2017 08:16:10 EST
+  Initial Allowed Vserver Peers: vs1,vs2
+            Intercluster LIF IP: 192.140.112.101,192.140.112.102
+              Peer Cluster Name: Clus_7ShR (temporary generated)
+
+Warning: make a note of the passphrase - it cannot be displayed again.
+----
++
+O exemplo a seguir cria um relacionamento de peer de cluster com um cluster remoto não especificado e pré-autoriza relacionamentos entre pares com SVMs e``vs1`` `vs2` no cluster local:
+
++
+[listing]
+----
+cluster02::> cluster peer create -generate-passphrase -offer-expiration 2days -initial-allowed-vserver-peers vs1,vs2
+
+                     Passphrase: UCa+6lRVICXeL/gq1WrK7ShR
+                Expiration Time: 6/7/2017 08:16:10 EST
+  Initial Allowed Vserver Peers: vs1,vs2
+            Intercluster LIF IP: 192.140.112.101
+              Peer Cluster Name: Clus_7ShR (temporary generated)
+
+Warning: make a note of the passphrase - it cannot be displayed again.
+----
+. No cluster de origem, autentique o cluster de origem no cluster de destino:
++
+[source, cli]
+----
+cluster peer create -peer-addrs <peer_LIF_IPs> -ipspace <ipspace>
+----
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir autentica o cluster local para o cluster remoto nos endereços IP 192.140.112.101 e 192.140.112.102 do LIF:
+
++
+[listing]
+----
+cluster01::> cluster peer create -peer-addrs 192.140.112.101,192.140.112.102
+
+Notice: Use a generated passphrase or choose a passphrase of 8 or more characters.
+        To ensure the authenticity of the peering relationship, use a phrase or sequence of characters that would be hard to guess.
+
+Enter the passphrase:
+Confirm the passphrase:
+
+Clusters cluster02 and cluster01 are peered.
+----
++
+Digite a senha para o relacionamento de pares quando solicitado.
+
+. Verifique se o relacionamento de pares de cluster foi criado:
++
+[source, cli]
+----
+cluster peer show -instance
+----
++
+[listing]
+----
+cluster01::> cluster peer show -instance
+
+                               Peer Cluster Name: cluster02
+                   Remote Intercluster Addresses: 192.140.112.101, 192.140.112.102
+              Availability of the Remote Cluster: Available
+                             Remote Cluster Name: cluster2
+                             Active IP Addresses: 192.140.112.101, 192.140.112.102
+                           Cluster Serial Number: 1-80-123456
+                  Address Family of Relationship: ipv4
+            Authentication Status Administrative: no-authentication
+               Authentication Status Operational: absent
+                                Last Update Time: 02/05 21:05:41
+                    IPspace for the Relationship: Default
+----
+. Verifique a conetividade e o status dos nós no relacionamento de pares:
++
+[source, cli]
+----
+cluster peer health show
+----
++
+[listing]
+----
+cluster01::> cluster peer health show
+Node       cluster-Name                Node-Name
+             Ping-Status               RDB-Health Cluster-Health  Avail…
+---------- --------------------------- ---------  --------------- --------
+cluster01-01
+           cluster02                   cluster02-01
+             Data: interface_reachable
+             ICMP: interface_reachable true       true            true
+                                       cluster02-02
+             Data: interface_reachable
+             ICMP: interface_reachable true       true            true
+cluster01-02
+           cluster02                   cluster02-01
+             Data: interface_reachable
+             ICMP: interface_reachable true       true            true
+                                       cluster02-02
+             Data: interface_reachable
+             ICMP: interface_reachable true       true            true
+----
+
+
+--
+====
+
+
+== Outras maneiras de fazer isso em ONTAP
+
+[cols="2"]
+|===
+| Para executar estas tarefas com... | Veja este conteúdo... 
+
+
+| System Manager Classic (disponível com o ONTAP 9.7 e versões anteriores) | link:https://docs.netapp.com/us-en/ontap-system-manager-classic/volume-disaster-prep/index.html["Visão geral da preparação para recuperação de desastres em volume"^] 
+|===

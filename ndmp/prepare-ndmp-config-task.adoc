@@ -1,0 +1,103 @@
+---
+permalink: ndmp/prepare-ndmp-config-task.html 
+sidebar: sidebar 
+keywords: prepare, ndmp, configuration 
+summary: 'Antes de configurar o acesso de backup em fita pelo Network Data Management Protocol (NDMP), você deve verificar se a configuração planejada é suportada, verificar se suas unidades de fita estão listadas como unidades qualificadas em cada nó, verificar se todos os nós têm LIFs entre clusters e identificar se o aplicativo de backup suporta a extensão CAB (Cluster Aware Backup).' 
+---
+= Prepare-se para a configuração NDMP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de configurar o acesso de backup em fita pelo Network Data Management Protocol (NDMP), você deve verificar se a configuração planejada é suportada, verificar se suas unidades de fita estão listadas como unidades qualificadas em cada nó, verificar se todos os nós têm LIFs entre clusters e identificar se o aplicativo de backup suporta a extensão CAB (Cluster Aware Backup).
+
+.Passos
+. Consulte a matriz de compatibilidade do fornecedor do aplicativo de backup para obter suporte ao ONTAP (o NetApp não qualifica aplicativos de backup de terceiros com ONTAP ou NDMP).
++
+Você deve verificar se os seguintes componentes do NetApp são compatíveis:
+
++
+--
+** A versão do ONTAP 9 que está sendo executada no cluster.
+** O fornecedor e a versão do aplicativo de backup: Por exemplo, Veritas NetBackup 8,2 ou CommVault.
+** Os detalhes dos dispositivos de fita, como o fabricante, o modelo e a interface das unidades de fita: Por exemplo, IBM Ultrium 8 ou HPE StoreEver Ultrium 30750 LTO-8.
+** As plataformas dos nós no cluster: Por exemplo, FAS8700 ou A400.
+
+
+--
++
+
+NOTE: Você pode encontrar matrizes de suporte de compatibilidade legadas do ONTAP para aplicativos de backup no https://mysupport.netapp.com/matrix["Ferramenta de Matriz de interoperabilidade do NetApp"^].
+
+. Verifique se suas unidades de fita estão listadas como unidades qualificadas no arquivo de configuração de fita interno de cada nó:
++
+.. Na interface de linha de comando, visualize o arquivo de configuração de fita incorporado usando o `storage tape show-supported-status` comando.
++
+....
+cluster1::> storage tape show-supported-status
+
+Node: cluster1-1
+                                Is
+Tape Drives                     Supported  Support Status
+------------------------------  ---------  -------------------------------
+Certance Ultrium 2              true       Dynamically Qualified
+Certance Ultrium 3              true       Dynamically Qualified
+Digital DLT2000                 true       Qualified
+....
+.. Compare suas unidades de fita com a lista de unidades qualificadas na saída.
++
+[NOTE]
+====
+Os nomes dos dispositivos de fita na saída podem variar ligeiramente dos nomes na etiqueta do dispositivo ou na Matriz de interoperabilidade. Por exemplo, o Digital DLT2000 também pode ser conhecido como DLT2k. Você pode ignorar essas pequenas diferenças de nomenclatura.
+
+====
+.. Se um dispositivo não estiver listado como qualificado na saída, mesmo que o dispositivo esteja qualificado de acordo com a Matriz de interoperabilidade, baixe e instale um arquivo de configuração atualizado para o dispositivo usando as instruções no site de suporte da NetApp.
++
+http://mysupport.netapp.com/NOW/download/tools/tape_config["Downloads do NetApp: Arquivos de configuração do dispositivo de fita"^]
+
++
+Um dispositivo qualificado pode não estar listado no arquivo de configuração de fita incorporado se o dispositivo de fita tiver sido qualificado após o nó ser enviado.
+
+
+
+. Verifique se cada nó no cluster tem um LIF entre clusters:
++
+.. Visualize as LIFs entre clusters nos nós usando o `network interface show -role intercluster` comando.
++
+[listing]
+----
+cluster1::> network interface show -role intercluster
+
+            Logical    Status     Network            Current       Current Is
+Vserver     Interface  Admin/Oper Address/Mask       Node          Port    Home
+----------- ---------- ---------- ------------------ ------------- ------- ----
+cluster1    IC1        up/up      192.0.2.65/24      cluster1-1    e0a     true
+----
+.. Se um LIF entre clusters não existir em nenhum nó, crie um LIF entre clusters usando o `network interface create` comando.
++
+[listing]
+----
+cluster1::> network interface create -vserver cluster1 -lif IC2 -role intercluster
+-home-node cluster1-2 -home-port e0b -address 192.0.2.68 -netmask 255.255.255.0
+-status-admin up -failover-policy local-only -firewall-policy intercluster
+
+cluster1::> network interface show -role intercluster
+
+            Logical    Status     Network            Current       Current Is
+Vserver     Interface  Admin/Oper Address/Mask       Node          Port    Home
+----------- ---------- ---------- ------------------ ------------- ------- ----
+cluster1    IC1        up/up      192.0.2.65/24      cluster1-1    e0a     true
+cluster1    IC2        up/up      192.0.2.68/24      cluster1-2    e0b     true
+----
++
+link:../networking/networking_reference.html["Gerenciamento de rede"]
+
+
+
+. Identifique se o aplicativo de backup suporta Backup ciente de cluster (CAB) usando a documentação fornecida com o aplicativo de backup.
++
+O suporte DA CAB é um fator chave para determinar o tipo de backup que você pode executar.
+
+

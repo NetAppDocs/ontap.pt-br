@@ -1,0 +1,95 @@
+---
+permalink: performance-admin/measure-latency-throughput-nodes-task.html 
+sidebar: sidebar 
+keywords: check, throughput, latency, between, nodes 
+summary: Você pode usar o comando network test-path para identificar gargalos de rede ou para pré-qualificar caminhos de rede entre nós. Você pode executar o comando entre nós ou nós entre clusters. 
+---
+= Verifique a taxa de transferência e a latência entre nós
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `network test-path` comando para identificar gargalos de rede ou para pré-qualificar caminhos de rede entre nós. Você pode executar o comando entre nós ou nós entre clusters.
+
+.O que você vai precisar
+* Você deve ser um administrador de cluster para executar esta tarefa.
+* São necessários comandos avançados de nível de privilégio para esta tarefa.
+* Para um caminho entre clusters, os clusters de origem e destino devem ser peered.
+
+
+.Sobre esta tarefa
+Ocasionalmente, o desempenho da rede entre nós pode não atender às expetativa de configuração do caminho. Uma taxa de transmissão de 1 Gbps para o tipo de grandes transferências de dados vistas nas operações de replicação do SnapMirror, por exemplo, não seria consistente com um link de 10 GbE entre os clusters de origem e destino.
+
+Você pode usar o `network test-path` comando para medir a taxa de transferência e a latência entre nós. Você pode executar o comando entre nós ou nós entre clusters.
+
+[NOTE]
+====
+O teste satura o caminho da rede com dados, então você deve executar o comando quando o sistema não estiver ocupado e quando o tráfego de rede entre nós não for excessivo. O teste expira após dez segundos. O comando só pode ser executado entre nós ONTAP 9.
+
+====
+A `session-type` opção identifica o tipo de operação que você está executando sobre o caminho da rede - por exemplo, "AsyncMirrorRemote" para replicação do SnapMirror para um destino remoto. O tipo determina a quantidade de dados utilizados no teste. A tabela a seguir define os tipos de sessão:
+
+|===
+
+
+| Tipo de sessão | Descrição 
+
+
+ a| 
+AsyncMirrorLocal
+ a| 
+Configurações usadas pelo SnapMirror entre nós no mesmo cluster
+
+
+
+ a| 
+AsyncMirrorRemote
+ a| 
+Configurações usadas pelo SnapMirror entre nós em clusters diferentes (tipo padrão)
+
+
+
+ a| 
+RemoteDataTransfer
+ a| 
+Configurações usadas pelo ONTAP para acesso remoto a dados entre nós no mesmo cluster (por exemplo, uma solicitação NFS para um nó para um arquivo armazenado em um volume em um nó diferente)
+
+|===
+.Passos
+. Alterar para nível de privilégio avançado:
++
+`set -privilege advanced`
+
+. Meça a taxa de transferência e a latência entre nós:
++
+`network test-path -source-node _source_nodename_ |local -destination-cluster _destination_clustername_ -destination-node _destination_nodename_ -session-type Default|AsyncMirrorLocal|AsyncMirrorRemote|SyncMirrorRemote|RemoteDataTransfer`
+
++
+O nó de origem deve estar no cluster local. O nó de destino pode estar no cluster local ou em um cluster com peering. Um valor de "local" para `-source-node` especifica o nó no qual você está executando o comando.
+
++
+O comando a seguir mede a taxa de transferência e a latência para operações de replicação do tipo SnapMirror entre `node1` no cluster local e `node3` no `cluster2`:
+
++
+[listing]
+----
+cluster1::> network test-path -source-node node1 -destination-cluster cluster2 -destination-node node3 -session-type AsyncMirrorRemote
+Test Duration:      10.88 secs
+Send Throughput:    18.23 MB/sec
+Receive Throughput: 18.23 MB/sec
+MB sent:            198.31
+MB received:        198.31
+Avg latency in ms:  2301.47
+Min latency in ms:  61.14
+Max latency in ms:  3056.86
+----
+. Retornar ao privilégio administrativo:
++
+`set -privilege admin`
+
+
+
+.Depois de terminar
+Se o desempenho não atender às expetativa de configuração do caminho, você deve verificar as estatísticas de desempenho do nó, usar as ferramentas disponíveis para isolar o problema na rede, verificar as configurações do switch e assim por diante.

@@ -1,0 +1,51 @@
+---
+permalink: nas-audit/synchronous-asynchronous-notifications-concept.html 
+sidebar: sidebar 
+keywords: synchronous, asynchronous, notifications 
+summary: O FPolicy envia notificações para servidores FPolicy externos através da interface FPolicy. As notificações são enviadas em modo síncrono ou assíncrono. O modo de notificação determina o que o ONTAP faz depois de enviar notificações para servidores FPolicy. 
+---
+= Quais são as notificações síncronas e assíncronas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O FPolicy envia notificações para servidores FPolicy externos através da interface FPolicy. As notificações são enviadas em modo síncrono ou assíncrono. O modo de notificação determina o que o ONTAP faz depois de enviar notificações para servidores FPolicy.
+
+* *Notificações assíncronas*
++
+Com notificações assíncronas, o nó não espera por uma resposta do servidor FPolicy, que aumenta a taxa de transferência geral do sistema. Esse tipo de notificação é adequado para aplicativos em que o servidor FPolicy não exige que qualquer ação seja tomada como resultado da avaliação da notificação. Por exemplo, notificações assíncronas são usadas quando o administrador da máquina virtual de storage (SVM) deseja monitorar e auditar a atividade de acesso a arquivos.
+
++
+Se um servidor FPolicy que opera no modo assíncrono sofrer uma interrupção na rede, as notificações FPolicy geradas durante a interrupção serão armazenadas no nó de storage. Quando o servidor FPolicy volta online, ele é alertado das notificações armazenadas e pode buscá-las a partir do nó de armazenamento. O período de tempo em que as notificações podem ser armazenadas durante uma interrupção é configurável até 10 minutos.
+
++
+A partir do ONTAP 9.14,1, o FPolicy permite configurar um armazenamento persistente para capturar eventos de acesso a arquivos para políticas assíncronas não obrigatórias no SVM. Armazenamentos persistentes podem ajudar a desacoplar o processamento de e/S do cliente do processamento de notificações FPolicy para reduzir a latência do cliente. Configurações síncronas (obrigatórias ou não obrigatórias) e assíncronas obrigatórias não são suportadas.
+
+* *Notificações síncronas*
++
+Quando configurado para ser executado no modo síncrono, o servidor FPolicy deve reconhecer todas as notificações antes que a operação do cliente possa continuar. Este tipo de notificação é utilizado quando uma ação é necessária com base nos resultados da avaliação da notificação. Por exemplo, as notificações síncronas são usadas quando o administrador da SVM deseja permitir ou negar solicitações com base nos critérios especificados no servidor FPolicy externo.
+
+
+
+
+
+== Aplicações síncronas e assíncronas
+
+Existem muitos usos possíveis para aplicativos FPolicy, tanto assíncronos quanto síncronos.
+
+Aplicações assíncronas são aquelas em que o servidor FPolicy externo não altera o acesso a arquivos ou diretórios nem modifica dados na máquina virtual de armazenamento (SVM). Por exemplo:
+
+* Acesso a arquivos e Registro de auditoria
+* Gerenciamento de recursos de storage
+
+
+Os aplicativos síncronos são aqueles em que o acesso aos dados é alterado ou os dados são modificados pelo servidor FPolicy externo. Por exemplo:
+
+* Gerenciamento de cota
+* Bloqueio de acesso a arquivos
+* Arquivamento de arquivos e gerenciamento de armazenamento hierárquico
+* Serviços de criptografia e descriptografia
+* Serviços de compressão e descompressão
+

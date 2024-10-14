@@ -1,0 +1,45 @@
+---
+permalink: system-admin/manage-web-protocol-engine-concept.html 
+sidebar: sidebar 
+keywords: manage, web, protocol, engine, ssl, access, configuration, settings 
+summary: Você pode configurar o mecanismo de protocolo da Web no cluster para controlar se o acesso à Web é permitido e quais versões SSL podem ser usadas. Também pode apresentar as definições de configuração do motor de protocolo Web. 
+---
+= Gerencie o mecanismo de protocolo da Web
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar o mecanismo de protocolo da Web no cluster para controlar se o acesso à Web é permitido e quais versões SSL podem ser usadas. Também pode apresentar as definições de configuração do motor de protocolo Web.
+
+Você pode gerenciar o mecanismo de protocolo da Web no nível do cluster das seguintes maneiras:
+
+* Você pode especificar se os clientes remotos podem usar HTTP ou HTTPS para acessar o conteúdo do serviço da Web usando o `system services web modify` comando com o `-external` parâmetro.
+* Você pode especificar se SSLv3 deve ser usado para acesso seguro à Web usando o `security config modify` comando com o `-supported-protocol` parâmetro. Por padrão, o SSLv3 está desativado. Transport Layer Security 1,0 (TLSv1,0) está ativado e pode ser desativado se necessário.
+* Você pode ativar o modo de conformidade FIPS (Federal Information Processing Standard) 140-2 para interfaces de serviço da Web do plano de controle em todo o cluster.
++
+[NOTE]
+====
+Por padrão, o modo de conformidade com o FIPS 140-2 está desativado.
+
+====
++
+** *Quando o modo de conformidade com o FIPS 140-2 estiver desativado*, é possível ativar o modo de conformidade com o FIPS 140-2 definindo o `is-fips-enabled` parâmetro como `true` para `security config modify` o comando e, em seguida, usando o `security config show` comando para confirmar o status on-line.
+** *Quando o modo de conformidade com o FIPS 140-2 estiver ativado*
++
+*** A partir do ONTAP 9.11,1, TLSv1, TLSv1,1 e SSLv3 estão desativados e apenas TSLv1,2 e TSLv1,3 permanecem ativados. Afeta outros sistemas e comunicações que são internos e externos ao ONTAP 9. Se você ativar o modo de conformidade FIPS 140-2 e, em seguida, desativar, TLSv1, TLSv1,1 e SSLv3 permanecerão desativados. O TLSv,1 ou o TLSv1,3 permanecerão ativados dependendo da configuração anterior.
+*** Para versões do ONTAP anteriores a 9.11.1, tanto o TLSv1 como o SSLv3 estão desativados e apenas o TLSv1,1 e o TLSv1,2 permanecem ativados. O ONTAP impede que você ative o TLSv1 e o SSLv3 quando o modo de conformidade FIPS 140-2 estiver ativado. Se você ativar o modo de conformidade FIPS 140-2 e, em seguida, desativá-lo, o TLSv1 e o SSLv3 permanecerão desativados, mas o TLSv1,2 ou o TLSv1,1 e o TLSv1,2 serão ativados dependendo da configuração anterior.
+
+
+
+
+* Você pode exibir a configuração de segurança em todo o cluster usando o `system security config show` comando.
+
+
+Se o firewall estiver ativado, a política de firewall para a interface lógica (LIF) a ser usada para serviços da Web deve ser configurada para permitir o acesso HTTP ou HTTPS.
+
+Se você usar HTTPS para acesso ao serviço da Web, o SSL para o cluster ou a máquina virtual de armazenamento (SVM) que ofereça o serviço da Web também deverá estar habilitado e fornecer um certificado digital para o cluster ou SVM.
+
+Nas configurações do MetroCluster, as alterações de configuração feitas para o mecanismo de protocolo da Web em um cluster não são replicadas no cluster de parceiros.

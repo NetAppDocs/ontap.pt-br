@@ -1,0 +1,159 @@
+---
+permalink: performance-admin/set-throughput-ceiling-qos-task.html 
+sidebar: sidebar 
+keywords: setting, throughput, ceiling, qos 
+summary: 'Você pode usar o campo taxa de transferência máxima para um grupo de políticas para definir um limite máximo de taxa de transferência para workloads de objetos de storage (QoS Max). Você pode aplicar o grupo de políticas ao criar ou modificar o objeto de armazenamento.' 
+---
+= Defina um limite de taxa de transferência com QoS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `max-throughput` campo de um grupo de políticas para definir um limite máximo de taxa de transferência para workloads de objetos de storage (QoS Max). Você pode aplicar o grupo de políticas ao criar ou modificar o objeto de armazenamento.
+
+.O que você vai precisar
+* Você deve ser um administrador de cluster para criar um grupo de políticas.
+* Você deve ser um administrador de cluster para aplicar um grupo de políticas a um SVM.
+
+
+.Sobre esta tarefa
+* A partir do ONTAP 9.4, você pode usar um grupo de políticas de QoS _não compartilhado_ para especificar que o limite de taxa de transferência definido se aplica a cada workload de membro individualmente. Caso contrário, o grupo de políticas é _compartilhado:_ a taxa de transferência total para as cargas de trabalho atribuídas ao grupo de políticas não pode exceder o limite máximo especificado.
++
+Defina `-is-shared=false` para que o `qos policy-group create` comando especifique um grupo de políticas não compartilhado.
+
+* Você pode especificar o limite de taxa de transferência para o limite máximo em IOPS, MB/s ou IOPS, MB/s. Se você especificar IOPS e MB/s, qualquer limite atingido primeiro será aplicado.
++
+[NOTE]
+====
+Se você definir um teto e um piso para a mesma carga de trabalho, poderá especificar o limite de taxa de transferência para o limite máximo apenas em IOPS.
+
+====
+* Um objeto de storage que esteja sujeito a um limite de QoS precisa estar contido pelo SVM a que o grupo de políticas pertence. Vários grupos de políticas podem pertencer ao mesmo SVM.
+* Não é possível atribuir um objeto de armazenamento a um grupo de políticas se o objeto que contém ou os objetos filho pertencerem ao grupo de políticas.
+* É uma prática recomendada de QoS aplicar um grupo de políticas ao mesmo tipo de objetos de storage.
+
+
+.Passos
+. Criar um grupo de políticas:
++
+`qos policy-group create -policy-group _policy_group_ -vserver _SVM_ -max-throughput _number_of_iops_|Mb/S|iops,Mb/S -is-shared true|false`
+
++
+Para obter a sintaxe completa do comando, consulte a página man. Você pode usar o `qos policy-group modify` comando para ajustar os tetos de taxa de transferência.
+
++
+O comando a seguir cria o grupo de políticas compartilhadas `pg-vs1` com uma taxa de transferência máxima de 5.000 IOPS:
+
++
+[listing]
+----
+cluster1::> qos policy-group create -policy-group pg-vs1 -vserver vs1 -max-throughput 5000iops -is-shared true
+----
++
+O comando a seguir cria o grupo de políticas não compartilhadas `pg-vs3` com uma taxa de transferência máxima de 100 IOPS e 400 Kb/S:
+
++
+[listing]
+----
+cluster1::> qos policy-group create -policy-group pg-vs3 -vserver vs3 -max-throughput 100iops,400KB/s -is-shared false
+----
++
+O comando a seguir cria o grupo de políticas não compartilhadas `pg-vs4` sem um limite de taxa de transferência:
+
++
+[listing]
+----
+cluster1::> qos policy-group create -policy-group pg-vs4 -vserver vs4 -is-shared false
+----
+. Aplique um grupo de políticas a um SVM, arquivo, volume ou LUN:
++
+`_storage_object_ create -vserver _SVM_ -qos-policy-group _policy_group_`
+
++
+Para obter a sintaxe completa do comando, consulte as páginas man. Você pode usar o `_storage_object_ modify` comando para aplicar um grupo de políticas diferente ao objeto de armazenamento.
+
++
+O comando a seguir aplica o grupo de políticas `pg-vs1` ao SVM `vs1`:
+
++
+[listing]
+----
+cluster1::> vserver create -vserver vs1 -qos-policy-group pg-vs1
+----
++
+Os comandos a seguir aplicam o grupo de políticas `pg-app` aos volumes `app1` e `app2`:
+
++
+[listing]
+----
+cluster1::> volume create -vserver vs2 -volume app1 -aggregate aggr1 -qos-policy-group pg-app
+----
++
+[listing]
+----
+cluster1::> volume create -vserver vs2 -volume app2 -aggregate aggr1 -qos-policy-group pg-app
+----
+. Monitorar o desempenho do grupo de políticas:
++
+`qos statistics performance show`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[NOTE]
+====
+Monitore o desempenho do cluster. Não use uma ferramenta no host para monitorar o desempenho.
+
+====
++
+O comando a seguir mostra o desempenho do grupo de políticas:
+
++
+[listing]
+----
+cluster1::> qos statistics performance show
+Policy Group           IOPS      Throughput   Latency
+-------------------- -------- --------------- ----------
+-total-                 12316       47.76MB/s  1264.00us
+pg_vs1                   5008       19.56MB/s     2.45ms
+_System-Best-Effort        62       13.36KB/s     4.13ms
+_System-Background         30           0KB/s        0ms
+----
+. Monitorar a performance do workload:
++
+`qos statistics workload performance show`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[NOTE]
+====
+Monitore o desempenho do cluster. Não use uma ferramenta no host para monitorar o desempenho.
+
+====
++
+O comando a seguir mostra o desempenho da carga de trabalho:
+
++
+[listing]
+----
+cluster1::> qos statistics workload performance show
+Workload          ID     IOPS      Throughput    Latency
+--------------- ------ -------- ---------------- ----------
+-total-              -    12320        47.84MB/s  1215.00us
+app1-wid7967      7967     7219        28.20MB/s   319.00us
+vs1-wid12279     12279     5026        19.63MB/s     2.52ms
+_USERSPACE_APPS     14       55        10.92KB/s   236.00us
+_Scan_Backgro..   5688       20            0KB/s        0ms
+----
++
+[NOTE]
+====
+Use o `qos statistics workload latency show` comando para visualizar estatísticas detalhadas de latência para workloads de QoS.
+
+====
+

@@ -1,0 +1,60 @@
+---
+permalink: nfs-admin/control-root-user-access-ntfs-security-data-task.html 
+sidebar: sidebar 
+keywords: control, root, user, access, ntfs, security, style, data 
+summary: 'Você pode configurar o ONTAP para permitir que clientes NFS acessem dados de estilo de segurança NTFS e clientes NTFS para acessar dados de estilo de segurança NFS. Ao usar o estilo de segurança NTFS em um armazenamento de dados NFS, você deve decidir como tratar o acesso pelo usuário raiz e configurar a máquina virtual de armazenamento (SVM) de acordo.' 
+---
+= Controle o acesso do usuário raiz aos dados de estilo de segurança NTFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar o ONTAP para permitir que clientes NFS acessem dados de estilo de segurança NTFS e clientes NTFS para acessar dados de estilo de segurança NFS. Ao usar o estilo de segurança NTFS em um armazenamento de dados NFS, você deve decidir como tratar o acesso pelo usuário raiz e configurar a máquina virtual de armazenamento (SVM) de acordo.
+
+.Sobre esta tarefa
+Quando um usuário raiz acessa dados de estilo de segurança NTFS, você tem duas opções:
+
+* Mapeie o usuário raiz para um usuário do Windows como qualquer outro usuário NFS e gerencie o acesso de acordo com ACLs NTFS.
+* Ignore as ACLs NTFS e forneça acesso total à raiz.
+
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+`set -privilege advanced`
+
+. Execute a ação desejada:
++
+[cols="35,65"]
+|===
+
+
+| Se você quiser que o usuário root... | Digite o comando... 
+
+
+ a| 
+Ser mapeado para um usuário do Windows
+ a| 
+`vserver nfs modify -vserver vserver_name -ignore-nt-acl-for-root disabled`
+
+
+
+ a| 
+Ignorar a verificação da ACL NT
+ a| 
+`vserver nfs modify -vserver vserver_name -ignore-nt-acl-for-root enabled`
+
+|===
++
+Por predefinição, este parâmetro está desativado.
+
++
+Se este parâmetro estiver ativado, mas não houver mapeamento de nomes para o usuário raiz, o ONTAP usará uma credencial de administrador SMB padrão para auditoria.
+
+. Voltar ao nível de privilégio de administrador:
++
+`set -privilege admin`
+
+

@@ -1,0 +1,129 @@
+---
+permalink: s3-config/create-data-lifs-task.html 
+sidebar: sidebar 
+keywords: tr-4814, create, data, lifs 
+summary: Se você criou um novo SVM, as LIFs dedicadas que você cria para o acesso S3 devem ser LIFs de dados. 
+---
+= Crie LIFs de dados
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você criou um novo SVM, as LIFs dedicadas que você cria para o acesso S3 devem ser LIFs de dados.
+
+.Antes de começar
+* A porta de rede física ou lógica subjacente deve ter sido configurada para o status administrativo `up`.
+* Se você estiver planejando usar um nome de sub-rede para alocar o endereço IP e o valor de máscara de rede para um LIF, a sub-rede já deve existir.
++
+As sub-redes contêm um conjunto de endereços IP que pertencem à mesma sub-rede da camada 3. Eles são criados usando o `network subnet create` comando.
+
+* A política de serviço LIF já deve existir.
+* Como prática recomendada, os LIFs usados para acesso a dados (data-S3-server) e LIFs usados para operações de gerenciamento (Management-https) devem ser separados. Ambos os serviços não devem ser ativados no mesmo LIF.
+* Os Registros DNS devem ter apenas endereços IP dos LIFs que têm dados-S3-server associados a eles. Se endereços IP de outros LIFs forem especificados no Registro DNS, as solicitações do ONTAP S3 podem ser atendidas por outros servidores, resultando em respostas inesperadas.
+
+
+.Sobre esta tarefa
+* Você pode criar LIFs IPv4 e IPv6 na mesma porta de rede.
+* Se você tiver um grande número de LIFs no cluster, poderá verificar a capacidade de LIF suportada no cluster usando o `network interface capacity show` comando e a capacidade de LIF suportada em cada nó usando o `network interface capacity details show` comando (no nível de privilégio avançado).
+* Se você habilitar a disposição em camadas remota de capacidade FabricPool (nuvem), também deverá configurar LIFs entre clusters.
+
+
+.Passos
+. Criar um LIF:
++
+`network interface create -vserver _svm_name_ -lif _lif_name_ -service-policy _service_policy_names_ -home-node _node_name_ -home-port _port_name_ {-address _IP_address_ -netmask _IP_address_ | -subnet-name _subnet_name_} -firewall-policy data -auto-revert {true|false}`
+
++
+** `-home-node` É o nó para o qual o LIF retorna quando o `network interface revert` comando é executado no LIF.
++
+Você também pode especificar se o LIF deve reverter automaticamente para o nó inicial e porta inicial com a `-auto-revert` opção.
+
+** `-home-port` É a porta física ou lógica para a qual o LIF retorna quando o `network interface revert` comando é executado no LIF.
+** Pode especificar um endereço IP com `-address` as opções e `-netmask` ou ativar a atribuição a partir de uma sub-rede com a `-subnet_name` opção.
+** Ao usar uma sub-rede para fornecer o endereço IP e a máscara de rede, se a sub-rede foi definida com um gateway, uma rota padrão para esse gateway é adicionada automaticamente ao SVM quando um LIF é criado usando essa sub-rede.
+** Se você atribuir endereços IP manualmente (sem usar uma sub-rede), talvez seja necessário configurar uma rota padrão para um gateway se houver clientes ou controladores de domínio em uma sub-rede IP diferente. A `network route create` página man contém informações sobre a criação de uma rota estática dentro de um SVM.
+** Para a `-firewall-policy` opção, use o mesmo padrão `data` que a função LIF.
++
+Você pode criar e adicionar uma política de firewall personalizada mais tarde, se desejado.
+
++
+
+NOTE: A partir do ONTAP 9.10,1, as políticas de firewall são obsoletas e totalmente substituídas por políticas de serviço LIF. Para obter mais informações, link:../networking/configure_firewall_policies_for_lifs.html["Configurar políticas de firewall para LIFs"]consulte .
+
+** `-auto-revert` Permite especificar se um LIF de dados é automaticamente revertido para o seu nó inicial em circunstâncias como inicialização, alterações no status do banco de dados de gerenciamento ou quando a conexão de rede é feita. A configuração padrão é `false`, mas você pode defini-la como `false` dependendo das políticas de gerenciamento de rede em seu ambiente.
+** A `-service-policy` opção especifica a política de dados e serviços de gerenciamento que você criou e quaisquer outras políticas necessárias.
+
+
+. Se você quiser atribuir um endereço IPv6 na `-address` opção:
++
+.. Use o `network ndp prefix show` comando para visualizar a lista de prefixos RA aprendidos em várias interfaces.
++
+O `network ndp prefix show` comando está disponível no nível de privilégio avançado.
+
+.. Use o formato `prefix:id` para construir o endereço IPv6 manualmente.
++
+`prefix` é o prefixo aprendido em várias interfaces.
+
++
+Para derivar o `id`, escolha um número hexadecimal aleatório de 64 bits.
+
+
+
+. Verifique se o LIF foi criado com sucesso usando o `network interface show` comando.
+. Verifique se o endereço IP configurado está acessível:
++
+[cols="2*"]
+|===
+| Para verificar um... | Utilizar... 
+
+
+ a| 
+Endereço IPv4
+ a| 
+`network ping`
+
+
+
+ a| 
+Endereço IPv6
+ a| 
+`network ping6`
+
+|===
+
+
+.Exemplos
+O comando a seguir mostra como criar um LIF de dados S3 atribuído com a `my-S3-policy` política de serviço:
+
+[listing]
+----
+network interface create -vserver svm1.example.com -lif lif2 -home-node node2 -homeport e0d -service-policy my-S3-policy -subnet-name ipspace1
+----
+O comando a seguir mostra todas as LIFs no cluster-1. Os LIFs de dados datalif1 e datalif3 são configurados com endereços IPv4 e o datalif4 é configurado com um endereço IPv6:
+
+[listing]
+----
+cluster-1::> network interface show
+
+            Logical    Status     Network          Current      Current Is
+Vserver     Interface  Admin/Oper Address/Mask     Node         Port    Home
+----------- ---------- ---------- ---------------- ------------ ------- ----
+cluster-1
+            cluster_mgmt up/up    192.0.2.3/24     node-1       e1a     true
+node-1
+            clus1        up/up    192.0.2.12/24    node-1       e0a     true
+            clus2        up/up    192.0.2.13/24    node-1       e0b     true
+            mgmt1        up/up    192.0.2.68/24    node-1       e1a     true
+node-2
+            clus1        up/up    192.0.2.14/24    node-2       e0a     true
+            clus2        up/up    192.0.2.15/24    node-2       e0b     true
+            mgmt1        up/up    192.0.2.69/24    node-2       e1a     true
+vs1.example.com
+            datalif1     up/down  192.0.2.145/30   node-1       e1c     true
+vs3.example.com
+            datalif3     up/up    192.0.2.146/30   node-2       e0c     true
+            datalif4     up/up    2001::2/64       node-2       e0c     true
+5 entries were displayed.
+----

@@ -1,0 +1,117 @@
+---
+permalink: volumes/quota-notifications-concept.html 
+sidebar: sidebar 
+keywords: understanding, quota, notifications 
+summary: 'As notificações de quota são mensagens enviadas para o sistema de gestão de eventos (EMS) e também configuradas como traps SNMP.' 
+---
+= Acerca das notificações de quota
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+As notificações de quota são mensagens enviadas para o sistema de gestão de eventos (EMS) e também configuradas como traps SNMP.
+
+As notificações são enviadas em resposta aos seguintes eventos:
+
+* Uma cota difícil é alcançada; em outras palavras, uma tentativa é feita para superá-la
+* Uma cota suave é excedida
+* Uma quota suave já não é ultrapassada
+
+
+Os limiares são ligeiramente diferentes de outras quotas moles. Os limites acionam notificações apenas quando são excedidos, não quando já não são excedidos.
+
+As notificações de cota rígida são configuráveis usando o comando de modificação de cota de volume. Você pode desligá-los completamente, e você pode alterar sua frequência, por exemplo, para evitar o envio de mensagens redundantes.
+
+As notificações de cota flexível não são configuráveis porque é improvável que gerem mensagens redundantes e o seu único objetivo é a notificação.
+
+A tabela a seguir lista os eventos que as cotas enviam para o sistema EMS:
+
+[cols="2*"]
+|===
+| Quando isso ocorre... | Este evento é enviado para o EMS... 
+
+
+ a| 
+Um limite rígido é alcançado em uma cota de árvore
+ a| 
+`wafl.quota.qtree.exceeded`
+
+
+
+ a| 
+Um limite rígido é atingido em uma cota de usuário no volume
+ a| 
+`wafl.quota.user.exceeded` (Para um usuário UNIX)
+`wafl.quota.user.exceeded.win` (para um usuário do Windows)
+
+
+
+ a| 
+Um limite rígido é atingido em uma cota de usuário em uma qtree
+ a| 
+`wafl.quota.userQtree.exceeded` (Para um usuário UNIX)
+`wafl.quota.userQtree.exceeded.win` (para um usuário do Windows)
+
+
+
+ a| 
+Um limite rígido é atingido em uma cota de grupo no volume
+ a| 
+`wafl.quota.group.exceeded`
+
+
+
+ a| 
+Um limite rígido é atingido em uma cota de grupo em uma qtree
+ a| 
+`wafl.quota.groupQtree.exceeded`
+
+
+
+ a| 
+Um limite suave, incluindo um limite, é excedido
+ a| 
+`quota.softlimit.exceeded`
+
+
+
+ a| 
+Um limite suave já não é excedido
+ a| 
+`quota.softlimit.normal`
+
+|===
+A tabela a seguir lista os traps SNMP que as cotas geram:
+
+[cols="2*"]
+|===
+| Quando isso ocorre... | Esta trap SNMP é enviada... 
+
+
+ a| 
+Um limite rígido é atingido
+ a| 
+QuotaExceeded
+
+
+
+ a| 
+Um limite suave, incluindo um limite, é excedido
+ a| 
+QuotaExceeded e softQuotaExceeded
+
+
+
+ a| 
+Um limite suave já não é excedido
+ a| 
+QuotaNormal e softQuotaNormal
+
+|===
+[NOTE]
+====
+As notificações contêm números de ID de qtree em vez de nomes de qtree. Você pode correlacionar nomes de qtree com números de ID usando o `volume qtree show -id` comando.
+
+====

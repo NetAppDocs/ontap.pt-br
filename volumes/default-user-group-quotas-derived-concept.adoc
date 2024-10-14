@@ -1,0 +1,54 @@
+---
+permalink: volumes/default-user-group-quotas-derived-concept.html 
+sidebar: sidebar 
+keywords: default, user, group quotas, create, derived, quotas, quota, derived quota 
+summary: Quando você cria cotas de usuário ou grupo padrão, cotas derivadas são criadas para cada usuário ou grupo que possua arquivos no mesmo nível. 
+---
+= Como as cotas padrão de usuário e grupo criam cotas derivadas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando você cria cotas de usuário ou grupo padrão, as cotas de usuário ou grupo derivadas correspondentes são criadas automaticamente para cada usuário ou grupo que possua arquivos no mesmo nível.
+
+As cotas de usuário e grupo derivadas são criadas das seguintes maneiras:
+
+* Uma cota de usuário padrão em um FlexVol volume cria cotas de usuário derivadas para cada usuário que possui um arquivo em qualquer lugar do volume.
+* Uma cota de usuário padrão em uma qtree cria cotas de usuário derivadas para cada usuário que possui um arquivo na qtree.
+* Uma cota de grupo padrão em um FlexVol volume cria cotas de grupo derivadas para cada grupo que possui um arquivo em qualquer lugar do volume.
+* Uma cota de grupo padrão em uma qtree cria cotas de grupo derivadas para cada grupo que possui um arquivo na qtree.
+
+
+Se um usuário ou grupo não possuir arquivos no nível de uma cota padrão de usuário ou grupo, as cotas derivadas não serão criadas para o usuário ou grupo. Por exemplo, se uma cota de usuário padrão for criada para a qtree proj1 e o jsmith do usuário possuir arquivos em uma qtree diferente, nenhuma cota de usuário derivada será criada para o jsmith.
+
+As cotas derivadas têm as mesmas configurações que as cotas padrão, incluindo limites e mapeamento de usuários. Por exemplo, se uma cota de usuário padrão tiver um limite de disco de 50 MB e tiver o mapeamento de usuários ativado, todas as cotas derivadas resultantes também terão um limite de disco de 50 MB e mapeamento de usuários ativados.
+
+No entanto, não existem limites em cotas derivadas para três usuários e grupos especiais. Se os seguintes usuários e grupos possuírem arquivos no nível de uma cota padrão de usuário ou grupo, uma cota derivada é criada com a mesma configuração de mapeamento de usuário que a cota padrão de usuário ou grupo, mas é apenas uma cota de rastreamento (sem limites):
+
+* Usuário raiz UNIX (UID 0)
+* Grupo raiz UNIX (GID 0)
+* Grupo de administradores do Windows BUILTIN
++
+Como as cotas para grupos do Windows são rastreadas como cotas de usuário, uma cota derivada para esse grupo é uma cota de usuário derivada de uma cota de usuário padrão, não de uma cota de grupo padrão.
+
+
+
+.Exemplo de quotas de utilizador derivadas
+Se você tiver um volume onde três usuários --root, jsmith e bob--possuem arquivos e criar uma cota de usuário padrão no volume, o ONTAP criará automaticamente três cotas de usuário derivadas. Portanto, depois de reinicializar cotas no volume, quatro novas cotas aparecerão no relatório de cota:
+
+[listing]
+----
+cluster1::> volume quota report
+  Vserver: vs1
+                                     ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol1               user    *           0B   50MB       0       -   *
+vol1               user    root        5B      -       1       -
+vol1               user    jsmith     30B   50MB      10       -   *
+vol1               user    bob        40B   50MB      15       -   *
+4 entries were displayed.
+----
+A primeira nova linha é a cota de usuário padrão que você criou, que é identificável pelo asterisco (*) como ID. As outras novas linhas são as quotas de utilizador derivadas. As cotas derivadas para jsmith e bob têm o mesmo limite de disco de 50 MB que a cota padrão. A cota derivada para o usuário raiz é uma cota de rastreamento sem limites.

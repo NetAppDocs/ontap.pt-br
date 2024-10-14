@@ -1,0 +1,91 @@
+---
+permalink: san-admin/move-luns-task.html 
+sidebar: sidebar 
+keywords: system manager, ontap 9.2, move, lun 
+summary: 'Você pode mover um LUN entre volumes em uma máquina virtual de storage (SVM), mas não pode mover um LUN entre SVMs. As LUNs migradas em volumes dentro de uma SVM são movidas imediatamente e sem perda de conectividade.' 
+---
+= Mover um LUN
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode mover um LUN entre volumes em uma máquina virtual de storage (SVM), mas não pode mover um LUN entre SVMs. As LUNs migradas em volumes dentro de uma SVM são movidas imediatamente e sem perda de conectividade.
+
+.O que você vai precisar
+Se o LUN estiver usando o mapa de LUN seletivo (SLM), você deve link:modify-slm-reporting-nodes-task.html["Modifique a lista de nós de relatórios SLM"]incluir o nó de destino e seu parceiro de HA antes de mover o LUN.
+
+.Sobre esta tarefa
+Os recursos de eficiência de storage, como deduplicação, compressão e compactação, não são preservados durante a movimentação de LUN. Eles devem ser reaplicados depois que a movimentação de LUN for concluída.
+
+A proteção de dados com cópias Snapshot ocorre no nível do volume. Portanto, quando você move um LUN, ele se enquadra no esquema de proteção de dados do volume de destino. Se você não tiver cópias Snapshot estabelecidas para o volume de destino, as cópias Snapshot do LUN não serão criadas. Além disso, todas as cópias Snapshot do LUN permanecem no volume original até que essas cópias snapshot sejam excluídas.
+
+Não é possível mover um LUN para os seguintes volumes:
+
+* Um volume de destino SnapMirror
+* Volume raiz do SVM
+
+
+Não é possível mover os seguintes tipos de LUNs:
+
+* Um LUN que foi criado a partir de um ficheiro
+* Um LUN que está no estado NVFail
+* Um LUN que está em um relacionamento de compartilhamento de carga
+* Um LUN de classe de endpoint de protocolo
+
+
+[NOTE]
+====
+Para LUNs Solaris os_type que tenham 1 TB ou mais, o host pode ter um tempo limite durante a movimentação de LUN. Para esse tipo de LUN, você deve desmontar o LUN antes de iniciar a movimentação.
+
+====
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+Mova um LUN com o Gerenciador de sistema do ONTAP (9,7 e posterior).
+
+A partir do ONTAP 9.10,1, você pode usar o Gerenciador do sistema para criar um novo volume ao mover um único LUN. No ONTAP 9 1 e 9,9.8, o volume para o qual você está movendo seu LUN deve existir antes de iniciar a movimentação do LUN.
+
+Passos
+
+. No System Manager, clique em *Storage>LUNs*.
+. Clique com o botão direito do rato no LUN que pretende mover e, em seguida, clique image:icon_kabob.gif["Ícone de opções do menu"] em *mover LUN*.
++
+No ONTAP 9.10,1, selecione para mover o LUN para *um volume existente* ou para um *novo volume*.
+
++
+Se você selecionar para criar um novo volume, forneça as especificações de volume.
+
+. Clique em *mover*.
+
+
+--
+.CLI
+--
+Mova um LUN com a CLI do ONTAP.
+
+. Mover o LUN:
++
+[source, cli]
+----
+lun move start
+----
++
+Durante um período muito breve, o LUN é visível tanto no volume de origem como no de destino. Isso é esperado e é resolvido após a conclusão da mudança.
+
+. Acompanhe o status da movimentação e verifique a conclusão bem-sucedida:
++
+[source, cli]
+----
+lun move show
+----
+
+
+--
+====
+.Informações relacionadas
+* link:selective-lun-map-concept.html["Mapa LUN seletivo"]
+

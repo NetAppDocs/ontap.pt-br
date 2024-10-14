@@ -1,0 +1,140 @@
+---
+permalink: s3-config/create-install-ca-certificate-svm-task.html 
+sidebar: sidebar 
+keywords: create, install, ca certificate, svm 
+summary: 'Um certificado de autoridade de certificação (CA) é necessário para habilitar o tráfego HTTPS de clientes S3 para o SVM habilitado para S3.' 
+---
+= Crie e instale um certificado de CA no SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um certificado de autoridade de certificação (CA) é necessário para habilitar o tráfego HTTPS de clientes S3 para o SVM habilitado para S3.
+
+.Sobre esta tarefa
+Embora seja possível configurar um servidor S3 para usar apenas HTTP, e embora seja possível configurar clientes sem um requisito de certificado de CA, é uma prática recomendada proteger o tráfego HTTPS para servidores ONTAP S3 com um certificado de CA.
+
+Um certificado de CA não é necessário para um caso de uso local de disposição em camadas, em que o tráfego IP está passando apenas pelas LIFs de cluster.
+
+As instruções neste procedimento irão criar e instalar um certificado auto-assinado ONTAP. Os certificados de CA de fornecedores terceiros também são suportados; consulte a documentação de autenticação do administrador para obter mais informações.
+
+link:../authentication/index.html["Autenticação de administrador e RBAC"]
+
+Consulte as `security certificate` páginas man para obter opções de configuração adicionais.
+
+.Passos
+. Crie um certificado digital autoassinado:
++
+`security certificate create -vserver _svm_name_ -type root-ca -common-name _ca_cert_name_`
+
++
+A `-type root-ca` opção cria e instala um certificado digital autoassinado para assinar outros certificados agindo como autoridade de certificação (CA).
+
++
+A `-common-name` opção cria o nome da Autoridade de Certificação (CA) do SVM e será usada ao gerar o nome completo do certificado.
+
++
+O tamanho padrão do certificado é de 2048 bits.
+
++
+Exemplo
+
++
+[listing]
+----
+cluster-1::> security certificate create -vserver svm1.example.com -type root-ca -common-name svm1_ca
+
+The certificate's generated name for reference: svm1_ca_159D1587CE21E9D4_svm1_ca
+----
++
+Quando o nome gerado do certificado for exibido; certifique-se de salvá-lo para etapas posteriores neste procedimento.
+
+. Gerar uma solicitação de assinatura de certificado:
++
+`security certificate generate-csr -common-name _s3_server_name_ [additional_options]`
+
++
+O `-common-name` parâmetro para a solicitação de assinatura deve ser o nome do servidor S3 (FQDN).
+
++
+Você pode fornecer a localização e outras informações detalhadas sobre o SVM, se desejado.
+
++
+Você será solicitado a manter uma cópia da solicitação de certificado e da chave privada para referência futura.
+
+. Assine a CSR usando SVM_CA para gerar o certificado do S3 Server:
++
+`security certificate sign -vserver _svm_name_ -ca _ca_cert_name_ -ca-serial _ca_cert_serial_number_ [additional_options]`
+
++
+Insira as opções de comando que você usou nas etapas anteriores:
+
++
+** `-ca` -- o nome comum da CA que você inseriu na Etapa 1.
+** `-ca-serial` -- o número de série da CA a partir do passo 1. Por exemplo, se o nome do certificado CA for svm1_CA_159D1587CE21E9D4_svm1_CA, o número de série será 159D1587CE21E9D4.
+
+
++
+Por padrão, o certificado assinado expirará em 365 dias. Você pode selecionar outro valor e especificar outros detalhes de assinatura.
+
++
+Quando solicitado, copie e insira a string de solicitação de certificado que você salvou na Etapa 2.
+
++
+Um certificado assinado é exibido; salve-o para uso posterior.
+
+. Instale o certificado assinado no SVM habilitado para S3:
++
+`security certificate install -type server -vserver _svm_name_`
+
++
+Quando solicitado, insira o certificado e a chave privada.
+
++
+Você tem a opção de inserir certificados intermediários se uma cadeia de certificados for desejada.
+
++
+Quando a chave privada e o certificado digital assinado pela CA forem exibidos, salve-os para referência futura.
+
+. Obtenha o certificado de chave pública:
++
+`security certificate show -vserver _svm_name_ -common-name _ca_cert_name_ -type root-ca -instance`
+
++
+Salve o certificado de chave pública para uma configuração posterior do lado do cliente.
+
++
+Exemplo
+
++
+[listing]
+----
+cluster-1::> security certificate show -vserver svm1.example.com -common-name svm1_ca -type root-ca  -instance
+
+                      Name of Vserver: svm1.example.com
+           FQDN or Custom Common Name: svm1_ca
+         Serial Number of Certificate: 159D1587CE21E9D4
+                Certificate Authority: svm1_ca
+                  Type of Certificate: root-ca
+     (DEPRECATED)-Certificate Subtype: -
+              Unique Certificate Name: svm1_ca_159D1587CE21E9D4_svm1_ca
+Size of Requested Certificate in Bits: 2048
+               Certificate Start Date: Thu May 09 10:58:39 2020
+          Certificate Expiration Date: Fri May 08 10:58:39 2021
+               Public Key Certificate: -----BEGIN CERTIFICATE-----
+MIIDZ ...==
+-----END CERTIFICATE-----
+                         Country Name: US
+               State or Province Name:
+                        Locality Name:
+                    Organization Name:
+                    Organization Unit:
+Contact Administrator's Email Address:
+                             Protocol: SSL
+                     Hashing Function: SHA256
+              Self-Signed Certificate: true
+       Is System Internal Certificate: false
+----
+

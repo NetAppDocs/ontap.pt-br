@@ -1,0 +1,90 @@
+---
+permalink: flexcache-writeback/flexcache-write-back-overview.html 
+sidebar: sidebar 
+keywords: tr-4743, flexcache writeback, flexcache write-back, overview, technical report, netapp tr, ontap tr 
+summary: Introduzido no ONTAP 9.15,1, o FlexCache write-back é um modo alternativo de operação para escrever em um cache. 
+---
+= Visão geral do FlexCache write-back
+:allow-uri-read: 
+
+
+[role="lead"]
+Introduzido no ONTAP 9.15,1, o FlexCache write-back é um modo alternativo de operação para escrever em um cache. O Writeback permite que a gravação seja comprometida com o armazenamento estável no cache e reconhecida ao cliente sem esperar que os dados cheguem à origem. Os dados são escoados assincronamente de volta à origem. Como resultado, um sistema de arquivos distribuído globalmente permite que as gravações sejam executadas em velocidades quase locais para workloads e ambientes específicos, oferecendo benefícios significativos de performance.
+
+
+NOTE: O ONTAP 9.12,1 introduziu um recurso de write-back como uma prévia pública. Isto é referido como versão de write-back 1 (wbv1) e não deve ser pensado como o mesmo que write-back no ONTAP 9.15,1, que é referido como versão de write-back 2 (wbv2).
+
+
+
+== Writeback vs write-around
+
+Desde que o FlexCache foi introduzido no ONTAP 9.5, ele tem sido um cache gravável de leitura; no entanto, ele operou no modo write-around. As gravações no cache foram enviadas para a origem para serem comprometidas com o armazenamento estável. Após a origem ter comprometido com sucesso a gravação para armazenamento estável, ele reconheceu a gravação no cache. O cache então reconheceria a gravação para o cliente. Isso fez com que cada gravação incorresse a penalidade de atravessar a rede entre o cache e a origem. O FlexCache write-back muda isso.
+
+
+NOTE: Depois de atualizar para o ONTAP 9.15,1, você pode converter um cache tradicional write-around para um cache write-back e, se necessário, voltar para write-around. Isso pode, no entanto, tornar a leitura de logs de diagnóstico mais difícil caso surja um problema.
+
+|===
+|  | Escrever em torno | Write-back 
+
+
+| Versão de ONTAP | Mais de 9,6 anos | Mais de 9.15.1 anos 
+
+
+| Caso de uso | Carga de trabalho com leitura intensa | Carga de trabalho com gravação intensa 
+
+
+| Dados comprometidos em | Origem | Cache 
+
+
+| Experiência do cliente | Tipo WAN | LAN-lke 
+
+
+| Limites | 100 por origem | 10 por origem 
+
+
+| https://en.wikipedia.org/wiki/CAP_theorem["CAP Theorem"^] | Disponível e tolerante à partição | Disponível e consistente 
+|===
+
+
+== Terminologia de reescrita do FlexCache
+
+Entenda os principais conceitos e termos trabalhando com o FlexCache write-back.
+
+[cols="12%,88%"]
+|===
+| Prazo | Definição 
+
+
+| [[Dirty-data]]*dados sujos* | Dados que foram comprometidos com o armazenamento estável no cache, mas não foram lavados para a origem. 
+
+
+| * Delegação exclusiva de bloqueio (XLD)* | Uma autoridade de bloqueio em nível de protocolo concedida em uma base por arquivo para um cache. Essa autoridade permite que o cache distribua bloqueios de gravação exclusivos aos clientes sem entrar em Contato com a origem. 
+
+
+| *Delegação de bloqueio compartilhado (SLD)* | Uma autoridade de bloqueio em nível de protocolo concedida em uma base por arquivo para um cache. Essa autoridade permite que o cache distribua bloqueios de leitura compartilhados aos clientes sem entrar em Contato com a origem. 
+
+
+| *Resposta* | Um modo de operação do FlexCache onde as gravações em um cache são comprometidas com o armazenamento estável nesse cache e imediatamente reconhecidas ao cliente. Os dados são assincronamente escritos de volta à origem. 
+
+
+| * Escreva-em torno* | Um modo de operação do FlexCache onde as gravações em um cache são encaminhadas para a origem para serem comprometidas com o armazenamento estável. Uma vez confirmada, a origem reconhecerá a gravação no cache, e o cache reconhecerá a gravação no cliente. 
+
+
+| *Sistema de Registro de dados sujos (DDRS)* | Um mecanismo proprietário que mantém o controle dos dados sujos em um cache habilitado para write-back em uma base por arquivo. 
+
+
+| *Origem* | Um FlexGroup ou FlexVol que contém os dados de origem para todos os volumes de cache FlexCache. Ele é a única fonte da verdade, orquestra o bloqueio e garante 100% de consistência, moeda e coerência dos dados. 
+
+
+| *Cache* | Um FlexGroup que é um volume de cache esparso da origem do FlexCache. 
+|===
+
+
+=== Consistente, atual e coerente
+
+O FlexCache é a solução da NetApp para ter os dados certos, em qualquer lugar e sempre. O FlexCache é 100% consistente, atual e coerente 100% do tempo:
+
+* *Consistente:* os dados são os mesmos onde quer que sejam acessados.
+* *Current:* os dados estão sempre atualizados.
+* *Coerente:* os dados estão corretos/não corrompidos.
+

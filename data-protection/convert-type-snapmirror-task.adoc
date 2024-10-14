@@ -1,0 +1,109 @@
+---
+permalink: data-protection/convert-type-snapmirror-task.html 
+sidebar: sidebar 
+keywords: convert, snapmirror, relationship, asynchronous, synchronous, baseline, convert 
+summary: A partir do ONTAP 9.5, o SnapMirror síncrono é suportado. Você pode converter uma relação assíncrona do SnapMirror para uma relação síncrona do SnapMirror ou vice-versa sem realizar uma transferência de linha de base. 
+---
+= Converta o tipo de uma relação SnapMirror
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.5, o SnapMirror síncrono é suportado. Você pode converter uma relação assíncrona do SnapMirror para uma relação síncrona do SnapMirror ou vice-versa sem realizar uma transferência de linha de base.
+
+.Sobre esta tarefa
+Não é possível converter uma relação assíncrona do SnapMirror para uma relação síncrona do SnapMirror ou vice-versa alterando a política do SnapMirror
+
+.Passos
+* * Conversão de uma relação assíncrona do SnapMirror para uma relação síncrona do SnapMirror*
++
+.. No cluster de destino, exclua a relação assíncrona do SnapMirror:
++
+`snapmirror delete -destination-path <SVM:volume>`
+
++
+[listing]
+----
+cluster2::>snapmirror delete -destination-path vs1_dr:vol1
+----
+.. No cluster de origem, libere a relação do SnapMirror sem excluir as cópias Snapshot comuns:
++
+`snapmirror release -relationship-info-only true -destination-path <destination_SVM>:<destination_volume>`
+
++
+[listing]
+----
+cluster1::>snapmirror release -relationship-info-only true -destination-path vs1_dr:vol1
+----
+.. No cluster de destino, crie uma relação síncrona SnapMirror:
++
+`snapmirror create -source-path _src_SVM:src_volume_ -destination-path <destination_SVM>:<destination_volume> -policy sync-mirror`
+
++
+[listing]
+----
+cluster2::>snapmirror create -source-path vs1:vol1 -destination-path vs1_dr:vol1 -policy sync
+----
+.. Ressincronizar a relação síncrona do SnapMirror:
++
+`snapmirror resync -destination-path <destination_SVM:destination_volume>`
+
++
+[listing]
+----
+cluster2::>snapmirror resync -destination-path vs1_dr:vol1
+----
+
+
+* * Conversão de uma relação síncrona SnapMirror para uma relação assíncrona SnapMirror*
++
+.. A partir do cluster de destino, quiesce a relação síncrona SnapMirror existente:
++
+`snapmirror quiesce -destination-path <destination_SVM>:<destination_volume>`
+
++
+[listing]
+----
+cluster2::> snapmirror quiesce -destination-path vs1_dr:vol1
+----
+.. No cluster de destino, exclua a relação assíncrona do SnapMirror:
++
+`snapmirror delete -destination-path <SVM:volume>`
+
++
+[listing]
+----
+cluster2::>snapmirror delete -destination-path vs1_dr:vol1
+----
+.. No cluster de origem, libere a relação do SnapMirror sem excluir as cópias Snapshot comuns:
++
+`snapmirror release -relationship-info-only true -destination-path <destination_SVM:destination_volume>`
+
++
+[listing]
+----
+cluster1::>snapmirror release -relationship-info-only true -destination-path vs1_dr:vol1
+----
+.. No cluster de destino, crie uma relação assíncrona do SnapMirror:
++
+`snapmirror create -source-path _src_SVM:src_volume_ -destination-path <destination_SVM:destination_volume> -policy MirrorAllSnapshots`
+
++
+[listing]
+----
+cluster2::>snapmirror create -source-path vs1:vol1 -destination-path vs1_dr:vol1 -policy sync
+----
+.. Ressincronizar a relação síncrona do SnapMirror:
++
+`snapmirror resync -destination-path <destination_SVM:destination_volume>`
+
++
+[listing]
+----
+cluster2::>snapmirror resync -destination-path vs1_dr:vol1
+----
+
+
+

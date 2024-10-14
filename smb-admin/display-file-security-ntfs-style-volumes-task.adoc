@@ -1,0 +1,209 @@
+---
+permalink: smb-admin/display-file-security-ntfs-style-volumes-task.html 
+sidebar: sidebar 
+keywords: display, information, file, directory, security, ntfs, security-style, volume, style, effective, permission, applied, apply, information, dos, attribute, result, validate, security, configuration, troubleshoot, issues, display information about file security on ntfs security-style volumes 
+summary: Você pode exibir informações sobre a segurança de arquivos e diretórios em volumes de estilo de segurança NTFS, incluindo o estilo de segurança e estilos de segurança eficazes, quais permissões são aplicadas e informações sobre os atributos dos. Você pode usar os resultados para validar sua configuração de segurança ou para solucionar problemas de acesso a arquivos. 
+---
+= Exibir informações sobre segurança de arquivos em volumes de estilo de segurança NTFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode exibir informações sobre a segurança de arquivos e diretórios em volumes de estilo de segurança NTFS, incluindo o estilo de segurança e estilos de segurança eficazes, quais permissões são aplicadas e informações sobre os atributos dos. Você pode usar os resultados para validar sua configuração de segurança ou para solucionar problemas de acesso a arquivos.
+
+.Sobre esta tarefa
+Você deve fornecer o nome da máquina virtual de armazenamento (SVM) e o caminho para os dados cujas informações de segurança de arquivo ou pasta você deseja exibir. Você pode exibir a saída em forma de resumo ou como uma lista detalhada.
+
+* Como os volumes e qtrees de estilo de segurança NTFS usam apenas permissões de arquivo NTFS e usuários e grupos do Windows ao determinar direitos de acesso a arquivos, os campos de saída relacionados ao UNIX contêm informações de permissão de arquivo UNIX somente para exibição.
+* A saída ACL é exibida para arquivos e pastas com segurança NTFS.
+* Como a segurança do Storage-Level Access Guard pode ser configurada na raiz de volume ou qtree, a saída para um caminho de volume ou qtree em que o Storage-Level Access Guard está configurado pode exibir ACLs de arquivo regulares e ACLs de Storage-Level Access Guard.
+* A saída também exibe informações sobre os ACEs do Controle de Acesso Dinâmico se o Controle de Acesso Dinâmico estiver configurado para o caminho do arquivo ou diretório específico.
+
+
+.Passo
+. Exiba as configurações de segurança de arquivo e diretório com o nível de detalhes desejado:
++
+|===
+| Se você quiser exibir informações... | Digite o seguinte comando... 
+
+
+ a| 
+Em forma de resumo
+ a| 
+`vserver security file-directory show -vserver _vserver_name_ -path _path_`
+
+
+
+ a| 
+Com detalhes expandidos
+ a| 
+`vserver security file-directory show -vserver _vserver_name_ -path _path_ -expand-mask true`
+
+|===
+
+
+.Exemplos
+O exemplo a seguir exibe as informações de segurança sobre o caminho `/vol4` no SVM VS1:
+
+[listing]
+----
+cluster::> vserver security file-directory show -vserver vs1 -path /vol4
+
+                                 Vserver: vs1
+                               File Path: /vol4
+                       File Inode Number: 64
+                          Security Style: ntfs
+                         Effective Style: ntfs
+                          DOS Attributes: 10
+                  DOS Attributes in Text: ----D---
+                 Expanded Dos Attributes: -
+                            Unix User Id: 0
+                           Unix Group Id: 0
+                          Unix Mode Bits: 777
+                  Unix Mode Bits in Text: rwxrwxrwx
+                                    ACLs: NTFS Security Descriptor
+                                          Control:0x8004
+                                          Owner:BUILTIN\Administrators
+                                          Group:BUILTIN\Administrators
+                                          DACL - ACEs
+                                          ALLOW-Everyone-0x1f01ff
+                                          ALLOW-Everyone-0x10000000-OI|CI|IO
+----
+O exemplo a seguir exibe as informações de segurança com máscaras expandidas sobre o caminho `/data/engineering` no SVM VS1:
+
+[listing]
+----
+cluster::> vserver security file-directory show -vserver vs1 -path -path /data/engineering -expand-mask true
+
+                Vserver: vs1
+              File Path: /data/engineering
+      File Inode Number: 5544
+         Security Style: ntfs
+        Effective Style: ntfs
+         DOS Attributes: 10
+ DOS Attributes in Text: ----D---
+Expanded Dos Attributes: 0x10
+     ...0 .... .... .... = Offline
+     .... ..0. .... .... = Sparse
+     .... .... 0... .... = Normal
+     .... .... ..0. .... = Archive
+     .... .... ...1 .... = Directory
+     .... .... .... .0.. = System
+     .... .... .... ..0. = Hidden
+     .... .... .... ...0 = Read Only
+           Unix User Id: 0
+          Unix Group Id: 0
+         Unix Mode Bits: 777
+ Unix Mode Bits in Text: rwxrwxrwx
+                   ACLs: NTFS Security Descriptor
+                         Control:0x8004
+
+                             1... .... .... .... = Self Relative
+                             .0.. .... .... .... = RM Control Valid
+                             ..0. .... .... .... = SACL Protected
+                             ...0 .... .... .... = DACL Protected
+                             .... 0... .... .... = SACL Inherited
+                             .... .0.. .... .... = DACL Inherited
+                             .... ..0. .... .... = SACL Inherit Required
+                             .... ...0 .... .... = DACL Inherit Required
+                             .... .... ..0. .... = SACL Defaulted
+                             .... .... ...0 .... = SACL Present
+                             .... .... .... 0... = DACL Defaulted
+                             .... .... .... .1.. = DACL Present
+                             .... .... .... ..0. = Group Defaulted
+                             .... .... .... ...0 = Owner Defaulted
+
+                         Owner:BUILTIN\Administrators
+                         Group:BUILTIN\Administrators
+                         DACL - ACEs
+                           ALLOW-Everyone-0x1f01ff
+                             0... .... .... .... .... .... .... .... = Generic Read
+                             .0.. .... .... .... .... .... .... .... = Generic Write
+                             ..0. .... .... .... .... .... .... .... = Generic Execute
+                             ...0 .... .... .... .... .... .... .... = Generic All
+                             .... ...0 .... .... .... .... .... .... = System Security
+                             .... .... ...1 .... .... .... .... .... = Synchronize
+                             .... .... .... 1... .... .... .... .... = Write Owner
+                             .... .... .... .1.. .... .... .... .... = Write DAC
+                             .... .... .... ..1. .... .... .... .... = Read Control
+                             .... .... .... ...1 .... .... .... .... = Delete
+                             .... .... .... .... .... ...1 .... .... = Write Attributes
+                             .... .... .... .... .... .... 1... .... = Read Attributes
+                             .... .... .... .... .... .... .1.. .... = Delete Child
+                             .... .... .... .... .... .... ..1. .... = Execute
+                             .... .... .... .... .... .... ...1 .... = Write EA
+                             .... .... .... .... .... .... .... 1... = Read EA
+                             .... .... .... .... .... .... .... .1.. = Append
+                             .... .... .... .... .... .... .... ..1. = Write
+                             .... .... .... .... .... .... .... ...1 = Read
+
+                           ALLOW-Everyone-0x10000000-OI|CI|IO
+                             0... .... .... .... .... .... .... .... = Generic Read
+                             .0.. .... .... .... .... .... .... .... = Generic Write
+                             ..0. .... .... .... .... .... .... .... = Generic Execute
+                             ...1 .... .... .... .... .... .... .... = Generic All
+                             .... ...0 .... .... .... .... .... .... = System Security
+                             .... .... ...0 .... .... .... .... .... = Synchronize
+                             .... .... .... 0... .... .... .... .... = Write Owner
+                             .... .... .... .0.. .... .... .... .... = Write DAC
+                             .... .... .... ..0. .... .... .... .... = Read Control
+                             .... .... .... ...0 .... .... .... .... = Delete
+                             .... .... .... .... .... ...0 .... .... = Write Attributes
+                             .... .... .... .... .... .... 0... .... = Read Attributes
+                             .... .... .... .... .... .... .0.. .... = Delete Child
+                             .... .... .... .... .... .... ..0. .... = Execute
+                             .... .... .... .... .... .... ...0 .... = Write EA
+                             .... .... .... .... .... .... .... 0... = Read EA
+                             .... .... .... .... .... .... .... .0.. = Append
+                             .... .... .... .... .... .... .... ..0. = Write
+                             .... .... .... .... .... .... .... ...0 = Read
+----
+O exemplo a seguir exibe informações de segurança, incluindo informações de segurança do Storage-Level Access Guard, para o volume com o caminho `/datavol1` no SVM VS1:
+
+[listing]
+----
+cluster::> vserver security file-directory show -vserver vs1 -path /datavol1
+
+                Vserver: vs1
+              File Path: /datavol1
+      File Inode Number: 77
+         Security Style: ntfs
+        Effective Style: ntfs
+         DOS Attributes: 10
+ DOS Attributes in Text: ----D---
+Expanded Dos Attributes: -
+           Unix User Id: 0
+          Unix Group Id: 0
+         Unix Mode Bits: 777
+ Unix Mode Bits in Text: rwxrwxrwx
+                   ACLs: NTFS Security Descriptor
+                         Control:0x8004
+                         Owner:BUILTIN\Administrators
+                         Group:BUILTIN\Administrators
+                         DACL - ACEs
+                           ALLOW-Everyone-0x1f01ff
+                           ALLOW-Everyone-0x10000000-OI|CI|IO
+
+
+                         Storage-Level Access Guard security
+                         SACL (Applies to Directories):
+                           AUDIT-EXAMPLE\Domain Users-0x120089-FA
+                           AUDIT-EXAMPLE\engineering-0x1f01ff-SA
+                         DACL (Applies to Directories):
+                           ALLOW-EXAMPLE\Domain Users-0x120089
+                           ALLOW-EXAMPLE\engineering-0x1f01ff
+                           ALLOW-NT AUTHORITY\SYSTEM-0x1f01ff
+                         SACL (Applies to Files):
+                           AUDIT-EXAMPLE\Domain Users-0x120089-FA
+                           AUDIT-EXAMPLE\engineering-0x1f01ff-SA
+                         DACL (Applies to Files):
+                           ALLOW-EXAMPLE\Domain Users-0x120089
+                           ALLOW-EXAMPLE\engineering-0x1f01ff
+                           ALLOW-NT AUTHORITY\SYSTEM-0x1f01ff
+----
+.Informações relacionadas
+xref:display-file-security-mixed-style-volumes-task.adoc[Exibindo informações sobre segurança de arquivos em volumes mistos de estilo de segurança]
+
+xref:display-file-security-unix-style-volumes-task.adoc[Exibindo informações sobre segurança de arquivos em volumes estilo de segurança UNIX]

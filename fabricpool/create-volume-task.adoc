@@ -1,0 +1,91 @@
+---
+permalink: fabricpool/create-volume-task.html 
+sidebar: sidebar 
+keywords: creating, volume, fabricpool, tiering, policy, policies, create, snap shot, snapshot, aggregate, flexgroup, cloud retrieval 
+summary: Ao criar um volume para o FabricPool, você tem a opção de especificar uma política de disposição em camadas. Se nenhuma política de disposição em camadas for especificada, o volume criado usará a política de disposição em camadas padrão somente snapshot. Para um volume com a política de disposição em camadas somente snapshot ou automática, você também pode especificar o período mínimo de resfriamento de disposição em camadas. 
+---
+= Crie um volume para o FabricPool
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode adicionar volumes ao FabricPool criando novos volumes diretamente no agregado habilitado para FabricPool ou movendo volumes existentes de outro agregado para o agregado habilitado para FabricPool.
+
+Ao criar um volume para o FabricPool, você tem a opção de especificar uma política de disposição em camadas. Se nenhuma política de disposição em camadas for especificada, o volume criado usará a política de disposição em camadas padrão `snapshot-only`. Para um volume com a `snapshot-only` política de disposição em camadas ou `auto` , você também pode especificar o período mínimo de resfriamento em camadas.
+
+.O que você vai precisar
+* Definir um volume para usar a `auto` política de disposição em camadas ou especificar o período mínimo de resfriamento em camadas requer o ONTAP 9.4 ou posterior.
+* O uso do FlexGroup volumes requer o ONTAP 9.5 ou posterior.
+* A configuração de um volume para usar a `all` política de disposição em camadas requer o ONTAP 9.6 ou posterior.
+* Definir um volume para usar o `-cloud-retrieval-policy` parâmetro requer ONTAP 9.8 ou posterior.
+
+
+.Passos
+. Crie um novo volume para o FabricPool usando o `volume create` comando.
++
+** O `-tiering-policy` parâmetro opcional permite especificar a política de disposição em camadas para o volume.
++
+Você pode especificar uma das seguintes políticas de disposição em categorias:
+
++
+*** `snapshot-only` (predefinição)
+*** `auto`
+*** `all`
+*** `backup` (obsoleto)
+*** `none`
++
+link:tiering-policies-concept.html#types-of-fabricpool-tiering-policies["Tipos de políticas de disposição em camadas do FabricPool"]
+
+
+
+** O `-cloud-retrieval-policy` parâmetro opcional permite que os administradores de cluster com nível de privilégio avançado substituam o comportamento padrão de migração ou recuperação da nuvem controlado pela política de disposição em camadas.
++
+Você pode especificar uma das seguintes políticas de recuperação de nuvem:
+
++
+*** `default`
++
+A política de disposição em camadas determina quais dados são retirados, portanto, não há alteração na recuperação de dados na nuvem com `default` a política de recuperação de nuvem. Isso significa que o comportamento é o mesmo que nos lançamentos pré-ONTAP 9.8:
+
++
+**** Se a política de disposição em camadas for `none` ou `snapshot-only`, então "deffect" significa que qualquer leitura de dados orientada pelo cliente é puxada da camada de nuvem para a camada de desempenho.
+**** Se a política de disposição em camadas for `auto`, qualquer leitura aleatória orientada pelo cliente será puxada, mas não leituras sequenciais.
+**** Se a política de disposição em camadas não for usada `all`, os dados orientados pelo cliente serão extraídos da camada de nuvem.
+
+
+*** `on-read`
++
+Todas as leituras de dados orientadas pelo cliente são extraídas da camada de nuvem para a camada de performance.
+
+*** `never`
++
+Nenhum dado orientado pelo cliente é extraído da camada de nuvem para a camada de performance
+
+*** `promote`
++
+**** Na política de disposição em categorias `none` , todos os dados de nuvem são extraídos da camada de nuvem para a categoria de performance
+**** Para a política de disposição em camadas `snapshot-only` , todos os dados do sistema de arquivos ativo são extraídos da camada de nuvem para a camada de desempenho.
+
+
+
+
+** O `-tiering-minimum-cooling-days` parâmetro opcional no nível de privilégio avançado permite especificar o período mínimo de resfriamento de disposição em camadas para um volume que usa a `snapshot-only` política de disposição em camadas ou `auto` .
++
+A partir do ONTAP 9.8, é possível especificar um valor entre 2 e 183 para os dias mínimos de resfriamento em categorias. Se você estiver usando uma versão do ONTAP anterior a 9,8, poderá especificar um valor entre 2 e 63 para os dias mínimos de resfriamento em categorias.
+
+
+
+
+
+.Exemplo de criação de um volume para o FabricPool
+O exemplo a seguir cria um volume chamado "yvol1" no agregado habilitado para FabricPool "myFabricPool". A política de disposição em categorias está definida como `auto` e o período de resfriamento mínimo de disposição em categorias é definido como 45 dias:
+
+[listing]
+----
+cluster1::*> volume create -vserver myVS -aggregate myFabricPool
+-volume myvol1 -tiering-policy auto -tiering-minimum-cooling-days 45
+----
+.Informações relacionadas
+link:../flexgroup/index.html["Gerenciamento de volumes do FlexGroup"]

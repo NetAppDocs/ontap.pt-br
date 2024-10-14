@@ -1,0 +1,50 @@
+---
+permalink: upgrade/task_verifying_that_the_netgroup_file_is_present_on_all_nodes.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, verifying, verify, netgroup file, present, nodes 
+summary: Antes de atualizar o ONTAP, se você tiver carregado netgroups em SVMs, verifique se o arquivo netgroup está presente em cada nó. Um arquivo netgroup ausente em um nó pode causar falha na atualização. 
+---
+= Verifique se o arquivo netgroup está presente em todos os nós antes de uma atualização do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de atualizar o ONTAP, se você tiver carregado netgroups em máquinas virtuais de armazenamento (SVMs), verifique se o arquivo netgroup está presente em cada nó. Um arquivo netgroup ausente em um nó pode causar falha na atualização.
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Exibir o status do netgroup para cada SVM:
++
+[source, cli]
+----
+vserver services netgroup status
+----
+. Verifique se, para cada SVM, cada nó mostra o mesmo valor de hash de arquivo netgroup:
++
+[source, cli]
+----
+vserver services name-service netgroup status
+----
++
+Se for esse o caso, você pode pular a próxima etapa e prosseguir com a atualização ou reversão. Caso contrário, avance para o passo seguinte.
+
+. Em qualquer nó do cluster, carregue manualmente o arquivo netgroup:
++
+[source, cli]
+----
+vserver services netgroup load -vserver vserver_name -source uri
+----
++
+Este comando faz o download do arquivo netgroup em todos os nós. Se um arquivo netgroup já existir em um nó, ele será substituído.
+
+
+
+.Informações relacionadas
+link:../nfs-config/work-netgroups-task.html["Trabalhando com Netgroups"]

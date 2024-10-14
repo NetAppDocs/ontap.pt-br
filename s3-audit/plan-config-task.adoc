@@ -1,0 +1,161 @@
+---
+permalink: s3-audit/plan-config-task.html 
+sidebar: sidebar 
+keywords: s3, audit, create, configure s3 audit 
+summary: Esta tarefa explica os parâmetros utilizados na auditoria S3. 
+---
+= Planejar uma configuração de auditoria S3
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve especificar vários parâmetros para a configuração de auditoria S3 ou aceitar os padrões. Em particular, você deve considerar quais parâmetros de rotação de log ajudarão a garantir espaço livre adequado.
+
+Consulte a *`vserver object-store-server audit create`página man * para obter detalhes de sintaxe.
+
+
+
+== Parâmetros gerais
+
+Há dois parâmetros necessários que você deve especificar ao criar a configuração de auditoria. Há também três parâmetros opcionais que você pode especificar.
+
+[cols="4,2,1"]
+|===
+
+
+| Tipo de informação | Opção | Obrigatório 
+
+
+ a| 
+_Nome da SVM_
+
+Nome do SVM no qual você pode criar a configuração de auditoria.
+
+O SVM já deve existir e estar habilitado para S3.
+ a| 
+`-vserver _svm_name_`
+ a| 
+Sim
+
+
+
+ a| 
+_Log Destination path_
+
+Especifica onde os logs de auditoria convertidos são armazenados. O caminho já deve existir no SVM.
+
+O caminho pode ter até 864 carateres de comprimento e deve ter permissões de leitura e gravação.
+
+Se o caminho não for válido, o comando de configuração de auditoria falhará.
+ a| 
+`-destination _text_`
+ a| 
+Sim
+
+
+
+ a| 
+_Categorias de eventos a auditar_
+
+As seguintes categorias de eventos podem ser auditadas:
+
+* Eventos GetObject, PutObject e DeleteObject de dados
+* Eventos PutBucket de Gestão e DeleteBucket
+
+
+O padrão é auditar somente eventos de dados.
+ a| 
+`-events {data{vbar}management}, ...`
+ a| 
+Não
+
+|===
+Pode introduzir um dos seguintes parâmetros para controlar o número de ficheiros de registo de auditoria. Se nenhum valor for inserido, todos os arquivos de log serão retidos.
+
+[cols="4,2,1"]
+|===
+
+
+| Tipo de informação | Opção | Obrigatório 
+
+
+ a| 
+_Limite de rotação de arquivos de log_
+
+Determina quantos arquivos de log de auditoria devem ser mantidos antes de girar o arquivo de log mais antigo. Por exemplo, se você inserir um valor de 5, os últimos cinco arquivos de log serão retidos.
+
+Um valor de 0 indica que todos os arquivos de log são mantidos. O valor padrão é 0.
+ a| 
+`-rotate-limit _integer_`
+ a| 
+Não
+
+
+
+ a| 
+_Limite de duração dos ficheiros de registo_
+
+Determina por quanto tempo um arquivo de log pode ser retido antes de ser excluído. Por exemplo, se você inserir um valor de 5d0h0m, os logs com mais de 5 dias serão excluídos.
+
+Um valor de 0 indica que todos os arquivos de log são mantidos. O valor padrão é 0.
+ a| 
+`-retention duration _integer_time_`
+ a| 
+Não
+
+|===
+
+
+== Parâmetros para rotação do log de auditoria
+
+Você pode girar os logs de auditoria com base no tamanho ou na programação. O padrão é girar os logs de auditoria com base no tamanho.
+
+
+
+=== Rode registos com base no tamanho do registo
+
+Se você quiser usar o método de rotação de log padrão e o tamanho padrão do log, não será necessário configurar nenhum parâmetro específico para a rotação de log. O tamanho padrão do log é de 100 MB.
+
+Se você não quiser usar o tamanho padrão do log, você pode configurar o `-rotate-size` parâmetro para especificar um tamanho de log personalizado.
+
+Se você quiser redefinir a rotação com base em um tamanho de log sozinho, use o seguinte comando para desdefinir o `-rotate-schedule-minute` parâmetro:
+
+`vserver audit modify -vserver _svm_name_ -destination / -rotate-schedule-minute -`
+
+
+
+=== Gire os logs com base em um agendamento
+
+Se você optar por girar os logs de auditoria com base em um agendamento, poderá agendar a rotação de logs usando os parâmetros de rotação baseados em tempo em qualquer combinação.
+
+* Se utilizar rotação baseada no tempo, o `-rotate-schedule-minute` parâmetro é obrigatório.
+* Todos os outros parâmetros de rotação baseados no tempo são opcionais.
++
+** `-rotate-schedule-month`
+** `-rotate-schedule-dayofweek`
+** `-rotate-schedule-day`
+** `-rotate-schedule-hour`
+
+
+* O programa de rotação é calculado utilizando todos os valores relacionados com o tempo. Por exemplo, se você especificar apenas o `-rotate-schedule-minute` parâmetro, os arquivos de log de auditoria serão girados com base nos minutos especificados em todos os dias da semana, durante todas as horas em todos os meses do ano.
+* Se você especificar apenas um ou dois parâmetros de rotação baseados no tempo (por exemplo, `-rotate-schedule-month` e `-rotate-schedule-minutes`), os arquivos de log serão girados com base nos valores de minuto especificados em todos os dias da semana, durante todas as horas, mas somente durante os meses especificados.
++
+Por exemplo, você pode especificar que o log de auditoria deve ser girado durante os meses de janeiro, março e agosto em todas as segundas, quartas e sábados às 10:30 da manhã
+
+* Se você especificar valores para ambos `-rotate-schedule-dayofweek` e `-rotate-schedule-day`, eles serão considerados independentemente.
++
+Por exemplo, se você especificar `-rotate-schedule-dayofweek` como sexta-feira e `-rotate-schedule-day` como 13, os logs de auditoria serão girados em todas as sextas-feiras e no dia 13th do mês especificado, não apenas em todas as sextas-feiras, dia 13th.
+
+* Se quiser redefinir a rotação com base em um agendamento sozinho, use o seguinte comando para desmarcar o `-rotate-size parameter`:
++
+`vserver audit modify -vserver _svm_name_ -destination / -rotate-size -`
+
+
+
+
+
+=== Rode registos com base no tamanho e na programação do registo
+
+Você pode optar por girar os arquivos de log com base no tamanho do log e em uma programação, definindo o parâmetro -Rotate-size e os parâmetros de rotação baseados no tempo em qualquer combinação. Por exemplo: Se `-rotate-size` estiver definido para 10 MB e `-rotate-schedule-minute` estiver definido para 15, os arquivos de log rodam quando o tamanho do arquivo de log atinge 10 MB ou nos 15th minutos de cada hora (o que ocorrer primeiro).

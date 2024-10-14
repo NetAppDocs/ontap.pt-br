@@ -1,0 +1,96 @@
+---
+permalink: fabricpool/replace-existing-object-store-mirror-task.html 
+sidebar: sidebar 
+keywords: replacing, existing, object, store, fabricpool, mirror 
+summary: Você pode usar a tecnologia FabricPool mirror para substituir um armazenamento de objetos por outro. O novo armazenamento de objetos não precisa usar o mesmo provedor de nuvem que o armazenamento de objetos original. 
+---
+= Substitua um armazenamento de objetos existente usando um espelho FabricPool
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar a tecnologia FabricPool mirror para substituir um armazenamento de objetos por outro. O novo armazenamento de objetos não precisa usar o mesmo provedor de nuvem que o armazenamento de objetos original.
+
+.Sobre esta tarefa
+Você pode substituir o armazenamento de objetos original por um armazenamento de objetos que usa um provedor de nuvem diferente. Por exemplo, seu armazenamento de objetos original pode usar a AWS como provedor de nuvem, mas você pode substituí-lo por um armazenamento de objetos que usa o Azure como provedor de nuvem e vice-versa. No entanto, o novo armazenamento de objetos deve manter o mesmo tamanho de objeto que o original.
+
+.Passos
+. Crie um espelho FabricPool adicionando um novo armazenamento de objetos a um FabricPool existente usando o `storage aggregate object-store mirror` comando.
++
+[listing]
+----
+cluster1::> storage aggregate object-store mirror -aggregate aggr1 -object-store-name my-AZURE-store
+----
+. Monitore o status de ressincronização do espelho usando o `storage aggregate object-store show-resync-status` comando.
++
+[listing]
+----
+cluster1::> storage aggregate object-store show-resync-status -aggregate aggr1
+----
++
+[listing]
+----
+                                                  Complete
+      Aggregate    Primary          Mirror        Percentage
+      ---------    -----------      ----------    ----------
+      aggr1        my-AWS-store     my-AZURE-store     40%
+----
+. Verifique se o espelho está em sincronia usando o `storage aggregate object-store> show -fields mirror-type,is-mirror-degraded` comando.
++
+[listing]
+----
+cluster1::> storage aggregate object-store show -fields mirror-type,is-mirror-degraded
+----
++
+[listing]
+----
+aggregate      object-store-name mirror-type     is-mirror-degraded
+-------------- ----------------- ------------- ------------------
+aggr1          my-AWS-store        primary           -
+               my-AZURE-store      mirror          false
+----
+. Troque o armazenamento de objetos primário pelo armazenamento de objetos espelhados usando o `storage aggregate object-store modify` comando.
++
+[listing]
+----
+cluster1::> storage aggregate object-store modify -aggregate aggr1 -object-store-name my-AZURE-store -mirror-type primary
+----
+. Exiba detalhes sobre o espelho FabricPool usando o `storage aggregate object-store show -fields mirror-type,is-mirror-degraded` comando.
++
+Este exemplo exibe as informações sobre o espelho FabricPool, incluindo se o espelho está degradado (não em sincronia).
+
++
+[listing]
+----
+cluster1::> storage aggregate object-store show -fields mirror-type, is-mirror-degraded
+----
++
+[listing]
+----
+aggregate      object-store-name mirror-type     is-mirror-degraded
+-------------- ----------------- ------------- ------------------
+aggr1          my-AZURE-store      primary           -
+               my-AWS-store        mirror          false
+----
+. Extrair o espelho FabricPool com o `storage aggregate object-store unmirror` comando.
++
+[listing]
+----
+cluster1::> storage aggregate object-store unmirror -aggregate aggr1
+----
+. Verifique se o FabricPool está de volta em uma configuração de armazenamento de objetos único usando o `storage aggregate object-store show -fields mirror-type,is-mirror-degraded` comando.
++
+[listing]
+----
+cluster1::> storage aggregate object-store show -fields mirror-type,is-mirror-degraded
+----
++
+[listing]
+----
+aggregate      object-store-name mirror-type     is-mirror-degraded
+-------------- ----------------- ------------- ------------------
+aggr1          my-AZURE-store      primary           -
+----
+

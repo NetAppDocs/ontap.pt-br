@@ -1,0 +1,46 @@
+---
+permalink: smb-admin/allow-users-groups-bypass-directory-traverse-task.html 
+sidebar: sidebar 
+keywords: traverse, directories, directory, path, file, permission, sechangenotifyprivilege, privilege, local, smb, user, svm, bypass, traverse, check, allow users or groups to bypass directory traverse checking 
+summary: 'Se você quiser que um usuário possa percorrer todos os diretórios no caminho para um arquivo, mesmo que o usuário não tenha permissões em um diretório atravessado, você pode adicionar o privilégio SeChangeNotifyPrivilege a usuários locais SMB ou grupos em máquinas virtuais de armazenamento (SVMs). Por padrão, os usuários são capazes de ignorar a verificação de rotação do diretório.' 
+---
+= Permitir que usuários ou grupos ignorem a verificação da rotação do diretório
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você quiser que um usuário possa percorrer todos os diretórios no caminho para um arquivo, mesmo que o usuário não tenha permissões em um diretório atravessado, você pode adicionar o `SeChangeNotifyPrivilege` privilégio a usuários ou grupos SMB locais em máquinas virtuais de armazenamento (SVMs). Por padrão, os usuários são capazes de ignorar a verificação de rotação do diretório.
+
+.Antes de começar
+* Um servidor SMB deve estar presente na SVM.
+* A opção local Users and Groups SMB Server (usuários locais e grupos) deve estar ativada.
+* O usuário ou grupo local ou domínio ao qual o `SeChangeNotifyPrivilege` privilégio será adicionado já deve existir.
+
+
+.Sobre esta tarefa
+Ao adicionar Privileges a um usuário ou grupo de domínio, o ONTAP pode validar o usuário ou grupo de domínio contatando o controlador de domínio. O comando pode falhar se o ONTAP não puder entrar em Contato com o controlador de domínio.
+
+.Passos
+. Ative a verificação de desvio transversal adicionando o `SeChangeNotifyPrivilege` privilégio a um usuário ou grupo local ou de domínio: `vserver cifs users-and-groups privilege add-privilege -vserver _vserver_name_ -user-or-group-name _name_ -privileges SeChangeNotifyPrivilege`
++
+O valor para o `-user-or-group-name` parâmetro é um usuário ou grupo local, ou um usuário ou grupo de domínio.
+
+. Verifique se o usuário ou grupo especificado tem a verificação transversal de desvio ativada: `vserver cifs users-and-groups privilege show -vserver _vserver_name_ ‑user-or-group-name _name_`
+
+
+.Exemplo
+O comando a seguir permite que os usuários que pertencem ao grupo "'EXAMPLE'" ignorem a verificação da rotação do diretório adicionando o `SeChangeNotifyPrivilege` privilégio ao grupo:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups privilege add-privilege -vserver vs1 -user-or-group-name EXAMPLE\eng -privileges SeChangeNotifyPrivilege
+
+cluster1::> vserver cifs users-and-groups privilege show -vserver vs1
+Vserver   User or Group Name    Privileges
+--------- --------------------- ---------------
+vs1       EXAMPLE\eng           SeChangeNotifyPrivilege
+----
+.Informações relacionadas
+xref:disallow-users-groups-bypass-directory-traverse-task.adoc[Não permitir que usuários ou grupos ignorem a verificação da rotação do diretório]

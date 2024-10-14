@@ -1,0 +1,149 @@
+---
+permalink: mediator/index.html 
+sidebar: sidebar 
+keywords: ontap mediator service, install requirements, mediator requirements 
+summary: Para instalar o serviço ONTAP Mediator, você deve garantir que todos os pré-requisitos sejam atendidos, obter o pacote de instalação e executar o instalador no host. 
+---
+= Prepare-se para instalar ou atualizar o serviço do Mediador ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para instalar o serviço ONTAP Mediator, você deve garantir que todos os pré-requisitos sejam atendidos, buscar o pacote de instalação e executar o instalador no host. Este procedimento é utilizado para uma instalação ou atualização de uma instalação existente.
+
+.Sobre esta tarefa
+* A partir do ONTAP 9.7, você pode usar qualquer versão do Mediador ONTAP para monitorar uma configuração IP do MetroCluster.
+* A partir do ONTAP 9.8, você pode usar qualquer versão do ONTAP Mediator para monitorar uma relação de sincronização ativa do SnapMirror.
+
+
+.Antes de começar
+Você deve atender aos seguintes pré-requisitos.
+
+
+NOTE: O serviço ONTAP Mediator não é compatível com o modo FIPS Linux e impedirá que ele seja instalado com êxito. Você pode verificar se o modo FIPS está ativado usando o `fips-mode-setup --check` comando. Você pode desativar o modo FIPS usando o `fips-mode-setup --disable` comando. Reinicie após desativar o modo FIPS para instalar com êxito o serviço ONTAP Mediator.
+
+[cols="30,70"]
+|===
+
+
+| ONTAP versão mediadora | Versões Linux suportadas 
+
+
+ a| 
+1,8
+ a| 
+* Red Hat Enterprise Linux: 8,6, 8,7, 8,8, 8,9, 8,10, 9,2, 9,3 e 9,4
+* Rocky Linux 8 e 9
+
+
+
+
+ a| 
+1,7
+ a| 
+* Red Hat Enterprise Linux: 8,5, 8,6, 8,7, 8,8, 8,9, 9,0, 9,1, 9,2 e 9,3
+* Rocky Linux 8 e 9
+
+
+
+
+ a| 
+1,6
+ a| 
+* Red Hat Enterprise Linux: 8,4, 8,5, 8,6, 8,7, 8,8, 9,0, 9,1, 9,2
+* Rocky Linux 8 e 9
+
+
+
+
+ a| 
+1,5
+ a| 
+* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,1, 8,2, 8,3, 8,4, 8,5
+* CentOS: 7,6, 7,7, 7,8, 7,9
+
+
+
+
+ a| 
+1,4
+ a| 
+* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,1, 8,2, 8,3, 8,4, 8,5
+* CentOS: 7,6, 7,7, 7,8, 7,9
+
+
+
+
+ a| 
+1,3
+ a| 
+* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,1, 8,2, 8,3
+* CentOS: 7,6, 7,7, 7,8, 7,9
+
+
+
+
+ a| 
+1,2
+ a| 
+* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 8,1
+* CentOS: 7,6, 7,7, 7,8
+
+
+|===
+
+NOTE: A versão do kernel deve corresponder à versão do sistema operacional.
+
+* instalação física de 64 bits ou máquina virtual
+* 8 GB DE RAM
+* 1 GB de espaço em disco (usado para instalação de aplicativos, logs de servidor e banco de dados)
+* Usuário: Acesso root
+
+
+Qualquer pacote de biblioteca, exceto o kernel, pode ser atualizado com segurança, mas pode exigir uma reinicialização para ter efeito dentro do aplicativo Mediador ONTAP. Uma janela de serviço é recomendada quando uma reinicialização é necessária.
+
+Se você instalar o `yum-utils` pacote, você pode usar o `needs-restarting` comando.
+
+O núcleo do kernel pode ser atualizado se estiver sendo atualizado para uma versão que ainda é suportada pela matriz de versão do Mediador ONTAP. Uma reinicialização será obrigatória, portanto, uma janela de serviço é necessária.
+
+O módulo do kernel SCST deve ser desinstalado antes da reinicialização e, em seguida, reinstalado após a reinicialização.
+
+
+NOTE: A atualização para um kernel além da versão de SO suportada para a versão específica do Mediador ONTAP não é suportada. (Isso provavelmente indica que o módulo SCST testado não irá compilar).
+
+
+
+== Registre uma chave de segurança quando o UEFI Secure Boot estiver ativado
+
+Se a Inicialização segura UEFI estiver ativada, para instalar o Mediador ONTAP, você terá que Registrar uma chave de segurança antes que o serviço do Mediador ONTAP possa ser iniciado. Para determinar se o sistema está habilitado para UEFI e o Secure Boot está ativado, execute as seguintes etapas:
+
+.Passos
+. Se o mokutil não estiver instalado, execute o seguinte comando:
++
+`yum install mokutil`
+
+. Para determinar se o UEFI Secure Boot está ativado no seu sistema, execute o seguinte comando:
++
+`mokutil --sb-state`
+
++
+Os resultados mostram se o UEFI Secure Boot está ativado neste sistema.
+
++
+
+NOTE: O ONTAP Mediator 1.2.0 e as versões anteriores não suportam este modo.
+
+
+
+
+
+== Desative o arranque seguro UEFI
+
+Você também pode optar por desativar a Inicialização segura UEFI antes de instalar o ONTAP Mediator.
+
+.Passos
+. Nas configurações do BIOS da máquina física, desative a opção "UEFI Secure Boot".
+. Nas configurações da VMware para a VM, desative a opção "Início seguro" para o vSphere 6.x ou a opção "Inicialização segura" para o vSphere 7.x.
+

@@ -1,0 +1,127 @@
+---
+sidebar: sidebar 
+permalink: ontap-security-hardening/securing-nfs.html 
+keywords: tr-4569, ontap hardening guide, security, export policy, client ip address or hostname, read-only, read-write, super user, Kerberos 5 and Krb5p 
+summary: O ONTAP usa o recurso de política de exportação para limitar o acesso de volume NFS a clientes que correspondem a parâmetros específicos. 
+---
+= Proteção do NFS
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media
+
+
+[role="lead"]
+As regras de exportação são os elementos funcionais de uma política de exportação. As regras de exportação correspondem às solicitações de acesso do cliente para um volume em relação aos parâmetros específicos que você configura para determinar como lidar com as solicitações de acesso do cliente. Uma política de exportação deve conter pelo menos uma regra de exportação para permitir o acesso aos clientes. Se uma política de exportação contiver mais de uma regra, as regras serão processadas na ordem em que aparecem na política de exportação.
+
+O controle de acesso é fundamental para manter uma postura segura. Portanto, o ONTAP usa o recurso de política de exportação para limitar o acesso de volume NFS a clientes que correspondem a parâmetros específicos. As políticas de exportação contêm uma ou mais regras de exportação que processam cada solicitação de acesso de cliente. Uma política de exportação está associada a cada volume para configurar o acesso do cliente ao volume. O resultado deste processo determina se o cliente é concedido ou negado (com uma mensagem de permissão negada) o acesso ao volume. Este processo também determina que nível de acesso é fornecido ao volume.
+
+
+NOTE: Uma política de exportação com regras de exportação deve existir em um SVM para que os clientes acessem os dados. Um SVM pode conter várias políticas de exportação.
+
+A ordem da regra é ditada pelo número do índice da regra. Se uma regra corresponder a um cliente, as permissões dessa regra serão usadas e nenhuma outra regra será processada. Se nenhuma regra corresponder, o cliente é negado o acesso.
+
+As regras de exportação determinam as permissões de acesso do cliente aplicando os seguintes critérios:
+
+* O protocolo de acesso ao arquivo usado pelo cliente que envia a solicitação (por exemplo, NFSv4 ou SMB)
+* Um identificador de cliente (por exemplo, nome de host ou endereço IP)
+* O tipo de segurança usado pelo cliente para autenticar (por exemplo, Kerberos v5, NTLM ou AUTH_SYS)
+
+
+Se uma regra especificar vários critérios e o cliente não corresponder a um ou mais deles, a regra não se aplica.
+
+Um exemplo de política de exportação contém uma regra de exportação com os seguintes parâmetros:
+
+* `-protocol nfs`
+* `-clientmatch 10.1.16.0/255.255.255.0`
+* `-rorule any`
+* `-rwrule any`
+
+
+O tipo de segurança determina o nível de acesso que um cliente recebe. Os três níveis de acesso são somente leitura, leitura-gravação e superusuário (para clientes com ID de usuário `0` ). Como o nível de acesso determinado pelo tipo de segurança é avaliado nesta ordem, você deve observar as regras listadas:
+
+
+
+== Regras para parâmetros de nível de acesso em regras de exportação
+
+[cols="2a,2a"]
+|===
+| Para que um cliente obtenha os seguintes níveis de acesso | Esses parâmetros de acesso devem corresponder ao tipo de segurança do cliente 
+
+
+ a| 
+Apenas de leitura normal do utilizador
+ a| 
+Somente leitura (`-rorule`)
+
+
+
+ a| 
+Leitura-escrita normal do utilizador
+ a| 
+Somente leitura (`-rorule`) e leitura-gravação (`-rwrule`)
+
+
+
+ a| 
+Somente leitura do superusuário
+ a| 
+Apenas leitura (`-rorule`) e. `-superuser`
+
+
+
+ a| 
+Leitura-gravação do superusuário
+ a| 
+Somente leitura (`-rorule`) e leitura-gravação (`-rwrule`) e. `-superuser`
+
+|===
+Os seguintes são tipos de segurança válidos para cada um destes três parâmetros de acesso:
+
+* Qualquer
+* Nenhum
+* Nunca
+
+
+Esses tipos de segurança não são válidos para uso com o `-superuser` parâmetro:
+
+* krb5
+* ntlm
+* sistema
+
+
+
+
+== Regras para resultados de parâmetros de acesso
+
+[cols="50%,50%"]
+|===
+| Se o tipo de segurança do cliente ... | Então ... 
+
+
+| Corresponde a um tipo de segurança especificado no parâmetro de acesso. | O cliente recebe acesso para esse nível com seu próprio ID de usuário. 
+
+
+| Não corresponde a um tipo de segurança especificado, mas o parâmetro Access inclui a opção `none`. | O cliente recebe acesso para esse nível e recebe o usuário anônimo com o ID de usuário especificado pelo `-anon` parâmetro. 
+
+
+| Não corresponde a um tipo de segurança especificado e o parâmetro Access não inclui a opção `none`.  a| 
+O cliente não recebe nenhum acesso para esse nível.
+
+
+NOTE: Esta restrição não se aplica ao `-superuser` parâmetro porque este parâmetro sempre inclui nenhum, mesmo quando não especificado.
+
+|===
+
+
+== Kerberos 5 e Krb5p
+
+A partir do ONTAP 9, a autenticação Kerberos 5 com serviço de privacidade (krb5p) é suportada. O modo de autenticação krbp5 é seguro e protege contra adulteração e espionagem de dados usando checksums para criptografar todo o tráfego entre cliente e servidor. A solução ONTAP suporta criptografia AES de 128 bits e 256 bits para Kerberos. O serviço de privacidade inclui verificar a integridade dos dados recebidos, autenticar usuários e criptografar dados antes da transmissão.
+
+A opção krb5p está mais presente no recurso de política de exportação, onde é definida como uma opção de criptografia. O método de autenticação krb5p.1X pode ser usado como um parâmetro de autenticação, como mostrado no exemplo a seguir:
+
+[listing]
+----
+cluster1::> vserver export-policy check-access -vserver vs1 -client-ip 10.22.32.42 -volume flex_vol -authentication-method krb5p -protocol nfs3 -access- type read
+----

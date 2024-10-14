@@ -1,0 +1,89 @@
+---
+permalink: antivirus/apply-scanner-policies-disaster-recovery-mcc-task.html 
+sidebar: sidebar 
+keywords: apply, scanner policies, metrocluster, configurations 
+summary: Uma política de scanner determina se um pool de scanner está ativo. Você deve aplicar uma política de scanner aos pools de scanner primário e secundário em cada cluster em uma configuração do MetroCluster. 
+---
+= Aplique políticas de scanner nas configurações do MetroCluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Uma política de scanner determina se um pool de scanner está ativo. Você deve aplicar uma política de scanner aos pools de scanner primário e secundário em cada cluster em uma configuração do MetroCluster.
+
+.Sobre esta tarefa
+* Só é possível aplicar uma política de scanner a um conjunto de scanners.
+* Se você criou um pool de scanners para todos os SVMs em um cluster, deverá aplicar uma política de scanner a cada SVM individualmente.
+* Para configurações de recuperação de desastres e MetroCluster, você deve aplicar uma política de scanner a cada pool de scanners no cluster local e no cluster remoto.
+* Na política criada para o cluster local, tem de especificar o cluster local no `cluster` parâmetro. Na política criada para o cluster remoto, tem de especificar o cluster remoto no `cluster` parâmetro. O cluster remoto pode então assumir operações de verificação de vírus em caso de desastre.
+
+
+.Passos
+. Aplicar uma política de scanner:
++
+`vserver vscan scanner-pool apply-policy -vserver _data_SVM_ -scanner-pool _scanner_pool_ -scanner-policy primary|secondary|idle -cluster _cluster_to_apply_policy_on_`
+
++
+Uma política de scanner pode ter um dos seguintes valores:
+
++
+** `Primary` especifica que o pool do scanner está ativo.
+** `Secondary` Especifica que o conjunto de scanners está ativo apenas se nenhum dos servidores Vscan no conjunto de scanners primário estiver conetado.
+** `Idle` especifica que o conjunto de scanners está inativo.
++
+[NOTE]
+====
+É necessário aplicar todas as políticas de scanner a partir do cluster que contém o SVM principal.
+
+====
++
+Os comandos a seguir aplicam políticas de scanner aos pools de scanner primário e secundário em cada cluster em uma configuração do MetroCluster:
+
++
+[listing]
+----
+cluster1::>vserver vscan scanner-pool apply-policy -vserver cifssvm1
+-scanner-pool pool1_for_site1 -scanner-policy primary -cluster cluster1
+
+cluster1::>vserver vscan scanner-pool apply-policy -vserver cifssvm1
+-scanner-pool pool2_for_site1 -scanner-policy secondary -cluster cluster1
+
+cluster1::>vserver vscan scanner-pool apply-policy -vserver cifssvm1
+-scanner-pool pool2_for_site2 -scanner-policy primary -cluster cluster2
+
+cluster1::>vserver vscan scanner-pool apply-policy -vserver cifssvm1
+-scanner-pool pool1_for_site2 -scanner-policy secondary -cluster cluster2
+----
+
+
+. Verifique se o conjunto do scanner está ativo:
++
+`vserver vscan scanner-pool show -vserver data_SVM|cluster_admin_SVM -scanner-pool scanner_pool`
+
++
+Para obter uma lista completa de opções, consulte a página de manual do comando.
+
++
+O comando a seguir exibe os detalhes do pool do scanner `pool1` :
+
++
+[listing]
+----
+cluster1::> vserver vscan scanner-pool show -vserver cifssvm1 -scanner-pool pool1_for_site1
+
+                                    Vserver: cifssvm1
+                               Scanner Pool: pool1_for_site1
+                             Applied Policy: primary
+                             Current Status: on
+         Cluster on Which Policy Is Applied: cluster1
+                  Scanner Pool Config Owner: vserver
+       List of IPs of Allowed Vscan Servers:
+List of Host Names of Allowed Vscan Servers: scan1
+                   List of Privileged Users: cifs\u1,cifs\u2
+----
++
+Você pode usar o `vserver vscan scanner-pool show-active` comando para exibir os pools de scanner ativos em um SVM. Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
+

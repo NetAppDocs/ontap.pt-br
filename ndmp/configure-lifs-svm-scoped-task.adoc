@@ -1,0 +1,199 @@
+---
+permalink: ndmp/configure-lifs-svm-scoped-task.html 
+sidebar: sidebar 
+keywords: configure, lifs 
+summary: Você precisa identificar os LIFs que serão usados para estabelecer uma conexão de dados entre os recursos de dados e fita, e para conexão de controle entre o SVM admin e o aplicativo de backup. Depois de identificar os LIFs, você deve verificar se as diretivas de firewall e failover estão definidas para os LIFs e especificar a função de interface preferida. 
+---
+= Configurar LIFs
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa identificar os LIFs que serão usados para estabelecer uma conexão de dados entre os recursos de dados e fita, e para conexão de controle entre o SVM admin e o aplicativo de backup. Depois de identificar os LIFs, você deve verificar se as diretivas de firewall e failover estão definidas para os LIFs e especificar a função de interface preferida.
+
+A partir do ONTAP 9.10,1, as políticas de firewall são obsoletas e totalmente substituídas por políticas de serviço LIF. Para obter mais informações, link:../networking/lifs_and_service_policies96.html["LIFs e políticas de serviço no ONTAP 9.6 e posteriores"]consulte .
+
+.Passos
+. Identifique os LIFs entre clusters, gerenciamento de cluster e gerenciamento de nós usando o `network interface show` comando com o `-role` parâmetro.
++
+O comando a seguir exibe as LIFs entre clusters:
+
++
+[listing]
+----
+cluster1::> network interface show -role intercluster
+
+            Logical           Status     Network            Current       Current Is
+Vserver     Interface         Admin/Oper Address/Mask       Node          Port    Home
+----------- ----------        ---------- ------------------ ------------- ------- ----
+cluster1    IC1               up/up      192.0.2.65/24      cluster1-1    e0a     true
+cluster1    IC2               up/up      192.0.2.68/24      cluster1-2    e0b     true
+----
++
+O comando a seguir exibe o LIF de gerenciamento de cluster:
+
++
+[listing]
+----
+cluster1::> network interface show -role cluster-mgmt
+
+            Logical           Status     Network            Current       Current Is
+Vserver     Interface         Admin/Oper Address/Mask       Node          Port    Home
+----------- ----------        ---------- ------------------ ------------- ------- ----
+cluster1    cluster_mgmt      up/up      192.0.2.60/24      cluster1-2    e0M     true
+----
++
+O comando a seguir exibe as LIFs de gerenciamento de nó:
+
++
+[listing]
+----
+cluster1::> network interface show -role node-mgmt
+
+            Logical           Status     Network            Current       Current Is
+Vserver     Interface         Admin/Oper Address/Mask       Node          Port    Home
+----------- ----------        ---------- ------------------ ------------  ------  ------
+cluster1    cluster1-1_mgmt1  up/up      192.0.2.69/24      cluster1-1    e0M     true
+            cluster1-2_mgmt1  up/up      192.0.2.70/24      cluster1-2    e0M     true
+----
+. Certifique-se de que a política de firewall esteja ativada para NDMP nas LIFs de clusters, gerenciamento de cluster (cluster-mgmt) e gerenciamento de nó (node-mgmt):
++
+.. Verifique se a política de firewall está habilitada para NDMP usando o `system services firewall policy show` comando.
++
+O comando a seguir exibe a política de firewall para o LIF de gerenciamento de cluster:
+
++
+[listing]
+----
+cluster1::> system services firewall policy show -policy cluster
+
+Vserver     Policy       Service    Allowed
+-------     ------------ ---------- -----------------
+cluster     cluster      dns        0.0.0.0/0
+                         http       0.0.0.0/0
+                         https      0.0.0.0/0
+                        ** ndmp       0.0.0.0/0**
+                         ndmps      0.0.0.0/0
+                         ntp        0.0.0.0/0
+                         rsh        0.0.0.0/0
+                         snmp       0.0.0.0/0
+                         ssh        0.0.0.0/0
+                         telnet     0.0.0.0/0
+10 entries were displayed.
+----
++
+O comando a seguir exibe a política de firewall para o LIF entre clusters:
+
++
+[listing]
+----
+cluster1::> system services firewall policy show -policy intercluster
+
+Vserver     Policy       Service    Allowed
+-------     ------------ ---------- -------------------
+cluster1    intercluster dns        -
+                         http       -
+                         https      -
+                         **ndmp       0.0.0.0/0, ::/0**
+                         ndmps      -
+                         ntp        -
+                         rsh        -
+                         ssh        -
+                         telnet     -
+9 entries were displayed.
+----
++
+O comando a seguir exibe a política de firewall para o LIF de gerenciamento de nós:
+
++
+[listing]
+----
+cluster1::> system services firewall policy show -policy mgmt
+
+Vserver     Policy       Service    Allowed
+-------     ------------ ---------- -------------------
+cluster1-1  mgmt         dns        0.0.0.0/0, ::/0
+                         http       0.0.0.0/0, ::/0
+                         https      0.0.0.0/0, ::/0
+                         **ndmp       0.0.0.0/0, ::/0**
+                         ndmps      0.0.0.0/0, ::/0
+                         ntp        0.0.0.0/0, ::/0
+                         rsh        -
+                         snmp       0.0.0.0/0, ::/0
+                         ssh        0.0.0.0/0, ::/0
+                         telnet     -
+10 entries were displayed.
+----
+.. Se a política de firewall não estiver ativada, ative a política de firewall utilizando o `system services firewall policy modify` comando com o `-service` parâmetro.
++
+O seguinte comando ativa a política de firewall para o LIF entre clusters:
+
++
+[listing]
+----
+cluster1::> system services firewall policy modify -vserver cluster1 -policy intercluster -service ndmp 0.0.0.0/0
+----
+
+
+. Certifique-se de que a política de failover esteja definida adequadamente para todos os LIFs:
++
+.. Verifique se a política de failover para o gerenciamento de cluster está definida como `broadcast-domain-wide`, e se a política para LIFs de gerenciamento de clusters e nós está definida como `local-only` usando o `network interface show -failover` comando.
++
+O comando a seguir exibe a política de failover para as LIFs de gerenciamento de clusters, clusters e nós:
+
++
+[listing]
+----
+cluster1::> network interface show -failover
+
+           Logical            Home              Failover              Failover
+Vserver    Interface          Node:Port         Policy                Group
+---------- -----------------  ----------------- --------------------  --------
+cluster    cluster1_clus1     cluster1-1:e0a    local-only            cluster
+                                                     Failover Targets:
+                   	                                 .......
+
+**cluster1   cluster_mgmt       cluster1-1:e0m    broadcast-domain-wide Default**
+                                                     Failover Targets:
+                                                     .......
+           **IC1                 cluster1-1:e0a    local-only           Default**
+                                                     Failover Targets:
+           **IC2                 cluster1-1:e0b    local-only           Default**
+                                                     Failover Targets:
+                                                     .......
+**cluster1-1 cluster1-1_mgmt1   cluster1-1:e0m    local-only            Default**
+                                                     Failover Targets:
+                                                     ......
+**cluster1-2 cluster1-2_mgmt1   cluster1-2:e0m    local-only            Default**
+                                                     Failover Targets:
+                                                     ......
+----
+.. Se as políticas de failover não forem definidas adequadamente, modifique a política de failover usando o `network interface modify` comando com o `-failover-policy` parâmetro.
++
+[listing]
+----
+cluster1::> network interface modify -vserver cluster1 -lif IC1 -failover-policy local-only
+----
+
+
+. Especifique os LIFs necessários para a conexão de dados usando o `vserver services ndmp modify` comando com o `preferred-interface-role` parâmetro.
++
+[listing]
+----
+cluster1::> vserver services ndmp modify -vserver cluster1 -preferred-interface-role intercluster,cluster-mgmt,node-mgmt
+----
+. Verifique se a função de interface preferida está definida para o cluster usando o `vserver services ndmp show` comando.
++
+[listing]
+----
+cluster1::> vserver services ndmp show -vserver cluster1
+
+                             Vserver: cluster1
+                        NDMP Version: 4
+                        .......
+                        .......
+            Preferred Interface Role: intercluster, cluster-mgmt, node-mgmt
+----
+

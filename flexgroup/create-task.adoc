@@ -1,0 +1,122 @@
+---
+permalink: flexgroup/create-task.html 
+sidebar: sidebar 
+keywords: create, flexgroup, volume, flex group, aggregate, fabricpool, fabric pool 
+summary: Você pode criar um volume FlexGroup selecionando manualmente os agregados nos quais o volume FlexGroup deve ser criado e, em seguida, especificando o número de constituintes em cada agregado. 
+---
+= Crie um volume FlexGroup
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar um volume FlexGroup selecionando manualmente os agregados nos quais o volume FlexGroup deve ser criado e, em seguida, especificando o número de constituintes em cada agregado.
+
+.Sobre esta tarefa
+Você precisa estar ciente do espaço necessário nos agregados para criar um volume FlexGroup.
+
+Você deve considerar as seguintes diretrizes ao criar um volume FlexGroup para obter os melhores resultados de desempenho com um volume FlexGroup:
+
+* Um volume FlexGroup deve abranger apenas agregados que estejam em sistemas de hardware idênticos.
++
+O uso de sistemas de hardware idênticos ajuda a fornecer desempenho previsível em todo o volume FlexGroup.
+
+* Um volume FlexGroup deve abranger agregados com o mesmo tipo de disco e configurações de grupo RAID.
++
+Para uma performance consistente, você precisa garantir que todos os agregados sejam compostos por todos os SSDs, todos os HDDs ou todos os agregados híbridos. Além disso, os agregados devem ter o mesmo número de unidades e grupos RAID no volume FlexGroup.
+
+* Um volume FlexGroup pode abranger partes de um cluster.
++
+Um volume FlexGroup não precisa ser configurado para abranger todo o cluster, mas isso pode aproveitar ainda mais os recursos de hardware disponíveis.
+
+* Ao criar um volume FlexGroup, é melhor se os agregados nos quais o volume FlexGroup é implantado tiverem as seguintes caraterísticas:
++
+** Aproximadamente a mesma quantidade de espaço livre deve estar disponível em vários agregados, especialmente ao usar thin Provisioning.
+** Aproximadamente 3% do espaço livre deve ser reservado para metadados agregados após a criação do volume FlexGroup.
+
+
+* Para sistemas FAS, é melhor ter dois agregados por nó e, para sistemas AFF, você precisa ter um agregado por nó para o volume FlexGroup.
+* Para cada volume FlexGroup, você deve criar pelo menos oito componentes distribuídos em dois ou mais agregados em sistemas FAS e em um ou mais agregados em sistemas AFF.
+
+
+.Antes de começar
+* A partir do ONTAP 9.13,1, você pode criar volumes com análise de capacidade e acompanhamento de atividades habilitados. Para ativar o acompanhamento de capacidade ou atividade, emita o `volume create` comando com `-analytics-state` ou `-activity-tracking-state` defina como `on`.
++
+Para saber mais sobre análise de capacidade e acompanhamento de atividades, https://docs.netapp.com/us-en/ontap/task_nas_file_system_analytics_enable.html["Ative a análise do sistema de ficheiros"] consulte .
+
+
+
+.Passos
+. Criar o volume FlexGroup: `volume create -vserver svm_name -volume flexgroup_name -aggr-list aggr1,aggr2,.. -aggr-list-multiplier constituents_per_aggr -size fg_size [–encrypt true] [-qos-policy-group qos_policy_group_name]`
++
+** O `-aggr-list` parâmetro especifica a lista de agregados a serem usados para componentes de volume FlexGroup.
++
+Cada entrada na lista cria um constituinte no agregado especificado. Você pode especificar um agregado várias vezes para ter vários constituintes criados no agregado.
+
++
+Para obter performance consistente em todo o volume FlexGroup, todos os agregados precisam usar o mesmo tipo de disco e configurações de grupo RAID.
+
+** O `-aggr-list-multiplier` parâmetro especifica o número de vezes a iterar sobre os agregados que são listados com o `-aggr-list` parâmetro ao criar um volume FlexGroup.
++
+O valor padrão do `-aggr-list-multiplier` parâmetro é 4.
+
+** O `size` parâmetro especifica o tamanho do volume FlexGroup em KB, MB, GB, TB ou PB.
+** A partir do ONTAP 9.5, é possível criar volumes FlexGroup para FabricPool, que usam apenas todos os agregados SSD.
++
+Para criar um volume FlexGroup para FabricPool, todos os agregados especificados com o `-aggr-list` parâmetro devem ser FabricPool. A garantia de volume deve estar sempre definida como `none` para FabricPool. Você também pode especificar a política de disposição em categorias e o período mínimo de resfriamento de disposição em camadas para o volume FlexGroup.
+
++
+xref:../disks-aggregates/index.html[Gerenciamento de disco e agregado]
+
+** A partir do ONTAP 9.4, é possível especificar andares de taxa de transferência (QoS min) e QoS adaptável para volumes FlexGroup.
++
+link:../performance-admin/index.html["Gerenciamento de desempenho"]
+
+** A partir do ONTAP 9.3, é possível especificar um limite máximo de taxa de transferência (QoS máximo) para volumes FlexGroup, o que limita os recursos de performance que o volume FlexGroup pode consumir.
+** A partir do ONTAP 9.2, pode definir o `-encrypt` parâmetro para `true` se pretender ativar a encriptação no volume FlexGroup.
++
+Para criar um volume criptografado, você deve ter instalado a licença de criptografia de volume e o gerenciador de chaves.
+
++
+[NOTE]
+====
+Você deve habilitar a criptografia em volumes FlexGroup no momento da criação. Não é possível ativar a encriptação em volumes FlexGroup existentes.
+
+====
++
+link:../encryption-at-rest/index.html["Criptografia de dados em repouso"]
+
+
+
++
+[listing]
+----
+cluster-1::> volume create -vserver vs0 -volume fg2 -aggr-list aggr1,aggr2,aggr3,aggr1 -aggr-list-multiplier 2 -size 500TB
+
+Warning: A FlexGroup "fg2" will be created with the following number of constituents of size 62.50TB: 8.
+Do you want to continue? {y|n}: y
+
+[Job 43] Job succeeded: Successful
+----
+
+
+No exemplo anterior, se você quiser criar o volume FlexGroup para FabricPool, todos os agregados (aggr1, aggr2 e aggr3) devem ser agregados no FabricPool. Monte o volume FlexGroup com um caminho de junção: `volume mount -vserver vserver_name -volume vol_name -junction-path junction_path`
+
+[listing]
+----
+cluster1::> volume mount -vserver vs0 -volume fg2 -junction-path /fg
+----
+.Depois de terminar
+Você deve montar o volume FlexGroup do cliente.
+
+Se você estiver executando o ONTAP 9.6 ou anterior e se a máquina virtual de armazenamento (SVM) tiver o NFSv3 e o NFSv4 configurados, a montagem do volume FlexGroup do cliente poderá falhar. Nesses casos, você deve especificar explicitamente a versão NFS ao montar o volume FlexGroup do cliente.
+
+[listing]
+----
+# mount -t nfs -o vers=3 192.53.19.64:/fg /mnt/fg2
+# ls /mnt/fg2
+file1  file2
+----
+.Informações relacionadas
+https://www.netapp.com/pdf.html?item=/media/12385-tr4571pdf.pdf["Relatório técnico da NetApp 4571: Guia de práticas recomendadas e implementação da NetApp FlexGroup"^]

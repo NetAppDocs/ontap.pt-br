@@ -1,0 +1,55 @@
+---
+permalink: fabricpool/setup-google-storage-cloud-tier-task.html 
+sidebar: sidebar 
+keywords: setting up, google cloud storage, cloud tier 
+summary: Se você estiver executando o ONTAP 9.6 ou posterior, poderá configurar o Google Cloud Storage como a camada de nuvem do FabricPool. 
+---
+= Configure o Google Cloud Storage como a camada de nuvem
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você estiver executando o ONTAP 9.6 ou posterior, poderá configurar o Google Cloud Storage como a camada de nuvem do FabricPool.
+
+
+
+== Considerações adicionais sobre como usar o Google Cloud Storage com FabricPool
+
+* É necessário usar a link:https://bluexp.netapp.com/cloud-tiering["Licença de disposição em camadas do BlueXP"]disposição em categorias no Google Cloud Storage.
+* Recomenda-se que o LIF que o ONTAP usa para se conetar ao servidor de objetos Google Cloud Storage esteja em uma porta de 10 Gbps.
+* Nos sistemas AFF e FAS e ONTAP Select, o FabricPool é compatível com as seguintes classes de storage de objetos do Google:
++
+** Multi-regional do Google Cloud
+** Google Cloud Regional
+** Google Cloud Nearline
+** Google Cloud Coldline
++
+https://cloud.google.com/storage/docs/storage-classes["Google Cloud: Classes de armazenamento"^]
+
+
+
+
+
+.Passos
+. Especifique as informações de configuração do Google Cloud Storage usando o `storage aggregate object-store config create` comando com o `-provider-type` `GoogleCloud` parâmetro.
++
+** O `storage aggregate object-store config create` comando falhará se o ONTAP não puder acessar o Google Cloud Storage com as informações fornecidas.
+** Use o `-access-key` parâmetro para especificar a chave de acesso para autorizar solicitações ao armazenamento de objetos do Google Cloud Storage.
+** Se a senha do Google Cloud Storage for alterada, você deve atualizar a senha correspondente armazenada no ONTAP imediatamente.
++
+Com isso, o ONTAP pode acessar os dados no Google Cloud Storage sem interrupção.
+
+
+
++
+[listing]
+----
+storage aggregate object-store config create my_gcp_store_1 -provider-type GoogleCloud  -container-name my-gcp-bucket1 -access-key GOOGAUZZUV2USCFGHGQ511I8
+----
+. Exiba e verifique as informações de configuração do Google Cloud Storage usando o `storage aggregate object-store config show` comando.
++
+O `storage aggregate object-store config modify` comando permite modificar as informações de configuração do Google Cloud Storage para FabricPool.
+
+

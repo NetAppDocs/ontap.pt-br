@@ -1,0 +1,92 @@
+---
+permalink: peering/prerequisites-cluster-peering-reference.html 
+sidebar: sidebar 
+keywords: prerequisites, cluster, peering. connectivity, requirements, port, firewall 
+summary: Antes de configurar o peering de cluster, você deve confirmar se os requisitos de conetividade, porta, endereço IP, sub-rede, firewall e nomenclatura de cluster são atendidos. 
+---
+= Pré-requisitos para peering de cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de configurar o peering de cluster, você deve confirmar se os requisitos de conetividade, porta, endereço IP, sub-rede, firewall e nomenclatura de cluster são atendidos.
+
+[NOTE]
+====
+A partir do ONTAP 9.6, o peering de cluster fornece suporte de criptografia TLS 1,2 AES-256 GCM para replicação de dados por padrão. As cifras de segurança padrão ("PSK-AES256-GCM-SHA384") são necessárias para que o peering de cluster funcione mesmo que a criptografia esteja desativada.
+
+Começando com ONTAP 9.11,1, as cifras de segurança DHE-PSK estão disponíveis por padrão.
+
+A partir do ONTAP 9.15,1, o peering de cluster fornece suporte de criptografia TLS 1,3 para replicação de dados por padrão.
+
+====
+
+
+== Requisitos de conetividade
+
+Cada LIF no cluster local deve ser capaz de se comunicar com cada LIF entre clusters no cluster remoto.
+
+Embora não seja necessário, geralmente é mais simples configurar os endereços IP usados para LIFs entre clusters na mesma sub-rede. Os endereços IP podem residir na mesma sub-rede que os LIFs de dados ou em uma sub-rede diferente. A sub-rede usada em cada cluster deve atender aos seguintes requisitos:
+
+* A sub-rede deve pertencer ao domínio de broadcast que contém as portas usadas para comunicação entre clusters.
+* A sub-rede deve ter endereços IP suficientes disponíveis para alocar a um LIF entre clusters por nó.
++
+Por exemplo, em um cluster de quatro nós, a sub-rede usada para comunicação entre clusters deve ter quatro endereços IP disponíveis.
+
+
+
+Cada nó deve ter um LIF entre clusters com um endereço IP na rede entre clusters.
+
+LIFs podem ter um endereço IPv4 ou um endereço IPv6 entre clusters.
+
+
+NOTE: O ONTAP permite que você migre suas redes de peering de IPv4 para IPv6, permitindo opcionalmente que ambos os protocolos estejam presentes simultaneamente nas LIFs entre clusters. Em versões anteriores, todas as relações entre clusters para um cluster inteiro eram IPv4 ou IPv6. Isso significava que a mudança de protocolos era um evento potencialmente disruptivo.
+
+
+
+== Requisitos portuários
+
+Você pode usar portas dedicadas para comunicação entre clusters ou compartilhar portas usadas pela rede de dados. As portas devem atender aos seguintes requisitos:
+
+* Todas as portas usadas para se comunicar com um determinado cluster remoto devem estar no mesmo espaço IPspace.
++
+Você pode usar vários IPspaces para fazer pares com vários clusters. A conetividade de malha completa em pares é necessária apenas dentro de um espaço IPspace.
+
+* O domínio de broadcast usado para comunicação entre clusters deve incluir pelo menos duas portas por nó para que a comunicação entre clusters possa fazer failover de uma porta para outra porta.
++
+As portas adicionadas a um domínio de broadcast podem ser portas de rede físicas, VLANs ou grupos de interface (ifgrps).
+
+* Todas as portas devem ser cabeadas.
+* Todas as portas devem estar em um estado saudável.
+* As configurações de MTU das portas devem ser consistentes.
+
+
+
+
+== Requisitos de firewall
+
+
+NOTE: A partir do ONTAP 9.10,1, as políticas de firewall são obsoletas e totalmente substituídas por políticas de serviço LIF. Para obter mais informações, link:../networking/configure_firewall_policies_for_lifs.html["Configurar políticas de firewall para LIFs"]consulte .
+
+Os firewalls e a política de firewall entre clusters devem permitir os seguintes protocolos:
+
+* Tráfego ICMP bidirecional
+* Tráfego TCP iniciado bidirecional para os endereços IP de todas as LIFs entre clusters nas portas 11104 e 11105
+* HTTPS bidirecional entre os LIFs entre clusters
++
+Embora o HTTPS não seja necessário quando você configura o peering de cluster usando a CLI, o HTTPS é necessário mais tarde se você usar o System Manager para configurar a proteção de dados.
+
+
+
+A política de firewall predefinida `intercluster` permite o acesso através do protocolo HTTPS e de todos os endereços IP (0,0.0,0/0). Você pode modificar ou substituir a política, se necessário.
+
+
+
+== Requisito de cluster
+
+Os clusters precisam atender aos seguintes requisitos:
+
+* Um cluster não pode estar em um relacionamento de pares com mais de 255 clusters.
+

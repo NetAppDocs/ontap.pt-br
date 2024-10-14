@@ -1,0 +1,105 @@
+---
+permalink: authentication/grant-access-active-directory-users-groups-task.html 
+sidebar: sidebar 
+keywords: enable, active directory, account access 
+summary: 'Você pode usar o comando security login create para habilitar contas de usuário ou grupo do ative Directory (AD) para acessar um administrador ou SVM de dados. Qualquer usuário do grupo AD pode acessar o SVM com a função atribuída ao grupo.' 
+---
+= Ative o acesso à conta do ative Directory
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `security login create` comando para habilitar contas de usuário ou grupo do ative Directory (AD) para acessar um administrador ou SVM de dados. Qualquer usuário do grupo AD pode acessar o SVM com a função atribuída ao grupo.
+
+.Sobre esta tarefa
+* Você deve configurar o acesso do controlador de domínio do AD ao cluster ou SVM antes que a conta possa acessar o SVM.
++
+xref:enable-ad-users-groups-access-cluster-svm-task.adoc[Configurando o acesso do controlador de domínio do ative Directory]
+
++
+Pode executar esta tarefa antes ou depois de ativar o acesso à conta.
+
+* A partir do ONTAP 9.13,1, você pode usar uma chave pública SSH como seu método de autenticação principal ou secundário com uma senha de usuário do AD.
++
+Se você optar por usar uma chave pública SSH como sua autenticação principal, nenhuma autenticação AD ocorrerá.
+
+* A partir do ONTAP 9.11,1, você pode usar link:../nfs-admin/ldap-fast-bind-nsswitch-authentication-task.html["Ligação rápida LDAP para autenticação nsswitch"] se for suportado pelo servidor LDAP do AD.
+* Se você não tiver certeza da função de controle de acesso que deseja atribuir à conta de login, use o `security login modify` comando para adicionar a função mais tarde.
++
+xref:modify-role-assigned-administrator-task.adoc[Modificação da função atribuída a um administrador]
+
+
+
+
+NOTE: O acesso à conta do GRUPO DE ANÚNCIOS é suportado apenas com os `SSH` aplicativos , `ontapi` e `rest` . Grupos DE ANÚNCIOS não são suportados com autenticação de chave pública SSH, que é comumente usada para autenticação multifator.
+
+.Antes de começar
+* O tempo do cluster deve ser sincronizado dentro de cinco minutos do tempo no controlador de domínio do AD.
+* Você deve ser um administrador de cluster para executar esta tarefa.
+
+
+.Passo
+. Habilite contas de administrador de grupo ou usuário do AD para acessar um SVM:
++
+*Para usuários do AD:*
+
++
+[cols="1,1,1,4"]
+|===
+| Versão de ONTAP | Autenticação primária | Autenticação secundária | Comando 
+
+
+| 9.13.1 e mais tarde | Chave pública | Nenhum  a| 
+[listing]
+----
+security login create -vserver <svm_name> -user-or-group-name <user_name> -application ssh -authentication-method publickey -role <role>
+----
+
+
+| 9.13.1 e mais tarde | Domínio | Chave pública  a| 
+*Para um novo usuário*
+
+[listing]
+----
+security login create -vserver <svm_name> -user-or-group-name <user_name> -application ssh -authentication-method domain -second-authentication-method publickey -role <role>
+----
+*Para um usuário existente*
+
+[listing]
+----
+security login modify -vserver <svm_name> -user-or-group-name <user_name> -application ssh -authentication-method domain -second-authentication-method publickey -role <role>
+----
+
+
+| 9,0 e mais tarde | Domínio | Nenhum  a| 
+[listing]
+----
+security login create -vserver <svm_name> -user-or-group-name <user_name> -application <application> -authentication-method domain -role <role> -comment <comment> [-is-ldap-fastbind true]
+----
+|===
++
+*Para grupos AD:*
+
++
+[cols="1,1,1,4"]
+|===
+| Versão de ONTAP | Autenticação primária | Autenticação secundária | Comando 
+
+
+| 9,0 e mais tarde | Domínio | Nenhum  a| 
+[listing]
+----
+security login create -vserver <svm_name> -user-or-group-name <user_name> -application <application> -authentication-method domain -role <role> -comment <comment> [-is-ldap-fastbind true]
+----
+|===
++
+Para obter a sintaxe de comando completa, consulte link:config-worksheets-reference.html["Planilhas para autenticação de administrador e configuração RBAC"]
+
+
+
+.Depois de terminar
+Se você não tiver configurado o acesso do controlador de domínio do AD ao cluster ou SVM, deverá fazê-lo antes que a conta possa acessar o SVM.
+
+xref:enable-ad-users-groups-access-cluster-svm-task.adoc[Configurando o acesso do controlador de domínio do ative Directory]

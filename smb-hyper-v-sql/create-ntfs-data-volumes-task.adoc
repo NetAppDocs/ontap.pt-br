@@ -1,0 +1,55 @@
+---
+permalink: smb-hyper-v-sql/create-ntfs-data-volumes-task.html 
+sidebar: sidebar 
+keywords: create, ntfs, data, volume, storage, virutal, machine, svm, smb, application, server, volume, configuration 
+summary: 'Você deve criar volumes de dados NTFS na máquina virtual de armazenamento (SVM) antes de poder configurar compartilhamentos continuamente disponíveis para uso com Hyper-V ou SQL Server em servidores de aplicativos SMB. Use a Planilha de configuração de volume para criar seus volumes de dados.' 
+---
+= Criar volumes de dados NTFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve criar volumes de dados NTFS na máquina virtual de armazenamento (SVM) antes de poder configurar compartilhamentos continuamente disponíveis para uso com Hyper-V ou SQL Server em servidores de aplicativos SMB. Use a Planilha de configuração de volume para criar seus volumes de dados.
+
+.Sobre esta tarefa
+Há parâmetros opcionais que você pode usar para personalizar um volume de dados. Para obter mais informações sobre a personalização de volumes, consulte link:../volumes/index.html["Gerenciamento de storage lógico"].
+
+À medida que você cria seus volumes de dados, você não deve criar pontos de junção dentro de um volume que contenha o seguinte:
+
+* Arquivos Hyper-V para os quais o ONTAP faz cópias de sombra
+* Arquivos de banco de dados do SQL Server que são copiados usando o SQL Server
+
+
+[NOTE]
+====
+Se você inadvertidamente criar um volume que usa estilo de segurança misto ou UNIX, não poderá alterar o volume para um volume de estilo de segurança NTFS e usá-lo diretamente para criar compartilhamentos continuamente disponíveis para operações ininterruptas. Operações ininterruptas para Hyper-V e SQL Server em SMB não funcionam corretamente, a menos que os volumes usados na configuração sejam criados como volumes de estilo de segurança NTFS. Você deve excluir o volume e recriar o volume com estilo de segurança NTFS, ou pode mapear o volume em um host Windows e aplicar uma ACL na parte superior do volume e propagar a ACL para todos os arquivos e pastas no volume.
+
+====
+.Passos
+. Crie o volume de dados inserindo o comando apropriado:
++
+[cols="1, 4"]
+|===
+| Se você quiser criar um volume em um SVM onde o estilo de segurança do volume raiz é... | Digite o comando... 
+
+
+ a| 
+NTFS
+ a| 
+`*volume create -vserver _vserver_name_ -volume _volume_name_ -aggregate _aggregate_name_ -size integer[KB{vbar}MB{vbar}GB{vbar}TB{vbar}PB] -junction-path _path_*`
+
+
+
+ a| 
+Não NTFS
+ a| 
+`*volume create -vserver _vserver_name_ -volume _volume_name_ -aggregate _aggregate_name_ -size integer[KB{vbar}MB{vbar}GB{vbar}TB{vbar}PB]-security-style ntfs -junction-path path*`
+
+|===
+. Verifique se a configuração do volume está correta:
++
+`*volume show -vserver _vserver_name_ -volume _volume_name_*`
+
+

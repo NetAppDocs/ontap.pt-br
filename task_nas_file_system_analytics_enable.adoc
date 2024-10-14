@@ -1,0 +1,103 @@
+---
+sidebar: sidebar 
+permalink: task_nas_file_system_analytics_enable.html 
+keywords: capacity analytics, data visualization, File System Analytics 
+summary: Para coletar e exibir dados de uso, como análise de capacidade, você precisa ativar o File System Analytics. 
+---
+= Ative a análise do sistema de ficheiros
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Para coletar e exibir dados de uso, como análise de capacidade, você precisa ativar o File System Analytics em um volume.
+
+.Sobre esta tarefa
+* A partir do ONTAP 9.8, você pode ativar a análise do sistema de arquivos em um volume novo ou existente. Se você atualizar um sistema para o ONTAP 9.8 ou posterior, certifique-se de que todos os processos de atualização foram concluídos antes de ativar a análise do sistema de arquivos.
+* O tempo necessário para habilitar a análise depende do tamanho e do conteúdo do volume. O System Manager exibe o progresso e apresenta dados analíticos quando concluído. Se precisar de informações mais precisas sobre o progresso da digitalização de inicialização, você pode usar o comando ONTAP CLI `volume analytics show` .
++
+** A partir do ONTAP 9.14,1, o ONTAP fornece o acompanhamento do progresso para a verificação de inicialização, além de notificações sobre eventos de limitação que afetam o progresso da digitalização.
+** A partir do ONTAP 9.15,1, você pode realizar apenas quatro verificações de inicialização simultaneamente em um nó. Tem de esperar que uma digitalização seja concluída antes de iniciar uma nova digitalização. O ONTAP também impõe que haja espaço disponível suficiente no volume e apresenta uma mensagem de erro se não houver. Certifique-se de que pelo menos 5 a 8% do espaço disponível do volume esteja livre. Se o volume tiver o dimensionamento automático ativado, calcule o tamanho disponível com base no tamanho máximo do crescimento automático.
+** Para mais considerações relacionadas com a digitalização de inicialização, xref:./file-system-analytics/considerations-concept.html#scan-considerations[Considerações de digitalização]consulte .
+
+
+
+
+
+
+== Ative a análise do sistema de arquivos em um volume existente
+
+Você pode ativar a análise do sistema de arquivos com o ONTAP System Manager ou a CLI.
+
+.Passo
+[role="tabbed-block"]
+====
+.System Manager
+--
+|===
+| Em ONTAP 9 .8 e 9.9.1 | Começando em ONTAP 9.10,1 
+
+
+| 1. Selecione *armazenamento > volumes*. 2. Selecione o volume desejado e, em seguida, selecione *Explorer*. 3. Selecione *Ativar o Analytics* ou *Desativar o Analytics*. | 1. Selecione *armazenamento > volumes*. 2. Selecione o volume pretendido. No menu volume individual, selecione *sistema de ficheiros > Explorador*. 3. Selecione *Ativar o Analytics* ou *Desativar o Analytics*. 
+|===
+--
+.CLI
+--
+.Ative a análise do sistema de arquivos com a CLI
+. Execute o seguinte comando:
+`volume analytics on -vserver _svm_name_ -volume _volume_name_ [-foreground {true|false}]` Por padrão, o comando é executado em primeiro plano; o ONTAP exibe o progresso e apresenta dados analíticos quando concluído. Se você precisar de informações mais precisas, você pode executar o comando em segundo plano usando a `-foreground false` opção e, em seguida, usar o `volume analytics show` comando para exibir o progresso de inicialização na CLI.
+. Depois de habilitar com êxito a análise do sistema de arquivos, use o Gerenciador do sistema ou a API REST do ONTAP para exibir os dados analíticos.
+
+
+--
+====
+
+
+== Modifique as configurações padrão de análise do sistema de arquivos
+
+A partir do ONTAP 9.13,1, é possível modificar as configurações de SVM ou clusters para habilitar a análise do sistema de arquivos por padrão em novos volumes.
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+Se você estiver usando o System Manager, poderá modificar as configurações de VM ou cluster de armazenamento para habilitar a análise de capacidade e o acompanhamento de atividades na criação de volume por padrão. A habilitação padrão se aplica somente a volumes criados após a modificação das configurações, não a volumes existentes.
+
+.Modificar as configurações de análise do sistema de arquivos em um cluster
+. No System Manager, navegue até **Configurações de cluster**.
+. Em **Configurações de cluster**, consulte a guia Configurações do sistema de arquivos. Para modificar as definições, selecione o image:icon_gear.gif["Ícone ações"] ícone.
+. No campo **Rastreamento de atividade**, insira os nomes dos SVMs para habilitar o Rastreamento de atividades por padrão. Deixar o campo em branco deixará o acompanhamento de atividades desativado em todos os SVMs.
++
+Desmarque a caixa **Ativar em novas VMs de armazenamento** para desativar o acompanhamento de atividades por padrão em novas VMs de armazenamento.
+
+. No campo **Analytics**, insira os nomes das VMs de armazenamento para as quais você deseja que a análise de capacidade esteja habilitada por padrão. Deixar o campo em branco deixará a análise de capacidade desativada em todos os SVMs.
++
+Desmarque a caixa **Ativar em novas VMs de armazenamento** para desativar a análise de capacidade por padrão em novas VMs de armazenamento.
+
+. Selecione **Guardar**.
+
+
+.Modificar as configurações de análise do sistema de arquivos em uma SVM
+. Selecione o SVM que você deseja modificar e, em seguida, **Storage VM settings**.
+. No cartão **File System Analytics**, use as alternâncias para ativar ou desativar o acompanhamento de atividades e a análise de capacidade para todos os novos volumes na VM de armazenamento.
+
+
+--
+.CLI
+--
+Você pode configurar a VM de storage para habilitar a análise do sistema de arquivos por padrão em novos volumes usando a CLI do ONTAP.
+
+.Por padrão, ative a análise do sistema de arquivos em uma SVM
+. Modifique o SVM para habilitar a análise de capacidade e o acompanhamento de atividades por padrão em todos os volumes recém-criados:
+`vserver modify -vserver _svm_name_ -auto-enable-activity-tracking true -auto-enable-analytics true`
+
+
+--
+====

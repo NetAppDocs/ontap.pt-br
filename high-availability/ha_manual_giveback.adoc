@@ -1,0 +1,174 @@
+---
+sidebar: sidebar 
+permalink: high-availability/ha_manual_giveback.html 
+keywords: ontap, high, availability, ha, pair, manual, giveback, interrupted, vetoed, veto, commands, performing, perform 
+summary: Você pode executar um giveback normal, um giveback no qual você encerra processos no nó do parceiro ou um giveback forçado. 
+---
+= Comandos manuais de giveback
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode executar um giveback normal, um giveback no qual você encerra processos no nó do parceiro ou um giveback forçado.
+
+
+NOTE: Antes de executar um giveback, é necessário remover as unidades com falha no sistema de tomada a cargo, conforme descrito em link:../disks-aggregates/index.html["Gerenciamento de discos e agregados"].
+
+
+
+== Se a giveback for interrompida
+
+Se o nó de aquisição sofrer uma falha ou uma interrupção de energia durante o processo de giveback, esse processo pára e o nó de aquisição retorna ao modo de aquisição até que a falha seja reparada ou a energia seja restaurada.
+
+No entanto, isso depende do estágio de giveback em que ocorreu a falha. Se o nó encontrou falha ou uma falha de energia durante o estado parcial de giveback (depois de devolver o agregado raiz), ele não retornará ao modo de aquisição. Em vez disso, o nó retorna ao modo parcial-giveback. Se isso ocorrer, conclua o processo repetindo a operação de giveback.
+
+
+
+== Se giveback é vetado
+
+Se a giveback for vetada, você deve verificar as mensagens EMS para determinar a causa. Dependendo do motivo ou motivos, você pode decidir se pode substituir os vetos com segurança.
+
+O `storage failover show-giveback` comando exibe o progresso da giveback e mostra qual subsistema vetou a giveback, se houver. Vetos macios podem ser substituídos, enquanto vetos duros não podem ser, mesmo que forçados. As tabelas a seguir resumem os vetos de software que não devem ser substituídos, juntamente com as soluções alternativas recomendadas.
+
+Você pode rever os detalhes do EMS para qualquer vetos de giveback usando o seguinte comando:
+
+`event log show -node * -event gb*`
+
+
+
+== Giveback do agregado raiz
+
+Esses vetos não se aplicam a operações de realocação agregadas:
+
+[cols="35,65"]
+|===
+
+
+| Módulo do subsistema de veto | Solução alternativa 
+
+
+ a| 
+vfiler_low_level
+ a| 
+Encerre as sessões SMB causando o veto ou encerre o aplicativo SMB que estabeleceu as sessões abertas.
+
+Substituir esse veto pode fazer com que o aplicativo usando SMB se desconete abruptamente e perca dados.
+
+
+
+ a| 
+Verificação do disco
+ a| 
+Todos os discos falhados ou ignorados devem ser removidos antes de tentar a giveback. Se os discos estiverem higienizando, aguarde até que a operação seja concluída.
+
+Substituir esse veto pode causar uma interrupção causada por agregados ou volumes que ficam offline devido a conflitos de reserva ou discos inacessíveis.
+
+|===
+
+
+== Giveback dos agregados SFO
+
+Esses vetos não se aplicam a operações de realocação agregadas:
+
+[cols="35,65"]
+|===
+
+
+| Módulo do subsistema de veto | Solução alternativa 
+
+
+ a| 
+Gerenciador de bloqueio
+ a| 
+Encerre graciosamente as aplicações SMB que têm arquivos abertos ou mova esses volumes para um agregado diferente.
+
+A substituição desse veto resulta na perda do estado de bloqueio SMB, causando interrupções e perda de dados.
+
+
+
+ a| 
+LOCK Manager NDESEJA
+ a| 
+Aguarde até que os bloqueios sejam espelhados.
+
+A substituição desse veto causa interrupções nas máquinas virtuais Microsoft Hyper-V.
+
+
+
+| RAID  a| 
+Verifique as mensagens do EMS para determinar a causa do veto:
+
+Se o veto for devido ao nvfile, coloque os volumes offline e agregados online.
+
+Se as operações de reatribuição de propriedade de disco ou adição de disco estiverem em andamento, aguarde até que elas sejam concluídas.
+
+Se o veto for devido a um conflito de nome agregado ou UUID, solucione e o problema.
+
+Se o veto for devido a ressincronização do espelho, verificação do espelho ou discos off-line, o veto pode ser substituído e a operação será reiniciada após a giveback.
+
+
+
+| Inventário de disco  a| 
+Solucione problemas para identificar e resolver a causa do problema.
+
+O nó de destino pode não conseguir ver discos pertencentes a um agregado que está sendo migrado.
+
+Discos inacessíveis podem resultar em agregados ou volumes inacessíveis.
+
+
+
+| Operação de movimentação de volume  a| 
+Solucione problemas para identificar e resolver a causa do problema.
+
+Este veto impede que a operação de movimentação de volume aborte durante a importante fase de transição. Se o trabalho for abortado durante a transição, o volume poderá ficar inacessível.
+
+|===
+
+
+=== Comandos para executar um manual giveback
+
+Você pode iniciar manualmente um giveback em um nó em um par de HA para retornar o storage ao proprietário original após concluir a manutenção ou resolver quaisquer problemas que causaram o takeover.
+
+|===
+
+
+| Se você quiser... | Use este comando... 
+
+
+ a| 
+Devolver storage a um nó de parceiro
+| `storage failover giveback ‑ofnode _nodename_` 
+
+
+ a| 
+Devolva o armazenamento mesmo que o parceiro não esteja no modo de espera para giveback
+ a| 
+`storage failover giveback ‑ofnode _nodename_`
+`‑require‑partner‑waiting false`
+
+Não use esta opção a menos que uma interrupção mais longa do cliente seja aceitável.
+
+
+
+| Devolva o armazenamento mesmo se os processos estiverem vetando a operação de giveback (force a giveback)  a| 
+`storage failover giveback ‑ofnode _nodename_`
+`‑override‑vetoes true`
+
+O uso dessa opção pode potencialmente levar a uma falha de cliente mais longa, ou agregados e volumes que não estão online após a giveback.
+
+
+
+| Devolver apenas os agregados CFO (o agregado raiz)  a| 
+`storage failover giveback ‑ofnode _nodename_`
+
+`‑only‑cfo‑aggregates true`
+
+
+
+| Monitore o progresso da giveback depois de emitir o comando giveback | `storage failover show‑giveback` 
+|===

@@ -1,0 +1,196 @@
+---
+permalink: disks-aggregates/manual-assign-ownership-partitioned-disks-task.html 
+sidebar: sidebar 
+keywords: manual, assign, disk, ownership, partition, disks 
+summary: 'Você pode atribuir manualmente a propriedade do disco de contentor ou as partições em sistemas de particionamento de unidade avançado (ADP). Se você estiver inicializando um par de HA que tenha apenas DS460C gavetas, será necessário atribuir manualmente a propriedade para as unidades de contentor que incluirão partições raiz.' 
+---
+= Atribua manualmente a propriedade de discos particionados
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode atribuir manualmente a propriedade do disco de contentor ou as partições em sistemas de particionamento de unidade avançado (ADP). Se você estiver inicializando um par de HA que tenha apenas DS460C gavetas, será necessário atribuir manualmente a propriedade para as unidades de contentor que incluirão partições raiz.
+
+.Sobre esta tarefa
+* O tipo de sistema de armazenamento que você determina qual método de ADP é suportado, dados de raiz (RD) ou dados-raiz (RD2).
++
+Os sistemas de storage FAS usam RD e os sistemas de storage AFF usam RD2.
+
+* Se você estiver atribuindo manualmente propriedade em um par de HA que não está sendo inicializado e não tem apenas DS460C gavetas, use a opção 1 para atribuir manualmente discos com particionamento de dados raiz (RD) ou use a opção 2 para atribuir manualmente discos com particionamento de dados raiz (RD2).
+* Se você estiver inicializando um par de HA com apenas DS460C gavetas, use a opção 3 para atribuir manualmente a propriedade para as unidades de contentor que têm a partição raiz.
+
+
+.Opção 1: Atribuir manualmente discos com particionamento de dados raiz (RD)
+[%collapsible]
+====
+Para o particionamento de dados raiz, existem três entidades de propriedade (o disco de contentor e as duas partições) coletivamente propriedade do par HA.
+
+.Sobre esta tarefa
+* O disco de contêiner e as duas partições nem todas precisam ser de propriedade do mesmo nó no par de HA, contanto que todas sejam de propriedade de um dos nós do par de HA. No entanto, quando você usa uma partição em um nível local (agregado), ela deve ser de propriedade do mesmo nó que possui o nível local.
+* Se um disco de contentor falhar em um compartimento com meio preenchimento e for substituído, talvez seja necessário atribuir manualmente a propriedade do disco porque o ONTAP nem sempre atribui propriedade automaticamente nesse caso.
+* Depois que o disco de contentor é atribuído, o software do ONTAP manipula automaticamente todas as atribuições de particionamento e partição necessárias.
+
+
+.Passos
+. Use a CLI para exibir a propriedade atual do disco particionado:
++
+`storage disk show -disk _disk_name_ -partition-ownership`
+
+. Defina o nível de privilégio CLI como avançado:
++
+`set -privilege advanced`
+
+. Digite o comando apropriado, dependendo da entidade de propriedade para a qual você deseja atribuir propriedade:
++
+Se alguma das entidades de propriedade já for detida, deverá incluir a opção ""-force".
+
++
+[cols="25,75"]
+|===
+
+
+| Se pretender atribuir propriedade para a... | Use este comando... 
+
+
+ a| 
+Disco do contêiner
+ a| 
+`storage disk assign -disk _disk_name_ -owner _owner_name_`
+
+
+
+ a| 
+Partição de dados
+ a| 
+`storage disk assign -disk _disk_name_ -owner _owner_name_ -data true`
+
+
+
+ a| 
+Partição raiz
+ a| 
+`storage disk assign -disk _disk_name_ -owner _owner_name_ -root true`
+
+|===
+
+
+====
+.Opção 2: Atribuir manualmente discos com particionamento root-data-data (RD2)
+[%collapsible]
+====
+Para o particionamento de dados-raiz, existem quatro entidades de propriedade (o disco do contentor e as três partições) coletivamente propriedade do par HA. O particionamento root-data-data cria uma pequena partição como a partição raiz e duas partições maiores e igualmente dimensionadas para dados.
+
+.Sobre esta tarefa
+* Os parâmetros devem ser usados com o `disk assign` comando para atribuir a partição adequada de um disco particionado root-data-data-data. Você não pode usar esses parâmetros com discos que fazem parte de um pool de armazenamento. O valor padrão é "false".
++
+** O `-data1 true` parâmetro atribui a partição "d.ATA1" de um disco particionado root-data1-data2.
+** O `-data2 true` parâmetro atribui a partição "d.ata2" de um disco particionado root-data1-data2.
+
+
+* Se um disco de contentor falhar em um compartimento com meio preenchimento e for substituído, talvez seja necessário atribuir manualmente a propriedade do disco porque o ONTAP nem sempre atribui propriedade automaticamente nesse caso.
+* Depois que o disco de contentor é atribuído, o software do ONTAP manipula automaticamente todas as atribuições de particionamento e partição necessárias.
+
+
+.Passos
+. Use a CLI para exibir a propriedade atual do disco particionado:
++
+`storage disk show -disk _disk_name_ -partition-ownership`
+
+. Defina o nível de privilégio CLI como avançado:
++
+`set -privilege advanced`
+
+. Digite o comando apropriado, dependendo da entidade de propriedade para a qual você deseja atribuir propriedade:
++
+Se alguma das entidades de propriedade já for detida, deverá incluir a opção ""-force".
+
++
+[cols="25,75"]
+|===
+
+
+| Se pretender atribuir propriedade para a... | Use este comando... 
+
+
+ a| 
+Disco do contêiner
+ a| 
+`storage disk assign -disk _disk_name_ -owner _owner_name_`
+
+
+
+ a| 
+Data1 partição
+ a| 
+`storage disk assign -disk _disk_name_ -owner _owner_name_ -data1 true`
+
+
+
+ a| 
+Data2 partição
+ a| 
+`storage disk assign -disk _disk_name_ -owner _owner_name_ -data2 true`
+
+
+
+ a| 
+Partição raiz
+ a| 
+`storage disk assign -disk _disk_name_ -owner _owner_name_ -root true`
+
+|===
+
+
+====
+.Opção 3: Atribua manualmente unidades de contentor DS460C que tenham a partição raiz
+[%collapsible]
+====
+Se você estiver inicializando um par de HA que tenha apenas DS460C gavetas, será necessário atribuir manualmente a propriedade para as unidades de contêiner que têm a partição raiz, de acordo com a política de meia gaveta.
+
+.Sobre esta tarefa
+* Quando você inicializar um par de HA que tenha apenas DS460C gavetas, as opções 9a e 9b do menu de inicialização ADP (disponível com o ONTAP 9.2 e posteriores) não suportam a atribuição automática de propriedade da unidade. Você deve atribuir manualmente as unidades de contentor que têm a partição raiz, de acordo com a política de meia gaveta.
++
+Após a inicialização do par de HA (inicialização), a atribuição automática da propriedade do disco é ativada automaticamente e usa a política de meia gaveta para atribuir propriedade às unidades restantes (exceto as unidades de contentor que têm a partição raiz) e quaisquer unidades adicionadas no futuro, como a substituição de unidades com falha, a resposta a uma mensagem de "peças sobressalentes baixas" ou a adição de capacidade.
+
+* Saiba mais sobre a política de meia gaveta no link:disk-autoassignment-policy-concept.html["Sobre a atribuição automática de propriedade de disco"]tópico .
+
+
+.Passos
+. Se as DS460C gavetas não estiverem totalmente preenchidas, execute as seguintes etapas; caso contrário, vá para a próxima etapa.
++
+.. Primeiro, instale unidades na linha dianteira (compartimentos de unidades 0, 3, 6 e 9) de cada gaveta.
++
+A instalação de acionamentos na fila dianteira de cada gaveta permite um fluxo de ar adequado e evita o superaquecimento.
+
+.. Para as unidades restantes, distribua-as uniformemente em cada gaveta.
++
+Encha as linhas da gaveta da frente para trás. Se você não tiver unidades suficientes para preencher linhas, instale-as em pares para que as unidades ocupem o lado esquerdo e direito de uma gaveta uniformemente.
+
++
+A ilustração a seguir mostra a numeração do compartimento de unidades e os locais em uma gaveta DS460C.
+
++
+image:dwg_trafford_drawer_with_hdds_callouts.gif["Esta ilustração mostra a numeração do compartimento da unidade e as localizações em uma gaveta DS460C"]
+
+
+
+. Faça login no clustershell usando o LIF de gerenciamento de nó ou LIF de gerenciamento de cluster.
+. Para cada gaveta, atribua manualmente as unidades de contentor que têm a partição raiz, de acordo com a política de meia gaveta usando as seguintes subetapas:
++
+A política de meia gaveta atribui a metade esquerda das unidades de uma gaveta (compartimentos 0 a 5) ao nó A e a metade direita das unidades de uma gaveta (compartimentos 6 a 11) ao nó B.
+
++
+.. Exibir todos os discos não possuídos:
+`storage disk show -container-type unassigned`
+.. Atribua as unidades de contentor que têm a partição raiz:
+`storage disk assign -disk disk_name -owner owner_name`
++
+Você pode usar o caractere curinga para atribuir mais de uma unidade de cada vez.
+
+
+
+
+
+====

@@ -1,0 +1,126 @@
+---
+permalink: data-protection/example-configure-vault-vault-cascade-task.html 
+sidebar: sidebar 
+keywords: example, configure, vault-vault, cascade 
+summary: 'Um exemplo mostrará em termos concretos como você pode configurar relacionamentos de replicação uma etapa de cada vez. Você pode usar a implantação em cascata do Vault-Vault configurada no exemplo para reter mais de 251 cópias Snapshot rotuladas como "minha semanal".' 
+---
+= Exemplo: Configurar uma cascata Vault-Vault
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um exemplo mostrará em termos concretos como você pode configurar relacionamentos de replicação uma etapa de cada vez. Você pode usar a implantação em cascata do Vault-Vault configurada no exemplo para reter mais de 251 cópias Snapshot rotuladas "semanal".
+
+.O que você vai precisar
+* Os clusters de origem e destino e as SVMs devem ser colocados em Contato.
+* Você deve estar executando o ONTAP 9.2 ou posterior. As cascatas do Vault-Vault não são suportadas em versões anteriores do ONTAP.
+
+
+.Sobre esta tarefa
+O exemplo assume o seguinte:
+
+* Você configurou cópias Snapshot no cluster de origem com os rótulos SnapMirror """diariamente", "semanal" e "mensal".
+* Você configurou volumes de destino chamados "volA" nos clusters de destino secundário e terciário.
+* Você configurou as programações de tarefas de replicação chamadas "mmy_SnapVault" nos clusters de destino secundário e terciário.
+
+
+O exemplo mostra como criar relacionamentos de replicação com base em duas políticas personalizadas:
+
+* A política "SnapVault_secondary" retém 7 cópias Snapshot diárias, 52 semanais e 180 mensais no cluster de destino secundário.
+* A política SnapVault_terciária mantém 250 cópias Snapshot semanais no cluster de destino terciário.
+
+
+.Passos
+. No cluster de destino secundário, crie a política "SnapVault_secondary":
++
+`cluster_secondary::> snapmirror policy create -policy snapvault_secondary -type vault -comment “Policy on secondary for vault to vault cascade” -vserver svm_secondary`
+
+. No cluster de destino secundário, defina a regra "diariamente" para a política:
++
+`cluster_secondary::> snapmirror policy add-rule -policy snapvault_secondary -snapmirror-label my-daily -keep 7 -vserver svm_secondary`
+
+. No cluster de destino secundário, defina a regra "semanal" para a política:
++
+`cluster_secondary::> snapmirror policy add-rule -policy snapvault_secondary -snapmirror-label my-weekly -keep 52 -vserver svm_secondary`
+
+. No cluster de destino secundário, defina a regra "mensal" para a política:
++
+`cluster_secondary::> snapmirror policy add-rule -policy snapvault_secondary -snapmirror-label my-monthly -keep 180 -vserver svm_secondary`
+
+. No cluster de destino secundário, verifique a política:
++
+`cluster_secondary::> snapmirror policy show snapvault_secondary -instance`
+
++
+[listing]
+----
+                     Vserver: svm_secondary
+      SnapMirror Policy Name: snapvault_secondary
+      SnapMirror Policy Type: vault
+                Policy Owner: cluster-admin
+                 Tries Limit: 8
+           Transfer Priority: normal
+   Ignore accesstime Enabled: false
+     Transfer Restartability: always
+ Network Compression Enabled: false
+             Create Snapshot: false
+                     Comment: Policy on secondary for vault to vault cascade
+       Total Number of Rules: 3
+                  Total Keep: 239
+                       Rules: SnapMirror Label     Keep  Preserve Warn Schedule Prefix
+                              ----------------     ----  -------- ---- -------- ------
+                              my-daily                7  false       0 -        -
+                              my-weekly              52  false       0 -        -
+                              my-monthly            180  false       0 -        -
+----
+. No cluster de destino secundário, crie a relação com o cluster de origem:
++
+`cluster_secondary::> snapmirror create -source-path svm_primary:volA -destination-path svm_secondary:volA -type XDP -schedule my_snapvault -policy snapvault_secondary`
+
+. No cluster de destino secundário, inicialize a relação com o cluster de origem:
++
+`cluster_secondary::> snapmirror initialize -source-path svm_primary:volA -destination-path svm_secondary:volA`
+
+. No cluster de destino terciário, crie a política "'SnapVault_terciária":
++
+`cluster_tertiary::> snapmirror policy create -policy snapvault_tertiary -type vault -comment “Policy on tertiary for vault to vault cascade” -vserver svm_tertiary`
+
+. No cluster de destino terciário, defina a regra "semanal" para a política:
++
+`cluster_tertiary::> snapmirror policy add-rule -policy snapvault_tertiary -snapmirror-label my-weekly -keep 250 -vserver svm_tertiary`
+
+. No cluster de destino terciário, verifique a política:
++
+`cluster_tertiary::> snapmirror policy show snapvault_tertiary -instance`
+
++
+[listing]
+----
+                     Vserver: svm_tertiary
+      SnapMirror Policy Name: snapvault_tertiary
+      SnapMirror Policy Type: vault
+                Policy Owner: cluster-admin
+                 Tries Limit: 8
+           Transfer Priority: normal
+   Ignore accesstime Enabled: false
+     Transfer Restartability: always
+ Network Compression Enabled: false
+             Create Snapshot: false
+                     Comment: Policy on tertiary for vault to vault cascade
+       Total Number of Rules: 1
+                  Total Keep: 250
+                       Rules: SnapMirror Label     Keep  Preserve Warn Schedule Prefix
+                              ----------------     ----  -------- ---- -------- ------
+                              my-weekly             250  false       0 -        -
+----
+. No cluster de destino terciário, crie a relação com o cluster secundário:
++
+`cluster_tertiary::> snapmirror create -source-path svm_secondary:volA -destination-path svm_tertiary:volA -type XDP -schedule my_snapvault -policy snapvault_tertiary`
+
+. No cluster de destino terciário, inicialize a relação com o cluster secundário:
++
+`cluster_tertiary::> snapmirror initialize -source-path svm_secondary:volA -destination-path svm_tertiary:volA`
+
+

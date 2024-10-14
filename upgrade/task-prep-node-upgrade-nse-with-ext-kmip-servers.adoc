@@ -1,0 +1,72 @@
+---
+permalink: upgrade/task-prep-node-upgrade-nse-with-ext-kmip-servers.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, prepare, preparing, nodes, netapp, storage, encryption, nse, external, key management, servers 
+summary: Se você estiver usando a criptografia de armazenamento NetApp no ONTAP 9.2 ou anterior e atualizando para 9,3 ou posterior, exclua as conexões do servidor de gerenciamento de chaves externas antes de atualizar. 
+---
+= Exclua conexões existentes do servidor de gerenciamento de chaves externas antes de atualizar o ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de atualizar o ONTAP, se você estiver executando o ONTAP 9.2 ou anterior com o NetApp Storage Encryption (NSE) e atualizando para o ONTAP 9.3 ou posterior, use a interface de linha de comando (CLI) para excluir quaisquer conexões de servidor de gerenciamento de chaves externas (KMIP) existentes.
+
+.Passos
+. Verifique se as unidades do NSE estão desbloqueadas, abertas e definidas para a ID segura de fabricação padrão 0x0:
++
+[source, cli]
+----
+storage encryption disk show -disk *
+----
+. Entre no modo de privilégio avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Use a ID segura de fabricação padrão 0x0 para atribuir a chave FIPS aos discos de criptografia automática (SEDs):
++
+[source, cli]
+----
+storage encryption disk modify -fips-key-id 0x0 -disk *
+----
+. Verifique se a atribuição da chave FIPS a todos os discos está concluída:
++
+[source, cli]
+----
+storage encryption disk show-status
+----
+. Verifique se o *mode* para todos os discos está definido como dados
++
+[source, cli]
+----
+storage encryption disk show
+----
+. Exibir os servidores KMIP configurados:
++
+[source, cli]
+----
+security key-manager show
+----
+. Exclua os servidores KMIP configurados:
++
+[source, cli]
+----
+security key-manager delete -address <kmip_ip_address>
+----
+. Exclua a configuração do gerenciador de chaves externo:
++
+[source, cli]
+----
+security key-manager delete-kmip-config
+----
++
+
+NOTE: Esta etapa não remove os certificados NSE.
+
+
+
+.O que vem a seguir
+Depois que a atualização estiver concluída, você deve xref:task_reconfiguring_kmip_servers_connections_after_upgrading_to_ontap_9_3_or_later.adoc[Reconfigure as conexões do servidor KMIP].

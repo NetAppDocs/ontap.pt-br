@@ -1,0 +1,100 @@
+---
+permalink: authentication/enable-disable-dynamic-authorization.html 
+sidebar: sidebar 
+keywords: dynamic, authorization, framework, security, login, ssh 
+summary: Configure o Dynamic Authorization Framework para aumentar a segurança de logins SSH e restringir a execução de certos comandos em circunstâncias suspeitas. 
+---
+= Ativar ou desativar a autorização dinâmica
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.15,1, os administradores podem configurar e ativar a autorização dinâmica no `visibility` modo para testar a configuração, ou no `enforced` modo para ativar a configuração para os usuários CLI que se conetam por SSH. Se você não precisar mais de autorização dinâmica, você pode desativá-la. Quando você desativa a autorização dinâmica, as configurações permanecem disponíveis e você pode usá-las mais tarde se decidir reativá-las.
+
+Para obter mais informações sobre os parâmetros `security dynamic-authorization modify` do comando, consulte o https://docs.netapp.com/us-en/ontap-cli/security-dynamic-authorization-modify.html["Páginas de manual do ONTAP"^].
+
+
+
+== Ativar autorização dinâmica para testes
+
+Você pode ativar a autorização dinâmica no modo de visibilidade, que permite testar o recurso e garantir que os usuários não serão bloqueados acidentalmente. Neste modo, a pontuação de confiança é verificada em todas as atividades restritas, mas não aplicada. No entanto, qualquer atividade que tenha sido negada ou sujeita a desafios de autenticação adicionais é registrada. Como prática recomendada, você deve testar as configurações pretendidas neste modo antes de aplicá-las.
+
+
+NOTE: Pode seguir este passo para ativar a autorização dinâmica pela primeira vez, mesmo que ainda não tenha configurado quaisquer outras definições de autorização dinâmica. link:configure-dynamic-authorization.html["Personalizar autorização dinâmica"]Consulte para obter instruções sobre como configurar outras definições de autorização dinâmica para personalizá-las para o seu ambiente.
+
+.Passos
+. Ative a autorização dinâmica no modo de visibilidade configurando as configurações globais e alterando o estado da função para `visibility`. Se você não usar o `-vserver` parâmetro, o comando será executado no nível do cluster. Atualize os valores entre parêntesis> para corresponder ao seu ambiente. Parâmetros em negrito são necessários:
++
+[source, subs="specialcharacters,quotes"]
+----
+security dynamic-authorization modify \
+*-state visibility* \
+-lower-challenge-boundary <percent> \
+-upper-challenge-boundary <percent> \
+-suppression-interval <interval> \
+-vserver <storage_VM_name>
+----
+. Verifique o resultado usando o `show` comando para exibir a configuração global:
++
+[source, console]
+----
+security dynamic-authorization show
+----
+
+
+
+
+== Ativar autorização dinâmica no modo imposto
+
+Pode ativar a autorização dinâmica no modo imposto. Normalmente, você usa este modo depois de concluir o teste com o modo de visibilidade. Neste modo, a pontuação de confiança é verificada em todas as atividades restritas e as restrições de atividade são aplicadas se as condições de restrição forem cumpridas. O intervalo de supressão também é aplicado, impedindo desafios de autenticação adicionais dentro do intervalo especificado.
+
+
+NOTE: Esta etapa pressupõe que você configurou e ativou previamente a autorização dinâmica no `visibility` modo, o que é altamente recomendado.
+
+.Passos
+. Ative a autorização dinâmica no `enforced` modo alterando seu estado para `enforced`. Se você não usar o `-vserver` parâmetro, o comando será executado no nível do cluster. Atualize os valores entre parêntesis> para corresponder ao seu ambiente. Parâmetros em negrito são necessários:
++
+[source, subs="specialcharacters,quotes"]
+----
+security dynamic-authorization modify \
+*-state enforced* \
+-vserver <storage_VM_name>
+----
+. Verifique o resultado usando o `show` comando para exibir a configuração global:
++
+[source, console]
+----
+security dynamic-authorization show
+----
+
+
+
+
+== Desativar autorização dinâmica
+
+Você pode desativar a autorização dinâmica se não precisar mais da segurança de autenticação adicionada.
+
+.Passos
+. Desative a autorização dinâmica alterando seu estado para `disabled`. Se você não usar o `-vserver` parâmetro, o comando será executado no nível do cluster. Atualize os valores entre parêntesis> para corresponder ao seu ambiente. Parâmetros em negrito são necessários:
++
+[source, subs="specialcharacters,quotes"]
+----
+security dynamic-authorization modify \
+*-state disabled* \
+-vserver <storage_VM_name>
+----
+. Verifique o resultado usando o `show` comando para exibir a configuração global:
++
+[source, console]
+----
+security dynamic-authorization show
+----
+
+
+
+
+== O que vem a seguir
+
+(Opcional) dependendo do seu ambiente, link:configure-dynamic-authorization.html["Personalizar autorização dinâmica"]consulte para configurar outras definições de autorização dinâmica.

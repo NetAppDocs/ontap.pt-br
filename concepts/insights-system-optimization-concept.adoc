@@ -1,0 +1,300 @@
+---
+permalink: concepts/insights-system-optimization-concept.html 
+sidebar: sidebar 
+keywords: system manager, optimize, optimise, optimization, optimisation, insight, cluster, system, analysis, analyze, perform, performing, performance, capacity, local tier, storage tier, telnet, remote shell, rsh, autosupport, auto support, auto-support, insecure protocol, nonsecure, login banner, log in banner, ssh, secure shell, cbc cipher, ntp server, admin user, administrative, user, best practice, practise, fabricpool, fabric pool, physical capacity, aggregate, cloud, snapshot, directories, directory, file, remote access, transport protocol, https, http, autogrow, auto grow, auto-grow, shrink, reduce, reduction, dismiss, undismiss, explore, fix, remove, replace, analytic, security, compliance, secure, comply, volume, applications, reclaim, space, full, provisioning, provisioned cluster, serial, port, node, global fips 140-2 
+summary: A partir do ONTAP 9.11,1, o Gerenciador de sistemas exibe insights que ajudam a otimizar o desempenho e a segurança do seu sistema. 
+---
+= Insights do System Manager
+:allow-uri-read: 
+:icons: font
+:imagesdir: ./media/
+
+
+[role="lead"]
+A partir do ONTAP 9.11,1, o Gerenciador de sistema exibe _insights_ que ajudam a otimizar o desempenho e a segurança do seu sistema.
+
+
+NOTE: Para visualizar, personalizar e responder a insights, consulte link:../insights-system-optimization-task.html["Obtenha insights para ajudar a otimizar seu sistema"]
+
+
+
+== Insights de capacidade
+
+O System Manager pode exibir os seguintes insights em resposta às condições de capacidade do seu sistema:
+
+[cols="15,15,20,50"]
+|===
+
+
+| Insight | Gravidade | Condição | Correções 
+
+
+ a| 
+As camadas locais não têm espaço
+ a| 
+Remediar riscos
+ a| 
+Um ou mais níveis locais estão mais de 95% cheios e crescendo rapidamente. Os workloads existentes podem não ser capazes de crescer ou, em casos extremos, os workloads existentes podem ficar sem espaço e falhar.
+ a| 
+*Correção recomendada*: Execute uma das seguintes opções.
+
+* Limpe a fila de recuperação de volume.
+* Habilite o provisionamento de thin Provisioning em volumes provisionados espessos para liberar o storage preso.
+* Mova volumes para outro nível local.
+* Excluir cópias snapshot desnecessárias.
+* Exclua diretórios desnecessários ou arquivos nos volumes.
+* Habilite o Fabric Pool para categorizar os dados na nuvem.
+
+
+
+
+ a| 
+As aplicações não têm espaço
+ a| 
+Precisa de atenção
+ a| 
+Um ou mais volumes estão mais de 95% cheios, mas não têm o crescimento automático ativado.
+ a| 
+*Recomendado*: Ative o crescimento até 150% da capacidade atual.
+
+*Outras opções*:
+
+* Recupere espaço com a exclusão de cópias Snapshot.
+* Redimensione os volumes.
+* Excluir diretórios ou arquivos.
+
+
+
+
+ a| 
+A capacidade do volume FlexGroup é desequilibrada
+ a| 
+Otimizar o armazenamento
+ a| 
+O tamanho dos volumes constituintes de um ou mais volumes do FlexGroup cresceu de forma desigual ao longo do tempo, levando a um desequilíbrio no uso da capacidade. Se os volumes constituintes ficarem cheios, podem ocorrer falhas de gravação.
+ a| 
+*Recomendado*: Rebalanceamento dos volumes FlexGroup.
+
+
+
+ a| 
+As VMs de storage estão ficando sem capacidade
+ a| 
+Otimizar o armazenamento
+ a| 
+Uma ou mais VMs de storage estão perto da capacidade máxima. Você não poderá provisionar mais espaço para volumes novos ou existentes se as VMs de storage alcançarem a capacidade máxima.
+ a| 
+*Recomendado*: Se possível, aumente o limite máximo de capacidade da VM de armazenamento.
+
+|===
+
+
+== Insights de segurança
+
+O System Manager pode exibir os seguintes insights em resposta a condições que podem comprometer a segurança de seus dados ou do sistema.
+
+[cols="15,15,20,50"]
+|===
+
+
+| Insight | Gravidade | Condição | Correções 
+
+
+ a| 
+Os volumes ainda estão no modo de aprendizado anti-ransomware
+ a| 
+Precisa de atenção
+ a| 
+Um ou mais volumes estão no modo de aprendizado anti-ransomware por 90 dias.
+ a| 
+*Recomendado*: Ative o modo ativo anti-ransomware para esses volumes.
+
+
+
+ a| 
+A exclusão automática de cópias Snapshot está habilitada nos volumes
+ a| 
+Precisa de atenção
+ a| 
+A eliminação automática de instantâneos está ativada num ou mais volumes.
+ a| 
+*Recomendado*: Desative a exclusão automática de cópias Snapshot. Caso contrário, em caso de ataque de ransomware, a recuperação de dados para esses volumes pode não ser possível.
+
+
+
+ a| 
+Os volumes não têm políticas Snapshot
+ a| 
+Precisa de atenção
+ a| 
+Um ou mais volumes não têm uma política de snapshot adequada anexada a eles.
+ a| 
+*Recomendado*: Anexe uma política Snapshot a volumes que não tenham um. Caso contrário, em caso de ataque de ransomware, a recuperação de dados para esses volumes pode não ser possível.
+
+
+
+ a| 
+FPolicy nativo não está configurado
+ a| 
+Prática recomendada
+ a| 
+O FPolicy nativo não está configurado em uma ou mais VMs de armazenamento nas.
+ a| 
+*Recomendado*: *IMPORTANTE*: Bloquear extensões pode levar a resultados inesperados. A partir de 9.11.1, é possível habilitar o FPolicy nativo para VMs de armazenamento, o que bloqueia mais de 3000 extensões de arquivo conhecidas por serem usadas para ataques de ransomware. link:../insights-configure-native-fpolicy-task.html["Configurar FPolicy nativo"] Nas VMs de armazenamento nas para controlar as extensões de arquivo permitidas ou não permitidas para serem gravadas em volumes em seu ambiente.
+
+
+
+ a| 
+O Telnet está ativado
+ a| 
+Prática recomendada
+ a| 
+O Secure Shell (SSH) deve ser usado para acesso remoto seguro.
+ a| 
+*Recomendado*: Desative o Telnet e use SSH para acesso remoto seguro.
+
+
+
+ a| 
+Poucos servidores NTP estão configurados
+ a| 
+Prática recomendada
+ a| 
+O número de servidores configurados para NTP é inferior a 3.
+ a| 
+*Recomendado*: Associe pelo menos três servidores NTP ao cluster. Caso contrário, podem ocorrer problemas com a sincronização da hora do cluster.
+
+
+
+ a| 
+O Remote Shell (RSH) está ativado
+ a| 
+Prática recomendada
+ a| 
+O Secure Shell (SSH) deve ser usado para acesso remoto seguro.
+ a| 
+*Recomendado*: Desative o RSH e use SSH para acesso remoto seguro.
+
+
+
+ a| 
+O banner de login não está configurado
+ a| 
+Prática recomendada
+ a| 
+As mensagens de login não são configuradas para o cluster, para a VM de armazenamento ou para ambos.
+ a| 
+*Recomendado*: Configure os banners de login para o cluster e a VM de armazenamento e habilite seu uso.
+
+
+
+ a| 
+O AutoSupport está usando um protocolo não seguro
+ a| 
+Prática recomendada
+ a| 
+O AutoSupport não está configurado para se comunicar via HTTPS.
+ a| 
+*Recomendado*: É altamente recomendável usar HTTPS como protocolo de transporte padrão para enviar mensagens AutoSupport para suporte técnico.
+
+
+
+ a| 
+O utilizador de administrador predefinido não está bloqueado
+ a| 
+Prática recomendada
+ a| 
+Ninguém fez login usando uma conta administrativa padrão (admin ou diag), e essas contas não estão bloqueadas.
+ a| 
+*Recomendado*: Bloqueie contas administrativas padrão quando elas não estiverem sendo usadas.
+
+
+
+ a| 
+O Secure Shell (SSH) está usando cifras não seguras
+ a| 
+Prática recomendada
+ a| 
+A configuração atual usa cifras CBC não seguras.
+ a| 
+*Recomendado*: Você deve permitir apenas cifras seguras em seu servidor web para proteger a comunicação segura com seus visitantes. Remover cifras que tenham nomes contendo "cbc", como "ais128-cbc", "aes192-cbc", "AES256-cbc" e "3DES-cbc".
+
+
+
+ a| 
+A conformidade com o FIPS 140-2 global está desativada
+ a| 
+Prática recomendada
+ a| 
+A conformidade com o FIPS 140-2 global é desativada no cluster.
+ a| 
+*Recomendado*: Por motivos de segurança, você deve habilitar a criptografia compatível com FIPS global 140-2 para garantir que o ONTAP possa se comunicar com segurança com clientes externos ou clientes de servidor.
+
+
+
+ a| 
+Os volumes não estão sendo monitorados para ataques de ransomware
+ a| 
+Precisa de atenção
+ a| 
+O antirransomware é desativado em um ou mais volumes.
+ a| 
+*Recomendado*: Ative o anti-ransomware nos volumes. Caso contrário, você pode não notar quando os volumes estão sendo ameaçados ou sob ataque.
+
+
+
+ a| 
+As VMs de storage não estão configuradas para anti-ransomware
+ a| 
+Prática recomendada
+ a| 
+Uma ou mais VMs de storage não estão configuradas para proteção contra ransomware.
+ a| 
+*Recomendado*: Ative o anti-ransomware nas VMs de armazenamento. Caso contrário, você pode não notar quando as VMs de armazenamento estão sendo ameaçadas ou sob ataque.
+
+|===
+
+
+== Insights de configuração
+
+O System Manager pode exibir os seguintes insights em resposta a preocupações sobre a configuração do seu sistema.
+
+[cols="15,15,20,50"]
+|===
+
+
+| Insight | Gravidade | Condição | Correções 
+
+
+ a| 
+O cluster não está configurado para notificações
+ a| 
+Prática recomendada
+ a| 
+E-mail, webhooks ou um traphost SNMP não está configurado para permitir que você receba notificações sobre problemas com o cluster.
+ a| 
+*Recomendado*: Configure notificações para o cluster.
+
+
+
+ a| 
+O cluster não está configurado para atualizações automáticas.
+ a| 
+Prática recomendada
+ a| 
+O cluster não foi configurado para receber atualizações automáticas para o pacote de qualificação de disco mais recente, firmware de disco, firmware de gaveta e arquivos de firmware SP/BMC quando estiverem disponíveis.
+ a| 
+*Recomendado*: Ative este recurso.
+
+
+
+ a| 
+O firmware do cluster não está atualizado
+ a| 
+Prática recomendada
+ a| 
+O seu sistema não tem a atualização mais recente do firmware, que pode ter melhorias, patches de segurança ou novos recursos que ajudam a proteger o cluster para um melhor desempenho.
+ a| 
+*Recomendado*: Atualize o firmware do ONTAP.
+
+|===

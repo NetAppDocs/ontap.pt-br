@@ -1,0 +1,62 @@
+---
+permalink: smb-admin/manage-ntfs-security-audit-policies-slag-concept.html 
+sidebar: sidebar 
+keywords: manage, ntfs, file, security, ntfs, audit, policies, policy, storage-level, access, guard, storage, virtual, machine, svm, cli, manage ntfs file security, ntfs audit policies, and storage-level access guard on svms using the cli 
+summary: 'Você pode gerenciar a segurança de arquivos NTFS, políticas de auditoria NTFS e o Storage-Level Access Guard em máquinas virtuais de armazenamento (SVMs) usando a CLI.' 
+---
+= Gerencie a segurança de arquivos NTFS, as políticas de auditoria NTFS e o Storage-Level Access Guard em SVMs usando a visão geral da CLI
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode gerenciar a segurança de arquivos NTFS, políticas de auditoria NTFS e o Storage-Level Access Guard em máquinas virtuais de armazenamento (SVMs) usando a CLI.
+
+Você pode gerenciar políticas de segurança e auditoria de arquivos NTFS de clientes SMB ou usando a CLI. No entanto, usar a CLI para configurar políticas de segurança e auditoria de arquivos remove a necessidade de usar um cliente remoto para gerenciar a segurança de arquivos. Usar a CLI pode reduzir significativamente o tempo necessário para aplicar a segurança em muitos arquivos e pastas usando um único comando.
+
+Você pode configurar o Storage-Level Access Guard, que é outra camada de segurança aplicada pelo ONTAP aos volumes SVM. O Storage-Level Access Guard aplica-se a acessos de todos os protocolos nas ao objeto de armazenamento ao qual o Storage-Level Access Guard é aplicado.
+
+O protetor de acesso no nível de storage pode ser configurado e gerenciado somente a partir da CLI do ONTAP. Não é possível gerenciar as configurações do protetor de acesso em nível de armazenamento de clientes SMB. Além disso, se você exibir as configurações de segurança em um arquivo ou diretório de um cliente NFS ou SMB, não verá a segurança Storage-Level Access Guard. A segurança do Access Guard no nível de armazenamento não pode ser revogada de um cliente, mesmo por um administrador do sistema (Windows ou UNIX). Portanto, o Storage-Level Access Guard fornece uma camada extra de segurança para o acesso aos dados que é definido e gerenciado de forma independente pelo administrador do armazenamento.
+
+
+NOTE: Embora apenas as permissões de acesso NTFS sejam suportadas pelo Guarda de Acesso em nível de armazenamento, o ONTAP pode executar verificações de segurança para acesso através de NFS a dados em volumes em que o Guarda de Acesso em nível de armazenamento é aplicado se o utilizador do UNIX mapear para um utilizador do Windows na SVM que possui o volume.
+
+
+
+== Volumes de estilo de segurança NTFS
+
+Todos os arquivos e pastas contidos em volumes e qtrees de estilo de segurança NTFS têm segurança efetiva NTFS. Você pode usar a `vserver security file-directory` família de comandos para implementar os seguintes tipos de segurança em volumes de estilo de segurança NTFS:
+
+* Permissões de arquivo e políticas de auditoria para arquivos e pastas contidos no volume
+* Segurança no nível de armazenamento de acesso Guarda em volumes
+
+
+
+
+== Volumes mistos de estilo de segurança
+
+Volumes mistos de estilo de segurança e qtrees podem conter alguns arquivos e pastas que têm segurança efetiva UNIX e usam permissões de arquivos UNIX, bits de modo ou ACLs NFSv4.x e diretivas de auditoria NFSv4.x, e alguns arquivos e pastas que têm segurança efetiva NTFS e usam permissões de arquivos NTFS e políticas de auditoria. Você pode usar a `vserver security file-directory` família de comandos para aplicar os seguintes tipos de segurança a dados mistos de estilo de segurança:
+
+* Permissões de arquivos e diretivas de auditoria para arquivos e pastas com o estilo de segurança eficaz NTFS no volume ou qtree misto
+* Proteção de acesso no nível de armazenamento para volumes com o estilo de segurança eficaz NTFS e UNIX
+
+
+
+
+== Volumes de estilo de segurança UNIX
+
+Os volumes e qtrees de estilo de segurança UNIX contêm arquivos e pastas que têm segurança efetiva UNIX (bits de modo ou ACLs NFSv4.x). Você deve ter em mente o seguinte se quiser usar a `vserver security file-directory` família de comandos para implementar a segurança em volumes estilo de segurança UNIX:
+
+* A `vserver security file-directory` família de comandos não pode ser usada para gerenciar políticas de segurança e auditoria de arquivos UNIX em volumes e qtrees de estilo de segurança UNIX.
+* Você pode usar a `vserver security file-directory` família de comandos para configurar o Storage-Level Access Guard em volumes de estilo de segurança UNIX, desde que o SVM com o volume de destino contenha um servidor CIFS.
+
+
+.Informações relacionadas
+xref:display-file-security-audit-policies-concept.adoc[Exibir informações sobre segurança de arquivos e diretivas de auditoria]
+
+xref:create-ntfs-security-descriptor-file-task.adoc[Configure e aplique segurança de arquivos em arquivos e pastas NTFS usando a CLI]
+
+xref:configure-apply-audit-policies-ntfs-files-folders-task.adoc[Configure e aplique políticas de auditoria a arquivos e pastas NTFS usando a CLI]
+
+xref:secure-file-access-storage-level-access-guard-concept.adoc[Proteja o acesso aos arquivos usando o Storage-Level Access Guard]

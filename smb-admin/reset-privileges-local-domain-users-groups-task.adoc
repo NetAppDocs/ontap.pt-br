@@ -1,0 +1,55 @@
+---
+permalink: smb-admin/reset-privileges-local-domain-users-groups-task.html 
+sidebar: sidebar 
+keywords: reset, privilege, local, domain, user, group, modification, reset privilege for local or domain users and groups 
+summary: Você pode redefinir o Privileges para usuários e grupos locais ou de domínio. Isso pode ser útil quando você fez modificações no Privileges para um usuário ou grupo local ou de domínio e essas modificações não são mais desejadas ou necessárias. 
+---
+= Redefinir o Privileges para usuários e grupos locais ou de domínio
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode redefinir o Privileges para usuários e grupos locais ou de domínio. Isso pode ser útil quando você fez modificações no Privileges para um usuário ou grupo local ou de domínio e essas modificações não são mais desejadas ou necessárias.
+
+.Sobre esta tarefa
+A redefinição do Privileges para um usuário ou grupo local ou de domínio remove quaisquer entradas de privilégio para esse objeto.
+
+.Passos
+. Redefina o Privileges em um usuário ou grupo local ou de domínio: `vserver cifs users-and-groups privilege reset-privilege -vserver _vserver_name_ -user-or-group-name _name_`
+. Verifique se os Privileges são redefinidos no objeto: `vserver cifs users-and-groups privilege show -vserver _vserver_name_ ‑user-or-group-name _name_`
+
+
+.Exemplos
+O exemplo a seguir redefine o Privileges no usuário "CIFS_SERVER" na máquina virtual de armazenamento (SVM, anteriormente conhecida como SVM) VS1. Por padrão, os usuários normais não têm o Privileges associado às suas contas:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups privilege show
+Vserver   User or Group Name    Privileges
+--------- --------------------- ---------------
+vs1       CIFS_SERVER\sue       SeTcbPrivilege
+                                SeTakeOwnershipPrivilege
+
+cluster1::> vserver cifs users-and-groups privilege reset-privilege -vserver vs1 -user-or-group-name CIFS_SERVER\sue
+
+cluster1::> vserver cifs users-and-groups privilege show
+This table is currently empty.
+----
+O exemplo a seguir redefine o Privileges para o grupo "Administradores", removendo efetivamente a entrada de privilégio:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups privilege show
+Vserver   User or Group Name       Privileges
+--------- ------------------------ -------------------
+vs1       BUILTIN\Administrators   SeRestorePrivilege
+                                   SeSecurityPrivilege
+                                   SeTakeOwnershipPrivilege
+
+cluster1::> vserver cifs users-and-groups privilege reset-privilege -vserver vs1 -user-or-group-name BUILTIN\Administrators
+
+cluster1::> vserver cifs users-and-groups privilege show
+This table is currently empty.
+----

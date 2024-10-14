@@ -1,0 +1,135 @@
+---
+permalink: data-protection/exclude-network-name-service-svm-replication-task.html 
+sidebar: sidebar 
+keywords: exclude, network, name service, other settings, svm replication 
+summary: Você pode usar a opção -Identity-Preserve false do comando SnapMirror Create para replicar apenas os volumes e configurações de segurança de um SVM. Algumas configurações de protocolo e serviço de nomes também são preservadas. 
+---
+= Exclua a rede, o serviço de nomes e outras configurações da replicação SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar `-identity-preserve false` a opção `snapmirror create` do comando para replicar apenas os volumes e as configurações de segurança de um SVM. Algumas configurações de protocolo e serviço de nomes também são preservadas.
+
+.Sobre esta tarefa
+Para obter uma lista das configurações de protocolo e serviço de nomes preservadas, link:snapmirror-svm-replication-concept.html#configurations-replicated-in-svm-disaster-recovery-relationships["Configurações replicadas em relacionamentos da SVM DR"]consulte .
+
+Para obter a sintaxe completa do comando, consulte a página man.
+
+.Antes de começar
+Os clusters de origem e destino e as SVMs devem ser colocados em Contato.
+
+Para obter mais informações, link:../peering/create-cluster-relationship-93-later-task.html["Crie um relacionamento de pares de cluster"]consulte e link:../peering/create-intercluster-svm-peer-relationship-93-later-task.html["Criar um relacionamento entre clusters entre pares"].
+
+.Passos
+. Criar um SVM de destino:
++
+`vserver create -vserver _SVM_ -subtype dp-destination`
+
++
+O nome do SVM deve ser exclusivo nos clusters de origem e destino.
+
++
+O exemplo a seguir cria um SVM de destino chamado `svm_backup`:
+
++
+[listing]
+----
+cluster_dst:> vserver create -vserver svm_backup -subtype dp-destination
+----
+. No cluster de destino, crie um relacionamento de pares SVM usando o `vserver peer create` comando.
++
+Para obter mais informações, link:../peering/create-intercluster-svm-peer-relationship-93-later-task.html["Criar um relacionamento entre clusters entre pares"]consulte .
+
+. Criar um agendamento de trabalho de replicação:
++
+`job schedule cron create -name _job_name_ -month _month_ -dayofweek _day_of_week_ -day _day_of_month_ -hour _hour_ -minute _minute_`
+
++
+Para `-month`, , `-dayofweek`, e `-hour`, é possível especificar `all` para executar o trabalho todos os meses, dia da semana e hora, respetivamente.
+
++
+[NOTE]
+====
+O cronograma mínimo com suporte (RPO) para volumes do FlexVol em uma relação do SVM SnapMirror é de 15 minutos. O cronograma mínimo com suporte (RPO) para volumes do FlexGroup em uma relação do SVM SnapMirror é de 30 minutos.
+
+====
++
+O exemplo a seguir cria um horário de trabalho chamado `my_weekly` que é executado aos sábados às 3:00 da manhã:
+
++
+[listing]
+----
+cluster_dst::> job schedule cron create -name my_weekly -dayofweek "Saturday" -hour 3 -minute 0
+----
+. Crie uma relação de replicação que exclua a rede, o serviço de nomes e outras configurações:
++
+`snapmirror create -source-path _SVM_: -destination-path _SVM_: -type DP|XDP -schedule schedule -policy policy -identity-preserve false`
+
++
+[NOTE]
+====
+Você deve inserir dois pontos (:) após o nome SVM `-source-path` nas opções e `-destination-path` . Veja os exemplos abaixo. Você deve executar esse comando a partir do SVM de destino ou do cluster de destino.
+
+====
++
+O exemplo a seguir cria uma relação de DR do SnapMirror usando a política padrão `MirrorAllSnapshots`. A relação exclui a rede, o serviço de nomes e outras configurações da replicação SVM:
+
++
+[listing]
+----
+cluster_dst::> snapmirror create -source-path svm1: -destination-path svm_backup: -type XDP -schedule my_daily -policy MirrorAllSnapshots -identity-preserve false
+----
++
+O exemplo a seguir cria uma relação de replicação unificada usando a política padrão `MirrorAndVault`. A relação exclui a rede, o serviço de nomes e outras configurações:
+
++
+[listing]
+----
+cluster_dst:> snapmirror create svm1: -destination-path svm_backup: -type XDP -schedule my_daily -policy MirrorAndVault -identity-preserve false
+----
++
+Supondo que você tenha criado uma política personalizada com o tipo de diretiva `async-mirror` , o exemplo a seguir cria uma relação de DR do SnapMirror. A relação exclui a rede, o serviço de nomes e outras configurações da replicação SVM:
+
++
+[listing]
+----
+cluster_dst::> snapmirror create -source-path svm1: -destination-path svm_backup: -type XDP -schedule my_daily -policy my_mirrored -identity-preserve false
+----
++
+Supondo que você tenha criado uma política personalizada com o tipo de diretiva `mirror-vault` , o exemplo a seguir cria uma relação de replicação unificada. A relação exclui a rede, o serviço de nomes e outras configurações da replicação SVM:
+
++
+[listing]
+----
+cluster_dst::> snapmirror create -source-path svm1: -destination-path svm_backup: -type XDP -schedule my_daily -policy my_unified -identity-preserve false
+----
+. Pare o SVM de destino:
++
+`vserver stop`
+
++
+`_SVM name_`
+
++
+O exemplo a seguir interrompe um SVM de destino chamado dvs1:
+
++
+[listing]
+----
+destination_cluster::> vserver stop -vserver dvs1
+----
+. Se você estiver usando SMB, você também deve configurar um servidor SMB.
++
+link:create-smb-server-task.html["Somente SMB: Criando um servidor SMB"]Consulte .
+
+. No SVM de destino ou no cluster de destino, inicialize a relação de replicação SVM:
++
+`snapmirror initialize -source-path _SVM_name_: -destination-path _SVM_name_:`
+
+
+
+.Depois de terminar
+Você deve configurar a rede e os protocolos no SVM de destino para acesso aos dados em caso de desastre.

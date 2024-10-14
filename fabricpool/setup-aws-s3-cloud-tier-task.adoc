@@ -1,0 +1,71 @@
+---
+permalink: fabricpool/setup-aws-s3-cloud-tier-task.html 
+sidebar: sidebar 
+keywords: setting up, aws, s3, cloud tier 
+summary: 'Se você estiver executando o ONTAP 9.2 ou posterior, poderá configurar o Amazon S3 como a camada de nuvem para o FabricPool. Se você estiver executando o ONTAP 9.5 ou posterior, poderá configurar o Amazon Commercial Cloud Services (C2S) para FabricPool.' 
+---
+= Configure o Amazon S3 como a camada de nuvem
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você estiver executando o ONTAP 9.2 ou posterior, poderá configurar o Amazon S3 como a camada de nuvem para o FabricPool. Se você estiver executando o ONTAP 9.5 ou posterior, poderá configurar o Amazon Commercial Cloud Services (C2S) para FabricPool.
+
+.Considerações para usar o Amazon S3 com FabricPool
+* A link:https://bluexp.netapp.com/cloud-tiering["Licença de disposição em camadas do BlueXP"] é necessário ao fazer a disposição em categorias no Amazon S3.
+* Recomenda-se que o LIF que o ONTAP usa para se conetar ao servidor de objetos Amazon S3 esteja em uma porta de 10 Gbps.
+* Nos sistemas AFF e FAS e ONTAP Select, o FabricPool oferece suporte às seguintes classes de storage do Amazon S3:
++
+** Padrão Amazon S3
+** Amazon S3 Standard - Acesso não frequente (Standard - IA)
+** Amazon S3 One Zone - Acesso não frequente (uma zona - IA)
+** Disposição em camadas inteligente do Amazon S3
+** Amazon Commercial Cloud Services
+** A partir do ONTAP 9.11,1, recuperação instantânea do Amazon S3 Glacier (o FabricPool não suporta recuperação flexível do Glacier ou arquivamento profundo do Glacier)
++
+https://aws.amazon.com/s3/storage-classes/["Documentação do Amazon Web Services: Classes de armazenamento do Amazon S3"]
+
+
+
++
+Entre em Contato com seu representante de vendas para obter informações sobre classes de armazenamento não listadas.
+
+* No Cloud Volumes ONTAP, o FabricPool oferece suporte à disposição em camadas de volumes SSD de uso geral (GP2) e HDD (st1) otimizados para taxa de transferência do Amazon Elastic Block Store (EBS).
+
+
+.Passos
+. Especifique as informações de configuração do Amazon S3 usando o `storage aggregate object-store config create` comando com o `-provider-type` `AWS_S3` parâmetro.
++
+** Você usa o `-auth-type` `CAP` parâmetro para obter credenciais para o acesso C2S.
++
+Quando você usa o `-auth-type` `CAP` parâmetro, você deve usar o `-cap-url` parâmetro para especificar o URL completo para solicitar credenciais temporárias para acesso C2S.
+
+** O `storage aggregate object-store config create` comando falhará se o ONTAP não puder acessar o Amazon S3 com as informações fornecidas.
+** Use o `-access-key` parâmetro para especificar a chave de acesso para autorizar solicitações ao armazenamento de objetos do Amazon S3.
+** Use o `-secret-password` parâmetro para especificar a senha (chave de acesso secreto) para autenticar solicitações no armazenamento de objetos do Amazon S3.
+** Se a senha do Amazon S3 for alterada, você deverá atualizar a senha correspondente armazenada no ONTAP imediatamente.
++
+Isso permite que o ONTAP acesse os dados no Amazon S3 sem interrupção.
+
++
+[listing]
+----
+cluster1::> storage aggregate object-store config create
+-object-store-name my_aws_store -provider-type AWS_S3
+-server s3.amazonaws.com -container-name my-aws-bucket
+-access-key DXJRXHPXHYXA9X31X3JX
+----
++
+[listing]
+----
+cluster1::> storage aggregate object-store config create -object-store-name my_c2s_store -provider-type AWS_S3 -auth-type CAP -cap-url https://123.45.67.89/api/v1/credentials?agency=XYZ&mission=TESTACCT&role=S3FULLACCESS -server my-c2s-s3server-fqdn -container my-c2s-s3-bucket
+----
+
+
+. Exiba e verifique as informações de configuração do Amazon S3 usando o `storage aggregate object-store config show` comando.
++
+O `storage aggregate object-store config modify` comando permite modificar as informações de configuração do Amazon S3 para o FabricPool.
+
+

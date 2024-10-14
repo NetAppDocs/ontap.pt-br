@@ -1,0 +1,38 @@
+---
+permalink: data-protection/snapshot-copies-work-concept.html 
+sidebar: sidebar 
+keywords: restore, file, snapshot copy, nfs, cifs, smb, client 
+summary: Um usuário em um cliente NFS ou SMB pode restaurar um arquivo diretamente de uma cópia Snapshot sem a intervenção de um administrador do sistema de storage. 
+---
+= Restaurar um arquivo a partir de uma cópia Snapshot em um cliente NFS ou SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um usuário em um cliente NFS ou SMB pode restaurar um arquivo diretamente de uma cópia Snapshot sem a intervenção de um administrador do sistema de storage.
+
+Cada diretório no sistema de arquivos contém um subdiretório chamado `.snapshot` acessível para usuários NFS e SMB. O `.snapshot` subdiretório contém subdiretórios correspondentes às cópias Snapshot do volume:
+
+....
+$ ls .snapshot
+daily.2017-05-14_0013/              hourly.2017-05-15_1106/
+daily.2017-05-15_0012/              hourly.2017-05-15_1206/
+hourly.2017-05-15_1006/             hourly.2017-05-15_1306/
+....
+Cada subdiretório contém os arquivos referenciados pela cópia Snapshot. Se os usuários excluírem ou sobrescreverem acidentalmente um arquivo, eles poderão restaurar o arquivo para o diretório de leitura e gravação pai copiando o arquivo do subdiretório Snapshot para o diretório de leitura e gravação:
+
+....
+$ ls my.txt
+ls: my.txt: No such file or directory
+$ ls .snapshot
+daily.2017-05-14_0013/              hourly.2017-05-15_1106/
+daily.2017-05-15_0012/              hourly.2017-05-15_1206/
+hourly.2017-05-15_1006/             hourly.2017-05-15_1306/
+$ ls .snapshot/hourly.2017-05-15_1306/my.txt
+my.txt
+$ cp .snapshot/hourly.2017-05-15_1306/my.txt .
+$ ls my.txt
+my.txt
+....

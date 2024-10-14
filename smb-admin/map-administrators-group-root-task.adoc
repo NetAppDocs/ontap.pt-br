@@ -1,0 +1,42 @@
+---
+permalink: smb-admin/map-administrators-group-root-task.html 
+sidebar: sidebar 
+keywords: cifs, client, environment, storage, virtual, machine, svm, multiprotocol, storage, system, windows, account, root, privilege, svm, sufficient, user, right, map the administrators group to root 
+summary: 'Se você tiver apenas clientes CIFS em seu ambiente e sua máquina virtual de storage (SVM) tiver sido configurada como um sistema de storage multiprotocolo, você deverá ter pelo menos uma conta do Windows que tenha privilégios de raiz para acessar arquivos no SVM; caso contrário, não será possível gerenciar o SVM porque não tem direitos de usuário suficientes.' 
+---
+= Mapeie o grupo administrators para root
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você tiver apenas clientes CIFS em seu ambiente e sua máquina virtual de storage (SVM) tiver sido configurada como um sistema de storage multiprotocolo, você deverá ter pelo menos uma conta do Windows que tenha privilégios de raiz para acessar arquivos no SVM; caso contrário, não será possível gerenciar o SVM porque não tem direitos de usuário suficientes.
+
+.Sobre esta tarefa
+No entanto, se o sistema de armazenamento tiver sido configurado apenas para NTFS, o `/etc` diretório tem uma ACL no nível do ficheiro que permite ao grupo de administradores aceder aos ficheiros de configuração do ONTAP.
+
+.Passos
+. Defina o nível de privilégio como avançado: `set -privilege advanced`
+. Configure a opção de servidor CIFS que mapeia o grupo de administradores para fazer root conforme apropriado:
++
+|===
+| Se você quiser... | Então... 
+
+
+ a| 
+Mapeie os membros do grupo de administradores para fazer root
+ a| 
+`vserver cifs options modify -vserver _vserver_name_ -is-admin-users-mapped-to-root-enabled true` Todas as contas do grupo administrators são consideradas root, mesmo que você não tenha uma `/etc/usermap.cfg` entrada mapeando as contas para root. Se você criar um arquivo usando uma conta que pertence ao grupo administrators, o arquivo será de propriedade do root quando você exibir o arquivo de um cliente UNIX.
+
+
+
+ a| 
+Desative o mapeamento dos membros do grupo de administradores para fazer root
+ a| 
+`vserver cifs options modify -vserver _vserver_name_ -is-admin-users-mapped-to-root-enabled false` As contas no grupo administrators não são mais mapeadas para o root. Você só pode mapear explicitamente um único usuário para o root.
+
+|===
+. Verifique se a opção está definida para o valor desejado: `vserver cifs options show -vserver _vserver_name_`
+. Voltar ao nível de privilégio de administrador: `set -privilege admin`
+

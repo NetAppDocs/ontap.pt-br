@@ -1,0 +1,52 @@
+---
+permalink: smb-admin/create-symbolic-link-mappings-task.html 
+sidebar: sidebar 
+keywords: create, mapping, unix, symbolic, link, smb, share, relative, symbol, refer, file, folder, relative, parent, absolute, create symbolic link mappings for smb shares 
+summary: Você pode criar mapeamentos de links simbólicos UNIX para compartilhamentos SMB. Você pode criar um link simbólico relativo, que se refere ao arquivo ou pasta relativa à sua pasta pai, ou você pode criar um link simbólico absoluto, que se refere ao arquivo ou pasta usando um caminho absoluto. 
+---
+= Crie mapeamentos de links simbólicos para compartilhamentos SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar mapeamentos de links simbólicos UNIX para compartilhamentos SMB. Você pode criar um link simbólico relativo, que se refere ao arquivo ou pasta relativa à sua pasta pai, ou você pode criar um link simbólico absoluto, que se refere ao arquivo ou pasta usando um caminho absoluto.
+
+.Sobre esta tarefa
+Os Winelinks não são acessíveis a partir de clientes Mac os X se você usar SMB 2.x. Quando um usuário tenta se conetar a um compartilhamento usando widelinks de um cliente Mac os X, a tentativa falha. No entanto, você pode usar widelinks com clientes Mac os X se você usar SMB 1.
+
+.Passos
+. Para criar mapeamentos de links simbólicos para compartilhamentos SMB: `vserver cifs symlink create -vserver virtual_server_name -unix-path path -share-name share_name -cifs-path path [-cifs-server server_name] [-locality {local|free|widelink}] [-home-directory {true|false}]`
++
+`-vserver` `virtual_server_name` Especifica o nome da máquina virtual de storage (SVM).
+
++
+`-unix-path` `path` Especifica o caminho UNIX. O caminho UNIX deve começar com uma barra (`/`) e deve terminar com uma barra (`/`).
+
++
+`-share-name` `share_name` Especifica o nome do compartilhamento SMB para mapear.
+
++
+`-cifs-path` `path` Especifica o caminho CIFS. O caminho CIFS deve começar com uma barra (`/`) e deve terminar com uma barra (`/`).
+
++
+`-cifs-server` `server_name` Especifica o nome do servidor CIFS. O nome do servidor CIFS pode ser especificado como um nome DNS (por exemplo, mynetwork.cifs.server.com), endereço IP ou nome NetBIOS. O nome NetBIOS pode ser determinado usando o `vserver cifs show` comando. Se este parâmetro opcional não for especificado, o valor padrão será o nome NetBIOS do servidor CIFS local.
+
++
+`-locality`  `local`|`free`|`widelink`especifica se deseja criar um link local, um link gratuito ou um link simbólico amplo. Um link simbólico local mapeia para o compartilhamento SMB local. Um link simbólico gratuito pode mapear qualquer lugar no servidor SMB local. Um link simbólico amplo mapeia para qualquer compartilhamento SMB na rede. Se não especificar este parâmetro opcional, o valor predefinido é `local`.
+
++
+`-home-directory`  `true` `false`especifica se o compartilhamento de destino é um diretório home. Mesmo que esse parâmetro seja opcional, você deve definir esse parâmetro para `true` quando o compartilhamento de destino for configurado como um diretório inicial. A predefinição é `false`.
+
+
+
+.Exemplo
+O comando a seguir cria um mapeamento de link simbólico no SVM chamado VS1. Ele tem o caminho UNIX `/src/` , o nome de compartilhamento SMB "'SOURCE'", o caminho CIFS `/mycompany/source/` e o endereço IP do servidor CIFS 123.123.123.123, e é um widelink.
+
+[listing]
+----
+cluster1::> vserver cifs symlink create -vserver vs1 -unix-path /src/ -share-name SOURCE -cifs-path "/mycompany/source/" -cifs-server 123.123.123.123 -locality widelink
+----
+.Informações relacionadas
+xref:configure-unix-symbolic-link-support-shares-task.adoc[Configurando o suporte a links simbólicos UNIX em compartilhamentos SMB]

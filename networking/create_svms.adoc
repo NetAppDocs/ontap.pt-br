@@ -1,0 +1,376 @@
+---
+sidebar: sidebar 
+permalink: networking/create_svms.html 
+keywords: create, creation, creating, add, adding, svm, storage, virtual, machine, create svms, create storage virtual machines, create an svm to serve data to clients, system manager 
+summary: Crie um SVM para servir dados aos clientes 
+---
+= Crie SVMs
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa criar um SVM para servir dados aos clientes.
+
+.Antes de começar
+* Você deve ser um administrador de cluster para executar esta tarefa.
+* Você deve saber qual estilo de segurança o volume raiz da SVM terá.
++
+Se você pretende implementar uma solução Hyper-V ou SQL Server sobre SMB neste SVM, você deve usar o estilo de segurança NTFS para o volume raiz. Os volumes que contêm ficheiros Hyper-V ou ficheiros de base de dados SQL têm de ser definidos para segurança NTFS no momento em que são criados. Ao definir o estilo de segurança do volume raiz como NTFS, você garante que não crie inadvertidamente volumes de dados UNIX ou mistos de estilo de segurança.
+
+* A partir do ONTAP 9.13,1, é possível definir uma capacidade máxima para uma VM de armazenamento. Você também pode configurar alertas quando o SVM se aproximar de um nível de capacidade limite. Para obter mais informações, xref:../volumes/manage-svm-capacity.html[Gerenciar a capacidade do SVM]consulte .
+
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+Você pode usar o System Manager para criar uma VM de storage.
+
+.Passos
+. Selecione *Storage VMs*.
+. Clique image:icon_add.gif["Adicionar ícone"] em para criar uma VM de armazenamento.
+. Nomeie a VM de storage.
+. Selecione o protocolo de acesso:
++
+** SMB/CIFS, NFS
+** ISCSI
+** FC
+** NVMe
++
+... Se selecionar *Ativar SMB/CIFS*, conclua a seguinte configuração:
+
+
+
+
+
+
+|===
+
+
+| Campo ou caixa de verificação | Descrição 
+
+
+ a| 
+Nome do administrador
+ a| 
+Especifique o nome de usuário do administrador para a VM de storage SMB/CIFS.
+
+
+
+ a| 
+Palavra-passe
+ a| 
+Especifique a senha de administrador para a VM de armazenamento SMB/CIFS.
+
+
+
+ a| 
+Nome do servidor
+ a| 
+Especifique o nome do servidor para a VM de armazenamento SMB/CIFS.
+
+
+
+ a| 
+Domínio do ative Directory
+ a| 
+Especifique o domínio do diretório ativo para fornecer autenticação de usuário para a VM de storage SMB/CIFS.
+
+
+
+ a| 
+Unidade organizacional
+ a| 
+Especifique a unidade organizacional no domínio do ative Directory associado ao servidor SMB/CIFS. "Computadores" é o valor padrão, que pode ser modificado.
+
+
+
+ a| 
+Criptografa dados enquanto acessa os compartilhamentos na VM de storage
+ a| 
+Marque essa caixa de seleção para criptografar dados usando o SMB 3,0 para impedir o acesso não autorizado a arquivos nos compartilhamentos na VM de armazenamento SMB/CIFS.
+
+
+
+ a| 
+Domínios
+ a| 
+Adicione, remova ou reordene os domínios listados para a VM de armazenamento SMB/CIFS.
+
+
+
+ a| 
+Servidores de nomes
+ a| 
+Adicione, remova ou reordene os servidores de nomes para a VM de armazenamento SMB/CIFS.
+
+
+
+ a| 
+Idioma padrão
+ a| 
+Especifica a configuração padrão de codificação de idioma para a VM de armazenamento e seus volumes. Use a CLI para alterar as configurações de volumes individuais em uma VM de armazenamento.
+
+
+
+ a| 
+Interface de rede
+ a| 
+Para cada interface de rede configurada para a VM de armazenamento, selecione uma sub-rede existente (se existir pelo menos uma) ou especifique *sem uma sub-rede* e preencha os campos *Endereço IP* e *Máscara de sub-rede*. Se for útil, marque a caixa de seleção *Use a mesma máscara de sub-rede e gateway para todas as seguintes interfaces*. Pode permitir que o sistema selecione automaticamente a porta inicial ou selecione manualmente a que pretende utilizar na lista.
+
+
+
+ a| 
+Gerenciar conta de administrador
+ a| 
+Marque essa caixa de seleção se desejar gerenciar a conta de administrador de VM de armazenamento. Quando selecionado, especifique o nome de usuário, a senha, confirme a senha e indique se deseja adicionar uma interface de rede para gerenciamento de VM de armazenamento.
+
+|===
+. Se você selecionar *Ativar NFS*, execute a seguinte configuração:
+
+
+|===
+
+
+| Campo ou caixa de verificação | Descrição 
+
+
+ a| 
+Caixa de verificação permitir acesso do cliente NFS
+ a| 
+Marque essa caixa de seleção quando todos os volumes criados na VM de armazenamento NFS devem usar o caminho do volume raiz "/" para montar e percorrer. Adicione regras à política de exportação "default" para permitir a passagem ininterrupta de montagem.
+
+
+
+ a| 
+Regras
+ a| 
+Clique image:icon_add.gif["Adicionar ícone"] para criar regras.
+
+* Especificação do cliente: Especifique os nomes de host, endereços IP, grupos de rede ou domínios.
+* Protocolos de acesso: Selecione uma combinação das seguintes opções:
++
+** SMB/CIFS
+** FlexCache
+** NFS
++
+*** NFSv3
+*** NFSv4
+
+
+
+
+* Detalhes de Acesso: Para cada tipo de usuário, especifique o nível de acesso, somente leitura, leitura/gravador ou superusuário. Os tipos de utilizador incluem:
++
+** Tudo
+** Todos (como utilizador anónimo)
+** UNIX
+** Kerberos 5
+** Kerberos 5i
+** Kerberos 5P
+** NTLM
+
+
+
+
+Salve a regra.
+
+
+
+ a| 
+Idioma padrão
+ a| 
+Especifica a configuração padrão de codificação de idioma para a VM de armazenamento e seus volumes. Use a CLI para alterar as configurações de volumes individuais em uma VM de armazenamento.
+
+
+
+ a| 
+Interface de rede
+ a| 
+Para cada interface de rede configurada para a VM de armazenamento, selecione uma sub-rede existente (se existir pelo menos uma) ou especifique *sem uma sub-rede* e preencha os campos *Endereço IP* e *Máscara de sub-rede*. Se for útil, marque a caixa de seleção *Use a mesma máscara de sub-rede e gateway para todas as seguintes interfaces*. Pode permitir que o sistema selecione automaticamente a porta inicial ou selecione manualmente a que pretende utilizar na lista.
+
+
+
+ a| 
+Gerenciar conta de administrador
+ a| 
+Marque essa caixa de seleção se desejar gerenciar a conta de administrador de VM de armazenamento. Quando selecionado, especifique o nome de usuário, a senha, confirme a senha e indique se deseja adicionar uma interface de rede para gerenciamento de VM de armazenamento.
+
+|===
+. Se selecionar *Ativar iSCSI*, efetue a seguinte configuração:
+
+
+|===
+
+
+| Campo ou caixa de verificação | Descrição 
+
+
+ a| 
+Interface de rede
+ a| 
+Para cada interface de rede configurada para a VM de armazenamento, selecione uma sub-rede existente (se existir pelo menos uma) ou especifique *sem uma sub-rede* e preencha os campos *Endereço IP* e *Máscara de sub-rede*. Se for útil, marque a caixa de seleção *Use a mesma máscara de sub-rede e gateway para todas as seguintes interfaces*. Pode permitir que o sistema selecione automaticamente a porta inicial ou selecione manualmente a que pretende utilizar na lista.
+
+
+
+ a| 
+Gerenciar conta de administrador
+ a| 
+Marque essa caixa de seleção se desejar gerenciar a conta de administrador de VM de armazenamento. Quando selecionado, especifique o nome de usuário, a senha, confirme a senha e indique se deseja adicionar uma interface de rede para gerenciamento de VM de armazenamento.
+
+|===
+. Se você selecionar *Ativar FC*, execute a seguinte configuração:
+
+
+|===
+
+
+| Campo ou caixa de verificação | Descrição 
+
+
+ a| 
+Configurar portas FC
+ a| 
+Selecione as interfaces de rede nos nós que você deseja incluir na VM de storage. Duas interfaces de rede por nó são recomendadas.
+
+
+
+ a| 
+Gerenciar conta de administrador
+ a| 
+Marque essa caixa de seleção se desejar gerenciar a conta de administrador de VM de armazenamento. Quando selecionado, especifique o nome de usuário, a senha, confirme a senha e indique se deseja adicionar uma interface de rede para gerenciamento de VM de armazenamento.
+
+|===
+. Se você selecionar *Ativar NVMe/FC*, execute a seguinte configuração:
+
+
+|===
+
+
+| Campo ou caixa de verificação | Descrição 
+
+
+ a| 
+Configurar portas FC
+ a| 
+Selecione as interfaces de rede nos nós que você deseja incluir na VM de storage. Duas interfaces de rede por nó são recomendadas.
+
+
+
+ a| 
+Gerenciar conta de administrador
+ a| 
+Marque essa caixa de seleção se desejar gerenciar a conta de administrador de VM de armazenamento. Quando selecionado, especifique o nome de usuário, a senha, confirme a senha e indique se deseja adicionar uma interface de rede para gerenciamento de VM de armazenamento.
+
+|===
+. Se você selecionar *Ativar NVMe/TCP*, execute a seguinte configuração:
+
+
+|===
+
+
+| Campo ou caixa de verificação | Descrição 
+
+
+ a| 
+Interface de rede
+ a| 
+Para cada interface de rede configurada para a VM de armazenamento, selecione uma sub-rede existente (se existir pelo menos uma) ou especifique *sem uma sub-rede* e preencha os campos *Endereço IP* e *Máscara de sub-rede*. Se for útil, marque a caixa de seleção *Use a mesma máscara de sub-rede e gateway para todas as seguintes interfaces*. Pode permitir que o sistema selecione automaticamente a porta inicial ou selecione manualmente a que pretende utilizar na lista.
+
+
+
+ a| 
+Gerenciar conta de administrador
+ a| 
+Marque essa caixa de seleção se desejar gerenciar a conta de administrador de VM de armazenamento. Quando selecionado, especifique o nome de usuário, a senha, confirme a senha e indique se deseja adicionar uma interface de rede para gerenciamento de VM de armazenamento.
+
+|===
+. Salve suas alterações.
+
+
+--
+.CLI
+--
+Use a CLI do ONTAP para criar uma sub-rede.
+
+.Passos
+. Determine quais agregados são candidatos a conter o volume raiz da SVM.
++
+`storage aggregate show -has-mroot false`
+
++
+Você deve escolher um agregado que tenha pelo menos 1 GB de espaço livre para conter o volume raiz. Se você pretende configurar a auditoria nas na SVM, você deve ter um mínimo de 3 GB de espaço livre extra no agregado raiz, com o espaço extra sendo usado para criar o volume de teste de auditoria quando a auditoria estiver ativada.
+
++
+
+NOTE: Se a auditoria nas já estiver habilitada em um SVM existente, o volume de preparo do agregado será criado imediatamente após a criação do agregado ser concluída com sucesso.
+
+. Registre o nome do agregado no qual você deseja criar o volume raiz do SVM.
+. Se você planeja especificar um idioma ao criar o SVM e não souber o valor a ser usado, identifique e Registre o valor do idioma que deseja especificar:
++
+`vserver create -language ?`
+
+. Se você planeja especificar uma política de Snapshot ao criar o SVM e não souber o nome da política, liste as políticas disponíveis e identifique e Registre o nome da política de snapshot que deseja usar:
++
+`volume snapshot policy show -vserver _vserver_name_`
+
+. Se você planeja especificar uma política de cota ao criar o SVM e não souber o nome da política, liste as políticas disponíveis e identifique e Registre o nome da política de cota que deseja usar:
++
+`volume quota policy show -vserver _vserver_name_`
+
+. Criar um SVM:
++
+`vserver create -vserver _vserver_name_ -aggregate _aggregate_name_ ‑rootvolume _root_volume_name_ -rootvolume-security-style {unix|ntfs|mixed} [-ipspace _IPspace_name_] [-language <language>] [-snapshot-policy _snapshot_policy_name_] [-quota-policy _quota_policy_name_] [-comment _comment_]`
+
++
+....
+vserver create -vserver vs1 -aggregate aggr3 -rootvolume vs1_root ‑rootvolume-security-style ntfs -ipspace ipspace1 -language en_US.UTF-8
+....
++
+`[Job 72] Job succeeded: Vserver creation completed`
+
+. Verifique se a configuração SVM está correta.
++
+`vserver show -vserver vs1`
+
++
+....
+Vserver: vs1
+Vserver Type: data
+Vserver Subtype: default
+Vserver UUID: 11111111-1111-1111-1111-111111111111
+Root Volume: vs1_root
+Aggregate: aggr3
+NIS Domain: -
+Root Volume Security Style: ntfs
+LDAP Client: -
+Default Volume Language Code: en_US.UTF-8
+Snapshot Policy: default
+Comment:
+Quota Policy: default
+List of Aggregates Assigned: -
+Limit on Maximum Number of Volumes allowed: unlimited
+Vserver Admin State: running
+Vserver Operational State: running
+Vserver Operational State Stopped Reason: -
+Allowed Protocols: nfs, cifs, ndmp
+Disallowed Protocols: fcp, iscsi
+QoS Policy Group: -
+Config Lock: false
+IPspace Name: ipspace1
+Is Vserver Protected: false
+....
++
+Neste exemplo, o comando cria o SVM chamado "VS1" no IPspace "ipspace1". O volume raiz é chamado "VS1_root" e é criado em aggr3 com estilo de segurança NTFS.
+
+
+
+--
+====
+
+NOTE: A partir do ONTAP 9.13,1, é possível definir um modelo de grupo de políticas de QoS adaptável, aplicando um limite mínimo de taxa de transferência e limite máximo a volumes no SVM. Só é possível aplicar essa política depois de criar o SVM. Para saber mais sobre esse processo, xref:../performance-admin/adaptive-policy-template-task.html[Defina um modelo de grupo de políticas adaptável]consulte .

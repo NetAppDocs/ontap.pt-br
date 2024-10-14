@@ -1,0 +1,54 @@
+---
+permalink: smb-hyper-v-sql/continuously-available-share-sql-concept.html 
+sidebar: sidebar 
+keywords: continuously, share, requirements, considerations, sql, server, smb, nondisuptive, snapcenter plug-in 
+summary: Você precisa estar ciente de certos requisitos e considerações ao configurar compartilhamentos continuamente disponíveis para configurações do SQL Server em SMB que dão suporte a operações ininterruptas. 
+---
+= Requisitos e considerações de compartilhamento continuamente disponíveis para SQL Server sobre SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa estar ciente de certos requisitos e considerações ao configurar compartilhamentos continuamente disponíveis para configurações do SQL Server em SMB que dão suporte a operações ininterruptas.
+
+
+
+== Compartilhar requisitos
+
+* Os volumes usados para armazenar arquivos de máquina virtual devem ser criados como volumes de estilo de segurança NTFS.
++
+Para fornecer operações ininterruptas para servidores de aplicações que usam conexões SMB continuamente disponíveis, o volume que contém o compartilhamento deve ser um volume NTFS. Além disso, deve sempre ter sido um volume NTFS. Você não pode alterar um volume de estilo de segurança misto ou um volume de estilo de segurança UNIX para um volume de estilo de segurança NTFS e usá-lo diretamente para operações ininterruptas em compartilhamentos SMB. Se você alterar um volume de estilo de segurança misto para um volume de estilo de segurança NTFS e pretender usá-lo para operações ininterruptas em compartilhamentos SMB, você deverá colocar manualmente uma ACL na parte superior do volume e propagar essa ACL para todos os arquivos e pastas contidos. Caso contrário, migrações de máquinas virtuais ou exportações e importações de arquivos de banco de dados onde os arquivos são movidos para outro volume podem falhar se os volumes de origem ou de destino foram criados inicialmente como volumes mistos ou de estilo de segurança UNIX e posteriormente alterados para o estilo de segurança NTFS.
+
+* Os compartilhamentos usados pelos servidores de aplicativos devem ser configurados com o conjunto de propriedades continuamente disponível.
++
+Os servidores de aplicações que se conectam a compartilhamentos continuamente disponíveis recebem alças persistentes que lhes permitem se reconectarem sem interrupções aos compartilhamentos de SMB e recuperarem bloqueios de arquivos após eventos disruptivos, como takeover, giveback e realocação de agregados.
+
+* Embora o volume que contém os arquivos do banco de dados possa conter junções, o SQL Server não cruza junções ao criar a estrutura do diretório do banco de dados.
+* Para que o plug-in do SnapCenter para operações do Microsoft SQL Server seja bem-sucedido, você deve ter espaço disponível suficiente no volume.
++
+O volume no qual os arquivos de banco de dados do SQL Server residem deve ser grande o suficiente para manter a estrutura de diretório de banco de dados e todos os arquivos contidos dentro do compartilhamento.
+
+* As seguintes propriedades de compartilhamento não devem ser definidas em compartilhamentos continuamente disponíveis usados pelos servidores de aplicativos:
++
+** Diretório base
+** Armazenamento em cache de atributos
+** BranchCache
+
+
+
+
+
+
+== Considerações sobre compartilhamento
+
+* As cotas são suportadas em ações continuamente disponíveis.
+* A seguinte funcionalidade não é suportada para configurações do SQL Server em SMB:
++
+** Auditoria
+** FPolicy
+
+
+* A verificação de vírus não é realizada em compartilhamentos SMB com o `continuously-availability` conjunto de propriedades de compartilhamento.
+

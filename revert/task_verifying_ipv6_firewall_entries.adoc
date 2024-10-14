@@ -1,0 +1,61 @@
+---
+permalink: revert/task_verifying_ipv6_firewall_entries.html 
+sidebar: sidebar 
+keywords: revert, reverting, reversion, ipv6, firewall, entries, verify 
+summary: Uma reversão de qualquer versão do ONTAP 9 pode resultar em entradas de firewall padrão IPv6 ausentes para alguns serviços em políticas de firewall. Você precisa verificar se as entradas de firewall necessárias foram restauradas para o sistema. 
+---
+= Verifique IPv6 entradas de firewall
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Uma reversão de qualquer versão do ONTAP 9 pode resultar em entradas de firewall padrão IPv6 ausentes para alguns serviços em políticas de firewall. Você precisa verificar se as entradas de firewall necessárias foram restauradas para o sistema.
+
+. Verifique se todas as políticas de firewall estão corretas comparando-as com as políticas padrão: `system services firewall policy show`
++
+O exemplo a seguir mostra as políticas padrão:
+
++
+[listing]
+----
+cluster1::*> system services firewall policy show
+Policy           Service    Action IP-List
+---------------- ---------- ------ --------------------
+cluster
+                 dns        allow  0.0.0.0/0
+                 http       allow  0.0.0.0/0
+                 https      allow  0.0.0.0/0
+                 ndmp       allow  0.0.0.0/0
+                 ntp        allow  0.0.0.0/0
+                 rsh        allow  0.0.0.0/0
+                 snmp       allow  0.0.0.0/0
+                 ssh        allow  0.0.0.0/0
+                 telnet     allow  0.0.0.0/0
+data
+                 dns        allow  0.0.0.0/0, ::/0
+                 http       deny   0.0.0.0/0, ::/0
+                 https      deny   0.0.0.0/0, ::/0
+                 ndmp       allow  0.0.0.0/0, ::/0
+                 ntp        deny   0.0.0.0/0, ::/0
+                 rsh        deny   0.0.0.0/0, ::/0
+.
+.
+.
+----
+. Adicione manualmente quaisquer entradas padrão de firewall IPv6 ausentes criando uma nova política de firewall: `system services firewall policy create`
++
+[listing]
+----
+cluster1::*> system services firewall policy create -policy newIPv6
+-service ssh -action allow -ip-list ::/0
+----
+. Aplique a nova política ao LIF para permitir o acesso a um serviço de rede: `network interface modify`
++
+[listing]
+----
+cluster1::*> network interface modify -vserver VS1 -lif LIF1
+-firewall-policy newIPv6
+----
+

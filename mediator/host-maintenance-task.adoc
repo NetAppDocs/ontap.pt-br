@@ -1,0 +1,92 @@
+---
+permalink: mediator/host-maintenance-task.html 
+sidebar: sidebar 
+keywords: mediator, maintain, host, maintenance, package update, kernal upgrade, change hostname, change IP, self-signed certificate, self signed certificate 
+summary: Para um desempenho ideal, você deve manter o OD do host para o Mediador ONTAP regularmente. 
+---
+= Mantenha o host do SO para o ONTAP Mediator
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para um desempenho ideal, você deve manter o sistema operacional do host para o ONTAP Mediator regularmente.
+
+
+
+== Reinicie o host
+
+Reinicie o host quando os clusters estiverem saudáveis. Embora o Mediador ONTAP esteja offline, os clusters correm o risco de não poderem reagir adequadamente às falhas. Recomenda-se uma janela de serviço se for necessário reiniciar.
+
+O Mediador ONTAP será retomado automaticamente durante uma reinicialização e reentrará as relações que foram configuradas anteriormente com clusters ONTAP.
+
+
+
+== Atualizações do pacote de host
+
+Qualquer biblioteca ou pacote yum (exceto o kernel) pode ser atualizado com segurança, mas pode exigir uma reinicialização para entrar em vigor. Recomenda-se uma janela de serviço se for necessário reiniciar.
+
+Se você instalar o `yum-utils` pacote, use o `needs-restarting` comando para detetar se alguma alteração de pacote requer uma reinicialização.
+
+Você deve reiniciar se alguma das dependências do ONTAP Mediator for atualizada porque elas não terão efeito imediato nos processos em execução.
+
+
+
+== Atualizações menores do kernel do sistema operacional do host
+
+SCST deve ser compilado para o kernel que está sendo usado. Para atualizar o SO, é necessária uma janela de manutenção.
+
+.Passos
+Execute as etapas a seguir para atualizar o kernel do sistema operacional do host.
+
+. Pare o Mediador ONTAP
+. Desinstale o pacote SCST. (O SCST não fornece um mecanismo de atualização.)
+. Atualize o sistema operacional e reinicie.
+. Volte a instalar o pacote SCST.
+. Reative os serviços do Mediador ONTAP.
+
+
+
+
+== O host muda para o nome de host ou IP
+
+.Sobre esta tarefa
+* Você executa essa tarefa no host Linux no qual o serviço do Mediador ONTAP está instalado.
+* Só é possível executar esta tarefa se os certificados autoassinados gerados se tornarem obsoletos devido a alterações no nome de host ou endereço IP do host após a instalação do Mediador ONTAP.
+* Depois que o certificado auto-assinado temporário for substituído por um certificado de terceiros confiável, você _não_ usará essa tarefa para regenerar um certificado. A ausência de um certificado auto-assinado fará com que este procedimento falhe.
+
+
+.Passo
+Para regenerar um novo certificado auto-assinado temporário para o host atual, execute o seguinte passo:
+
+. Reinicie o Mediador ONTAP:
++
+`./make_self_signed_certs.sh overwrite`
+
++
+[listing]
+----
+[root@xyz000123456 ~]# cd /opt/netapp/lib/ontap_mediator/ontap_mediator/server_config
+[root@xyz000123456 server_config]# ./make_self_signed_certs.sh overwrite
+
+Adding Subject Alternative Names to the self-signed server certificate
+#
+# OpenSSL example configuration file.
+Generating self-signed certificates
+Generating RSA private key, 4096 bit long modulus (2 primes)
+..................................................................................................................................................................++++
+........................................................++++
+e is 65537 (0x010001)
+Generating a RSA private key
+................................................++++
+.............................................................................................................................................++++
+writing new private key to 'ontap_mediator_server.key'
+-----
+Signature ok
+subject=C = US, ST = California, L = San Jose, O = "NetApp, Inc.", OU = ONTAP Core Software, CN = ONTAP Mediator, emailAddress = support@netapp.com
+Getting CA Private Key
+
+[root@xyz000123456 server_config]# systemctl restart ontap_mediator
+----
+

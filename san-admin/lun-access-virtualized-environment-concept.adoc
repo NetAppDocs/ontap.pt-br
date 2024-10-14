@@ -1,0 +1,36 @@
+---
+permalink: san-admin/lun-access-virtualized-environment-concept.html 
+sidebar: sidebar 
+keywords: how, lun, access, works, virtualized, environment, single, svm, cluster, active or optimized path, multiple 
+summary: 'Em um ambiente virtualizado, os LIFs permitem que os hosts (clientes) acessem LUNs por meio de caminhos otimizados e não otimizados.' 
+---
+= Como o acesso LUN funciona em um ambiente virtualizado
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Em um ambiente virtualizado, os LIFs permitem que os hosts (clientes) acessem LUNs por meio de caminhos otimizados e não otimizados.
+
+Um LIF é uma interface lógica que coneta o SVM a uma porta física. Embora vários SVMs possam ter várias LIFs na mesma porta, um LIF pertence a uma SVM. Você pode acessar LUNs por meio das LIFs SVMs.
+
+.Exemplo de acesso LUN com uma única SVM em um cluster
+No exemplo a seguir, o host 1 se conecta ao LIF1,1 e LIF1,2 no SVM-1 para acessar o LUN1. LIF1,1 usa a porta física node1:0C e LIF1,2 usa o node2:0C. O LIF1,1 e o LIF1,2 pertencem apenas à SVM-1. Se um novo LUN for criado no nó 1 ou no nó 2, para SVM-1, ele poderá usar essas mesmas LIFs. Se um novo SVM for criado, novas LIFs poderão ser criadas usando as portas físicas 0C ou 0d em ambos os nós.
+
+image:bsag-c-mode-1-lif-belongs-1-vs.gif["Acesso SVM ao LUN1"]
+
+.Exemplo de acesso LUN com vários SVMs em um cluster
+Uma porta física pode suportar vários LIFs que servem diferentes SVMs. Como os LIFs estão associados a uma SVM específica, os nós de cluster podem enviar o tráfego de dados de entrada para o SVM correto. No exemplo a seguir, cada nó de 1 a 4 tem um LIF para SVM-2 usando a porta física 0C em cada nó. O host 1 se conecta ao LIF1,1 e ao LIF1,2 na SVM-1 para acessar o LUN1. O host 2 se conecta ao LIF2-1 e ao LIF2-2 na SVM-2 para acessar o LUN2. Ambos os SVMs estão compartilhando a porta física 0C nos nós 1 e 2. O SVM-2 tem LIFs adicionais que o host 2 está usando para acessar LUNs 3 e 4. Esses LIFs estão usando a porta física 0C nos nós 3 e 4. Vários SVMs podem compartilhar as portas físicas nos nós.
+
+image:bsag-c-mode-multiple-lifs-vservers.gif["2 LIFs em node2 para 2 VServers"]
+
+.Exemplo de um caminho ativo ou otimizado para um LUN a partir de um sistema host
+Em um caminho ativo ou otimizado, o tráfego de dados não percorre a rede do cluster; ele viaja a rota mais direta para o LUN. O caminho ativo ou otimizado para LUN1 é através de LIF1,1 em node1, usando a porta física 0C. O host 2 tem dois caminhos ativos ou otimizados, um caminho para node1, LIF2,1, que está compartilhando a porta física 0C e o outro caminho para node4, LIF2,4, que está usando a porta física 0C.
+
+image:bsag-c-mode-unoptimized-path.gif["exemplo de um caminho otimizado"]
+
+.Exemplo de um caminho ativo ou não otimizado (indireto) para um LUN a partir de um sistema host
+Em um caminho ativo ou não otimizado (indireto), o tráfego de dados viaja pela rede do cluster. Esse problema ocorre somente se todos os caminhos ativos ou otimizados de um host não estiverem disponíveis para lidar com o tráfego. Se o caminho do Host 2 para o SVM-2 LIF2,4 for perdido, o acesso ao LUN3 e ao LUN4 percorre a rede do cluster. O acesso a partir do Host 2 usa o LIF2,3 em node3. Em seguida, o tráfego entra no switch de rede do cluster e faz backup de até node4 para acesso ao LUN3 e ao LUN4. Em seguida, ele passará para trás pelo switch de rede de cluster e, em seguida, voltará para o LIF2,3 para o Host 2. Esse caminho ativo ou não otimizado é usado até que o caminho para o LIF2,4 seja restaurado ou um novo LIF seja estabelecido para SVM-2 em outra porta física no nó 4.
+
+image:bsag-c-mode-optimized-path.gif["exemplo de caminhos não otimizados"]

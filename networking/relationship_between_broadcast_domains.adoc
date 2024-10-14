@@ -1,0 +1,75 @@
+---
+sidebar: sidebar 
+permalink: networking/relationship_between_broadcast_domains.html 
+keywords: relationship, broadcast, domain, failover, fail, over, group, policy, policies, relationship between broadcast domains, failover groups, and failover policies, comparing broadcast domains, failover groups, and failover policies, port failover, network interface show -failover, decide which lif failover policy to use, failover policy decision tree, default failover policies by lif type, sfo-partner-only 
+summary: Domínios de broadcast, grupos de failover e políticas de failover trabalham em conjunto para determinar qual porta assumirá o controle em caso de falha 
+---
+= Relação entre domínios de broadcast, grupos de failover e políticas de failover
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Domínios de broadcast, grupos de failover e políticas de failover trabalham em conjunto para determinar qual porta assumirá quando o nó ou a porta na qual um LIF é configurado falhar.
+
+Um domínio de broadcast lista todas as portas alcançáveis na mesma rede Ethernet de camada 2. Um pacote de broadcast Ethernet enviado de uma das portas é visto por todas as outras portas no domínio de broadcast. Essa caraterística de acessibilidade comum de um domínio de broadcast é importante para LIFs porque se um LIF falhasse para qualquer outra porta no domínio de broadcast, ele ainda poderia alcançar todos os hosts locais e remotos que estavam acessíveis a partir da porta original.
+
+Os grupos de failover definem as portas dentro de um domínio de broadcast que fornecem cobertura de failover de LIF entre si. Cada domínio de broadcast tem um grupo de failover que inclui todas as suas portas. Esse grupo de failover que contém todas as portas no domínio de broadcast é o grupo de failover padrão e recomendado para o LIF. Você pode criar grupos de failover com subconjuntos menores que você definir, como um grupo de portas de failover que têm a mesma velocidade de link em um domínio de broadcast.
+
+Uma política de failover dita como um LIF usa as portas de um grupo de failover quando um nó ou porta é desativado. Considere a política de failover como um tipo de filtro aplicado a um grupo de failover. Os destinos de failover para um LIF (o conjunto de portas para as quais um LIF pode fazer failover) são determinados aplicando a política de failover de LIF ao grupo de failover de LIF no domínio de broadcast.
+
+Você pode exibir os destinos de failover para um LIF usando o seguinte comando CLI:
+
+....
+network interface show -failover
+....
+O NetApp recomenda fortemente o uso da política de failover padrão para o seu tipo de LIF.
+
+
+
+== Decida qual política de failover de LIF usar
+
+Decida se deseja usar a política de failover padrão recomendada ou se deseja alterá-la com base no seu tipo e ambiente de LIF.
+
+
+
+=== Árvore de decisões de política de failover
+
+image:LIF_failover_decision_tree.png["Imagem da árvore de decisão da política de failover de LIF"]
+
+
+
+=== Políticas de failover padrão por tipo de LIF
+
+[cols="25,25,50"]
+|===
+
+
+| Tipo de LIF | Política de failover padrão | Descrição 
+
+
+| BGP LIFs | desativado | O LIF não faz failover para outra porta. 
+
+
+| LIFs de cluster | apenas local | O LIF faz failover para portas apenas no mesmo nó. 
+
+
+| LIF de cluster-mgmt | broadcast-domain-wide | O LIF faz failover para portas no mesmo domínio de broadcast, em todos e em todos os nós do cluster. 
+
+
+| LIFs entre clusters | apenas local | O LIF faz failover para portas apenas no mesmo nó. 
+
+
+| LIFs de dados nas | definido pelo sistema | O LIF faz failover para um outro nó que não é o parceiro de HA. 
+
+
+| LIFs de gerenciamento de nós | apenas local | O LIF faz failover para portas apenas no mesmo nó. 
+
+
+| LIFs de dados SAN | desativado | O LIF não faz failover para outra porta. 
+|===
+A política de failover "somente para parceiros sfo" não é padrão, mas pode ser usada quando você deseja que o LIF faça failover para uma porta no nó inicial ou apenas para parceiros SFO.

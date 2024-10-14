@@ -1,0 +1,77 @@
+---
+permalink: disks-aggregates/create-flash-pool-aggregate-physical-ssds-task.html 
+sidebar: sidebar 
+keywords: create, flash, pool, aggregate, local tier, physical, ssds 
+summary: 'Você cria um nível local do Flash Pool (agregado) habilitando o recurso em um nível local existente composto por grupos RAID de HDD e adicionando um ou mais grupos RAID de SSD a esse nível local. Isso resulta em dois conjuntos de grupos RAID para esse nível local: Grupos RAID SSD (cache SSD) e grupos RAID HDD.' 
+---
+= Criar um nível local (agregado) do Flash Pool usando SSDs físicos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você cria um nível local do Flash Pool (agregado) habilitando o recurso em um nível local existente composto por grupos RAID de HDD e adicionando um ou mais grupos RAID de SSD a esse nível local. Isso resulta em dois conjuntos de grupos RAID para esse nível local: Grupos RAID SSD (cache SSD) e grupos RAID HDD.
+
+.Sobre esta tarefa
+Depois de adicionar um cache SSD a um nível local para criar um nível local do Flash Pool, não é possível remover o cache SSD para converter o nível local de volta à configuração original.
+
+Por padrão, o nível RAID do cache SSD é o mesmo que o nível RAID dos grupos RAID HDD. Você pode substituir essa seleção padrão especificando a opção "'raidtype'" quando você adiciona os primeiros grupos RAID SSD.
+
+.Antes de começar
+* Você precisa ter identificado um nível local válido composto de HDDs para converter em um nível local de Flash Pool.
+* Você precisa ter determinado a qualificação para o armazenamento em cache de gravação dos volumes associados ao nível local e concluído as etapas necessárias para resolver problemas de qualificação.
+* Você precisa ter determinado os SSDs que você estará adicionando e esses SSDs devem pertencer ao nó no qual você está criando a camada local do Flash Pool.
+* Você precisa ter determinado os tipos de checksum dos SSDs que está adicionando e dos HDDs que já estão no nível local.
+* Você deve ter determinado o número de SSDs que está adicionando e o tamanho ideal do grupo RAID para os grupos RAID SSD.
++
+O uso de menos grupos RAID no cache SSD reduz o número de discos de paridade necessários, mas grupos RAID maiores exigem RAID-DP.
+
+* Você deve ter determinado o nível RAID que deseja usar para o cache SSD.
+* Você deve ter determinado o tamanho máximo de cache para o seu sistema e determinado que adicionar cache SSD ao seu nível local não fará com que você o exceda.
+* Você precisa se familiarizar com os requisitos de configuração das camadas locais do Flash Pool.
+
+
+.Passos
+Você pode criar um agregado do FlashPool usando o Gerenciador de sistema ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.12,1, você pode usar o Gerenciador de sistema para criar um nível local de pool flash usando SSDs físicos.
+
+.Passos
+. Selecione *Storage > Tiers* e, em seguida, selecione um nível de armazenamento HDD local existente.
+. Selecione image:icon_kabob.gif["Ícone de opções do menu"]*Add Flash Pool Cache*.
+. Selecione **Use SSDs dedicados como cache**.
+. Selecione um tipo de disco e o número de discos.
+. Escolha um tipo RAID.
+. Selecione *Guardar*.
+. Localize a camada de storage e image:icon_kabob.gif["Ícone de opções do menu"]selecione .
+. Selecione *mais detalhes*. Verifique se o Flash Pool é exibido como *Enabled*.
+
+
+--
+.CLI
+--
+.Passos
+. Marque o nível local (agregado) como qualificado para se tornar um agregado de Flash Pool:
++
+`storage aggregate modify -aggregate _aggr_name_ -hybrid-enabled true`
+
++
+Se essa etapa não for bem-sucedida, determine a qualificação para o armazenamento em cache de gravação para o agregado de destino.
+
+. Adicione os SSDs ao agregado usando o `storage aggregate add` comando.
++
+** Você pode especificar os SSDs por ID ou usando os `diskcount` parâmetros e. `disktype`
+** Se os HDDs e os SSDs não tiverem o mesmo tipo de checksum, ou se o agregado for um agregado de checksum misto, você deverá usar o `checksumstyle` parâmetro para especificar o tipo de checksum dos discos que você está adicionando ao agregado.
+** Você pode especificar um tipo RAID diferente para o cache SSD usando o `raidtype` parâmetro.
+** Se você quiser que o tamanho do grupo RAID de cache seja diferente do padrão para o tipo RAID que você está usando, você deve alterá-lo agora, usando o `-cache-raid-group-size` parâmetro.
+
+
+
+
+--
+====

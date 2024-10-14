@@ -1,0 +1,84 @@
+---
+permalink: nfs-config/create-svms-data-access-task.html 
+sidebar: sidebar 
+keywords: create, svm 
+summary: Se você ainda não tiver pelo menos um SVM em um cluster para fornecer acesso a dados a clientes NFS, será necessário criá-lo. 
+---
+= Criar um SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você ainda não tiver pelo menos um SVM em um cluster para fornecer acesso a dados a clientes NFS, será necessário criá-lo.
+
+.Antes de começar
+* A partir do ONTAP 9.13,1, é possível definir uma capacidade máxima para uma VM de armazenamento. Você também pode configurar alertas quando o SVM se aproximar de um nível de capacidade limite. Para obter mais informações, xref:../volumes/manage-svm-capacity.html[Gerenciar a capacidade do SVM]consulte .
+
+
+.Passos
+. Criar um SVM:
++
+`vserver create -vserver _vserver_name_ -rootvolume _root_volume_name_ -aggregate _aggregate_name_ -rootvolume-security-style unix -language C.UTF-8 -ipspace _ipspace_name_`
+
++
+** Utilize a definição UNIX para a `-rootvolume-security-style` opção.
+** Utilize a opção C.UTF-8 predefinida `-language`.
+** A `ipspace` definição é opcional.
+
+
+. Verifique a configuração e o status do SVM recém-criado:
++
+`vserver show -vserver _vserver_name_`
+
++
+ `Allowed Protocols`O campo deve incluir NFS. Você pode editar esta lista mais tarde.
+
++
+O `Vserver Operational State` campo tem de apresentar o `running` estado. Se ele exibir `initializing` o estado, isso significa que alguma operação intermediária, como criação de volume raiz, falhou e você deve excluir o SVM e recriá-lo.
+
+
+
+.Exemplos
+O comando a seguir cria um SVM para acesso a dados no ipspace ipspaceA:
+
+[listing]
+----
+cluster1::> vserver create -vserver vs1.example.com -rootvolume root_vs1 -aggregate aggr1
+-rootvolume-security-style unix -language C.UTF-8 -ipspace ipspaceA
+
+[Job 2059] Job succeeded:
+Vserver creation completed
+----
+O comando a seguir mostra que um SVM foi criado com um volume raiz de 1 GB, que foi iniciado automaticamente e está `running` no estado. O volume raiz tem uma política de exportação padrão que não inclui nenhuma regra, portanto, o volume raiz não é exportado após a criação.
+
+[listing]
+----
+cluster1::> vserver show -vserver vs1.example.com
+                                    Vserver: vs1.example.com
+                               Vserver Type: data
+                            Vserver Subtype: default
+                               Vserver UUID: b8375669-19b0-11e5-b9d1-00a0983d9736
+                                Root Volume: root_vs1
+                                  Aggregate: aggr1
+                                 NIS Domain: -
+                 Root Volume Security Style: unix
+                                LDAP Client: -
+               Default Volume Language Code: C.UTF-8
+                            Snapshot Policy: default
+                                    Comment:
+                               Quota Policy: default
+                List of Aggregates Assigned: -
+ Limit on Maximum Number of Volumes allowed: unlimited
+                        Vserver Admin State: running
+                  Vserver Operational State: running
+   Vserver Operational State Stopped Reason: -
+                          Allowed Protocols: nfs, cifs, fcp, iscsi, ndmp
+                       Disallowed Protocols: -
+                           QoS Policy Group: -
+                                Config Lock: false
+                               IPspace Name: ipspaceA
+----
+
+NOTE: A partir do ONTAP 9.13,1, é possível definir um modelo de grupo de políticas de QoS adaptável, aplicando um limite mínimo de taxa de transferência e limite máximo a volumes no SVM. Só é possível aplicar essa política depois de criar o SVM. Para saber mais sobre esse processo, xref:../performance-admin/adaptive-policy-template-task.html[Defina um modelo de grupo de políticas adaptável]consulte .

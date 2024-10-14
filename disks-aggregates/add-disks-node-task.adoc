@@ -1,0 +1,84 @@
+---
+permalink: disks-aggregates/add-disks-node-task.html 
+sidebar: sidebar 
+keywords: add, drives, node, shelf 
+summary: 'Você adiciona unidades a um nó ou gaveta para aumentar o número de hot spares ou para adicionar espaço à camada local (agregado).' 
+---
+= Adicionar unidades a um nó ou gaveta
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você adiciona unidades a um nó ou gaveta para aumentar o número de hot spares ou para adicionar espaço à camada local (agregado).
+
+.Antes de começar
+A unidade que você deseja adicionar deve ser suportada pela sua plataforma. Pode confirmar utilizando o link:https://hwu.netapp.com/["NetApp Hardware Universe"^].
+
+O número mínimo de unidades que você deve adicionar em um único procedimento é seis. Adicionar uma única unidade pode reduzir o desempenho.
+
+.Passos para o NetApp Hardware Universe
+. No menu suspenso **Produtos**, selecione sua configuração de hardware
+. Selecione a sua plataforma.
+. Selecione a versão do ONTAP que você está executando e, em seguida, **Mostrar resultados**.
+. Abaixo do gráfico, selecione **clique aqui para ver vistas alternativas**. Escolha a exibição que corresponde à sua configuração.
+
+
+image:hardware-universe-more-info-graphic.png["Screenshot do Hardware Universe clique aqui gráfico"]
+
+.Passos para instalar as unidades
+. Verifique link:https://mysupport.netapp.com/site/["Site de suporte da NetApp"^]se há arquivos mais recentes do firmware da unidade e do compartimento e do Pacote de Qualificação de disco.
++
+Se o nó ou o compartimento não tiver as versões mais recentes, atualize-as antes de instalar a nova unidade.
+
++
+O firmware da unidade é atualizado automaticamente (sem interrupções) em novas unidades que não tenham versões de firmware atuais.
+
+. Aterre-se corretamente.
+. Retire cuidadosamente a moldura da parte frontal da plataforma.
+. Identifique a ranhura correta para a nova unidade.
++
+
+NOTE: Os slots corretos para adicionar unidades variam dependendo do modelo da plataforma e da versão do ONTAP. Em alguns casos, você precisa adicionar unidades a slots específicos em sequência. Por exemplo, em um AFF A800, você adiciona as unidades em intervalos específicos, deixando clusters de slots vazios. Considerando que, em um AFF A220, você adiciona novas unidades aos próximos slots vazios, correndo do lado de fora para o meio da prateleira.
+
++
+Consulte as etapas em **antes de começar** para identificar os slots corretos para sua configuração no link:https://hwu.netapp.com/["NetApp Hardware Universe"^].
+
+. Insira a nova unidade:
++
+.. Com o manípulo do excêntrico na posição aberta, utilize as duas mãos para introduzir a nova transmissão.
+.. Prima até a unidade parar.
+.. Feche a pega do came de forma a que a unidade fique totalmente assente no plano intermédio e a pega encaixe no devido lugar. Certifique-se de que fecha lentamente a pega do excêntrico de forma a que fique corretamente alinhada com a face da unidade.
+
+
+. Verifique se o LED de atividade da unidade (verde) está aceso.
++
+Quando o LED de atividade da unidade está sólido, significa que a unidade tem energia. Quando o LED de atividade da unidade está intermitente, significa que a unidade tem alimentação e e/S está em curso. Se o firmware da unidade estiver sendo atualizado automaticamente, o LED pisca.
+
+. Para adicionar outra unidade, repita os passos 4 a 6.
++
+As novas unidades não são reconhecidas até que sejam atribuídas a um nó. Você pode atribuir as novas unidades manualmente ou esperar que o ONTAP atribua automaticamente as novas unidades se o nó seguir as regras para atribuição automática de unidade.
+
+. Depois de todas as novas unidades terem sido reconhecidas, verifique se foram adicionadas e se a sua propriedade está especificada corretamente.
+
+
+.Passos para confirmar a instalação
+. Exibir a lista de discos:
++
+`storage aggregate show-spare-disks`
+
++
+Você deve ver as novas unidades, de propriedade do nó correto.
+
+. **Opcionalmente (apenas para ONTAP 9.3 e versões anteriores),** zero as unidades recém-adicionadas:
++
+`storage disk zerospares`
+
++
+As unidades que foram usadas anteriormente em um nível local (agregado) do ONTAP devem ser zeradas antes que possam ser adicionadas a outro agregado. No ONTAP 9.3 e anterior, a restauração pode levar horas para ser concluída, dependendo do tamanho das unidades não zeradas no nó. A restauração das unidades agora pode evitar atrasos no caso de você precisar aumentar rapidamente o tamanho de uma camada local. Este não é um problema no ONTAP 9.4 ou posterior em que as unidades são zeradas usando _fast zero_, que leva apenas segundos.
+
+
+
+.Resultados
+As novas unidades estão prontas. Você pode adicioná-los a um nível local (agregado), colocá-los na lista de hot spares ou adicioná-los ao criar um novo nível local.

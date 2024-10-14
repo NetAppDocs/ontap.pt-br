@@ -1,0 +1,46 @@
+---
+permalink: antivirus/best-practices-configure-off-box-antivirus-functionality-concept.html 
+sidebar: sidebar 
+keywords: off-box, ONTAP, antivirus, 
+summary: Considere as seguintes recomendações para configurar a funcionalidade antivírus off-box no ONTAP. 
+---
+= Práticas recomendadas para configurar a funcionalidade antivírus off-box no ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Considere as seguintes recomendações para configurar a funcionalidade off-box no ONTAP.
+
+* Restringir usuários privilegiados a operações de verificação de vírus. Os usuários normais devem ser desencorajados a usar credenciais de usuário privilegiadas. Essa restrição pode ser alcançada desativando os direitos de login para usuários privilegiados no ative Directory.
+* Os usuários privilegiados não precisam fazer parte de nenhum grupo de usuários que tenha um grande número de direitos no domínio, como o grupo administradores ou o grupo de operadores de backup. Os usuários privilegiados devem ser validados apenas pelo sistema de armazenamento para que eles possam criar conexões de servidor Vscan e acessar arquivos para verificação de vírus.
+* Use os computadores que executam servidores Vscan apenas para fins de verificação de vírus. Para desencorajar o uso geral, desative os serviços de terminal do Windows e outras disposições de acesso remoto nessas máquinas e conceda o direito de instalar novos softwares nessas máquinas somente aos administradores.
+* Dedique os servidores Vscan à verificação de vírus e não os use para outras operações, como backups. Você pode decidir executar o servidor Vscan como uma máquina virtual (VM). Se você executar o servidor Vscan como uma VM, certifique-se de que os recursos alocados à VM não sejam compartilhados e sejam suficientes para executar a verificação de vírus.
+* Fornecer CPU, memória e capacidade de disco adequados ao servidor Vscan para evitar a alocação excessiva de recursos. A maioria dos servidores Vscan são projetados para usar vários servidores centrais da CPU e para distribuir a carga entre as CPUs.
+* A NetApp recomenda o uso de uma rede dedicada com uma VLAN privada para a conexão do SVM ao servidor Vscan para que o tráfego de varredura não seja afetado por outro tráfego de rede cliente. Crie uma placa de interface de rede (NIC) separada dedicada à VLAN antivírus no servidor Vscan e ao LIF de dados na SVM. Esta etapa simplifica a administração e a solução de problemas se surgirem problemas de rede. O tráfego antivírus deve ser segregado usando uma rede privada. O servidor antivírus deve ser configurado para se comunicar com o controlador de domínio (DC) e o ONTAP de uma das seguintes maneiras:
++
+** O DC deve se comunicar com os servidores antivírus através da rede privada que é usada para segregar o tráfego.
+** O DC e o servidor antivírus devem se comunicar através de uma rede diferente (não a rede privada mencionada anteriormente), que não é a mesma que a rede cliente CIFS.
+** Para ativar a autenticação Kerberos para comunicação antivírus, crie uma entrada DNS para os LIFs privados e um nome principal de serviço no DC correspondente à entrada DNS criada para o LIF privado. Use esse nome ao adicionar um LIF ao conetor do antivírus. O DNS deve ser capaz de retornar um nome exclusivo para cada LIF privado conetado ao conetor Antivirus.
+
+
+
+
+
+TIP: Se o LIF para tráfego Vscan for configurado em uma porta diferente do LIF para tráfego de cliente, o Vscan LIF pode falhar para outro nó se ocorrer uma falha de porta. A alteração faz com que o servidor Vscan não seja acessível a partir do novo nó e as notificações de digitalização para operações de arquivo no nó falharem. Verifique se o servidor Vscan está acessível através de pelo menos um LIF em um nó para que ele possa processar solicitações de digitalização para operações de arquivo executadas nesse nó.
+
+* Conete o sistema de armazenamento NetApp e o servidor Vscan usando pelo menos uma rede 1GbEG.
+* Para um ambiente com vários servidores Vscan, conete todos os servidores com conexões de rede semelhantes de alto desempenho. Conetar os servidores Vscan melhora o desempenho permitindo o compartilhamento de carga.
+* Para locais remotos e filiais, a NetApp recomenda o uso de um servidor Vscan local em vez de um servidor Vscan remoto porque o primeiro é um candidato perfeito para alta latência. Se o custo for um fator, use um laptop ou PC para proteção moderada contra vírus. Você pode agendar verificações periódicas completas do sistema de arquivos compartilhando os volumes ou qtrees e digitalizando-os a partir de qualquer sistema no local remoto.
+* Use vários servidores Vscan para verificar os dados no SVM para fins de balanceamento de carga e redundância. A quantidade de carga de trabalho CIFS e o tráfego antivírus resultante variam de acordo com a SVM. Monitore a latência de CIFS e verificação de vírus no controlador de storage. Monitore a tendência dos resultados ao longo do tempo. Se a latência CIFS e a latência de verificação de vírus aumentarem devido às filas de CPU ou de aplicativos nos servidores Vscan além dos limites de tendência, os clientes CIFS podem ter longos tempos de espera. Adicione servidores Vscan adicionais para distribuir a carga.
+* Instale a versão mais recente do ONTAP Antivirus Connector.
+* Mantenha os mecanismos e definições antivírus atualizados. Consulte os parceiros para obter recomendações sobre a frequência com que você deve atualizar.
+* Em um ambiente de alocação a vários clientes, um pool de scanners (pool de servidores Vscan) pode ser compartilhado com vários SVMs, desde que os servidores Vscan e os SVMs façam parte do mesmo domínio ou domínio confiável.
+* A política de software antivírus para arquivos infetados deve ser definida como "excluir" ou "quarentena", que é o valor padrão definido pela maioria dos fornecedores de antivírus. Se o "vscan-fileop-profile" estiver definido como "write_only", e se um arquivo infetado for encontrado, o arquivo permanece no compartilhamento e pode ser aberto porque a abertura de um arquivo não aciona uma verificação. A verificação antivírus é acionada apenas depois de o ficheiro ser fechado.
+* O `scan-engine timeout` valor deve ser inferior ao `scanner-pool request-timeout` valor. Se estiver definido para um valor mais alto, o acesso aos arquivos pode ser atrasado e eventualmente acabar. Para evitar isso, configure o `scan-engine timeout` para 5 segundos menos do que o `scanner-pool request-timeout` valor. Consulte a documentação do fornecedor do mecanismo de digitalização para obter instruções sobre como alterar as `scan-engine timeout` configurações. O `scanner-pool timeout` pode ser alterado usando o seguinte comando no modo avançado e fornecendo o valor apropriado para o `request-timeout` parâmetro:
+`vserver vscan scanner-pool modify`.
+* Para um ambiente dimensionado para cargas de trabalho de verificação de acesso e que exija o uso da verificação sob demanda, a NetApp recomenda agendar o trabalho de verificação sob demanda em horas fora do horário de pico para evitar cargas adicionais na infraestrutura antivírus existente.
+
+
+Saiba mais sobre as práticas recomendadas específicas dos parceiros em link:../antivirus/vscan-partner-solutions.html["Soluções de parceiros Vscan"].

@@ -1,0 +1,52 @@
+---
+permalink: flexgroup/create-snapmirror-cascade-fanout-reference.html 
+sidebar: sidebar 
+keywords: consider, create, snapmirror, cascade, fanout, relationship, flexgroup 
+summary: Existem considerações e limitações de suporte que você deve ter em mente ao criar relacionamentos em cascata e fanout do SnapMirror para volumes FlexGroup. 
+---
+= Considerações para criar relações de cascata e fanout do SnapMirror para FlexGroups
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Existem considerações e limitações de suporte que você deve ter em mente ao criar relacionamentos em cascata e fanout do SnapMirror para volumes FlexGroup.
+
+
+
+== Considerações para criar relacionamentos em cascata
+
+* Cada relacionamento pode ser um relacionamento inter cluster ou intra cluster.
+* Todos os tipos de políticas assíncronas, incluindo async-mirror, mirror-Vault e Vault, são compatíveis com ambas as relações.
+* Apenas as políticas "MirrorAllSnapshots" e não "MirrorLatest" async-mirror são suportadas.
+* Atualizações simultâneas de relacionamentos XDP em cascata são suportadas.
+* Suporta a remoção De A para B e B para C e ressincronizar A para C ou ressincronizar C para A.
+* Os volumes a e B FlexGroup também suportam fanout quando todos os nós estão executando o ONTAP 9.9,1 ou posterior.
+* As operações de restauração de volumes FlexGroup B ou C são compatíveis.
+* Transferências em relacionamentos FlexGroup não são compatíveis enquanto o destino é a origem de um relacionamento de restauração.
+* O destino de uma restauração do FlexGroup não pode ser o destino de qualquer outra relação do FlexGroup.
+* As operações de restauração de arquivos do FlexGroup têm as mesmas restrições que as operações de restauração normais do FlexGroup.
+* Todos os nós no cluster em que residem os volumes FlexGroup B e C devem estar executando o ONTAP 9.9,1 ou posterior.
+* Todas as funcionalidades de expansão e expansão automática são suportadas.
+* Em uma configuração em cascata, como A A B a C, se A a B e B a C tiverem números diferentes de relações SnapMirror constituintes, então uma operação de interrupção da fonte não é suportada para a relação B a C SnapMirror.
+* O Gerenciador do sistema não oferece suporte a relacionamentos em cascata no ONTAP 9.9,1.
+* Ao converter um conjunto de A para B para C de relação FlexVol para um relacionamento FlexGroup, você deve converter o B para C hop primeiro.
+* Todas as configurações em cascata do FlexGroup para relacionamentos com tipos de política compatíveis com REST também são compatíveis com APIs REST em configurações de FlexGroup em cascata.
+* Tal como acontece com as relações FlexVol, o FlexGroup em cascata não é suportado pelo `snapmirror protect` comando.
+
+
+
+
+== Considerações para criar relações de fanout
+
+* Duas ou mais relações de fanout do FlexGroup são suportadas; por exemplo, A A B, A C, com um máximo de 8 pernas de fanout.
+* Cada relacionamento pode ser entre clusters ou entre clusters.
+* As atualizações simultâneas são suportadas para os dois relacionamentos.
+* Todas as funcionalidades de expansão e expansão automática são suportadas.
+* Se as pernas de fanout da relação têm números diferentes de relações SnapMirror constituintes, então uma operação de abortar da fonte não é suportada para as relações A A B e A A C.
+* Todos os nós do cluster onde residem os FlexGroups de origem e destino devem estar executando o ONTAP 9.9,1 ou posterior.
+* Todos os tipos de políticas assíncronas atualmente suportados para FlexGroup SnapMirror são suportados em relacionamentos de fanout.
+* Você pode executar operações de restauração de B para C FlexGroups.
+* Todas as configurações de fanout com tipos de política suportados por REST também são suportadas para APIs REST em configurações de fanout do FlexGroup.
+

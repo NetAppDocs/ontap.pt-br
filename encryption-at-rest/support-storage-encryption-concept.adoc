@@ -1,0 +1,125 @@
+---
+permalink: encryption-at-rest/support-storage-encryption-concept.html 
+sidebar: sidebar 
+keywords: configuring, netapp, hardware-based, encryption 
+summary: 'A criptografia baseada em hardware da NetApp oferece suporte à criptografia de disco completo (FDE) dos dados conforme eles são gravados. Os dados não podem ser lidos sem uma chave de criptografia armazenada no firmware. A chave de criptografia, por sua vez, é acessível apenas para um nó autenticado.' 
+---
+= Configure a visão geral da criptografia baseada em hardware do NetApp
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A criptografia baseada em hardware da NetApp oferece suporte à criptografia de disco completo (FDE) dos dados conforme eles são gravados. Os dados não podem ser lidos sem uma chave de criptografia armazenada no firmware. A chave de criptografia, por sua vez, é acessível apenas para um nó autenticado.
+
+
+
+== Compreensão da criptografia baseada em hardware do NetApp
+
+Um nó se autentica em uma unidade de autocriptografia usando uma chave de autenticação recuperada de um servidor de gerenciamento de chaves externo ou Gerenciador de chaves integrado:
+
+* O servidor de gerenciamento de chaves externo é um sistema de terceiros em seu ambiente de storage que serve chaves para nós que usam o Key Management Interoperability Protocol (KMIP). É uma prática recomendada configurar servidores de gerenciamento de chaves externos em um sistema de armazenamento diferente dos seus dados.
+* O Gerenciador de chaves integrado é uma ferramenta integrada que serve chaves de autenticação para nós do mesmo sistema de storage que seus dados.
+
+
+Você pode usar a criptografia de volume do NetApp com criptografia baseada em hardware para "criptografar dados" em unidades com autocriptografia.
+
+Quando as unidades de autocriptografia estão ativadas, o despejo de memória também é criptografado.
+
+
+NOTE: Se um par de HA estiver usando a criptografia de unidades SAS ou NVMe (SED, NSE, FIPS), siga as instruções no xref:return-seds-unprotected-mode-task.html[Retornar uma unidade FIPS ou SED para o modo desprotegido] tópico para todas as unidades do par de HA antes de inicializar o sistema (opções de inicialização 4 ou 9). Se não fizer isso, poderá resultar em perda de dados futura se as unidades forem reaproveitadas.
+
+
+
+== Tipos de unidade com autocriptografia compatíveis
+
+Dois tipos de unidades com autocriptografia são compatíveis:
+
+* As unidades SAS ou NVMe com certificação FIPS são compatíveis com todos os sistemas FAS e AFF. Essas unidades, chamadas unidades _FIPS,_ estão em conformidade com os requisitos da publicação padrão Federal de processamento de informações 140-2, nível 2. Os recursos certificados habilitam proteções além da criptografia, como impedir ataques de negação de serviço na unidade. As unidades FIPS não podem ser combinadas com outros tipos de unidades no mesmo nó ou par de HA.
+* A partir do ONTAP 9.6, as unidades NVMe com autocriptografia que não foram submetidas ao teste FIPS são compatíveis com sistemas AFF A800, A320 e posteriores. Essas unidades, chamadas _SEDs_, oferecem os mesmos recursos de criptografia que as unidades FIPS, mas podem ser combinadas com unidades sem criptografia no mesmo nó ou par de HA.
+* Todas as unidades validadas FIPS usam um módulo criptográfico de firmware que passou pela validação FIPS. O módulo criptográfico da unidade FIPS não usa nenhuma chave gerada fora da unidade (a senha de autenticação que é inserida na unidade é usada pelo módulo criptográfico de firmware da unidade para obter uma chave de criptografia de chave).
+
+
+
+NOTE: Unidades com autocriptografia são unidades que não são unidades FIPS ou SEDs.
+
+
+NOTE: Se você estiver usando o NSE em um sistema com um módulo Flash Cache, também deverá ativar o NVE ou NAE. O NSE não criptografa dados que residem no módulo Flash Cache.
+
+
+
+== Quando usar o gerenciamento de chaves externas
+
+Embora seja mais barato e normalmente mais conveniente usar o gerenciador de chaves integrado, você deve usar o gerenciamento de chaves externas se alguma das seguintes opções for verdadeira:
+
+* A política da sua organização requer uma solução de gerenciamento de chaves que use um módulo criptográfico FIPS 140-2 nível 2 (ou superior).
+* Você precisa de uma solução de vários clusters, com gerenciamento centralizado de chaves de criptografia.
+* Sua empresa requer a segurança adicional de armazenar chaves de autenticação em um sistema ou em um local diferente dos dados.
+
+
+
+
+== Detalhes do suporte
+
+A tabela a seguir mostra detalhes importantes do suporte à criptografia de hardware. Consulte a Matriz de interoperabilidade para obter as informações mais recentes sobre servidores KMIP, sistemas de storage e compartimentos de disco compatíveis.
+
+[cols="30,70"]
+|===
+
+
+| Recurso ou recurso | Detalhes do suporte 
+
+
+ a| 
+Conjuntos de discos não homogéneos
+ a| 
+* As unidades FIPS não podem ser combinadas com outros tipos de unidades no mesmo nó ou par de HA. Pares de HA em conformidade podem coexistir com pares de HA não conformes no mesmo cluster.
+* As SEDs podem ser combinadas com unidades sem criptografia no mesmo nó ou par de HA.
+
+
+
+
+ a| 
+Tipo de unidade
+ a| 
+* As unidades FIPS podem ser unidades SAS ou NVMe.
+* As SEDs devem ser unidades NVMe.
+
+
+
+
+ a| 
+Interfaces de rede de 10 GB
+ a| 
+A partir do ONTAP 9.3, as configurações de gerenciamento de chaves KMIP suportam interfaces de rede de 10 GB para comunicações com servidores de gerenciamento de chaves externas.
+
+
+
+ a| 
+Portas para comunicação com o servidor de gerenciamento de chaves
+ a| 
+A partir do ONTAP 9.3, você pode usar qualquer porta de controlador de armazenamento para comunicação com o servidor de gerenciamento de chaves. Caso contrário, você deve usar a porta e0M para comunicação com servidores de gerenciamento de chaves. Dependendo do modelo do controlador de storage, algumas interfaces de rede podem não estar disponíveis durante o processo de inicialização para comunicação com servidores de gerenciamento de chaves.
+
+
+
+ a| 
+MetroCluster (MCC)
+ a| 
+* As unidades NVMe são compatíveis com MCC.
+* As unidades SAS não suportam MCC.
+
+
+|===
+
+
+== Fluxo de trabalho de criptografia baseado em hardware
+
+Você deve configurar os serviços de gerenciamento de chaves antes que o cluster possa se autenticar na unidade de autocriptografia. Você pode usar um servidor de gerenciamento de chaves externo ou um gerenciador de chaves integrado.
+
+image:nse-workflow.gif["Fluxo de trabalho de criptografia baseado em hardware"]
+
+.Informações relacionadas
+* link:https://hwu.netapp.com/["NetApp Hardware Universe"^]
+* link:https://www.netapp.com/pdf.html?item=/media/17070-ds-3899.pdf["Criptografia de volumes do NetApp e criptografia agregada do NetApp"^]
+

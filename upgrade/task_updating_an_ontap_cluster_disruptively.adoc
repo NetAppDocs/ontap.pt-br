@@ -1,0 +1,201 @@
+---
+permalink: upgrade/task_updating_an_ontap_cluster_disruptively.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, disruptively 
+summary: Se você puder colocar o cluster off-line para atualizar para uma nova versão do ONTAP, poderá usar o método de atualização disruptiva. 
+---
+= Atualização manual do ONTAP disruptiva usando a CLI
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você puder colocar o cluster off-line para atualizar para uma nova versão do ONTAP, poderá usar o método de atualização disruptiva. Este método tem várias etapas: Desativar o failover de armazenamento para cada par de HA, reinicializar cada nó no cluster e, em seguida, reativar o failover de armazenamento.
+
+* Você deve link:download-software-image.html["transferir"] e link:install-software-manual-upgrade.html["instale"] a imagem do software.
+* Se você estiver operando em um ambiente SAN, todos os clientes SAN devem ser desligados ou suspensos até que a atualização seja concluída.
++
+Se os clientes SAN não forem desligados ou suspensos antes de uma atualização disruptiva , os sistemas de arquivos e aplicativos do cliente sofrerão erros que podem exigir recuperação manual após a conclusão da atualização.
+
+
+
+Em uma atualização disruptiva, o tempo de inatividade é necessário porque o failover de storage é desativado para cada par de HA e cada nó é atualizado. Quando o failover de storage é desativado, cada nó se comporta como um cluster de nó único; ou seja, os serviços de sistema associados ao nó são interrompidos pelo tempo que o sistema for reinicializado.
+
+.Passos
+. Defina o nível de privilégio de admin para Advanced, inserindo *y* quando solicitado a continuar:
++
+[source, cli]
+----
+set -privilege advanced
+----
++
+(`*>`É apresentado o aviso avançado ).
+
+. Defina a nova imagem do software ONTAP para ser a imagem padrão:
++
+[source, cli]
+----
+system image modify {-node * -iscurrent false} -isdefault true
+----
++
+Este comando usa uma consulta estendida para alterar a imagem do software ONTAP de destino (que é instalada como a imagem alternativa) para ser a imagem padrão para cada nó.
+
+. Verifique se a nova imagem do software ONTAP está definida como a imagem padrão:
++
+[source, cli]
+----
+system image show
+----
++
+No exemplo a seguir, a imagem 2 é a nova versão do ONTAP e é definida como a imagem padrão em ambos os nós:
+
++
+[listing]
+----
+cluster1::*> system image show
+                 Is      Is                Install
+Node     Image   Default Current Version    Date
+-------- ------- ------- ------- --------- -------------------
+node0
+         image1  false   true    X.X.X     MM/DD/YYYY TIME
+         image2  true    false   Y.Y.Y     MM/DD/YYYY TIME
+node1
+         image1  false   true    X.X.X     MM/DD/YYYY TIME
+         image2  true    false   Y.Y.Y     MM/DD/YYYY TIME
+4 entries were displayed.
+----
+. Execute uma das seguintes etapas:
++
+[cols="2*"]
+|===
+| Se o cluster consistir em... | Faça isso... 
+
+
+ a| 
+Um nó
+ a| 
+Avance para o passo seguinte.
+
+
+
+ a| 
+Dois nós
+ a| 
+.. Desativar a alta disponibilidade do cluster:
++
+[source, cli]
+----
+cluster ha modify -configured false
+----
++
+Digite `y` para continuar quando solicitado.
+
+.. Desativar o failover de armazenamento para o par de HA:
++
+[source, cli]
+----
+storage failover modify -node * -enabled false
+----
+
+
+
+
+ a| 
+Mais de dois nós
+ a| 
+Desative o failover de storage para cada par de HA no cluster:
+
+[source, cli]
+----
+storage failover modify -node * -enabled false
+----
+|===
+. Reinicie um nó no cluster:
++
+[source, cli]
+----
+system node reboot -node nodename -ignore-quorum-warnings
+----
++
+
+IMPORTANT: Não reinicie mais de um nó de cada vez.
+
++
+O nó inicializa a nova imagem ONTAP. O prompt de login do ONTAP é exibido, indicando que o processo de reinicialização está concluído.
+
+. Após o nó ou conjunto de nós reiniciar com a nova imagem ONTAP, defina o nível de privilégio como avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
++
+Digite *y* quando solicitado a continuar
+
+. Confirme se o novo software está em execução:
++
+[source, cli]
+----
+system node image show
+----
++
+No exemplo a seguir, image1 é a nova versão do ONTAP e é definida como a versão atual no node0:
+
++
+[listing]
+----
+cluster1::*> system node image show
+                 Is      Is                 Install
+Node     Image   Default Current Version    Date
+-------- ------- ------- ------- --------   -------------------
+node0
+         image1  true    true    X.X.X       MM/DD/YYYY TIME
+         image2  false   false   Y.Y.Y      MM/DD/YYYY TIME
+node1
+         image1  true    false   X.X.X      MM/DD/YYYY TIME
+         image2  false   true    Y.Y.Y      MM/DD/YYYY TIME
+4 entries were displayed.
+----
+. Verifique se a atualização foi concluída com sucesso:
++
+.. Defina o nível de privilégio como avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+.. Verifique se o status da atualização está concluído para cada nó:
++
+[source, cli]
+----
+system node upgrade-revert show -node nodename
+----
++
+O status deve ser listado como completo.
+
++
+Se o estado não estiver concluído, link:http://mysupport.netapp.com/["Entre em Contato com o suporte da NetApp"^]imediatamente.
+
+.. Voltar ao nível de privilégio de administrador:
++
+[source, cli]
+----
+set -privilege admin
+----
+
+
+. Repita as etapas de 2 a 8 para cada nó adicional.
+. Se o cluster consistir em dois ou mais nós, ative o failover de storage para cada par de HA no cluster:
++
+[source, cli]
+----
+storage failover modify -node * -enabled true
+----
+. Se o cluster consistir em apenas dois nós, ative a alta disponibilidade do cluster:
++
+[source, cli]
+----
+cluster ha modify -configured true
+----
+

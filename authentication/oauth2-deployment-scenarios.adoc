@@ -1,0 +1,144 @@
+---
+sidebar: sidebar 
+permalink: authentication/oauth2-deployment-scenarios.html 
+keywords: oauth 2.0, deployment, configuration, parameters, local validation, remote introspection 
+summary: Há várias opções de configuração disponíveis ao definir um servidor de autorização para o ONTAP. Com base nessas opções, você pode criar um servidor de autorização apropriado para seu ambiente de implantação. 
+---
+= Cenários de implantação do OAuth 2,0
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Há várias opções de configuração disponíveis ao definir um servidor de autorização para o ONTAP. Com base nessas opções, você pode criar um servidor de autorização apropriado para seu ambiente de implantação.
+
+
+
+== Resumo dos parâmetros de configuração
+
+Existem vários parâmetros de configuração disponíveis ao definir um servidor de autorização para o ONTAP. Estes parâmetros são geralmente suportados em todas as interfaces administrativas.
+
+Os nomes dos parâmetros podem variar ligeiramente dependendo da interface administrativa do ONTAP. Por exemplo, ao configurar introspeção remota, o endpoint é identificado usando o parâmetro de comando CLI `-introspection-endpoint` . Mas, com o System Manager, o campo equivalente é _autorização do servidor token introspection URI_. Para acomodar todas as interfaces administrativas do ONTAP, é fornecida uma descrição geral dos parâmetros. O parâmetro ou campo exato deve ser óbvio com base no contexto.
+
+[cols="25,75"]
+|===
+| Parâmetro | Descrição 
+
+
+| Nome | O nome do servidor de autorização como é conhecido pelo ONTAP. 
+
+
+| Aplicação | A aplicação interna do ONTAP à qual a definição se aplica. Este deve ser *http*. 
+
+
+| URI do emissor | O FQDN com o caminho que identifica o site ou a organização que emite os tokens. 
+
+
+| URI do provedor JWKS | O FQDN com caminho e nome de arquivo onde o ONTAP obtém os conjuntos de chaves da Web JSON usados para validar os tokens de acesso. 
+
+
+| Intervalo de atualização do JWKS | O intervalo de tempo que determina com que frequência o ONTAP atualiza informações de certificado do URI JWKS do provedor. O valor é especificado no formato ISO-8601. 
+
+
+| Endpoint de introspeção | O FQDN com caminho que o ONTAP usa para executar a validação remota de token por meio de introspeção. 
+
+
+| ID do cliente | O nome do cliente, conforme definido no servidor de autorização. Quando esse valor é incluído, você também precisa fornecer o segredo do cliente associado com base na interface. 
+
+
+| Proxy de saída | Isso é para fornecer acesso ao servidor de autorização quando o ONTAP está atrás de um firewall. O URI deve estar no formato curl. 
+
+
+| Use funções locais, se presentes | Um sinalizador booleano que determina se as definições ONTAP locais são usadas, incluindo uma FUNÇÃO REST nomeada e usuários locais. 
+
+
+| Remover reclamação do utilizador | Um nome alternativo que o ONTAP usa para corresponder aos usuários locais. Use o `sub` campo no token de acesso para corresponder ao nome de usuário local. 
+|===
+
+
+== Cenários de implantação
+
+Vários cenários comuns de implantação são apresentados abaixo. Eles são organizados com base se a validação de token é realizada localmente pelo ONTAP ou remotamente pelo servidor de autorização. Cada cenário inclui uma lista das opções de configuração necessárias. link:../authentication/oauth2-deploy-ontap.html["Implantar o OAuth 2,0 no ONTAP"]Consulte para obter exemplos dos comandos de configuração.
+
+
+TIP: Depois de definir um servidor de autorização, você pode exibir sua configuração por meio da interface administrativa do ONTAP. Por exemplo, use o comando `security oauth2 client show` com a CLI do ONTAP.
+
+
+
+=== Validação local
+
+Os cenários de implantação a seguir são baseados no ONTAP executando a validação de token localmente.
+
+.Use escopos autônomos sem um proxy
+Esta é a implantação mais simples usando apenas escopos auto-contidos do OAuth 2,0. Nenhuma das definições de identidade ONTAP local é usada. Você precisa incluir os seguintes parâmetros:
+
+* Nome
+* Aplicação (http)
+* URI do provedor JWKS
+* URI do emissor
+
+
+Você também precisa adicionar os escopos no servidor de autorização.
+
+.Use escopos autônomos com um proxy
+Esse cenário de implantação usa os escopos auto-contidos do OAuth 2,0. Nenhuma das definições de identidade ONTAP local é usada. Mas o servidor de autorização está atrás de um firewall e, portanto, você precisa configurar um proxy. Você precisa incluir os seguintes parâmetros:
+
+* Nome
+* Aplicação (http)
+* URI do provedor JWKS
+* Proxy de saída
+* URI do emissor
+* Público-alvo
+
+
+Você também precisa adicionar os escopos no servidor de autorização.
+
+.Use funções de usuário local e mapeamento de nome de usuário padrão com um proxy
+Esse cenário de implantação usa funções de usuário local com mapeamento de nomes padrão. A reivindicação de usuário remoto usa o valor padrão de `sub` e, portanto, esse campo no token de acesso é usado para corresponder ao nome de usuário local. O nome de usuário deve ter 40 carateres ou menos. O servidor de autorização está atrás de um firewall, então você também precisa configurar um proxy. Você precisa incluir os seguintes parâmetros:
+
+* Nome
+* Aplicação (http)
+* URI do provedor JWKS
+* Usar funções locais, se presentes (`true`)
+* Proxy de saída
+* Emissor
+
+
+Tem de se certificar de que o utilizador local está definido como ONTAP.
+
+.Use funções de usuário local e mapeamento de nome de usuário alternativo com um proxy
+Esse cenário de implantação usa funções de usuário local com um nome de usuário alternativo que é usado para corresponder a um usuário local do ONTAP. O servidor de autorização está atrás de um firewall, então você precisa configurar um proxy. Você precisa incluir os seguintes parâmetros:
+
+* Nome
+* Aplicação (http)
+* URI do provedor JWKS
+* Usar funções locais, se presentes (`true`)
+* Reclamação do utilizador remoto
+* Proxy de saída
+* URI do emissor
+* Público-alvo
+
+
+Tem de se certificar de que o utilizador local está definido como ONTAP.
+
+
+
+=== Introspeção remota
+
+As configurações de implantação a seguir são baseadas no ONTAP executando a validação de token remotamente por meio de introspeção.
+
+.Use escopos autônomos sem proxy
+Esta é uma implantação simples baseada no uso dos escopos auto-contidos do OAuth 2,0. Nenhuma das definições de identidade do ONTAP é usada. Você deve incluir os seguintes parâmetros:
+
+* Nome
+* Aplicação (http)
+* Endpoint de introspeção
+* ID do cliente
+* URI do emissor
+
+
+Você precisa definir os escopos, bem como o segredo do cliente e do cliente no servidor de autorização.

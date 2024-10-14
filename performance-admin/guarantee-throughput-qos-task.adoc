@@ -1,0 +1,435 @@
+---
+permalink: performance-admin/guarantee-throughput-qos-task.html 
+sidebar: sidebar 
+keywords: throughput, qos, understand, ceilings, floors, shared, policy, adaptive, general, support, workloads, 
+summary: 'Use a qualidade do serviço (QoS) de storage para garantir que a performance de workloads essenciais não seja degradada pelos workloads da concorrência. Você pode definir um limite máximo de taxa de transferência em um workload da concorrência para limitar seu impacto nos recursos do sistema ou definir uma taxa de transferência para um workload crítico, garantindo que ele atenda aos destinos mínimos de taxa de transferência, independentemente da demanda por workloads da concorrência. Você pode até mesmo definir um teto e piso para a mesma carga de trabalho.' 
+---
+= Garanta a taxa de transferência com uma visão geral de QoS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Use a qualidade do serviço (QoS) de storage para garantir que a performance de workloads essenciais não seja degradada pelos workloads da concorrência. Você pode definir um throughput _ceiling_ em uma carga de trabalho concorrente para limitar seu impactos nos recursos do sistema ou definir um throughput _floor_ para uma carga de trabalho crítica, garantindo que ele atenda aos objetivos mínimos de taxa de transferência, independentemente da demanda por cargas de trabalho concorrentes. Você pode até mesmo definir um teto e piso para a mesma carga de trabalho.
+
+
+
+== Sobre limites máximos de taxa de transferência (QoS Max)
+
+Um limite máximo de taxa de transferência limita a taxa de transferência de um workload a um número máximo de IOPS ou Mbps, ou IOPS e Mbps. Na figura abaixo, o limite de taxa de transferência para a carga de trabalho 2 garante que não "bully" as cargas de trabalho 1 e 3.
+
+Um _grupo de políticas_ define o limite máximo de taxa de transferência para uma ou mais cargas de trabalho. Um workload representa as operações de e/S de um _objeto de storage:_ um volume, arquivo, qtree ou LUN, ou todos os volumes, arquivos, qtrees ou LUNs em um SVM. Você pode especificar o limite máximo ao criar o grupo de políticas ou esperar até que você monitore cargas de trabalho para especificá-lo.
+
+
+NOTE: A taxa de transferência para workloads pode exceder o limite máximo especificado em até 10%, especialmente se um workload sofrer mudanças rápidas na taxa de transferência. O teto pode ser excedido em até 50% para lidar com explosões. As explosões ocorrem em nós únicos quando os tokens acumulam até 150%
+
+image:qos-ceiling.gif["Gráfico comparando QoS antes e depois da aplicação do teto de throughput."]
+
+
+
+== Sobre os andares de taxa de transferência (QoS min)
+
+Um piso de taxa de transferência garante que a taxa de transferência para um workload não fique abaixo de um número mínimo de IOPS ou Mbps, ou IOPS e Mbps. Na figura abaixo, os andares de taxa de transferência para o workload 1 e o workload 3 garantem que eles atendam aos destinos mínimos de taxa de transferência, independentemente da demanda por workload 2.
+
+
+TIP: Como os exemplos sugerem, um teto de throughput limita a taxa de transferência diretamente. Um piso de taxa de transferência mantém a taxa de transferência indiretamente, dando prioridade às cargas de trabalho para as quais o piso foi definido.
+
+Você pode especificar o piso ao criar o grupo de políticas ou esperar até que você monitore cargas de trabalho para especificá-lo.
+
+A partir do ONTAP 9.13,1, é possível definir os andares de taxa de transferência no escopo da SVM com <<adaptive-qos-templates>>. Nas versões do ONTAP anteriores a 9.13.1, um grupo de políticas que define uma área de taxa de transferência não pode ser aplicado a um SVM.
+
+[NOTE]
+====
+Nos lançamentos anteriores ao ONTAP 9.7, os pisos de taxa de transferência são garantidos quando há capacidade de desempenho suficiente disponível.
+
+No ONTAP 9.7 e posterior, os andares de throughput podem ser garantidos mesmo quando há capacidade de desempenho insuficiente disponível. Este novo comportamento do piso é chamado de pisos v2. Para atender às garantias, o piso v2 pode resultar em maior latência em cargas de trabalho sem uma taxa de transferência ou no trabalho que exceda as configurações básicas. Os pisos v2 aplicam-se a QoS e QoS adaptável.
+
+A opção de ativar/desativar o novo comportamento dos pisos v2 está disponível no ONTAP 9.7P6 e posterior. Uma carga de trabalho pode ficar abaixo do nível especificado durante operações críticas como `volume move trigger-cutover`. Mesmo quando a capacidade suficiente está disponível e as operações críticas não estão ocorrendo, a taxa de transferência para uma carga de trabalho pode ficar abaixo do piso especificado em até 5%. Se os andares forem superprovisionados e não houver capacidade de performance, alguns workloads podem ficar abaixo do andar especificado.
+
+====
+image:qos-floor.gif["Dois gráficos que comparam a taxa de transferência de QoS antes e depois da aplicação de um piso."]
+
+
+
+== Sobre grupos de políticas de QoS compartilhados e não compartilhados
+
+A partir do ONTAP 9.4, você pode usar um grupo de políticas de QoS _não compartilhado_ para especificar que o limite ou o piso da taxa de transferência definido se aplica a cada workload de membro individualmente. O comportamento dos grupos de políticas _shared_ depende do tipo de política:
+
+* Para limites máximos de taxa de transferência, a taxa de transferência total para as cargas de trabalho atribuídas ao grupo de políticas partilhadas não pode exceder o limite máximo especificado.
+* Para andares de taxa de transferência, o grupo de políticas compartilhadas pode ser aplicado somente a um único workload.
+
+
+
+
+== Sobre a QoS adaptável
+
+Normalmente, o valor do grupo de políticas que você atribui a um objeto de storage é fixo. Você precisa alterar o valor manualmente quando o tamanho do objeto de armazenamento muda. Um aumento na quantidade de espaço usado em um volume, por exemplo, geralmente requer um aumento correspondente no limite de produtividade especificado para o volume.
+
+O _Adaptive QoS_ dimensiona automaticamente o valor do grupo de políticas para o tamanho do workload, mantendo a taxa de IOPS para TBs|GBs conforme o tamanho do workload muda. Essa é uma vantagem significativa quando você gerencia centenas ou milhares de workloads em uma implantação grande.
+
+Normalmente, você usa QoS adaptável para ajustar limites máximos de taxa de transferência, mas também pode usá-la para gerenciar andares de taxa de transferência (quando o tamanho do workload aumenta). O tamanho do workload é expresso como o espaço alocado para o objeto de storage ou o espaço usado pelo objeto de storage.
+
+
+NOTE: O espaço usado está disponível para pisos de throughput no ONTAP 9.5 e posterior. Não é suportado para pisos de rendimento no ONTAP 9 .4 e anteriores.
+
+* Uma política _allocated space_ mantém a relação IOPS/TB|GB de acordo com o tamanho nominal do objeto de armazenamento. Se a taxa for de 100 IOPS/GB, um volume de 150 GB terá um limite máximo de taxa de transferência de 15.000 IOPS enquanto o volume permanecer nesse tamanho. Se o volume for redimensionado para 300 GB, a QoS adaptável ajusta o limite da taxa de transferência para 30.000 IOPS.
+* Uma política _used space_ (o padrão) mantém a taxa IOPS/TB|GB de acordo com a quantidade de dados reais armazenados antes da eficiência de armazenamento. Se a taxa for de 100 IOPS/GB, um volume de 150 GB que tenha 100 GB de dados armazenados teria um limite máximo de taxa de transferência de 10.000 IOPS. À medida que a quantidade de espaço usado muda, a QoS adaptável ajusta o teto de taxa de transferência de acordo com a taxa.
+
+
+A partir do ONTAP 9.5, você pode especificar um tamanho de bloco de e/S para o aplicativo que permite que um limite de taxa de transferência seja expresso em IOPS e Mbps. O limite de Mbps é calculado a partir do tamanho do bloco multiplicado pelo limite de IOPS. Por exemplo, um tamanho de bloco de e/S de 32K MB para um limite de IOPS de 6144IOPS GB/TB produz um limite de Mbps de 192MBps GB.
+
+Você pode esperar o seguinte comportamento para tetos e pisos de rendimento:
+
+* Quando um workload é atribuído a um grupo de políticas de QoS adaptável, o teto ou o piso é atualizado imediatamente.
+* Quando um workload em um grupo de políticas de QoS adaptável é redimensionado, o teto ou o piso é atualizado em aproximadamente cinco minutos.
+
+
+A taxa de transferência deve aumentar em pelo menos 10 IOPS antes que as atualizações ocorram.
+
+Grupos de políticas de QoS adaptáveis sempre não são compartilhados: O limite ou o piso da taxa de transferência definida se aplica a cada workload de membro individualmente.
+
+A partir do ONTAP 9.6, os andares de taxa de transferência são suportados no ONTAP Select premium com SSD.
+
+
+
+=== Modelo de grupo de políticas adaptável
+
+A partir do ONTAP 9.13,1, você pode definir um modelo de QoS adaptável em um SVM. Os modelos de grupo de políticas adaptáveis permitem definir andares e tetos de taxa de transferência para todos os volumes em uma SVM.
+
+Os modelos de grupo de políticas adaptáveis só podem ser definidos após a criação do SVM. Use o `vserver modify` comando com o `-qos-adaptive-policy-group-template` parâmetro para definir a política.
+
+Quando você define um modelo de grupo de políticas adaptativas, os volumes criados ou migrados após a configuração da diretiva herdam automaticamente a política. Quaisquer volumes existentes no SVM não serão afetados quando você atribuir o modelo de política. Se você desativar a política no SVM, qualquer volume posteriormente migrado ou criado no SVM não receberá a política. A desativação do modelo de grupo de políticas adaptativas não afeta os volumes que herdaram o modelo de política à medida que retêm o modelo de política.
+
+Para obter mais informações, xref:../performance-admin/adaptive-policy-template-task.html[Defina um modelo de grupo de políticas adaptável]consulte .
+
+
+
+== Suporte geral
+
+A tabela a seguir mostra as diferenças no suporte para limites máximos de taxa de transferência, andares de taxa de transferência e QoS adaptável.
+
+|===
+| Recurso ou recurso | Teto com taxa de transferência | Piso de taxa de transferência | Piso de taxa de transferência v2 | QoS adaptável 
+
+
+ a| 
+Versão ONTAP 9
+ a| 
+Tudo
+ a| 
+9,2 e mais tarde
+ a| 
+9,7 e mais tarde
+ a| 
+9,3 e mais tarde
+
+
+
+ a| 
+Plataformas
+ a| 
+Tudo
+ a| 
+* AFF
+* C190 *
+* ONTAP Select premium com SSD *
+
+ a| 
+* AFF
+* C190
+* ONTAP Select premium com SSD
+
+ a| 
+Tudo
+
+
+
+ a| 
+Protocolos
+ a| 
+Tudo
+ a| 
+Tudo
+ a| 
+Tudo
+ a| 
+Tudo
+
+
+
+ a| 
+FabricPool
+ a| 
+Sim
+ a| 
+Sim, se a política de disposição em categorias estiver definida como "nenhum" e não houver blocos na nuvem.
+ a| 
+Sim, se a política de disposição em categorias estiver definida como "nenhum" e não houver blocos na nuvem.
+ a| 
+Não
+
+
+
+ a| 
+SnapMirror síncrono
+ a| 
+Sim
+ a| 
+Não
+ a| 
+Não
+ a| 
+Sim
+
+|===
+O suporte ao C190 e ao ONTAP Select começou com o lançamento do ONTAP 9.6.
+
+
+
+== Workloads compatíveis com limites máximos de taxa de transferência
+
+A tabela a seguir mostra o suporte do workload para limites máximos de taxa de transferência pela versão do ONTAP 9. Volumes raiz, espelhos de compartilhamento de carga e espelhos de proteção de dados não são compatíveis.
+
+|===
+| Suporte à carga de trabalho - limite máximo | ONTAP 9,0 | ONTAP 9,1 | ONTAP 9,2 | ONTAP 9,3 | ONTAP 9.4 - 9,7 | ONTAP 9 F.8 e mais tarde 
+
+
+ a| 
+Volume
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+
+
+
+ a| 
+Ficheiro
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+
+
+
+ a| 
+LUN
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+
+
+
+ a| 
+SVM
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+
+
+
+ a| 
+Volume FlexGroup
+ a| 
+não
+ a| 
+não
+ a| 
+não
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+
+
+
+ a| 
+qtrees*
+ a| 
+não
+ a| 
+não
+ a| 
+não
+ a| 
+não
+ a| 
+não
+ a| 
+sim
+
+
+
+ a| 
+Vários workloads por grupo de políticas
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+ a| 
+sim
+
+
+
+ a| 
+Grupos de políticas não compartilhados
+ a| 
+não
+ a| 
+não
+ a| 
+não
+ a| 
+não
+ a| 
+sim
+ a| 
+sim
+
+|===
+A partir do ONTAP 9.8, o acesso NFS é compatível com qtrees nos volumes FlexVol e FlexGroup com NFS habilitado. A partir do ONTAP 9.9,1, o acesso SMB também é suportado em qtrees nos volumes FlexVol e FlexGroup com SMB ativado.
+
+
+
+== Workloads compatíveis em pisos de taxa de transferência
+
+A tabela a seguir mostra o suporte do workload para andares de taxa de transferência pela versão do ONTAP 9. Volumes raiz, espelhos de compartilhamento de carga e espelhos de proteção de dados não são compatíveis.
+
+|===
+| Suporte de carga de trabalho - básico | ONTAP 9,2 | ONTAP 9,3 | ONTAP 9.4 - 9,7 | ONTAP 9.8 - 9.13.0 | ONTAP 9.13,1 e posterior 
+
+
+| Volume | sim | sim | sim | sim | sim 
+
+
+| Ficheiro | não | sim | sim | sim | sim 
+
+
+| LUN | sim | sim | sim | sim | sim 
+
+
+| SVM | não | não | não | não | sim 
+
+
+| Volume FlexGroup | não | não | sim | sim | sim 
+
+
+| qtrees * | não | não | não | sim | sim 
+
+
+| Vários workloads por grupo de políticas | não | não | sim | sim | sim 
+
+
+| Grupos de políticas não compartilhados | não | não | sim | sim | sim 
+|===
+A partir do ONTAP 9.8, o acesso NFS é suportado em qtrees nos volumes FlexVol e FlexGroup com NFS ativado. A partir do ONTAP 9.9,1, o acesso SMB também é suportado em qtrees nos volumes FlexVol e FlexGroup com SMB ativado.
+
+
+
+== Workloads compatíveis com QoS adaptável
+
+A tabela a seguir mostra o suporte do workload para QoS adaptável pela versão do ONTAP 9. Volumes raiz, espelhos de compartilhamento de carga e espelhos de proteção de dados não são compatíveis.
+
+|===
+| Suporte a workload - QoS adaptável | ONTAP 9,3 | ONTAP 9.4 - 9.13.0 | ONTAP 9.13,1 e posterior 
+
+
+| Volume | sim | sim | sim 
+
+
+| Ficheiro | não | sim | sim 
+
+
+| LUN | não | sim | sim 
+
+
+| SVM | não | não | sim 
+
+
+| Volume FlexGroup | não | sim | sim 
+
+
+| Vários workloads por grupo de políticas | sim | sim | sim 
+
+
+| Grupos de políticas não compartilhados | sim | sim | sim 
+|===
+
+
+== Número máximo de cargas de trabalho e grupos de políticas
+
+A tabela a seguir mostra o número máximo de cargas de trabalho e grupos de políticas por versão do ONTAP 9.
+
+|===
+| Suporte a workload | ONTAP 9 .3 e anteriores | ONTAP 9 .4 e mais tarde 
+
+
+ a| 
+Máximo de workloads por cluster
+ a| 
+12.000
+ a| 
+40.000
+
+
+
+ a| 
+Máximo de workloads por nó
+ a| 
+12.000
+ a| 
+40.000
+
+
+
+ a| 
+Máximo de grupos de políticas
+ a| 
+12.000
+ a| 
+12.000
+
+|===

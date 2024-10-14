@@ -1,0 +1,141 @@
+---
+sidebar: sidebar 
+permalink: anti-ransomware/index.html 
+keywords: ransomware, security, digital advisor, autonomous protection, arp, detect, detection, threat, attack, suspect, anti-ransomware, entropy, abnormal volume activity, antiransomware, extension conformity, ransomware protection strategy 
+summary: A proteção autônoma contra ransomware usa análise de workload em ambientes nas para detectar e avisar sobre atividades anormais que podem ser um ataque. 
+---
+= Visão geral da proteção autônoma contra ransomware
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+A partir do ONTAP 9.10,1, o recurso Autonomous ransomware Protection (ARP) usa análise de workload em ambientes nas (NFS e SMB) para detectar e avisar proativamente sobre atividades anormais que podem indicar um ataque.
+
+Quando um ataque é suspeito, o ARP também cria novas cópias Snapshot, além da proteção existente contra cópias Snapshot programadas.
+
+
+
+== Licenças e capacitação
+
+ARP requer uma licença. O ARP está disponível com o link:https://kb.netapp.com/onprem/ontap/os/ONTAP_9.10.1_and_later_licensing_overview["Licença ONTAP ONE"^]. Se você não tiver a licença do ONTAP One, outras licenças estarão disponíveis para usar o ARP, que diferem dependendo da sua versão do ONTAP.
+
+[cols="2*"]
+|===
+| Lançamentos da ONTAP | Licença 
+
+
+ a| 
+ONTAP 9.11,1 e posterior
+ a| 
+Anti_ransomware
+
+
+
+ a| 
+ONTAP 9.10,1
+ a| 
+MT_EK_MGMT (gerenciamento de chaves de vários clientes)
+
+|===
+* Se você estiver atualizando para o ONTAP 9.11,1 ou posterior e o ARP já estiver configurado em seu sistema, não será necessário comprar a nova licença anti-ransomware. Para novas configurações ARP, a nova licença é necessária.
+* Se você estiver revertendo do ONTAP 9.11,1 ou posterior para o ONTAP 9.10,1 e tiver ativado o ARP com a licença Anti-ransomware, verá uma mensagem de aviso e poderá precisar reconfigurar o ARP. link:../revert/anti-ransomware-license-task.html["Saiba mais sobre como reverter ARP"].
+
+
+Você pode configurar o ARP por volume usando o Gerenciador do sistema ou a CLI do ONTAP.
+
+
+
+== Estratégia de proteção contra ransomware da ONTAP
+
+Uma estratégia eficaz de detecção de ransomware deve incluir mais do que uma única camada de proteção.
+
+Uma analogia seria as caraterísticas de segurança de um veículo. Você não confia em uma única caraterística, como um cinto de segurança, para protegê-lo completamente em um acidente. Os airbags, os travões antibloqueio e o aviso de colisão à frente são todos elementos de segurança adicionais que conduzirão a um resultado muito melhor. A proteção contra ransomware deve ser vista da mesma maneira.
+
+Embora o ONTAP inclua recursos como FPolicy, cópias Snapshot, SnapLock e Active IQ Digital Advisor (também conhecido como consultor digital) para ajudar a proteger contra ransomware, as informações a seguir se concentram no recurso ARP on-box com recursos de aprendizado de máquina.
+
+Para saber mais sobre outros recursos anti-ransomware do ONTAP, link:../ransomware-solutions/ransomware-overview.html["Portfólio de proteção de ransomware e NetApp"]consulte .
+
+
+
+== O que o ARP deteta
+
+O ARP é projetado para proteger contra ataques de negação de serviço, onde o invasor retém dados até que um resgate seja pago. O ARP oferece detecção de ransomware em tempo real com base em:
+
+* Identificação dos dados recebidos como encriptados ou em texto simples.
+* Analytics, que deteta
++
+** **Entropia**: Uma avaliação da aleatoriedade dos dados em um arquivo
+** **Tipos de extensão de arquivo**: Uma extensão que não está em conformidade com o tipo de extensão normal
+** **IOPS de arquivos**: Um aumento na atividade de volume anormal com criptografia de dados (a partir de ONTAP 9.11,1)
+
+
+
+
+O ARP pode detetar a propagação da maioria dos ataques de ransomware depois que apenas um pequeno número de arquivos é criptografado, tomar medidas automaticamente para proteger os dados e alertá-lo de que um ataque suspeito está acontecendo.
+
+
+NOTE: Nenhum sistema de prevenção ou detecção de ransomware pode garantir completamente a segurança de um ataque de ransomware. Embora seja possível que um ataque não seja detetado, o ARP atua como uma importante camada adicional de defesa se o software antivírus não conseguir detetar uma intrusão.
+
+
+
+== Aprendizagem e modos ativos
+
+ARP tem dois modos:
+
+* *Aprendizagem* (ou modo "funcionamento a seco")
+* *Ativo* (ou modo "ativado")
+
+
+Quando você ativa o ARP, ele é executado no _modo de aprendizagem_. No modo de aprendizagem, o sistema ONTAP desenvolve um perfil de alerta baseado nas áreas analíticas: Entropia, tipos de extensão de arquivo e IOPS de arquivos. Depois de executar o ARP no modo de aprendizado por tempo suficiente para avaliar as caraterísticas da carga de trabalho, você pode alternar para o modo ativo e começar a proteger seus dados. Uma vez que o ARP tenha mudado para o modo ativo, o ONTAP cria cópias Snapshot ARP para proteger os dados se uma ameaça for detetada.
+
+Recomenda-se que você deixe o ARP no modo de aprendizado por 30 dias. A partir do ONTAP 9.13,1, o ARP determina automaticamente o intervalo ideal do período de aprendizagem e automatiza o switch, que pode ocorrer antes de 30 dias.
+
+No modo ativo, se uma extensão de arquivo for sinalizada como anormal, você deve avaliar o alerta. Você pode agir no alerta para proteger seus dados ou você pode marcar o alerta como um falso positivo. Marcar um alerta como falso positivo atualiza o perfil de alerta. Por exemplo, se o alerta for acionado por uma nova extensão de arquivo e você marcar o alerta como um falso positivo, você não receberá um alerta na próxima vez que essa extensão de arquivo for observada. O comando `security anti-ransomware volume workload-behavior show` mostra extensões de arquivo que foram detetadas no volume. (Se você executar esse comando no modo de aprendizado e ele mostrar uma representação precisa dos tipos de arquivo, você não deve usar esses dados como base para mover para o modo ativo, já que o ONTAP ainda está coletando outras métricas.)
+
+A partir de ONTAP 9.11,1, você pode personalizar os parâmetros de deteção para ARP. Para obter mais informações, xref:manage-parameters-task.html[Gerenciar parâmetros de deteção de ataque ARP]consulte .
+
+
+
+== Avaliação de ameaças e cópias ARP Snapshot
+
+No modo ativo, o ARP avalia a probabilidade de ameaça com base nos dados de entrada medidos em relação às análises aprendidas. Uma medição é atribuída quando o ARP deteta uma ameaça:
+
+* **Baixa**: A deteção mais precoce de uma anomalia no volume (por exemplo, uma nova extensão de arquivo é observada no volume).
+* ** Moderado**: Vários arquivos com a mesma extensão de arquivo nunca visto-antes são observados.
++
+** No ONTAP 9.10,1, o limite de escalonamento para moderar é de 100 ou mais arquivos. Começando com ONTAP 9.11,1, a quantidade de arquivo é modificável; seu valor padrão é 20.
+
+
+
+
+Em uma situação de baixa ameaça, o ONTAP deteta uma anormalidade e cria uma cópia Snapshot do volume para criar o melhor ponto de recuperação. O ONTAP prepende o nome da cópia Snapshot ARP com `Anti-ransomware-backup` para torná-la facilmente identificável, por exemplo `Anti_ransomware_backup.2022-12-20_1248`.
+
+A ameaça aumenta para moderar depois que o ONTAP executa um relatório de análise determinando se a anormalidade corresponde a um perfil de ransomware. As ameaças que permanecem no nível baixo são registradas e visíveis na seção **Eventos** do System Manager. Quando a probabilidade de ataque é moderada, o ONTAP gera uma notificação EMS, solicitando que você avalie a ameaça. O ONTAP não envia alertas sobre baixas ameaças, no entanto, começando com ONTAP 9.14,1, você pode xref:manage-parameters-task.html#modify-alerts[modificar definições de alertas]. Para obter mais informações, xref:respond-abnormal-task.html[Responder a atividades anormais]consulte .
+
+Você pode visualizar informações sobre uma ameaça, independentemente do nível, na seção **Eventos** do System Manager ou com o `security anti-ransomware volume show` comando.
+
+As cópias Snapshot ARP são retidas por um período mínimo de dois dias. A partir do ONTAP 9.11,1, você pode modificar as configurações de retenção. Para obter mais informações, xref:modify-automatic-shapshot-options-task.html[Modificar opções para cópias Snapshot]consulte .
+
+
+
+== Como recuperar dados no ONTAP após um ataque de ransomware
+
+Quando um ataque é suspeito, o sistema pega uma cópia Snapshot de volume nesse momento e bloqueia essa cópia. Se o ataque for confirmado posteriormente, o volume poderá ser restaurado usando a cópia Snapshot ARP.
+
+As cópias Snapshot bloqueadas não podem ser excluídas por meios normais. No entanto, se você decidir mais tarde marcar o ataque como um falso positivo, a cópia bloqueada será excluída.
+
+Com o conhecimento dos arquivos afetados e o momento do ataque, é possível recuperar seletivamente os arquivos afetados de várias cópias Snapshot, em vez de simplesmente reverter todo o volume para uma das cópias Snapshot.
+
+O ARP se baseia na comprovada tecnologia de recuperação de desastres e proteção de dados da ONTAP para responder a ataques de ransomware. Consulte os tópicos a seguir para obter mais informações sobre como recuperar dados.
+
+* link:../data-protection/restore-contents-volume-snapshot-task.html["Recuperar de cópias Snapshot (System Manager)"]
+* link:../data-protection/restore-contents-volume-snapshot-task.html["Restaurar arquivos de cópias Snapshot (CLI)"]
+* link:https://www.netapp.com/blog/smart-ransomware-recovery["Recuperação inteligente de ransomware"^]
+

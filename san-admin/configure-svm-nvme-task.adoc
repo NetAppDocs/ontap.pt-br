@@ -1,0 +1,171 @@
+---
+permalink: san-admin/configure-svm-nvme-task.html 
+sidebar: sidebar 
+keywords: configure, svm, nvme 
+summary: Para usar o protocolo NVMe em um nó, configure o SVM especificamente para NVMe. 
+---
+= Configurar uma VM de storage para NVMe
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para usar o protocolo NVMe em um nó, configure o SVM especificamente para NVMe.
+
+.Antes de começar
+Seus adaptadores FC ou Ethernet devem ser compatíveis com NVMe. Os adaptadores suportados estão listados no https://hwu.netapp.com["NetApp Hardware Universe"^].
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+Configurar uma VM de storage para NVMe com o ONTAP System Manager (9,7 e posterior).
+
+[cols="2"]
+|===
+| Para configurar o NVMe em uma nova VM de storage | Para configurar o NVMe em uma VM de storage existente 
+
+
+ a| 
+. No System Manager, clique em *Storage > Storage VMs* e, em seguida, clique em *Add*.
+. Introduza um nome para a VM de armazenamento.
+. Selecione *NVMe* para o *Access Protocol*.
+. Selecione *Ativar NVMe/FC* ou *Ativar NVMe/TCP* e *Salvar*.
+
+ a| 
+. No System Manager, clique em *Storage > Storage VMs*.
+. Clique na VM de armazenamento que você deseja configurar.
+. Clique na guia *Configurações* e, em seguida, clique image:icon_gear.gif["Ícone ações"] ao lado do protocolo NVMe.
+. Selecione *Ativar NVMe/FC* ou *Ativar NVMe/TCP* e *Salvar*.
+
+
+|===
+--
+.CLI
+--
+Configurar uma VM de storage para NVMe com a CLI do ONTAP.
+
+. Se você não quiser usar um SVM existente, crie um:
++
+[source, cli]
+----
+vserver create -vserver <SVM_name>
+----
++
+.. Verifique se o SVM foi criado:
++
+[source, cli]
+----
+vserver show
+----
+
+
+. Verifique se você tem adaptadores compatíveis com NVMe ou TCP instalados no cluster:
++
+Para NVMe:
+
++
+[source, cli]
+----
+network fcp adapter show -data-protocols-supported fc-nvme
+----
++
+Para TCP:
+
++
+[source, cli]
+----
+network port show
+----
+. Se você estiver executando o ONTAP 9.7 ou anterior, remova todos os protocolos do SVM:
++
+[source, cli]
+----
+vserver remove-protocols -vserver <SVM_name> -protocols iscsi,fcp,nfs,cifs,ndmp
+----
++
+A partir do ONTAP 9.8, não é necessário remover outros protocolos ao adicionar o NVMe.
+
+. Adicionar o protocolo NVMe à SVM:
++
+[source, cli]
+----
+vserver add-protocols -vserver <SVM_name> -protocols nvme
+----
+. Se você estiver executando o ONTAP 9.7 ou anterior, verifique se o NVMe é o único protocolo permitido no SVM:
++
+[source, cli]
+----
+vserver show -vserver <SVM_name> -fields allowed-protocols
+----
++
+O NVMe deve ser o único protocolo exibido sob a `allowed protocols` coluna.
+
+. Criar o serviço NVMe:
++
+[source, cli]
+----
+vserver nvme create -vserver <SVM_name>
+----
+. Verifique se o serviço NVMe foi criado:
++
+[source, cli]
+----
+vserver nvme show -vserver <SVM_name>
+----
++
+O `Administrative Status` do SVM deve ser listado como `up`.
+
+. Criar um LIF NVMe/FC:
++
+** Para ONTAP 9.9,1 ou anterior, FC:
++
+[source, cli]
+----
+network interface create -vserver <SVM_name> -lif <lif_name> -address <ip address> -netmask <netmask_value> -role data -data-protocol fc-nvme -home-node <home_node> -home-port <home_port>
+----
+** Para ONTAP 9.10,1 ou posterior, FC ou TCP:
++
+[source, cli]
+----
+network interface create -vserver <SVM_name> -lif <lif_name> -address <ip address> -netmask <netmask_value> -service-policy <default-data-nvme-tcp | default-data-nvme-fc> -data-protocol <fcp | fc-nvme | nvme-tcp> -home-node <home_node> -home-port <home_port> -status-admin up -failover-policy disabled -firewall-policy data -auto-revert false -failover-group <failover_group> -is-dns-update-enabled false
+----
+
+
+. Crie um NVMe/FC LIF no nó de parceiro de HA:
++
+** Para ONTAP 9.9,1 ou anterior, FC:
++
+[source, cli]
+----
+network interface create -vserver <SVM_name> -lif <lif_name> -role data -data-protocol fc-nvme -home-node <home_node> -home-port <home_port>
+----
+** Para ONTAP 9.10,1 ou posterior, FC ou TCP:
++
+[source, cli]
+----
+network interface create -vserver <SVM_name> -lif <lif_name> -service-policy <default-data-nvme-tcp | default-data-nvme-fc> -data-protocol <fcp | fc-nvme | nvme-tcp> -home-node <home_node> -home-port <home_port> -status-admin up -failover-policy disabled -firewall-policy data -auto-revert false -failover-group <failover_group> -is-dns-update-enabled false
+----
+
+
+. Verifique se os LIFs NVMe/FC foram criados:
++
+[source, cli]
+----
+network interface show -vserver <SVM_name>
+----
+. Criar volume no mesmo nó que o LIF:
++
+[source, cli]
+----
+vol create -vserver <SVM_name> -volume <vol_name> -aggregate <aggregate_name> -size <volume_size>
+----
++
+Se for apresentada uma mensagem de aviso sobre a política de eficiência automática, esta pode ser ignorada com segurança.
+
+
+
+--
+====

@@ -1,0 +1,136 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/remove-configuration-task.html 
+keywords: SM-BC, SMBC, removing, protection relationship, snapmirror active sync 
+summary: Você pode remover a proteção síncrona de rto SnapMirror zero e excluir a configuração da relação de sincronização ativa do SnapMirror. 
+---
+= Remova uma configuração de sincronização ativa do SnapMirror
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você não precisar mais de proteção síncrona de rto SnapMirror zero, poderá excluir sua relação de sincronização ativa do SnapMirror.
+
+
+
+== Remova uma configuração assimétrica
+
+* Antes de excluir a relação de sincronização ativa do SnapMirror, todos os LUNs no cluster de destino devem ser não mapeados.
+* Depois que os LUNs não são mapeados e o host é reconfigurado, o destino SCSI notifica os hosts de que o inventário LUN foi alterado. Os LUNs existentes nos volumes secundários de rto zero mudam para refletir uma nova identidade depois que a relação rto zero é excluída. Os hosts descobrem os LUNs de volume secundário como novos LUNs que não têm relação com os LUNs de volume de origem.
+* Os volumes secundários permanecem volumes DP depois que a relação é excluída. Você pode emitir o `snapmirror break` comando para convertê-los para ler/escrever.
+* A exclusão do relacionamento não é permitida no estado de failover quando o relacionamento não é revertido.
+
+
+.Passos
+. No cluster secundário, remova a relação do grupo de consistência de sincronização ativa do SnapMirror entre o ponto final de origem e o ponto de extremidade de destino:
++
+`destination::>snapmirror delete -destination-path vs1_dst:/cg/cg_dst`
+
+. No cluster primário, solte a relação de grupo de consistência e as cópias Snapshot criadas para a relação:
++
+`source::>snapmirror release -destination-path vs1_dst:/cg/cg_dst`
+
+. Execute uma nova verificação do host para atualizar o inventário LUN.
+. A partir do ONTAP 9.10,1, a exclusão da relação SnapMirror não exclui o grupo de consistência. Se você quiser excluir o grupo de consistência, use o Gerenciador do sistema ou a API REST do ONTAP. Consulte xref:../consistency-groups/delete-task.adoc[Excluir um grupo de consistência] para obter mais informações.
+
+
+
+
+== Remover uma configuração ativo-ativo simétrica
+
+Você pode remover uma configuração simétrica usando o Gerenciador do sistema ou a CLI do ONTAP. Em ambas as interfaces, existem diferentes etapas para xref:index.html#key-concepts[configurações uniformes e não uniformes].
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos para uma configuração uniforme
+. No site principal, remova os hosts remotos do igrop e encerre a replicação.
++
+.. Navegue até **hosts** > *grupos de iniciadores SAN*.
+.. Selecione o grupo que você deseja modificar e, em seguida, **Editar**.
+.. Remova o iniciador remoto e encerre a replicação do igroup. Selecione **Guardar**.
+
+
+. No site secundário, exclua a relação replicada desmapeando os LUNs.
++
+.. Navegue até **hosts** > **grupos de iniciadores SAN**.
+.. Selecione o grupo com o relacionamento SnapMirror e, em seguida, **Excluir**.
+.. Na caixa de diálogo, selecione a caixa **Unmap the Associated LUNs** (Anular mapeamento dos LUNs associados) e **Delete** (Excluir).
+.. Navegue até **proteção** > **relacionamentos**.
+.. Selecione a relação de sincronização ativa do SnapMirror e, em seguida, **Liberação** para excluir as relações.
+
+
+
+
+.Passos para uma configuração não uniforme
+. No site principal, remova os hosts remotos do igrop e encerre a replicação.
++
+.. Navegue até **hosts** > *grupos de iniciadores SAN*.
+.. Selecione o grupo que você deseja modificar e, em seguida, **Editar**.
+.. Remova o iniciador remoto e encerre a replicação do igroup. Selecione **Guardar**.
+
+
+. No local secundário, remova a relação de sincronização ativa do SnapMirror.
++
+.. Navegue até **proteção** > **relacionamentos**.
+.. Selecione a relação de sincronização ativa do SnapMirror e, em seguida, **Liberação** para excluir as relações.
+
+
+
+
+--
+.CLI
+--
+.Passos para uma configuração uniforme
+. Mova todos os workloads de VM para o host local para o cluster de origem da sincronização ativa do SnapMirror.
+. No cluster de origem, remova os iniciadores do iggroup e modifique a configuração do iggroup para encerrar a replicação do iggroup.
++
+`SiteA::> igroup remove -vserver <svm_name> -igroup <igroup_name> -os-type <os_type> -initiator <host2>
+SiteA::> igroup modify -vserver <svm_name> -igroup <igroup_name> -os-type <os_type> -replication-peer "-"`
+
+. No site secundário, exclua o mapeamento de LUN e remova a configuração do igroup:
++
+`SiteB::> lun mapping delete -vserver <svm_name> -igroup <igroup_name> -path <>
+SiteB::> igroup delete -vserver <svm_name> -igroup <igroup_name>`
+
+. No site secundário, exclua a relação de sincronização ativa do SnapMirror.
++
+`SiteB::> snapmirror delete -destination-path _destination_path_`
+
+. No local principal, libere a relação de sincronização ativa do SnapMirror do local principal.
++
+`SiteA::> snapmirror release -destination-path <destination_path>`
+
+. Redescubra os caminhos para verificar se apenas o caminho local está disponível para o host.
+
+
+.Passos para uma configuração não uniforme
+. Mova todos os workloads de VM para o host local para o cluster de origem da sincronização ativa do SnapMirror.
+. No cluster de origem, remova os iniciadores do igrop.
++
+`SiteA::> igroup remove -vserver <svm_name> -igroup <igroup_name> -initiator <host2>`
+
+. No site secundário, exclua o mapeamento de LUN e remova a configuração do igroup:
++
+`SiteB::> lun mapping delete -vserver <svm_name> -igroup <igroup_name> -path <>
+SiteB::> igroup delete -vserver <svm_name> -igroup <igroup_name>`
+
+. No site secundário, exclua a relação de sincronização ativa do SnapMirror.
++
+`SiteB::> snapmirror delete -destination-path <destination_path>`
+
+. No local principal, libere a relação de sincronização ativa do SnapMirror do local principal.
++
+`SiteA::> snapmirror release -destination-path <destination_path>`
+
+. Redescubra os caminhos para verificar se apenas o caminho local está disponível para o host.
+
+
+--
+====

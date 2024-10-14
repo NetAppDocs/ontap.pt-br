@@ -1,0 +1,66 @@
+---
+permalink: smb-admin/grant-null-users-access-file-system-shares-task.html 
+sidebar: sidebar 
+keywords: access, storage, system, resource, null, session, client, assign, group, ip, adress, null, session, grant, grant null users access to file system shares 
+summary: Você pode permitir o acesso aos recursos do seu sistema de armazenamento por clientes de sessão nulos, atribuindo um grupo a ser usado por clientes de sessão nulos e registrando os endereços IP de clientes de sessão nulos para adicionar à lista de clientes com permissão para acessar dados usando sessões nulas. 
+---
+= Conceder acesso a usuários nulos a compartilhamentos de sistema de arquivos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode permitir o acesso aos recursos do seu sistema de armazenamento por clientes de sessão nulos, atribuindo um grupo a ser usado por clientes de sessão nulos e registrando os endereços IP de clientes de sessão nulos para adicionar à lista de clientes com permissão para acessar dados usando sessões nulas.
+
+.Passos
+. Use o `vserver name-mapping create` comando para mapear o usuário nulo para qualquer usuário válido do Windows, com um qualificador IP.
++
+O comando a seguir mapeia o usuário nulo para user1 com um nome de host válido google.com:
+
++
+[listing]
+----
+vserver name-mapping create –direction win-unix  -position 1 –pattern “ANONYMOUS LOGON” –replacement user1 – hostname google.com
+----
++
+O comando a seguir mapeia o usuário nulo para user1 com um endereço IP válido 10.238.2.54/32:
+
++
+[listing]
+----
+vserver name-mapping create –direction win-unix  -position 2 –pattern “ANONYMOUS LOGON” –replacement user1 –address 10.238.2.54/32
+----
+. Use o `vserver name-mapping show` comando para confirmar o mapeamento de nomes.
++
+[listing]
+----
+vserver name-mapping show
+
+Vserver:   vs1
+Direction: win-unix
+Position Hostname         IP Address/Mask
+-------- --------         ----------------
+1       -                 10.72.40.83/32      Pattern: anonymous logon
+                                          Replacement: user1
+----
+. Use o `vserver cifs options modify –win-name-for-null-user` comando para atribuir a associação do Windows ao usuário nulo.
++
+Essa opção é aplicável somente quando há um mapeamento de nome válido para o usuário nulo.
+
++
+[listing]
+----
+vserver cifs options modify -win-name-for-null-user user1
+----
+. Use o `vserver cifs options show` comando para confirmar o mapeamento do usuário nulo para o usuário ou grupo do Windows.
++
+[listing]
+----
+vserver cifs options show
+
+Vserver :vs1
+
+Map Null User to Windows User of Group: user1
+----
+

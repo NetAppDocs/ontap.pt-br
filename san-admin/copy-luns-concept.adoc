@@ -1,0 +1,30 @@
+---
+permalink: san-admin/copy-luns-concept.html 
+sidebar: sidebar 
+keywords: considerations, copying, luns, before 
+summary: Você deve estar ciente de certas coisas antes de copiar um LUN. 
+---
+= O que saber antes de copiar LUNs
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve estar ciente de certas coisas antes de copiar um LUN.
+
+Os administradores de cluster podem copiar um LUN entre máquinas virtuais de armazenamento (SVMs) dentro do cluster usando o `lun copy` comando. Os administradores de cluster devem estabelecer a relação de peering de máquina virtual de storage (SVM) usando o comando antes de uma operação de cópia LUN entre SVM `vserver peer create` ser executada. Deve haver espaço suficiente no volume de origem para um clone SIS.
+
+LUNs nas cópias Snapshot podem ser usadas como LUNs de origem para o `lun copy` comando. Quando você copia um LUN usando o `lun copy` comando, a cópia LUN fica imediatamente disponível para acesso de leitura e gravação. O LUN de origem não é alterado pela criação de uma cópia LUN. Tanto o LUN de origem como a cópia LUN existem como LUNs exclusivos com números de série LUN diferentes. As alterações feitas no LUN de origem não são refletidas na cópia LUN e as alterações feitas na cópia LUN não são refletidas no LUN de origem. O mapeamento LUN do LUN de origem não é copiado para o novo LUN; a cópia LUN deve ser mapeada.
+
+A proteção de dados com cópias Snapshot ocorre no nível do volume. Portanto, se você copiar um LUN para um volume diferente do volume do LUN de origem, o LUN de destino estará sob o esquema de proteção de dados do volume de destino. Se você não tiver cópias Snapshot estabelecidas para o volume de destino, as cópias Snapshot não serão criadas da cópia LUN.
+
+Copiar LUNs é uma operação sem interrupções.
+
+Não é possível copiar os seguintes tipos de LUNs:
+
+* Um LUN que foi criado a partir de um ficheiro
+* Um LUN que está no estado NVFAIL
+* Um LUN que está em um relacionamento de compartilhamento de carga
+* Um LUN de classe de endpoint de protocolo
+

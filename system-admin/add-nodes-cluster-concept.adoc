@@ -1,0 +1,117 @@
+---
+permalink: system-admin/add-nodes-cluster-concept.html 
+sidebar: sidebar 
+keywords: add, node, cluster, create, expand 
+summary: Depois que um cluster é criado, você pode expandi-lo adicionando nós a ele. Você adiciona apenas um nó de cada vez. 
+---
+= Adicione nós ao cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois que um cluster é criado, você pode expandi-lo adicionando nós a ele. Você adiciona apenas um nó de cada vez.
+
+.O que você vai precisar
+* Se você estiver adicionando nós a um cluster de vários nós, todos os nós existentes no cluster devem estar íntegros (indicado pela `cluster show`).
+* Se estiver adicionando nós a um cluster sem switch de dois nós, você deverá converter seu cluster sem switch de dois nós para um cluster conetado ao switch usando um switch de cluster compatível com NetApp.
++
+A funcionalidade de cluster sem switch é suportada apenas em um cluster de dois nós.
+
+* Se você estiver adicionando um segundo nó a um cluster de nó único, o segundo nó deve ter sido instalado e a rede de cluster deve ter sido configurada.
+* Se o cluster tiver a configuração automática do SP ativada, a sub-rede especificada para o SP deve ter recursos disponíveis para permitir que o nó de junção use a sub-rede especificada para configurar automaticamente o SP.
+* Você deve ter reunido as seguintes informações para o LIF de gerenciamento de nós do novo nó:
++
+** Porta
+** Endereço IP
+** Máscara de rede
+** Gateway predefinido
+
+
+
+
+.Sobre esta tarefa
+Os nós precisam estar em números pares para que possam formar pares de HA. Depois de começar a adicionar um nó ao cluster, você deve concluir o processo. O nó deve fazer parte do cluster antes de poder começar a adicionar outro nó.
+
+.Passos
+. Ligue o nó que você deseja adicionar ao cluster.
++
+O nó é inicializado e o assistente de configuração do nó é iniciado no console.
+
++
+[listing]
+----
+Welcome to node setup.
+
+You can enter the following commands at any time:
+  "help" or "?" - if you want to have a question clarified,
+  "back" - if you want to change previously answered questions, and
+  "exit" or "quit" - if you want to quit the setup wizard.
+     Any changes you made before quitting will be saved.
+
+To accept a default or omit a question, do not enter a value.
+
+Enter the node management interface port [e0M]:
+----
+. Saia do assistente de configuração do nó: `exit`
++
+O assistente de configuração do nó é encerrado e é apresentado um aviso de início de sessão, avisando que não concluiu as tarefas de configuração.
+
+. Inicie sessão na conta de administrador utilizando o `admin` nome de utilizador.
+. Inicie o assistente Configuração do cluster:
++
+`*cluster setup*`
+
++
+[listing]
+----
+::> cluster setup
+
+Welcome to the cluster setup wizard.
+
+You can enter the following commands at any time:
+ "help" or "?" - if you want to have a question clarified,
+ "back" - if you want to change previously answered questions, and
+ "exit" or "quit" - if you want to quit the cluster setup wizard.
+ Any changes you made before quitting will be saved.
+
+You can return to cluster setup at any time by typing "cluster setup".
+To accept a default or omit a question, do not enter a value....
+
+Use your web browser to complete cluster setup by accessing
+https://<node_mgmt_or_e0M_IP_address>
+
+Otherwise, press Enter to complete cluster setup using the
+command line interface:
+----
++
+[NOTE]
+====
+Para obter mais informações sobre como configurar um cluster usando a GUI de configuração, consulte a link:https://docs.netapp.com/us-en/ontap/task_admin_add_nodes_to_cluster.html["System Manager"] ajuda on-line.
+
+====
+. Pressione Enter para usar a CLI para concluir esta tarefa. Quando for solicitado a criar um novo cluster ou ingressar em um existente, digite `*join*`.
++
+[listing]
+----
+Do you want to create a new cluster or join an existing cluster? {create, join}:
+join
+----
++
+Se a versão do ONTAP em execução no novo nó for diferente da versão em execução no cluster existente, o sistema informará um `System checks Error: Cluster join operation cannot be performed at this time` erro. Este é o comportamento esperado. Para continuar, execute o `add-node -allow-mixed-version-join new_node_name` comando no nível de privilégio avançado a partir de um nó existente no cluster.
+
+. Siga as instruções para configurar o nó e associá-lo ao cluster:
++
+** Para aceitar o valor padrão de um prompt, pressione Enter.
+** Para inserir seu próprio valor para um prompt, digite o valor e pressione Enter.
+
+
+. Repita as etapas anteriores para cada nó adicional que você deseja adicionar.
+
+
+.Depois de terminar
+Depois de adicionar nós ao cluster, ative o failover de storage para cada par de HA.
+
+.Informações relacionadas
+link:../upgrade/concept_mixed_version_requirements.html#requirements-for-mixed-version-ontap-clusters["Clusters ONTAP de versão mista"]

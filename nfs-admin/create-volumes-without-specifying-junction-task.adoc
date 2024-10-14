@@ -1,0 +1,57 @@
+---
+permalink: nfs-admin/create-volumes-without-specifying-junction-task.html 
+sidebar: sidebar 
+keywords: create, data, volume, specify, junction, point 
+summary: Você pode criar um volume de dados sem especificar um ponto de junção. O volume resultante não é montado automaticamente e não está disponível para configuração para acesso nas. É necessário montar o volume antes de configurar compartilhamentos SMB ou exportações NFS para esse volume. 
+---
+= Crie volumes de dados sem especificar pontos de junção
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar um volume de dados sem especificar um ponto de junção. O volume resultante não é montado automaticamente e não está disponível para configuração para acesso nas. É necessário montar o volume antes de configurar compartilhamentos SMB ou exportações NFS para esse volume.
+
+.Antes de começar
+* O agregado no qual você deseja criar o volume já deve existir.
+* A partir do ONTAP 9.13,1, você pode criar volumes com análise de capacidade e acompanhamento de atividades habilitados. Para ativar o acompanhamento de capacidade ou atividade, emita o `volume create` comando com `-analytics-state` ou `-activity-tracking-state` defina como `on`.
++
+Para saber mais sobre análise de capacidade e acompanhamento de atividades, https://docs.netapp.com/us-en/ontap/task_nas_file_system_analytics_enable.html["Ative a análise do sistema de ficheiros"] consulte .
+
+
+
+.Passos
+. Crie o volume sem um ponto de junção usando o seguinte comando:
++
+`volume create -vserver vserver_name -volume volume_name -aggregate aggregate_name -size {integer[KB|MB|GB|TB|PB]} -security-style {ntfs|unix|mixed}`
+
++
+Especificar um estilo de segurança de volume é opcional. Se você não especificar um estilo de segurança, o ONTAP criará o volume com o mesmo estilo de segurança aplicado ao volume raiz da máquina virtual de storage (SVM). No entanto, o estilo de segurança do volume raiz pode não ser o estilo de segurança que você deseja aplicar ao volume de dados. A recomendação é especificar o estilo de segurança quando você cria o volume para minimizar problemas de acesso a arquivos difíceis de solucionar.
+
++
+Há muitos parâmetros opcionais que você pode usar para personalizar um volume de dados. Para saber mais sobre eles, consulte as páginas de manual do `volume create` comando.
+
+. Verifique se o volume foi criado sem um ponto de junção:
++
+`volume show -vserver vserver_name -volume volume_name -junction`
+
+
+
+.Exemplo
+O exemplo a seguir cria um volume chamado "vendas" localizado no SVM VS1 que não está montado em um ponto de junção:
+
+[listing]
+----
+cluster1::> volume create -vserver vs1 -volume sales -aggregate aggr3 -size 20GB
+[Job 3406] Job succeeded: Successful
+
+cluster1::> volume show -vserver vs1 -junction
+                     Junction                 Junction
+Vserver   Volume     Active   Junction Path   Path Source
+--------- ---------- -------- --------------- -----------
+vs1       data       true     /data           RW_volume
+vs1       home4      true     /eng/home       RW_volume
+vs1       vs1_root   -        /               -
+vs1       sales      -        -               -
+----

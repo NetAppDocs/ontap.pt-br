@@ -1,0 +1,75 @@
+---
+sidebar: sidebar 
+permalink: ontap-security-hardening/create-fpolicy.html 
+keywords: tr-4569, ontap hardening guide, security, native, external server, file policy, take actions, synchronous, asynchronous, storage workload security 
+summary: Para fornecer visibilidade e controle de acesso para arquivos, a solução ONTAP usa o recurso NetApp FPolicy. 
+---
+= Crie e use um FPolicy do NetApp
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media
+
+
+[role="lead"]
+Você pode criar e usar um FPolicy, um componente de infraestrutura da solução ONTAP, que permite que aplicativos parceiros monitorem e definam permissões de acesso a arquivos. Uma das aplicações mais avançadas é a Segurança de workload de storage, uma aplicação SaaS da NetApp que oferece visibilidade e controle centralizados de todos os acessos a dados corporativos em ambientes de nuvem híbrida para garantir que as metas de segurança e conformidade sejam atingidas.
+
+O controle de acesso é um conceito chave de segurança. A visibilidade e a capacidade de responder a acesso aos arquivos e operações de arquivos são essenciais para manter sua postura de segurança. Para fornecer visibilidade e controle de acesso para arquivos, a solução ONTAP usa o recurso NetApp FPolicy.
+
+As políticas de arquivo podem ser definidas com base no tipo de arquivo. O FPolicy determina como o sistema de armazenamento processa solicitações de sistemas clientes individuais para operações como criar, abrir, renomear e excluir. A partir do ONTAP 9, a estrutura de notificação de acesso a arquivos FPolicy é aprimorada com controles de filtragem e resiliência contra interrupções de rede curtas.
+
+.Passos
+. Para aproveitar o recurso FPolicy, primeiro você deve criar a política FPolicy com o `vserver fpolicy policy create` comando.
++
+
+NOTE: Além disso, use o `-events` parâmetro se você usar o FPolicy para visibilidade e a coleção de eventos. A granularidade adicional fornecida pelo ONTAP permite filtrar e acessar o nível de controle do nome de usuário. Para controlar o Privileges e o acesso com nomes de usuário, especifique o `-privilege-user-name` parâmetro.
+
++
+O texto a seguir fornece um exemplo de criação de FPolicy:
+
++
+[listing]
+----
+cluster1::> vserver fpolicy policy create -vserver vs1.example.com -policy-name vs1_pol -events cserver_evt,v1e1 -engine native -is-mandatory true -allow-privileged-access no -is-passthrough-read-enabled false
+----
+. Depois de criar a política FPolicy, você deve ativá-la com o `vserver fpolicy enable` comando. Este comando também define a prioridade ou a sequência da entrada FPolicy.
++
+
+NOTE: A sequência FPolicy é importante porque, se várias políticas se inscreveram no mesmo evento de acesso ao arquivo, a sequência dita a ordem em que o acesso é concedido ou negado.
+
++
+O texto a seguir fornece uma configuração de exemplo para ativar a política FPolicy e validar a configuração com o `vserver fpolicy show` comando:
+
++
+[listing]
+----
+cluster1::> vserver fpolicy enable -vserver vs2.example.com -policy-name vs2_pol -sequence-number 5
+
+cluster1::> vserver fpolicy show
+Vserver                 Policy Name                    Sequence  Status   Engine
+----------------------- ------------------------------ --------  -------  -------
+vs1.example.com         vs1_pol
+vs2.example.com         vs2_pol
+ external
+2 entries were displayed.
+----
+
+
+
+
+== Melhorias de FPolicy
+
+O ONTAP 9 inclui os aprimoramentos de FPolicy descritos nas seções a seguir.
+
+
+
+=== Controlos de filtragem
+
+Novos filtros estão disponíveis para `SetAttr` e para remover notificações sobre atividades de diretório.
+
+
+
+=== Resiliência assíncrona
+
+Se um servidor FPolicy que opera no modo assíncrono sofrer uma interrupção na rede, as notificações FPolicy geradas durante a interrupção serão armazenadas no nó de storage. Quando o servidor FPolicy volta online, ele é alertado das notificações armazenadas e pode buscá-las a partir do nó de armazenamento. O período de tempo em que as notificações podem ser armazenadas durante uma interrupção é configurável até 10 minutos.

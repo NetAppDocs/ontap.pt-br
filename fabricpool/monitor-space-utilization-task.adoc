@@ -1,0 +1,149 @@
+---
+permalink: fabricpool/monitor-space-utilization-task.html 
+sidebar: sidebar 
+keywords: monitoring, space, utilization, fabricpool 
+summary: Você precisa saber a quantidade de dados armazenados nas categorias de performance e nuvem do FabricPool. Essas informações ajudam a determinar se você precisa alterar a política de disposição em camadas de um volume, aumentar o limite de uso licenciado da FabricPool ou aumentar o espaço de storage da categoria de nuvem. 
+---
+= Monitorar a utilização de espaço do FabricPool
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa saber a quantidade de dados armazenados nas categorias de performance e nuvem do FabricPool. Essas informações ajudam a determinar se você precisa alterar a política de disposição em camadas de um volume, aumentar o limite de uso licenciado da FabricPool ou aumentar o espaço de storage da categoria de nuvem.
+
+.Passos
+. Monitore a utilização de espaço para agregados habilitados para FabricPool usando um dos seguintes comandos para exibir as informações:
++
+|===
+
+
+| Se você quiser exibir... | Em seguida, use este comando: 
+
+
+ a| 
+O tamanho usado da camada de nuvem em um agregado
+ a| 
+`storage aggregate show` com o `-instance` parâmetro
+
+
+
+ a| 
+Detalhes da utilização de espaço dentro de um agregado, incluindo a capacidade referenciada do armazenamento de objetos
+ a| 
+`storage aggregate show-space` com o `-instance` parâmetro
+
+
+
+ a| 
+Utilização de espaço dos armazenamentos de objetos anexados aos agregados, incluindo quanto espaço de licença está sendo usado
+ a| 
+`storage aggregate object-store show-space`
+
+
+
+ a| 
+Uma lista de volumes em um agregado e as pegadas de seus dados e metadados
+ a| 
+`volume show-footprint`
+
+|===
++
+Além de usar os comandos de CLI, você pode usar o Active IQ Unified Manager (anteriormente conhecido como Gerenciador Unificado de OnCommand), junto com o FabricPool Advisor, que é compatível com clusters ONTAP 9.4 e posteriores, ou o System Manager para monitorar a utilização de espaço.
+
++
+O exemplo a seguir mostra maneiras de exibir a utilização de espaço e informações relacionadas ao FabricPool:
+
++
+[listing]
+----
+cluster1::> storage aggregate show-space -instance
+
+                          Aggregate: MyFabricPool
+                                                                   ...
+                                               Aggregate Display Name: MyFabricPool
+                                                                   ...
+                          Total Object Store Logical Referenced Capacity: -
+                          Object Store Logical Referenced Capacity Percentage: -
+                                                                   ...
+                                                       Object Store Size: -
+                          Object Store Space Saved by Storage Efficiency: -
+                          Object Store Space Saved by Storage Efficiency Percentage: -
+                                                 Total Logical Used Size: -
+                                                 Logical Used Percentage: -
+                                           Logical Unreferenced Capacity: -
+                                         Logical Unreferenced Percentage: -
+
+----
++
+[listing]
+----
+cluster1::> storage aggregate show -instance
+
+                           Aggregate: MyFabricPool
+                           ...
+                           Composite: true
+                           Capacity Tier Used Size:
+                           ...
+----
++
+[listing]
+----
+cluster1::> volume show-footprint
+
+Vserver : vs1
+Volume : rootvol
+
+Feature                          Used       Used%
+-------------------------------- ---------- -----
+Volume Footprint                 KB          %
+Volume Guarantee                 MB          %
+Flexible Volume Metadata         KB          %
+Delayed Frees                    KB          %
+Total Footprint                  MB          %
+
+Vserver : vs1
+Volume : vol
+
+Feature                          Used       Used%
+-------------------------------- ---------- -----
+Volume Footprint                 KB          %
+Footprint in Performance Tier    KB          %
+Footprint in Amazon01            KB          %
+Flexible Volume Metadata         MB          %
+Delayed Frees                    KB          %
+Total Footprint                  MB          %
+...
+----
+. Execute uma das seguintes ações, conforme necessário:
++
+|===
+
+
+| Se você quiser... | Então... 
+
+
+ a| 
+Alterar a política de disposição em camadas de um volume
+ a| 
+Siga o procedimento descrito link:modify-tiering-policy-cooling-period-task.html["Gerenciamento da disposição em camadas de storage modificando a política de disposição em camadas de um volume ou o período mínimo de resfriamento em camadas"]em .
+
+
+
+ a| 
+Aumente o limite de uso licenciado da FabricPool
+ a| 
+Entre em Contato com seu NetApp ou representante de vendas do parceiro.
+
+https://mysupport.netapp.com/site/global/dashboard["Suporte à NetApp"^]
+
+
+
+ a| 
+Aumente o espaço de storage da camada de nuvem
+ a| 
+Entre em Contato com o fornecedor do armazenamento de objetos que você usa para o nível de nuvem.
+
+|===
+

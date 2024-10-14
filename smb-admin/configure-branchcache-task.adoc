@@ -1,0 +1,175 @@
+---
+permalink: smb-admin/configure-branchcache-task.html 
+sidebar: sidebar 
+keywords: configure, branchcache, service, per-share, basis, smb, share, configure branchcache on the cifs server 
+summary: Você pode configurar o BranchCache para fornecer serviços do BranchCache por compartilhamento. Como alternativa, você pode configurar o BranchCache para ativar automaticamente o cache em todos os compartilhamentos SMB. 
+---
+= Configure o BranchCache no servidor SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar o BranchCache para fornecer serviços do BranchCache por compartilhamento. Como alternativa, você pode configurar o BranchCache para ativar automaticamente o cache em todos os compartilhamentos SMB.
+
+.Sobre esta tarefa
+Você pode configurar o BranchCache em SVMs.
+
+* Você pode criar uma configuração BranchCache de todos os compartilhamentos se quiser oferecer serviços de cache para todo o conteúdo contido em todos os compartilhamentos SMB no servidor CIFS.
+* Você pode criar uma configuração de BranchCache por compartilhamento se quiser oferecer serviços de cache para conteúdo contido em compartilhamentos SMB selecionados no servidor CIFS.
+
+
+Você deve especificar os seguintes parâmetros ao configurar o BranchCache:
+
+|===
+| Parâmetros necessários | Descrição 
+
+
+ a| 
+_Nome da SVM_
+ a| 
+O BranchCache é configurado por SVM. Você deve especificar em qual SVM habilitado para CIFS deseja configurar o serviço BranchCache.
+
+
+
+ a| 
+_Path to hash store_
+ a| 
+Os hashes do BranchCache são armazenados em arquivos regulares no volume SVM. Você deve especificar o caminho para um diretório existente onde você deseja que o ONTAP armazene os dados de hash.o caminho de hash do BranchCache deve ser lido-gravável. Caminhos somente leitura, como diretórios Snapshot, não são permitidos. Você pode armazenar dados de hash em um volume que contém outros dados ou pode criar um volume separado para armazenar dados de hash.
+
+Se o SVM for uma fonte de recuperação de desastres SVM, o caminho hash não poderá estar no volume raiz. Isso ocorre porque o volume raiz não é replicado para o destino de recuperação de desastres.
+
+O caminho hash pode conter espaços em branco e quaisquer carateres de nome de arquivo válidos.
+
+|===
+Opcionalmente, você pode especificar os seguintes parâmetros:
+
+|===
+| Parâmetros opcionais | Descrição 
+
+
+ a| 
+_Versões suportadas_
+ a| 
+ONTAP suporta BranchCache 1 e 2. Pode ativar a versão 1, a versão 2 ou ambas as versões. O padrão é ativar ambas as versões.
+
+
+
+ a| 
+_Tamanho máximo do armazenamento de hash_
+ a| 
+Você pode especificar o tamanho a ser usado para o armazenamento de dados de hash. Se os dados de hash excederem esse valor, o ONTAP excluirá hashes mais antigos para abrir espaço para hashes mais recentes. O tamanho padrão para o armazenamento de hash é de 1 GB. O BranchCache funciona de forma mais eficiente se os hashes não forem descartados de forma excessivamente agressiva. Se você determinar que hashes são descartados frequentemente porque o armazenamento de hash está cheio, você pode aumentar o tamanho do armazenamento de hash modificando a configuração BranchCache.
+
+
+
+ a| 
+_Chave do servidor_
+ a| 
+Você pode especificar uma chave de servidor que o serviço BranchCache usa para impedir que os clientes personificem o servidor BranchCache. Se você não especificar uma chave de servidor, uma será gerada aleatoriamente quando você criar a configuração BranchCache. Você pode definir a chave do servidor para um valor específico para que, se vários servidores estiverem fornecendo dados do BranchCache para os mesmos arquivos, os clientes possam usar hashes de qualquer servidor usando essa mesma chave do servidor. Se a chave do servidor contiver espaços, você deverá inserir a chave do servidor entre aspas.
+
+
+
+ a| 
+_Modo de funcionamento_
+ a| 
+O padrão é habilitar o BranchCache por compartilhamento.
+
+* Para criar uma configuração do BranchCache na qual você habilite o BranchCache por compartilhamento, não é possível especificar esse parâmetro opcional ou especificar `per-share`.
+* Para ativar automaticamente o BranchCache em todos os compartilhamentos, você deve definir o modo operacional como `all-shares`.
+
+
+|===
+.Passos
+. Habilite o SMB 2,1 e 3,0 conforme necessário:
++
+.. Defina o nível de privilégio como avançado: `set -privilege advanced`
+.. Verifique as configurações configuradas do SVM SMB para determinar se todas as versões necessárias do SMB estão ativadas: `vserver cifs options show -vserver _vserver_name_`
+.. Se necessário, ative o SMB 2,1: `vserver cifs options modify -vserver _vserver_name_ -smb2-enabled true`
++
+O comando habilita o SMB 2,0 e o SMB 2,1.
+
+.. Se necessário, ative o SMB 3,0: `vserver cifs options modify -vserver _vserver_name_ -smb3-enabled true`
+.. Voltar ao nível de privilégio de administrador: `set -privilege admin`
+
+
+. Configurar BranchCache: `vserver cifs branchcache create -vserver _vserver_name_ -hash-store-path path [-hash-store-max-size {integer[KB|MB|GB|TB|PB]}] [-versions {v1-enable|v2-enable|enable-all] [-server-key text] -operating-mode {per-share|all-shares}`
++
+O caminho de storage de hash especificado deve existir e residir em um volume gerenciado pela SVM. O caminho também deve estar localizado em um volume gravável de leitura. O comando falha se o caminho for somente leitura ou não existir.
+
++
+Se você quiser usar a mesma chave de servidor para configurações adicionais do SVM BranchCache, Registre o valor inserido para a chave de servidor. A chave do servidor não aparece quando você exibe informações sobre a configuração do BranchCache.
+
+. Verifique se a configuração do BranchCache está correta: `vserver cifs branchcache show -vserver _vserver_name_`
+
+
+.Exemplos
+Os comandos a seguir verificam se o SMB 2,1 e o 3,0 estão ativados e configuram o BranchCache para habilitar automaticamente o armazenamento em cache em todos os compartilhamentos SMB no SVM VS1:
+
+[listing]
+----
+cluster1::> set -privilege advanced
+Warning: These advanced commands are potentially dangerous; use them
+only when directed to do so by technical support personnel.
+Do you wish to continue? (y or n): y
+
+cluster1::*> vserver cifs options show -vserver vs1 -fields smb2-enabled,smb3-enabled
+vserver smb2-enabled smb3-enabled
+------- ------------ ------------
+vs1     true         true
+
+
+cluster1::*> set -privilege admin
+
+cluster1::> vserver cifs branchcache create -vserver vs1 -hash-store-path /hash_data -hash-store-max-size 20GB -versions enable-all -server-key "my server key" -operating-mode all-shares
+
+cluster1::> vserver cifs branchcache show -vserver vs1
+
+                                 Vserver: vs1
+          Supported BranchCache Versions: enable_all
+                      Path to Hash Store: /hash_data
+          Maximum Size of the Hash Store: 20GB
+Encryption Key Used to Secure the Hashes: -
+        CIFS BranchCache Operating Modes: all_shares
+----
+Os comandos a seguir verificam se o SMB 2,1 e o 3,0 estão ativados, configuram o BranchCache para habilitar o armazenamento em cache por compartilhamento no SVM VS1 e verificam a configuração do BranchCache:
+
+[listing]
+----
+cluster1::> set -privilege advanced
+Warning: These advanced commands are potentially dangerous; use them
+only when directed to do so by technical support personnel.
+Do you wish to continue? (y or n): y
+
+cluster1::*> vserver cifs options show -vserver vs1 -fields smb2-enabled,smb3-enabled
+vserver smb2-enabled smb3-enabled
+------- ------------ ------------
+vs1     true         true
+
+cluster1::*> set -privilege admin
+
+cluster1::> vserver cifs branchcache create -vserver vs1 -hash-store-path /hash_data -hash-store-max-size 20GB -versions enable-all -server-key "my server key"
+
+cluster1::> vserver cifs branchcache show -vserver vs1
+
+                                 Vserver: vs1
+          Supported BranchCache Versions: enable_all
+                      Path to Hash Store: /hash_data
+          Maximum Size of the Hash Store: 20GB
+Encryption Key Used to Secure the Hashes: -
+        CIFS BranchCache Operating Modes: per_share
+----
+.Informações relacionadas
+xref:branchcache-version-support-concept.html[Requisitos e diretrizes: Suporte à versão BranchCache]
+
+xref:configure-branchcache-remote-office-concept.adoc[Onde encontrar informações sobre como configurar o BranchCache no escritório remoto]
+
+xref:create-branchcache-enabled-share-task.adoc[Crie um compartilhamento SMB habilitado para BranchCache]
+
+xref:enable-branchcache-existing-share-task.adoc[Ative o BranchCache em um compartilhamento SMB existente]
+
+xref:modify-branchcache-config-task.html[Modifique a configuração do BranchCache]
+
+xref:disable-branchcache-shares-concept.html[Desative a visão geral de BranchCache na SMB shares]
+
+xref:delete-branchcache-config-task.html[Exclua a configuração BranchCache em SVMs]

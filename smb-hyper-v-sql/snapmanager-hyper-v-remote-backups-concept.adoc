@@ -1,0 +1,60 @@
+---
+permalink: smb-hyper-v-sql/snapmanager-hyper-v-remote-backups-concept.html 
+sidebar: sidebar 
+keywords: snapmanager, hyper, v, remote, manage, vss, backup, smb 
+summary: Você pode usar o SnapManager para Hyper-V para gerenciar serviços de backup baseados em VSS remoto. Há benefícios de usar o serviço de backup gerenciado do SnapManager para Hyper-V para criar conjuntos de backup com uso eficiente de espaço. 
+---
+= Como o SnapManager para Hyper-V gerencia backups remotos baseados em VSS para Hyper-V em SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o SnapManager para Hyper-V para gerenciar serviços de backup baseados em VSS remoto. Há benefícios de usar o serviço de backup gerenciado do SnapManager para Hyper-V para criar conjuntos de backup com uso eficiente de espaço.
+
+As otimizações para o SnapManager para backups gerenciados do Hyper-V incluem o seguinte:
+
+* A integração do SnapDrive com o ONTAP oferece otimização de performance ao descobrir o local de compartilhamento SMB.
++
+O ONTAP fornece ao SnapDrive o nome do volume em que o compartilhamento reside.
+
+* O SnapManager para Hyper-V especifica a lista de arquivos de máquina virtual nos compartilhamentos SMB que o serviço de cópia sombra precisa copiar.
++
+Ao fornecer uma lista segmentada de arquivos de máquina virtual, o serviço de cópia de sombra não precisa criar cópias de sombra de todos os arquivos no compartilhamento.
+
+* A máquina virtual de storage (SVM) retém as cópias Snapshot do SnapManager para Hyper-V a serem usadas para restaurações.
++
+Não há fase de backup. O backup é a cópia Snapshot com uso eficiente de espaço.
+
+
+
+O SnapManager para Hyper-V fornece recursos de backup e restauração para o HyperV em SMB usando o seguinte processo:
+
+. Preparação para a operação de cópia de sombra
++
+O cliente VSS do aplicativo SnapManager para Hyper-V configura o conjunto de cópias de sombra. O cliente VSS reúne informações sobre quais compartilhamentos incluir no conjunto de cópias de sombra e fornece essas informações ao ONTAP. Um conjunto pode conter uma ou mais cópias de sombra, e uma cópia de sombra corresponde a um compartilhamento.
+
+. Criando o conjunto de cópias de sombra (se a recuperação automática for usada)
++
+Para cada compartilhamento incluído no conjunto de cópias de sombra, o ONTAP cria uma cópia de sombra e torna a cópia de sombra gravável.
+
+. Expondo o conjunto de cópias de sombra
++
+Depois que o ONTAP cria as cópias de sombra, elas são expostas ao SnapManager para Hyper-V para que os escritores VSS do aplicativo possam executar a recuperação automática.
+
+. Recuperar automaticamente o conjunto de cópias de sombra
++
+Durante a criação do conjunto de cópias de sombra, há um período de tempo em que as alterações ativas estão ocorrendo nos arquivos incluídos no conjunto de backup. Os escritores VSS do aplicativo devem atualizar as cópias sombra para garantir que estejam em um estado completamente consistente antes do backup.
+
++
+[NOTE]
+====
+A forma como a recuperação automática é feita é específica da aplicação. VSS remoto não está envolvido nesta fase.
+
+====
+. Completar e limpar o conjunto de cópias de sombra
++
+O cliente VSS notifica o ONTAP após concluir a recuperação automática. O conjunto de cópias de sombra é feito somente leitura e, em seguida, está pronto para backup. Ao usar o SnapManager para Hyper-V para backup, os arquivos em uma cópia Snapshot tornam-se o backup; portanto, para a fase de backup, uma cópia Snapshot é criada para cada volume que contém compartilhamentos no conjunto de backup. Após a conclusão do backup, o conjunto de cópias de sombra é removido do servidor CIFS.
+
+

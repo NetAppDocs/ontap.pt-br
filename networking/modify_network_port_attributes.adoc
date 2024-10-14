@@ -1,0 +1,52 @@
+---
+sidebar: sidebar 
+permalink: networking/modify_network_port_attributes.html 
+keywords: change, changing, modify, modifying, network, port, attributes, modify network port attributes, change the autonegotiation, duplex, flow control, speed, and health settings of a physical network port 
+summary: Altere as configurações de negociação automática, duplex, controle de fluxo, velocidade e integridade de uma porta de rede física 
+---
+= Modificar atributos de porta de rede
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode modificar as configurações de negociação automática, duplex, controle de fluxo, velocidade e integridade de uma porta de rede física.
+
+.Antes de começar
+A porta que você deseja modificar não deve estar hospedando nenhum LIFs.
+
+.Sobre esta tarefa
+* Não é recomendável modificar as configurações administrativas das interfaces de rede de 100 GbE, 40 GbE, 10 GbE ou 1 GbE.
++
+Os valores definidos para o modo duplex e a velocidade da porta são referidos como definições administrativas. Dependendo das limitações da rede, as configurações administrativas podem diferir das configurações operacionais (ou seja, o modo duplex e a velocidade que a porta realmente usa).
+
+* Não é recomendável modificar as configurações administrativas das portas físicas subjacentes em um grupo de interfaces.
++
+O `-up-admin` parâmetro (disponível no nível de privilégio avançado) modifica as definições administrativas da porta.
+
+* Não é recomendável definir a `-up-admin` configuração administrativa como falsa para todas as portas em um nó ou para a porta que hospeda o último LIF de cluster operacional em um nó.
+* Não é recomendável modificar o tamanho da MTU da porta de gerenciamento, `e0M`.
+* O tamanho da MTU de uma porta em um domínio de broadcast não pode ser alterado do valor MTU definido para o domínio de broadcast.
+* O tamanho da MTU de uma VLAN não pode exceder o valor do tamanho da MTU de sua porta base.
+
+
+.Passos
+. Modifique os atributos de uma porta de rede:
++
+`network port modify`
+
+. Você pode definir o `-ignore-health-status` campo como verdadeiro para especificar que o sistema pode ignorar o status de integridade da porta de rede de uma porta especificada.
++
+O status de integridade da porta de rede é alterado automaticamente de degradada para saudável, e essa porta agora pode ser usada para hospedar LIFs. Você deve definir o controle de fluxo das portas do cluster como `none`. Por padrão, o controle de fluxo é definido como `full`.
+
+
+
+O comando a seguir desativa o controle de fluxo na porta e0b definindo o controle de fluxo como nenhum:
+
+....
+network port modify -node cluster-1-01 -port e0b -flowcontrol-admin none
+....

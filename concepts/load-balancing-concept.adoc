@@ -1,0 +1,75 @@
+---
+permalink: concepts/load-balancing-concept.html 
+sidebar: sidebar 
+keywords: 'load balance, workload, latency, overload, reduce load, ceiling, limits, iops, "mb/s", qos, min, max, policy group, throughput, headroom, floor, adaptive qos' 
+summary: 'O desempenho de workloads começa a ser afetado pela latência quando a quantidade de trabalho em um nó excede os recursos disponíveis. Você pode gerenciar um nó sobrecarregado aumentando os recursos disponíveis (atualizando discos ou CPU) ou reduzindo a carga (movendo volumes ou LUNs para nós diferentes, conforme necessário).' 
+---
+= Balanceamento de carga
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O desempenho de workloads começa a ser afetado pela latência quando a quantidade de trabalho em um nó excede os recursos disponíveis. Você pode gerenciar um nó sobrecarregado aumentando os recursos disponíveis (atualizando discos ou CPU) ou reduzindo a carga (movendo volumes ou LUNs para nós diferentes, conforme necessário).
+
+Você também pode usar a qualidade do serviço (QoS) do ONTAP para garantir que a performance de workloads essenciais não seja degradada pelos workloads da concorrência:
+
+* Você pode definir uma taxa de transferência de QoS _ceiling_ em um workload da concorrência para limitar seu impacto nos recursos do sistema (QoS Max).
+* Você pode definir uma taxa de transferência de QoS _floor_ para um workload crítico, garantindo que ele atenda aos destinos mínimos de taxa de transferência, independentemente da demanda por workloads da concorrência (QoS min).
+* Você pode definir um limite e um espaço de QoS para o mesmo workload.
+
+
+
+
+== Limites máximos de taxa de transferência
+
+Um limite máximo de taxa de transferência limita a taxa de transferência de uma carga de trabalho a um número máximo de IOPS ou MB/s. Na figura abaixo, o limite máximo de produtividade para a carga de trabalho 2 garante que não seja "bully" cargas de trabalho 1 e 3.
+
+Um _grupo de políticas_ define o limite máximo de taxa de transferência para uma ou mais cargas de trabalho. Um workload representa as operações de e/S de um _objeto de storage:_ um volume, arquivo ou LUN ou todos os volumes, arquivos ou LUNs em uma SVM. Você pode especificar o limite máximo ao criar o grupo de políticas ou esperar até que você monitore cargas de trabalho para especificá-lo.
+
+[NOTE]
+====
+A taxa de transferência para cargas de trabalho pode exceder o limite máximo especificado em até 10%, especialmente se uma carga de trabalho sofrer mudanças rápidas na taxa de transferência. O teto pode ser excedido em até 50% para lidar com explosões.
+
+====
+image:qos-ceiling-concepts.gif["Teto com taxa de transferência"]
+
+
+
+== Andares com taxa de transferência
+
+Um piso de taxa de transferência garante que a taxa de transferência para um workload não fique abaixo de um número mínimo de IOPS. Na figura abaixo, os andares de taxa de transferência para o workload 1 e o workload 3 garantem que eles atendam aos destinos mínimos de taxa de transferência, independentemente da demanda por workload 2.
+
+[TIP]
+====
+Como os exemplos sugerem, um teto de throughput limita a taxa de transferência diretamente. Um piso de taxa de transferência mantém a taxa de transferência indiretamente, dando prioridade às cargas de trabalho para as quais o piso foi definido.
+
+====
+Uma carga de trabalho representa as operações de e/S de um volume, LUN ou, a partir de ONTAP 9.3, arquivo. Um grupo de políticas que define um piso de taxa de transferência não pode ser aplicado a um SVM. Você pode especificar o piso ao criar o grupo de políticas ou esperar até que você monitore cargas de trabalho para especificá-lo.
+
+[NOTE]
+====
+A taxa de transferência para uma carga de trabalho pode ficar abaixo do nível especificado se houver capacidade de desempenho (espaço livre) insuficiente no nó ou no agregado, ou durante operações críticas como `volume move trigger-cutover`o . Mesmo quando a capacidade suficiente está disponível e as operações críticas não estão ocorrendo, a taxa de transferência para uma carga de trabalho pode cair abaixo do piso especificado em até 5%.
+
+====
+image:qos-floor-concepts.gif["Andares com taxa de transferência"]
+
+
+
+== QoS adaptável
+
+Normalmente, o valor do grupo de políticas que você atribui a um objeto de storage é fixo. Você precisa alterar o valor manualmente quando o tamanho do objeto de armazenamento muda. Um aumento na quantidade de espaço usado em um volume, por exemplo, geralmente requer um aumento correspondente no limite de produtividade especificado para o volume.
+
+O _Adaptive QoS_ dimensiona automaticamente o valor do grupo de políticas para o tamanho do workload, mantendo a taxa de IOPS para TBs|GBs conforme o tamanho do workload muda. Essa é uma vantagem significativa quando você gerencia centenas ou milhares de cargas de trabalho em uma implantação grande.
+
+Normalmente, você usa QoS adaptável para ajustar limites máximos de taxa de transferência, mas também pode usá-la para gerenciar andares de taxa de transferência (quando o tamanho do workload aumenta). O tamanho do workload é expresso como o espaço alocado para o objeto de storage ou o espaço usado pelo objeto de storage.
+
+
+NOTE: O espaço usado está disponível para pisos de throughput no ONTAP 9.5 e posterior. Não é suportado para pisos de rendimento no ONTAP 9 .4 e anteriores.
+
+A partir do ONTAP 9.13,1, você pode usar QoS adaptável para definir pisos e tetos de taxa de transferência no nível da SVM.
+
+* Uma política _allocated space_ mantém a relação IOPS/TB|GB de acordo com o tamanho nominal do objeto de armazenamento. Se a taxa for de 100 IOPS/GB, um volume de 150 GB terá um limite máximo de taxa de transferência de 15.000 IOPS enquanto o volume permanecer nesse tamanho. Se o volume for redimensionado para 300 GB, a QoS adaptável ajusta o limite da taxa de transferência para 30.000 IOPS.
+* Uma política _used space_ (o padrão) mantém a taxa IOPS/TB|GB de acordo com a quantidade de dados reais armazenados antes da eficiência de armazenamento. Se a taxa for de 100 IOPS/GB, um volume de 150 GB que tenha 100 GB de dados armazenados teria um limite máximo de taxa de transferência de 10.000 IOPS. À medida que a quantidade de espaço usado muda, a QoS adaptável ajusta o teto de taxa de transferência de acordo com a taxa.
+

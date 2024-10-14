@@ -1,0 +1,115 @@
+---
+permalink: authentication/manage-ssh-public-keys-and-certificates.html 
+sidebar: sidebar 
+keywords: associate, public key, administrator account 
+summary: Para autenticação de chave pública SSH, você pode gerenciar a chave pública e sua associação com certificados X,509 para uma conta de administrador, você pode usar os comandos de segurança de login publickey para gerenciar chaves públicas e certificados para uma conta de administrador. 
+---
+= Gerenciar chaves públicas SSH e certificados X,509 para uma conta de administrador
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para maior segurança de autenticação SSH com contas de administrador, você pode usar o `security login publickey` conjunto de comandos para gerenciar a chave pública SSH e sua associação com certificados X,509.
+
+
+
+== Associar uma chave pública e um certificado X,509 a uma conta de administrador
+
+A partir do ONTAP 9.13,1, é possível associar um certificado X,509 à chave pública associada à conta de administrador. Isso dá a você a segurança adicional de verificações de expiração ou revogação de certificados no login SSH para essa conta.
+
+.Sobre esta tarefa
+Se você autenticar uma conta via SSH com uma chave pública SSH e um certificado X,509, o ONTAP verifica a validade do certificado X,509 antes de autenticar com a chave pública SSH. O login SSH será recusado se esse certificado estiver expirado ou revogado, e a chave pública será automaticamente desativada.
+
+.Antes de começar
+* Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
+* Você deve ter gerado a chave SSH.
+* Se você precisar apenas do certificado X,509 para ser verificado para a expiração, você pode usar um certificado autoassinado.
+* Se você precisar que o certificado X,509 seja verificado quanto à expiração e revogação:
++
+** Você deve ter recebido o certificado de uma autoridade de certificação (CA).
+** Você deve instalar a cadeia de certificados (certificados de CA intermediária e raiz) usando `security certificate install` comandos.
+** Você precisa ativar o OCSP para SSH. link:../system-admin/verify-digital-certificates-valid-ocsp-task.html["Verifique se os certificados digitais são válidos usando OCSP"^]Consulte para obter instruções.
+
+
+
+
+.Passos
+. Associar uma chave pública e um certificado X,509 a uma conta de administrador:
++
+`security login publickey create -vserver _SVM_name_ -username _user_name_ -index _index_ -publickey _certificate_ -x509-certificate install`
+
++
+Para obter a sintaxe de comando completa, consulte a referência de Planilha para link:config-worksheets-reference.html#associate-a-public-key-with-a-user-account["Associar uma chave pública a uma conta de utilizador"^].
+
+. Verifique a alteração visualizando a chave pública:
++
+`security login publickey show -vserver _SVM_name_ -username _user_name_ -index _index_`
+
+
+
+.Exemplo
+O comando a seguir associa uma chave pública e um certificado X,509 à conta de administrador do SVM `svmadmin2` para o `engData2` SVM . A chave pública recebe o número de índice 6.
+
+[listing]
+----
+cluster1::> security login publickey create -vserver engData2 -username svmadmin2 -index 6 -publickey
+"<key text>" -x509-certificate install
+Please enter Certificate: Press <Enter> when done
+<certificate text>
+----
+
+
+== Remova a associação de certificados da chave pública SSH para uma conta de administrador
+
+Você pode remover a associação de certificados atual da chave pública SSH da conta, mantendo a chave pública.
+
+.Antes de começar
+Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
+
+.Passos
+. Remova a associação de certificados X,509 de uma conta de administrador e guarde a chave pública SSH existente:
++
+`security login publickey modify -vserver SVM_name -username user_name -index index -x509-certificate delete`
+
+. Verifique a alteração visualizando a chave pública:
++
+`security login publickey show -vserver _SVM_name_ -username _user_name_ -index _index_`
+
+
+
+.Exemplo
+O comando a seguir remove a associação de certificado X,509 da conta de administrador SVM `svmadmin2` para SVM `engData2` no índice 6.
+
+[listing]
+----
+cluster1::> security login publickey modify -vserver engData2 -username svmadmin2 -index 6 -x509-certificate delete
+----
+
+
+== Remova a associação de chave pública e certificado de uma conta de administrador
+
+Você pode remover a chave pública atual e a configuração de certificado de uma conta.
+
+.Antes de começar
+Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
+
+.Passos
+. Remova a chave pública e uma associação de certificado X,509 de uma conta de administrador:
++
+`security login publickey delete -vserver _SVM_name_ -username _user_name_ -index _index_`
+
+. Verifique a alteração visualizando a chave pública:
++
+`security login publickey show -vserver _SVM_name_ -username _user_name_ -index _index_`
+
+
+
+.Exemplo
+O comando a seguir remove uma chave pública e um certificado X,509 da conta de administrador do SVM `svmadmin3` para o SVM `engData3` no índice 7.
+
+[listing]
+----
+cluster1::> security login publickey delete -vserver engData3 -username svmadmin3 -index 7
+----

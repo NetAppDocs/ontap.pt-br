@@ -1,0 +1,64 @@
+---
+permalink: s3-audit/create-enable-config-task.html 
+sidebar: sidebar 
+keywords: consistency groups, consistency group, application protection, parent, child, configure 
+summary: Para implementar a auditoria do S3, primeiro você cria uma configuração de auditoria de armazenamento de objetos persistente em um SVM habilitado para S3 e, em seguida, ativa a configuração. 
+---
+= Crie e habilite uma configuração de auditoria S3
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para implementar a auditoria do S3, primeiro você cria uma configuração de auditoria de armazenamento de objetos persistente em um SVM habilitado para S3 e, em seguida, ativa a configuração.
+
+.O que você vai precisar
+* SVM habilitado para S3.
+* Espaço suficiente para estadiamento de volumes no agregado.
+
+
+.Sobre esta tarefa
+É necessária uma configuração de auditoria para cada SVM que contenha buckets do S3 que você deseja auditar. Você pode habilitar a auditoria S3 em servidores S3 novos ou existentes. As configurações de auditoria persistem em um ambiente S3 até serem removidas pelo comando *vserver object-store-server audit delete*.
+
+A configuração de auditoria do S3 se aplica a todos os buckets do SVM que você selecionar para auditoria. Um SVM habilitado para auditoria pode conter buckets auditados e não auditados.
+
+É recomendável configurar a auditoria S3 para rotação automática de logs, determinada pelo tamanho do log ou por um agendamento. Se você não configurar a rotação automática de log, todos os arquivos de log serão retidos por padrão. Você também pode girar arquivos de log S3 manualmente usando o comando *vserver object-store-server audit rotate-log*.
+
+Se o SVM for uma fonte de recuperação de desastres do SVM, o caminho de destino não poderá estar no volume raiz.
+
+.Procedimento
+. Crie a configuração de auditoria para girar logs de auditoria com base no tamanho do log ou em uma programação.
++
+[cols="2,4"]
+|===
+| Se você quiser girar logs de auditoria... | Digite... 
+
+
+| Tamanho do registo | `vserver object-store-server audit create -vserver _svm_name_ -destination _path_ [[-events] {data{vbar}management}, ...] {[-rotate-limit _integer_] {vbar} [-retention-duration [_integer_d] [_integer_h][_integer_m][_integers_]]} [-rotate-size {_integer_[KB{vbar}MB{vbar}GB{vbar}TB{vbar}PB]}]` 
+
+
+| Uma programação  a| 
+`vserver object-store-server audit create -vserver _svm_name_ -destination path [[-events] {data{vbar}management}, ...] {[-rotate-limit _integer_] {vbar} [-retention-duration [_integerd_][_integerh_] [_integerm_][_integers_]] } [-rotate-schedule-month _chron_month_] [-rotate-schedule-dayofweek _chron_dayofweek_] [-rotate-schedule-day _chron_dayofmonth_] [-rotate-schedule-hour _chron_hour_] -rotate-schedule-minute _chron_minute_`
+
+O `-rotate-schedule-minute` parâmetro é necessário se você estiver configurando a rotação de log de auditoria baseada em tempo.
+
+|===
+. Ativar auditoria S3:
++
+`vserver object-store-server audit enable -vserver _svm_name_`
+
+
+
+.Exemplos
+O exemplo a seguir cria uma configuração de auditoria que audita todos os eventos S3 (o padrão) usando rotação baseada em tamanho. Os logs são armazenados no diretório /audit_log. O limite de tamanho do arquivo de log é de 200 MB. Os logs são girados quando atingem 200 MB de tamanho.
+
+`cluster1::> vserver audit create -vserver vs1 -destination /audit_log -rotate-size 200MB`
+
+O exemplo a seguir cria uma configuração de auditoria que audita todos os eventos S3 (o padrão) usando rotação baseada em tamanho. O limite de tamanho do arquivo de log é de 100 MB (o padrão) e os logs são mantidos por 5 dias antes de serem excluídos.
+
+`cluster1::> vserver audit create -vserver vs1 -destination /audit_log -retention-duration 5d0h0m`
+
+O exemplo a seguir cria uma configuração de auditoria que audita eventos de gerenciamento S3 e eventos de preparação de políticas de acesso central usando rotação baseada em tempo. Os logs de auditoria são girados mensalmente, às 12:30 horas em todos os dias da semana. O limite de rotação do registo é 5.
+
+`cluster1::> vserver audit create -vserver vs1 -destination /audit_log -events management -rotate-schedule-month all -rotate-schedule-dayofweek all -rotate-schedule-hour 12 -rotate-schedule-minute 30 -rotate-limit 5`

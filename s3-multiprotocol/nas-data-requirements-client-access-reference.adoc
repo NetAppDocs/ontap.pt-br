@@ -1,0 +1,32 @@
+---
+permalink: s3-multiprotocol/nas-data-requirements-client-access-reference.html 
+sidebar: sidebar 
+keywords: s3, mapping, directory, access, configuration, object, nas, bucket 
+summary: É importante entender que o mapeamento de arquivos e diretórios nas para o acesso S3 altera algum comportamento nas padrão. 
+---
+= Requisitos de dados nas para acesso ao cliente S3
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É importante entender que existem algumas incompatibilidades inerentes ao mapeamento de arquivos e diretórios nas para acesso S3. Pode ser necessário ajustar hierarquias de arquivos nas antes de servi-los usando buckets do nas S3.
+
+Um bucket do S3 nas fornece acesso S3 a um diretório nas mapeando esse diretório usando a sintaxe do bucket do S3, e os arquivos na árvore de diretórios são vistos como objetos. Os nomes de objeto são os nomes de caminho delimitados por barra dos arquivos em relação ao diretório especificado na configuração de bucket S3.
+
+Esse mapeamento impõe alguns requisitos quando arquivos e diretórios são servidos usando buckets do nas S3:
+
+* Os nomes S3 são limitados a 1024 bytes, portanto os arquivos com pathnames mais longos não são acessíveis usando S3.
+* Os nomes de arquivo e diretório estão limitados a 255 carateres, portanto, um nome de objeto não pode ter mais de 255 carateres consecutivos sem barra ( '/')
+* Um nome de caminho SMB delimitado por carateres de barra invertida ( ''') aparecerá em S3 como um nome de objeto contendo carateres de barra direta ( '/') em vez disso.
+* Alguns pares de nomes de objetos S3 legais não podem coexistir na árvore de diretórios nas mapeada. Por exemplo, os nomes de objetos S3 legais "part1/part2" e "part1/part2/part3" mapeiam para arquivos que não podem existir simultaneamente na árvore de diretórios nas, pois "part1/part2" é um arquivo no primeiro nome e um diretório no outro.
++
+** Se "part1/part2" for um arquivo existente, uma criação S3 de "part1/part2/part3" falhará.
+** Se "part1/part2/part3" for um arquivo existente, uma criação ou exclusão S3 de "part1/part2" falhará.
+** Uma criação de objeto S3 que corresponde ao nome de um objeto existente substitui o objeto pré-existente (em buckets não versionados); que se mantém no nas, mas requer uma correspondência exata. Os exemplos acima não causarão a remoção do objeto existente porque enquanto os nomes colidem, eles não coincidem.
+
+
+
+
+Embora um armazenamento de objetos seja projetado para suportar um número muito grande de nomes arbitrários, uma estrutura de diretório nas pode experimentar problemas de desempenho se um número muito grande de nomes for colocado em um diretório. Em particular, nomes sem carateres de barra ( '/') serão todos colocados no diretório raiz do mapeamento nas. As aplicações que fazem uso extensivo de nomes que não são "amigáveis ao nas" seriam mais bem hospedadas em um bucket de armazenamento de objetos real em vez de um mapeamento nas.

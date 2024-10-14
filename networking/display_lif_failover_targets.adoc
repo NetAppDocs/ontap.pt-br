@@ -1,0 +1,69 @@
+---
+sidebar: sidebar 
+permalink: networking/display_lif_failover_targets.html 
+keywords: display, view, show, lif, logical, interface, failover, fail, over, target, display lif failover targets, verify the failover policy and failover group configuration for a lif, network interface show 
+summary: Verifique a política de failover e a configuração do grupo de failover para um LIF 
+---
+= Exibir destinos de failover de LIF
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Talvez seja necessário verificar se as políticas de failover e os grupos de failover de um LIF estão configurados corretamente. Para evitar a configuração incorreta das regras de failover, você pode exibir os destinos de failover para um único LIF ou para todos os LIFs.
+
+.Sobre esta tarefa
+A exibição de destinos de failover de LIF permite verificar o seguinte:
+
+* Se os LIFs são configurados com o grupo de failover correto e a política de failover
+* Se a lista resultante de portas de destino de failover é apropriada para cada LIF
+* Se o destino de failover de um LIF de dados não é uma porta de gerenciamento (e0M)
+
+
+.Passo
+Exiba os destinos de failover de um LIF usando a `failover` opção `network interface show` do comando.
+
+O comando a seguir exibe informações sobre os destinos de failover para todos os LIFs em um cluster de dois nós. A `Failover` `Targets` linha mostra a lista (priorizada) de combinações de nó-porta para um determinado LIF.
+
+....
+network interface show -failover
+         Logical       Home                  Failover        Failover
+Vserver  Interface     Node:Port             Policy          Group
+-------- ------------- --------------------- --------------- ---------
+Cluster
+         node1_clus1   node1:e0a             local-only      Cluster
+                       Failover Targets: node1:e0a,
+                                         node1:e0b
+         node1_clus2   node1:e0b             local-only      Cluster
+                       Failover Targets: node1:e0b,
+                                         node1:e0a
+         node2_clus1   node2:e0a             local-only      Cluster
+                       Failover Targets: node2:e0a,
+                                         node2:e0b
+         node2_clus2   node2:e0b             local-only      Cluster
+                       Failover Targets: node2:e0b,
+                                         node2:e0a
+cluster1
+         cluster_mgmt  node1:e0c             broadcast-domain-wide
+                                                             Default
+                       Failover Targets: node1:e0c,
+                                         node1:e0d,
+                                         node2:e0c,
+                                         node2:e0d
+         node1_mgmt1   node1:e0c             local-only      Default
+                       Failover Targets: node1:e0c,
+                                         node1:e0d
+         node2_mgmt1   node2:e0c             local-only      Default
+                       Failover Targets: node2:e0c,
+                                         node2:e0d
+vs1
+         data1         node1:e0e             system-defined  bcast1
+                       Failover Targets: node1:e0e,
+                                         node1:e0f,
+                                         node2:e0e,
+                                         node2:e0f
+....

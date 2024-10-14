@@ -1,0 +1,95 @@
+---
+sidebar: sidebar 
+permalink: networking/verify_your_network_configuration.html 
+keywords: verify, upgrade, considerations, network, configuration, upgrading, physical, wire, wiring, cable, cabling, layer 2, reachability, port, results, verify your networking configuration after upgrading to ontap 9.8 or later, network port reachability show -detail, repair reachability decision tree, layer 2 reachability, assigned broadcast domain, reachability-status, unexpected ports, unavailable ports, reachability repair 
+summary: Verifique sua configuração de rede após a atualização para o ONTAP 9.8 ou posterior 
+---
+= Verifique a configuração da rede após uma atualização do ONTAP a partir do ONTAP 9.7x ou anterior
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois de atualizar do ONTAP 9.7x ou anterior para o ONTAP 9.8 ou posterior, verifique a configuração da rede. Após a atualização, o ONTAP monitora automaticamente a acessibilidade da camada 2.
+
+.Passo
+. Verifique se cada porta tem acessibilidade ao domínio de broadcast esperado:
++
+[source, cli]
+----
+network port reachability show -detail
+----
+
+
+O comando output contém resultados de acessibilidade. Use a seguinte árvore de decisão e tabela para entender os resultados de acessibilidade (status de acessibilidade) e determinar o que, se houver, fazer a seguir.
+
+image:ontap_nm_image1.png["Reparar árvore de decisão de acessibilidade"]
+
+[cols="20,80"]
+|===
+
+
+| status de acessibilidade | Descrição 
+
+
+ a| 
+ok
+ a| 
+A porta tem acessibilidade da camada 2 ao domínio de broadcast atribuído.
+
+Se o status de acessibilidade for "ok", mas houver "portas inesperadas", considere mesclar um ou mais domínios de broadcast. Para obter mais informações, link:merge_broadcast_domains.html["Mesclar domínios de broadcast"]consulte .
+
+Se o status de acessibilidade for "ok", mas houver "portas inalcançáveis", considere dividir um ou mais domínios de broadcast. Para obter mais informações, link:split_broadcast_domains.html["Dividir domínios de broadcast"]consulte .
+
+Se o status de acessibilidade for "ok" e não houver portas inesperadas ou inacessíveis, sua configuração está correta.
+
+
+
+ a| 
+acessibilidade mal configurada
+ a| 
+A porta não tem acessibilidade da camada 2 ao domínio de broadcast atribuído; no entanto, a porta tem acessibilidade da camada 2 para um domínio de broadcast diferente.
+
+Você pode reparar a acessibilidade da porta. Ao executar o seguinte comando, o sistema atribuirá a porta ao domínio de broadcast ao qual tem acessibilidade:
+
+`network port reachability repair -node -port`
+
+Para obter mais informações, link:repair_port_reachability.html["Acessibilidade da porta de reparo"]consulte .
+
+
+
+ a| 
+sem acessibilidade
+ a| 
+A porta não tem acessibilidade da camada 2 para qualquer domínio de broadcast existente.
+
+Você pode reparar a acessibilidade da porta. Quando você executa o seguinte comando, o sistema atribuirá a porta a um novo domínio de broadcast criado automaticamente no IPspace padrão:
+
+`network port reachability repair -node -port`
+
+Para obter mais informações, link:repair_port_reachability.html["Acessibilidade da porta de reparo"]consulte .
+
+
+
+ a| 
+multidomínio-acessibilidade
+ a| 
+A porta tem acessibilidade da camada 2 ao domínio de broadcast atribuído; no entanto, também tem acessibilidade da camada 2 para pelo menos um outro domínio de broadcast.
+
+Examine a conetividade física e a configuração do switch para determinar se está incorreta ou se o domínio de broadcast atribuído à porta precisa ser mesclado com um ou mais domínios de broadcast.
+
+Para obter mais informações, consulte link:merge_broadcast_domains.html["Mesclar domínios de broadcast"] ou link:repair_port_reachability.html["Acessibilidade da porta de reparo"].
+
+
+
+ a| 
+desconhecido
+ a| 
+Se o status de acessibilidade for "desconhecido", aguarde alguns minutos e tente o comando novamente.
+
+|===
+Depois de reparar uma porta, você precisa verificar e resolver LIFs e VLANs deslocados. Se a porta fazia parte de um grupo de interfaces, você também precisa entender o que aconteceu com esse grupo de interfaces. Para obter mais informações, link:repair_port_reachability.html["Acessibilidade da porta de reparo"]consulte .

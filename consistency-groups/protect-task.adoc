@@ -1,0 +1,305 @@
+---
+permalink: consistency-groups/protect-task.html 
+sidebar: sidebar 
+keywords: application protection, two-phase commit, 2 phase, smbc, async snapmirror, local, remote, snapshot, asynchronous, svm disaster recovery, snapmirror 
+summary: Use grupos de consistência para proteger dados usando snapshots locais, assíncrono com SnapMirror, SnapMirror active Sync e recuperação de desastres com SVM. 
+---
+= Proteja grupos de consistência
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os grupos de consistência oferecem proteção local e remota facilmente gerenciada para aplicações SAN, nas e NVMe que abrangem vários volumes.
+
+Criar um grupo de consistência não ativa automaticamente a proteção. As políticas de proteção podem ser definidas no momento da criação ou após a criação do seu grupo de consistência. Você pode proteger grupos de consistência usando:
+
+* Cópias Snapshot locais
+* SnapMirror ative Sync (referido como SnapMirror Business Continuity em versões do ONTAP anteriores a 9.15.1)
+* xref:index.html#mcc[MetroCluster (início de 9.11.1)]
+* SnapMirror assíncrono (início de 9.13.1)
+* Recuperação assíncrona de desastres do SVM (início de 9.14.1)
+
+
+Se você estiver utilizando grupos de consistência aninhados, poderá definir políticas de proteção diferentes para os grupos de consistência pai e filho.
+
+Começando com ONTAP 9.11,1, grupos de consistência oferecem <<two-phase,Criação de Snapshot do grupo de consistência em duas fases>>. A operação Snapshot de duas fases executa uma pré-verificação, garantindo que a cópia Snapshot seja capturada com êxito.
+
+A recuperação pode ocorrer para um grupo inteiro de consistência, um único grupo de consistência em uma configuração hierárquica ou para volumes individuais dentro do grupo de consistência. A recuperação pode ser obtida selecionando o grupo de consistência do qual você deseja recuperar, selecionando o tipo de cópia Snapshot e identificando a cópia Snapshot para basear a restauração. Para obter mais informações sobre esse processo, link:../task_dp_restore_from_vault.html["Restaurar um volume a partir de uma cópia Snapshot anterior"]consulte .
+
+
+
+== Configurar uma política de instantâneo local
+
+Definir uma política de proteção de snapshot local permite criar uma política que abrange todos os volumes em um grupo de consistência.
+
+.Sobre esta tarefa
+O agendamento mínimo de cópia Snapshot compatível para grupos de consistência é de 30 minutos. Isso é baseado link:https://www.netapp.com/media/12385-tr4571.pdf["Teste para FlexGroups"^]no , que compartilha a mesma infraestrutura Snapshot que os grupos de consistência.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência que você criou no menu do grupo de consistência.
+. No canto superior direito da página de visão geral do grupo consistência, selecione *Editar*.
+. Marque a caixa ao lado de *Agendar cópias Snapshot (local)*.
+. Selecione uma política de instantâneos. Para configurar uma nova política personalizada, link:../task_dp_create_custom_data_protection_policies.html["Crie uma política de proteção de dados personalizada"]consulte .
+. Selecione *Guardar*.
+. Regresse ao menu de visão geral do grupo de consistência. Na coluna à esquerda em *cópias Snapshot (local)*, o status dirá protegido ao lado image:../media/icon_shield.png["Ícone de escudo"]de .
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode modificar a política de proteção de um grupo de consistência usando a CLI.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Passo
+. Execute o seguinte comando para definir ou modificar a política de proteção:
++
+Se você estiver modificando a política de proteção de uma consistência filho, será necessário identificar o grupo de consistência pai usando o `-parent-consistency-group _parent_consistency_group_name_` parâmetro.
+
++
+`consistency-group modify -vserver _svm_name_ -consistency-group _consistency_group_name_ -snapshot-policy _policy_name_`
+
+
+
+--
+====
+
+
+== Crie uma cópia Snapshot sob demanda
+
+Se você precisar criar uma cópia Snapshot do seu grupo de consistência fora de uma política normalmente agendada, poderá criar uma sob demanda.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Navegue até *armazenamento* > *grupos de consistência*.
+. Selecione o grupo de consistência para o qual você deseja criar uma cópia Snapshot sob demanda.
+. Mude para a guia *cópias Snapshot* e selecione * Adicionar*.
+. Forneça um *Nome* e um *Etiqueta SnapMirror*. No menu suspenso para *consistência*, selecione *consistente aplicação* ou *Crash consistente*.
+. Selecione *Guardar*.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode criar uma cópia Snapshot sob demanda de um grupo de consistência usando a CLI.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Passo
+. Criar a cópia Snapshot:
++
+Por padrão, o tipo Snapshot é consistente com falhas. Você pode modificar o tipo de instantâneo com o parâmetro opcional `-type`.
+
++
+`consistency-group snapshot create -vserver _svm_name_ -consistency-group _consistency_group_name_ -snapshot _snapshot_name_`
+
+
+
+--
+====
+
+
+== Crie instantâneos de grupo de consistência em duas fases
+
+A partir do ONTAP 9.11,1, os grupos de consistência suportam commits de duas fases para a criação de instantâneo do grupo de consistência (CG), que executam uma pré-verificação antes de confirmar a cópia Snapshot. Esse recurso só está disponível com a API REST do ONTAP.
+
+A criação de Snapshot CG em duas fases só está disponível para a criação do Snapshot, não para provisionar grupos de consistência ou restaurar grupos de consistência.
+
+Um CG Snapshot de duas fases divide o processo de criação de Snapshot em duas fases:
+
+. Na primeira fase, a API executa pré-verificações e aciona a criação do Snapshot. A primeira fase inclui um parâmetro de tempo limite, designando a quantidade de tempo para a cópia Snapshot ser confirmada com êxito.
+. Se a solicitação na primeira fase for concluída com êxito, você poderá invocar a segunda fase dentro do intervalo designado a partir da primeira fase, comprometendo a cópia Snapshot ao endpoint apropriado.
+
+
+.Antes de começar
+* Para usar a criação de Snapshot CG em duas fases, todos os nós do cluster devem estar executando o ONTAP 9.11,1 ou posterior.
+* Apenas uma invocação ativa de uma operação Snapshot de grupo de consistência é suportada em uma instância de grupo de consistência de cada vez, seja em uma fase ou em duas fases. A tentativa de invocar uma operação Snapshot enquanto outra está em andamento resulta em uma falha.
+* Quando você invoca criação do Snapshot, você pode definir um valor de tempo limite opcional entre 5 e 120 segundos. Se nenhum valor de tempo limite for fornecido, o tempo de operação expira no padrão de 7 segundos. Na API, defina o valor de tempo limite com o `action_timeout` parâmetro. Na CLI, use a `-timeout` bandeira.
+
+
+.Passos
+Você pode concluir um snapshot de duas fases com a API REST ou, a partir do ONTAP 9.14,1, a CLI do ONTAP. Esta operação não é suportada no System Manager.
+
+
+NOTE: Se você invocar a criação do Snapshot com a API, deverá confirmar a cópia Snapshot com a API. Se você invocar a criação do Snapshot com a CLI, deverá confirmar a cópia Snapshot com a CLI. Os métodos de mistura não são suportados.
+
+[role="tabbed-block"]
+====
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode criar uma cópia Snapshot em duas fases usando a CLI.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Passos
+. Inicie o instantâneo:
++
+`consistency-group snapshot start -vserver _svm_name_ -consistency-group _consistency_group_name_ -snapshot _snapshot_name_ [-timeout _time_in_seconds_ -write-fence {true|false}]`
+
+. Verifique se o instantâneo foi obtido:
++
+`consistency-group snapshot show`
+
+. Confirme o snapshot:
++
+`consistency-group snapshot commit _svm_name_ -consistency-group _consistency_group_name_ -snapshot _snapshot_name_`
+
+
+
+--
+.API
+--
+. Invoque a criação do Snapshot. Envie uma SOLICITAÇÃO POST para o endpoint do grupo de consistência usando o `action=start` parâmetro.
++
+[source, curl]
+----
+curl -k -X POST 'https://<IP_address>/application/consistency-groups/<cg-uuid>/snapshots?action=start&action_timeout=7' -H "accept: application/hal+json" -H "content-type: application/json" -d '
+{
+  "name": "<snapshot_name>",
+  "consistency_type": "crash",
+  "comment": "<comment>",
+  "snapmirror_label": "<SnapMirror_label>"
+}'
+----
+. Se a SOLICITAÇÃO POST for bem-sucedida, a saída inclui um uuuid Snapshot. Usando esse uuid, envie uma SOLICITAÇÃO DE PATCH para confirmar a cópia Snapshot.
++
+[source, curl]
+----
+curl -k -X PATCH 'https://<IP_address>/application/consistency-groups/<cg_uuid>/snapshots/<snapshot_id>?action=commit' -H "accept: application/hal+json" -H "content-type: application/json"
+
+For more information about the ONTAP REST API, see link:https://docs.netapp.com/us-en/ontap-automation/reference/api_reference.html[API reference^] or the link:https://devnet.netapp.com/restapi.php[ONTAP REST API page^] at the NetApp Developer Network for a complete list of API endpoints.
+----
+
+
+--
+====
+
+
+== Defina a proteção remota para um grupo de consistência
+
+Os grupos de consistência oferecem proteção remota por meio da sincronização ativa do SnapMirror e, a partir do ONTAP 9.13,1, assíncrono do SnapMirror.
+
+
+
+=== Configure a proteção com a sincronização ativa do SnapMirror
+
+Você pode utilizar a sincronização ativa do SnapMirror para garantir que as cópias Snapshot dos grupos de consistência criados no grupo de consistência sejam copiadas para o destino. Para saber mais sobre a sincronização ativa do SnapMirror ou como configurar a sincronização ativa do SnapMirror usando a CLI, xref:../task_san_configure_protection_for_business_continuity.html[Configurar a proteção para a continuidade dos negócios]consulte .
+
+.Antes de começar
+* As relações de sincronização ativa do SnapMirror não podem ser estabelecidas em volumes montados para acesso nas.
+* Os rótulos de política no cluster de origem e destino devem corresponder.
+* O SnapMirror active Sync não replicará cópias Snapshot por padrão, a menos que uma regra com um rótulo SnapMirror seja adicionada à política predefinida `AutomatedFailOver` e as cópias Snapshot sejam criadas com esse rótulo.
++
+Para saber mais sobre este processo, link:../task_san_configure_protection_for_business_continuity.html["Proteja com a sincronização ativa do SnapMirror"]consulte .
+
+* xref:../data-protection/supported-deployment-config-concept.html[Implantações em cascata] Não são compatíveis com a sincronização ativa do SnapMirror.
+* Começando com ONTAP 9.13,1, você pode sem interrupções xref:modify-task.html#add-volumes-to-a-consistency-group[adicione volumes a um grupo de consistência] com uma relação de sincronização ativa do SnapMirror. Quaisquer outras alterações em um grupo de consistência exigem que você quebre a relação de sincronização ativa do SnapMirror, modifique o grupo de consistência e, em seguida, restabeleça e ressincronize a relação.
+
+
+
+TIP: Para configurar a sincronização ativa do SnapMirror com a CLI, xref:../task_san_configure_protection_for_business_continuity.html[Proteja com a sincronização ativa do SnapMirror]consulte .
+
+.Etapas para o System Manager
+. Certifique-se de que encontrou o link:../snapmirror-active-sync/prerequisites-reference.html["Pré-requisitos para usar a sincronização ativa do SnapMirror"].
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência que você criou no menu do grupo de consistência.
+. No canto superior direito da página de visão geral, selecione *mais* e depois *proteger*.
+. O System Manager preenche automaticamente as informações do lado da fonte. Selecione o cluster e a VM de armazenamento apropriados para o destino. Selecione uma política de proteção. Certifique-se de que *Initialize Relationship* está marcado.
+. Selecione *Guardar*.
+. O grupo de consistência precisa inicializar e sincronizar. Confirme se a sincronização foi concluída com êxito retornando ao menu *Grupo de consistência*. O status *SnapMirror (remoto)* é exibido `Protected` ao lado image:../media/icon_shield.png["Ícone de escudo"]de .
+
+
+
+
+=== Configurar o SnapMirror assíncrono
+
+A partir do ONTAP 9.13,1, você pode configurar a proteção assíncrona do SnapMirror para um único grupo de consistência. A partir do ONTAP 9.14,1, você pode usar o assíncrono SnapMirror para replicar cópias Snapshot granular de volume para o cluster de destino usando o relacionamento de grupo de consistência.
+
+.Sobre esta tarefa
+Para replicar cópias Snapshot granular de volume, você precisa executar o ONTAP 9.14,1 ou posterior. Para políticas MirrorAndVault e Vault, o rótulo SnapMirror da política de snapshot granular de volume deve corresponder à regra de política SnapMirror do grupo de consistência. Os snapshots granulares em volume cumprem o valor manter da política SnapMirror do grupo de consistência, que é calculada independentemente dos snapshots do grupo de consistência. Por exemplo, se você tiver uma política para manter duas cópias Snapshot no destino, poderá ter duas cópias Snapshot granular de volume e duas cópias Snapshot de grupo de consistência.
+
+Ao ressincronizar a relação do SnapMirror com cópias Snapshot granular de volume, é possível preservar as cópias Snapshot granular de volume com o `-preserve` sinalizador. Cópias Snapshot granular de volume mais recentes que o grupo de consistência as cópias Snapshot são preservadas. Se não houver uma cópia Snapshot de grupo de consistência, nenhuma cópia Snapshot granular de volume poderá ser transferida para a operação ressincronizada.
+
+.Antes de começar
+* A proteção assíncrona do SnapMirror está disponível apenas para um único grupo de consistência. Não é suportado para grupos hierárquicos de consistência. Para converter um grupo de consistência hierárquica em um único grupo de consistência, xref:modify-geometry-task.html[modifique a arquitetura do grupo de consistência]consulte .
+* Os rótulos de política no cluster de origem e destino devem corresponder.
+* Você pode sem interrupções xref:modify-task.html#add-volumes-to-a-consistency-group[adicione volumes a um grupo de consistência] com uma relação assíncrona ativa do SnapMirror. Quaisquer outras alterações em um grupo de consistência exigem que você quebre o relacionamento SnapMirror, modifique o grupo de consistência e, em seguida, restabeleça e ressincronize o relacionamento.
+* Os grupos de consistência habilitados para proteção com o SnapMirror Asynchronous têm limites diferentes. Para obter mais informações, xref:limits.html[Limites do grupo de consistência]consulte .
+* Se você tiver configurado uma relação de proteção assíncrona do SnapMirror para vários volumes individuais, poderá converter esses volumes em um grupo de consistência e reter as cópias Snapshot existentes. Para converter volumes com sucesso:
++
+** Deve haver uma cópia Snapshot comum dos volumes.
+** Você deve quebrar a relação existente do SnapMirror exref:configure-task.html[adicione os volumes a um único grupo de consistência], em seguida, ressincronizar a relação usando o seguinte fluxo de trabalho.
+
+
+
+
+.Passos
+. No cluster de destino, selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência que você criou no menu do grupo de consistência.
+. No canto superior direito da página de visão geral, selecione *mais* e depois *proteger*.
+. O System Manager preenche automaticamente as informações do lado da fonte. Selecione o cluster e a VM de armazenamento apropriados para o destino. Selecione uma política de proteção. Certifique-se de que *Initialize Relationship* está marcado.
++
+Ao selecionar uma política assíncrona, você tem a opção de **Substituir programação de transferência**.
+
++
+
+NOTE: O cronograma mínimo com suporte (objetivo do ponto de restauração ou RPO) para grupos de consistência com assíncrono SnapMirror é de 30 minutos.
+
+. Selecione *Guardar*.
+. O grupo de consistência precisa inicializar e sincronizar. Confirme se a sincronização foi concluída com êxito retornando ao menu *Grupo de consistência*. O status *SnapMirror (remoto)* é exibido `Protected` ao lado image:../media/icon_shield.png["Ícone de escudo"]de .
+
+
+
+
+=== Configurar a recuperação de desastres da SVM
+
+A partir do ONTAP 9.14,1, xref:../data-protection/snapmirror-svm-replication-concept.html#[Recuperação de desastres da SVM] suporta grupos de consistência, permitindo espelhar informações do grupo de consistência da origem para o cluster de destino.
+
+Se você habilitar a recuperação de desastres do SVM em uma SVM que já contenha um grupo de consistência, siga os workflows de configuração do SVM xref:../task_dp_configure_storage_vm_dr.html[System Manager]para ou o xref:../data-protection/replicate-entire-svm-config-task.html[CLI do ONTAP].
+
+Se você estiver adicionando um grupo de consistência a um SVM que esteja em uma relação de recuperação de desastres ativa e saudável da SVM, você precisará atualizar a relação de recuperação de desastres do SVM no cluster de destino. Para obter mais informações, xref:../data-protection/update-replication-relationship-manual-task.html[Atualizar uma relação de replicação manualmente]consulte . Você deve atualizar o relacionamento sempre que expandir o grupo de consistência.
+
+.Limitações
+* A recuperação de desastres da SVM não dá suporte a grupos de consistência hierárquicos.
+* A recuperação de desastre do SVM não dá suporte a grupos de consistência protegidos com o SnapMirror assíncrono. É necessário interromper a relação do SnapMirror antes de configurar a recuperação de desastres da SVM.
+* Ambos os clusters devem estar executando o ONTAP 9.14,1 ou posterior.
+* As relações de fan-out não são compatíveis com configurações de recuperação de desastres da SVM que contenham grupos de consistência.
+* Para outros limites, xref:limits.html[limites do grupo de consistência]consulte .
+
+
+
+
+== Visualize relacionamentos
+
+O System Manager visualiza mapas LUN no menu *proteção > relacionamentos*. Quando você seleciona uma relação de origem, o System Manager exibe uma visualização das relações de origem. Ao selecionar um volume, você pode aprofundar esses relacionamentos para ver uma lista dos LUNs contidos e dos relacionamentos do grupo de iniciadores. Essas informações podem ser baixadas como uma pasta de trabalho do Excel a partir da exibição de volume individual; a operação de download é executada em segundo plano.
+
+.Informações relacionadas
+* link:clone-task.html["Clonar um grupo de consistência"]
+* link:../task_dp_configure_snapshot.html["Configurar cópias Snapshot"]
+* link:../task_dp_create_custom_data_protection_policies.html["Crie políticas de proteção de dados personalizadas"]
+* link:../task_dp_recover_snapshot.html["Recuperar de cópias Snapshot"]
+* link:../task_dp_restore_from_vault.html["Restaurar um volume a partir de uma cópia Snapshot anterior"]
+* link:../snapmirror-active-sync/index.html["Descrição geral da sincronização ativa do SnapMirror"]
+* link:https://docs.netapp.com/us-en/ontap-automation/["Documentação de automação do ONTAP"^]
+* xref:../data-protection/snapmirror-disaster-recovery-concept.html[Noções básicas de recuperação de desastres assíncrona do SnapMirror]
+

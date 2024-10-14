@@ -1,0 +1,57 @@
+---
+permalink: smb-config/requirements-create-share-concept.html 
+sidebar: sidebar 
+keywords: creating, create, smb, share, requirement, path, properties, property, home, directories, directory, requirements and considerations for creating an smb share 
+summary: Antes de criar um compartilhamento SMB, você deve entender os requisitos para caminhos de compartilhamento e propriedades de compartilhamento, especialmente para diretórios base. 
+---
+= Requisitos e considerações para criar um compartilhamento SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de criar um compartilhamento SMB, você deve entender os requisitos para caminhos de compartilhamento e propriedades de compartilhamento, especialmente para diretórios base.
+
+Criar um compartilhamento SMB implica especificar uma estrutura de caminho de diretório (usando a `-path` opção no `vserver cifs share create` comando) que os clientes acessarão. O caminho do diretório corresponde ao caminho de junção de um volume ou qtree que você criou no namespace SVM. O caminho do diretório e o caminho de junção correspondente devem existir antes de criar seu compartilhamento.
+
+Os caminhos de compartilhamento têm os seguintes requisitos:
+
+* Um nome de caminho de diretório pode ter até 255 carateres.
+* Se houver um espaço no nome do caminho, toda a cadeia de carateres deve ser colocada em aspas (por exemplo, `"/new volume/mount here"` ).
+* Se o caminho UNC (`\\servername\sharename\filepath`) do compartilhamento contiver mais de 256 carateres (excluindo o "''' inicial no caminho UNC), a guia *Segurança* na caixa Propriedades do Windows não estará disponível.
++
+Este é um problema de cliente do Windows em vez de um problema de ONTAP. Para evitar esse problema, não crie compartilhamentos com caminhos UNC com mais de 256 carateres.
+
+
+
+Os padrões de propriedade de compartilhamento podem ser alterados:
+
+* As propriedades iniciais padrão para todos os compartilhamentos são `oplocks`, `browsable`, `changenotify` e `show-previous-versions`.
+* É opcional especificar propriedades de compartilhamento quando você cria um compartilhamento.
++
+No entanto, se você especificar propriedades de compartilhamento ao criar o compartilhamento, os padrões não serão usados. Se você usar o `-share-properties` parâmetro ao criar um compartilhamento, especifique todas as propriedades de compartilhamento que deseja aplicar ao compartilhamento usando uma lista delimitada por vírgulas.
+
+* Para designar um compartilhamento de diretório base, use a `homedirectory` propriedade.
++
+Este recurso permite configurar um compartilhamento que mapeia para diferentes diretórios com base no usuário que se coneta a ele e um conjunto de variáveis. Em vez de ter que criar compartilhamentos separados para cada usuário, você pode configurar um único compartilhamento com alguns parâmetros do diretório base para definir a relação de um usuário entre um ponto de entrada (o compartilhamento) e seu diretório inicial (um diretório no SVM).
+
++
+[NOTE]
+====
+Não é possível adicionar ou remover esta propriedade depois de criar a partilha.
+
+====
+
+
+Os compartilhamentos do diretório base têm os seguintes requisitos:
+
+* Antes de criar diretórios home do SMB, você deve adicionar pelo menos um caminho de pesquisa do diretório home usando o `vserver cifs home-directory search-path add` comando.
+* Os compartilhamentos do diretório base especificados pelo valor de `homedirectory` no `-share-properties` parâmetro devem incluir a `%w` variável dinâmica (nome de usuário do Windows) no nome do compartilhamento.
++
+O nome do compartilhamento pode também conter a `%d` variável dinâmica (nome de domínio) (por exemplo, `%d/%w` ) ou uma parte estática no nome do compartilhamento (por exemplo, `home1_%w`).
+
+* Se o compartilhamento for usado por administradores ou usuários para se conetar a diretórios home de outros usuários (usando opções para o `vserver cifs home-directory modify` comando), o padrão de nome de compartilhamento dinâmico deve ser precedido por um til (`~`).
+
+
+link:../smb-admin/index.html["Gerenciamento de SMB"] e `vserver cifs share` as páginas de manual têm informações adicionais.

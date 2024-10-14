@@ -1,0 +1,33 @@
+---
+permalink: smb-admin/configure-ntfs-file-permissions-concept.html 
+sidebar: sidebar 
+keywords: configure, ntfs, file, permission, directories, directory, ontap, cli, enable, windows, client, how to configure ntfs file permissions using the ontap cli 
+summary: Você pode configurar permissões de arquivos NTFS em arquivos e diretórios usando a CLI do ONTAP. Isso permite configurar permissões de arquivos NTFS sem precisar se conetar aos dados usando um compartilhamento SMB em um cliente Windows. 
+---
+= Configurar permissões de arquivos NTFS usando a CLI do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar permissões de arquivos NTFS em arquivos e diretórios usando a CLI do ONTAP. Isso permite configurar permissões de arquivos NTFS sem precisar se conetar aos dados usando um compartilhamento SMB em um cliente Windows.
+
+Você pode configurar permissões de arquivo NTFS adicionando entradas a listas de controle de acesso discricionário NTFS (DACLs) associadas a um descritor de segurança NTFS. O descritor de segurança é então aplicado a arquivos e diretórios NTFS.
+
+Você só pode configurar permissões de arquivo NTFS usando a linha de comando. Você não pode configurar ACLs NFSv4 usando a CLI.
+
+.Passos
+. Crie um descritor de segurança NTFS.
++
+`vserver security file-directory ntfs create -vserver _svm_name_ -ntfs-sd _ntfs_security_descriptor_name_ -owner _owner_name_ -group _primary_group_name_ -control-flags-raw _raw_control_flags_`
+
+. Adicione DACLs ao descritor de segurança NTFS.
++
+`vserver security file-directory ntfs dacl add -vserver _svm_name_ -ntfs-sd _ntfs_security_descriptor_name_ -access-type {deny|allow} -account _account_name_ -rights {no-access|full-control|modify|read-and-execute|read|write} -apply-to {this-folder|sub-folders|files}`
+
+. Crie uma política de segurança de arquivo/diretório.
++
+`vserver security file-directory policy create -vserver _svm_name_ -policy-name _policy_name_`
+
+

@@ -1,0 +1,124 @@
+---
+permalink: antivirus/architecture-concept.html 
+sidebar: sidebar 
+keywords: antivirus, architecture 
+summary: A arquitetura antivírus do NetApp consiste em software de servidor Vscan e configurações associadas. 
+---
+= Arquitetura antivírus
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A arquitetura antivírus do NetApp consiste em software de servidor Vscan e configurações associadas.
+
+
+
+== Software do servidor Vscan
+
+Tem de instalar este software no servidor Vscan.
+
+* *Conetor do antivírus ONTAP*
++
+Este é um software fornecido pela NetApp que lida com a comunicação de solicitação de verificação e resposta entre os SVMs e o software antivírus. Ele pode ser executado em uma máquina virtual, mas para o melhor desempenho use uma máquina física. Você pode baixar este software a partir do site de suporte da NetApp (requer login).
+
+* *Software antivírus*
++
+Este é um software fornecido por parceiros que verifica os ficheiros em busca de vírus ou outro código malicioso. Você especifica as ações corretivas a serem tomadas em arquivos infetados ao configurar o software.
+
+
+
+
+
+== Definições do software Vscan
+
+Tem de configurar estas definições de software no servidor Vscan.
+
+* *Piscina do scanner*
++
+Esta configuração define os servidores Vscan e os usuários privilegiados que podem se conetar a SVMs. Ele também define um período de tempo limite de solicitação de digitalização, após o qual a solicitação de digitalização é enviada para um servidor Vscan alternativo, se houver um disponível.
+
++
+[NOTE]
+====
+Você deve definir o período de tempo limite no software antivírus no servidor Vscan para cinco segundos a menos do que o período de tempo limite de solicitação de digitalização do pool do scanner. Isso evitará situações em que o acesso ao arquivo seja atrasado ou negado completamente porque o período de tempo limite no software é maior do que o período de tempo limite para a solicitação de digitalização.
+
+====
+* *Usuário privilegiado*
++
+Essa configuração é uma conta de usuário de domínio que um servidor Vscan usa para se conetar ao SVM. A conta deve existir na lista de utilizadores privilegiados no conjunto do scanner.
+
+* *Política do scanner*
++
+Esta definição determina se um conjunto de scanners está ativo. As políticas do scanner são definidas pelo sistema, pelo que não é possível criar políticas personalizadas do scanner. Apenas estas três políticas estão disponíveis:
+
++
+** `Primary` especifica que o pool do scanner está ativo.
+** `Secondary` Especifica que o pool de scanner está ativo, somente quando nenhum dos servidores Vscan no pool de scanner primário estiver conetado.
+** `Idle` especifica que o conjunto de scanners está inativo.
+
+
+* *Política de acesso*
++
+Esta definição define o âmbito de uma digitalização no acesso. Pode especificar o tamanho máximo do ficheiro a analisar, as extensões e os caminhos de ficheiro a incluir na digitalização e as extensões e caminhos de ficheiro a excluir da digitalização.
+
++
+Por padrão, somente os volumes de leitura e gravação são digitalizados. Você pode especificar filtros que permitem a digitalização de volumes somente leitura ou que restringem a digitalização a arquivos abertos com acesso de execução:
+
++
+** `scan-ro-volume` permite a digitalização de volumes só de leitura.
+** `scan-execute-access` restringe a digitalização para arquivos abertos com acesso de execução.
++
+[NOTE]
+====
+"Execute Access" é diferente de "execute permission". Um determinado cliente terá "execute access" em um arquivo executável somente se o arquivo tiver sido aberto com "execute intent".
+
+====
+
+
++
+Você pode definir a `scan-mandatory` opção como Desativado para especificar que o acesso ao arquivo é permitido quando nenhum servidor Vscan estiver disponível para verificação de vírus. No modo de acesso, pode escolher entre estas duas opções mutuamente exclusivas:
+
++
+** Obrigatório: Com esta opção, o Vscan tenta entregar a solicitação de digitalização ao servidor até que o período de tempo limite expire. Se a solicitação de digitalização não for aceita pelo servidor, a solicitação de acesso do cliente será negada.
+** Não obrigatório: Com esta opção, o Vscan sempre permite o acesso do cliente, independentemente de um servidor Vscan estar ou não disponível para verificação de vírus.
+
+
+* *Tarefa sob demanda*
++
+Esta definição define o âmbito de uma digitalização a pedido. Pode especificar o tamanho máximo do ficheiro a analisar, as extensões e os caminhos de ficheiro a incluir na digitalização e as extensões e caminhos de ficheiro a excluir da digitalização. Os arquivos nos subdiretórios são verificados por padrão.
+
++
+Você usa um cronograma cron para especificar quando a tarefa é executada. Você pode usar o `vserver vscan on-demand-task run` comando para executar a tarefa imediatamente.
+
+* *Perfil de operações de arquivo Vscan (somente digitalização no acesso)*
++
+O `vscan-fileop-profile` parâmetro para `vserver cifs share create` o comando define quais operações de arquivo SMB acionam a verificação de vírus. Por padrão, o parâmetro é definido como `standard`, que é a melhor prática do NetApp. Você pode ajustar esse parâmetro conforme necessário ao criar ou modificar um compartilhamento SMB:
+
++
+** `no-scan` especifica que as verificações de vírus nunca são acionadas para o compartilhamento.
+** `standard` especifica que as verificações de vírus são acionadas por operações abertas, fechadas e renomeadas.
+** `strict` especifica que as verificações de vírus são acionadas por operações abertas, lidas, fechadas e renomeadas.
++
+O `strict` perfil fornece segurança aprimorada para situações em que vários clientes acessam um arquivo simultaneamente. Se um cliente fechar um arquivo depois de gravar um vírus para ele, e o mesmo arquivo permanecer aberto em um segundo cliente, `strict` garante que uma operação de leitura no segundo cliente aciona uma verificação antes que o arquivo seja fechado.
+
++
+Você deve ter cuidado para restringir o `strict` perfil a compartilhamentos contendo arquivos que você espera que serão acessados simultaneamente. Uma vez que este perfil gera mais pedidos de digitalização, pode afetar o desempenho.
+
+** `writes-only` especifica que as verificações de vírus são acionadas apenas quando os arquivos modificados são fechados.
++
+Como `writes-only` gera menos solicitações de digitalização, geralmente melhora o desempenho.
+
++
+Se você usar esse perfil, o scanner deve estar configurado para excluir ou colocar em quarentena arquivos infetados não reparáveis, para que eles não possam ser acessados. Se, por exemplo, um cliente fechar um arquivo depois de gravar um vírus para ele, e o arquivo não for reparado, excluído ou em quarentena, qualquer cliente que acesse a gravação do arquivo `without` para ele será infetado.
+
+
+
+
+
+[NOTE]
+====
+Se um aplicativo cliente executar uma operação de renomeação, o arquivo será fechado com o novo nome e não será digitalizado. Se tais operações representarem uma preocupação de segurança no seu ambiente, deve utilizar o `standard` perfil ou `strict`.
+
+====

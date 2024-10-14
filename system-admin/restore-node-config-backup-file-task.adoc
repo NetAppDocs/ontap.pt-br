@@ -1,0 +1,64 @@
+---
+permalink: system-admin/restore-node-config-backup-file-task.html 
+sidebar: sidebar 
+keywords: restore, node, configuration, backup, file, recovering 
+summary: Você restaura a configuração do nó usando o arquivo de backup de configuração identificado e disponibilizado para o nó de recuperação. 
+---
+= Restaure a configuração do nó usando um arquivo de backup de configuração
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você restaura a configuração do nó usando o arquivo de backup de configuração identificado e disponibilizado para o nó de recuperação.
+
+.Sobre esta tarefa
+Você só deve executar esta tarefa para se recuperar de um desastre que resultou na perda dos arquivos de configuração local do nó.
+
+.Passos
+. Mude para o nível de privilégio avançado:
++
+`set -privilege advanced`
+
+. Se o nó estiver saudável, no nível de privilégio avançado de um nó diferente, use o `cluster modify` comando com os `-node` parâmetros e `-eligibility` para marcá-lo inelegível e isolá-lo do cluster.
++
+Se o nó não estiver saudável, então você deve pular esta etapa.
+
++
+Este exemplo modifica o node2 para ser inelegível para participar do cluster para que sua configuração possa ser restaurada:
+
++
+[listing]
+----
+cluster1::*> cluster modify -node node2 -eligibility false
+----
+. Use o `system configuration recovery node restore` comando no nível de privilégio avançado para restaurar a configuração do nó a partir de um arquivo de backup de configuração.
++
+Se o nó perdeu sua identidade, incluindo seu nome, então você deve usar o `-nodename-in-backup` parâmetro para especificar o nome do nó no arquivo de backup de configuração.
+
++
+Este exemplo restaura a configuração do nó usando um dos arquivos de backup de configuração armazenados no nó:
+
++
+[listing]
+----
+cluster1::*> system configuration recovery node restore -backup cluster1.8hour.2011-02-22.18_15_00.7z
+
+Warning: This command overwrites local configuration files with
+         files contained in the specified backup file. Use this
+         command only to recover from a disaster that resulted
+         in the loss of the local configuration files.
+         The node will reboot after restoring the local configuration.
+Do you want to continue? {y|n}: y
+----
++
+A configuração é restaurada e o nó é reiniciado.
+
+. Se você marcou o nó inelegível, use o `system configuration recovery cluster sync` comando para marcar o nó como qualificado e sincronizá-lo com o cluster.
+. Se você estiver operando em um ambiente SAN, use o `system node reboot` comando para reinicializar o nó e restabelecer o quorum SAN.
+
+
+.Depois de terminar
+Se você recriou anteriormente o cluster e se estiver restaurando a configuração do nó usando um arquivo de backup de configuração que foi criado antes da recriação do cluster, você deverá recriar o cluster novamente.

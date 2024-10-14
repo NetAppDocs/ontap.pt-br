@@ -1,0 +1,232 @@
+---
+sidebar: sidebar 
+permalink: data-protection/cloud-backup-using-cbs-task.html 
+keywords: cloud, data, backup, back up, storage, volume, lun, connector, secret key, access key, Cloud Backup service, CBS, restore data, protect volumes, ipspace, storagegrid, storage grid, archive, archival, archiving, cost, calculator, glacier, deep archive 
+summary: A partir do ONTAP 9.9,1, você pode usar o System Manager para fazer backup de dados na nuvem usando o Cloud Backup. 
+---
+= Fazer backup dos dados usando o Cloud Backup
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.9,1, você pode usar o System Manager para fazer backup de dados na nuvem usando o Cloud Backup.
+
+
+NOTE: O Cloud Backup é compatível com volumes de leitura-gravação FlexVol e volumes de proteção de dados (DP). O FlexGroup volumes e o SnapLock volumes não são compatíveis.
+
+.Antes de começar
+Você deve executar os seguintes procedimentos para estabelecer uma conta no BlueXP . Para a conta de serviço, você precisa criar a função como "Administrador da conta". (Outras funções de conta de serviço não têm o Privileges necessário para estabelecer uma conexão do Gerenciador de sistema.)
+
+. link:https://docs.netapp.com/us-en/occm/task_logging_in.html["Crie uma conta no BlueXP "^].
+. link:https://docs.netapp.com/us-en/occm/concept_connectors.html["Crie um conetor no BlueXP "^] com um dos seguintes fornecedores de nuvem:
++
+** Microsoft Azure
+** Amazon Web Services (AWS)
+** Google Cloud Platform (GCP)
+** StorageGRID (ONTAP 9.10,1)
++
+
+NOTE: A partir do ONTAP 9.10,1, você pode selecionar o StorageGRID como um fornecedor de backup em nuvem, mas somente se o BlueXP  for implantado no local. O BlueXP  Connector deve ser instalado no local e disponível por meio do aplicativo software como serviço (SaaS) da BlueXP .
+
+
+
+. link:https://docs.netapp.com/us-en/occm/concept_backup_to_cloud.html["Inscreva-se no Cloud Backup Service em BlueXP "^] (requer a licença apropriada).
+. link:https://docs.netapp.com/us-en/occm/task_managing_cloud_central_accounts.html#creating-and-managing-service-accounts["Gere uma chave de acesso e uma chave secreta usando o BlueXP "^].
+
+
+
+
+== Registre o cluster no BlueXP 
+
+Você pode Registrar o cluster no BlueXP  usando o BlueXP  ou o Gerenciador de sistema.
+
+.Passos
+. No System Manager, vá para *Visão geral da proteção*.
+. Sob *Cloud Backup Service*, forneça os seguintes detalhes:
++
+** ID do cliente
+** Chave secreta do cliente
+
+
+. Selecione *Registe-se e continue*.
+
+
+
+
+== Habilite o Cloud Backup
+
+Depois que o cluster é registrado no BlueXP , você precisa ativar o backup em nuvem e iniciar o primeiro backup na nuvem.
+
+.Passos
+. No Gestor do sistema, clique em *proteção > Visão geral* e, em seguida, desloque-se para a secção *Cloud Backup Service*.
+. Insira *Client ID* e *Client Secret*.
++
+
+NOTE: A partir do ONTAP 9.10,1, você pode aprender sobre o custo de usar a nuvem clicando em *Saiba mais sobre o custo de usar a nuvem*.
+
+. Clique em *conetar e ativar o Cloud Backup Service*.
+. Na página *Ativar Cloud Backup Service*, forneça os seguintes detalhes, dependendo do fornecedor selecionado.
++
+[cols="35,65"]
+|===
+
+
+| Para este provedor de nuvem... | Introduza os seguintes dados... 
+
+
+ a| 
+Azure
+ a| 
+** ID de subscrição do Azure
+** Região
+** Nome do grupo de recursos (existente ou novo)
+
+
+
+
+ a| 
+AWS
+ a| 
+** ID da conta da AWS
+** Chave de acesso
+** Chave secreta
+** Região
+
+
+
+
+ a| 
+Projeto Google Cloud (GCP)
+ a| 
+** Nome do projeto Google Cloud
+** Chave de acesso ao Google Cloud
+** Chave secreta do Google Cloud
+** Região
+
+
+
+
+ a| 
+StorageGRID (ONTAP 9.10,1 e posterior, e somente para implantação local do BlueXP )
+ a| 
+** Servidor
+** Chave de Acesso SG
+** Chave secreta SG
+
+
+|===
+. Selecione uma *Política de proteção*:
++
+** *Política existente*: Escolha uma política existente.
+** *Nova Política*: Especifique um nome e configure um agendamento de transferência.
++
+
+NOTE: A partir do ONTAP 9.10,1, você pode especificar se deseja ativar o arquivamento com o Azure ou a AWS.
+
++
+
+IMPORTANT: Se você habilitar o arquivamento para um volume com o Azure ou AWS, não será possível desativar o arquivamento.
+
++
+Se você habilitar o arquivamento para o Azure ou AWS, especifique o seguinte:
+
++
+*** O número de dias após os quais o volume é arquivado.
+*** O número de cópias de segurança a reter no arquivo. Especifique "0" (zero) para arquivar até o backup mais recente.
+*** Para AWS, selecione a classe de armazenamento de arquivo.
+
+
+
+
+. Selecione os volumes que pretende efetuar uma cópia de segurança.
+. Selecione *Guardar*.
+
+
+
+
+== Edite a política de proteção usada no Cloud Backup
+
+Você pode alterar a política de proteção usada com o Cloud Backup.
+
+.Passos
+. No Gestor do sistema, clique em *proteção > Visão geral* e, em seguida, desloque-se para a secção *Cloud Backup Service*.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"]em e, em seguida, em *Editar*.
+. Selecione uma *Política de proteção*:
++
+** *Política existente*: Escolha uma política existente.
+** *Nova Política*: Especifique um nome e configure um agendamento de transferência.
++
+
+NOTE: A partir do ONTAP 9.10,1, você pode especificar se deseja ativar o arquivamento com o Azure ou a AWS.
+
++
+
+IMPORTANT: Se você habilitar o arquivamento para um volume com o Azure ou AWS, não será possível desativar o arquivamento.
+
++
+Se você habilitar o arquivamento para o Azure ou AWS, especifique o seguinte:
+
++
+*** O número de dias após os quais o volume é arquivado.
+*** O número de cópias de segurança a reter no arquivo. Especifique "0" (zero) para arquivar até o backup mais recente.
+*** Para AWS, selecione a classe de armazenamento de arquivo.
+
+
+
+
+. Selecione *Guardar*.
+
+
+
+
+== Proteger novos volumes ou LUNs na nuvem
+
+Ao criar um novo volume ou LUN, você pode estabelecer uma relação de proteção SnapMirror que permite fazer backup na nuvem para o volume ou LUN.
+
+.Antes de começar
+* Você deve ter uma licença SnapMirror.
+* LIFs entre clusters devem ser configurados.
+* NTP deve ser configurado.
+* O cluster deve estar executando o ONTAP 9.9,1.
+
+
+.Sobre esta tarefa
+Não é possível proteger novos volumes ou LUNs na nuvem nas seguintes configurações de cluster:
+
+* O cluster não pode estar em um ambiente MetroCluster.
+* O SVM-DR não é compatível.
+* Não é possível fazer backup do FlexGroups usando o Cloud Backup.
+
+
+.Passos
+. Ao provisionar um volume ou LUN, na página *proteção* no Gerenciador de sistema, marque a caixa de seleção *Ativar SnapMirror (local ou remoto)*.
+. Selecione o tipo de política Cloud Backup.
+. Se o backup em nuvem não estiver ativado, selecione *Ativar Cloud Backup Service*.
+
+
+
+
+== Proteger volumes ou LUNs existentes na nuvem
+
+É possível estabelecer uma relação de proteção SnapMirror para volumes e LUNs existentes.
+
+.Passos
+. Selecione um volume ou LUN existente e clique em *Protect*.
+. Na página *proteger volumes*, especifique *Backup usando o Cloud Backup Service* para a política de proteção.
+. Clique em *Protect*.
+. Na página *proteção*, marque a caixa de seleção *Ativar SnapMirror (local ou remoto)*.
+. Selecione *Ativar Cloud Backup Service*.
+
+
+
+
+== Restaurar dados de arquivos de backup
+
+Você pode executar operações de gerenciamento de backup, como restauração de dados, atualização de relacionamentos e exclusão de relacionamentos, somente quando usar a interface do BlueXP . link:https://docs.netapp.com/us-en/occm/task_restore_backups.html["Restaurar dados de arquivos de backup"]Consulte para obter mais informações.

@@ -1,0 +1,32 @@
+---
+permalink: smb-admin/create-share-force-group-setting-task.html 
+sidebar: sidebar 
+keywords: create, smb, share, force-group, setting, user, access, data, volume, qtree, unix, file, security, regard, ontap, belong, group, create an smb share with the force-group share setting 
+summary: Você pode criar um compartilhamento SMB com a configuração de compartilhamento de grupo de força se desejar que os usuários de SMB que acessam dados em volumes ou qtrees com segurança de arquivos UNIX sejam considerados pelo ONTAP como pertencentes ao mesmo grupo UNIX. 
+---
+= Crie um compartilhamento SMB com a configuração de compartilhamento de grupo de força
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar um compartilhamento SMB com a configuração de compartilhamento de grupo de força se desejar que os usuários de SMB que acessam dados em volumes ou qtrees com segurança de arquivos UNIX sejam considerados pelo ONTAP como pertencentes ao mesmo grupo UNIX.
+
+.Passo
+. Crie o compartilhamento SMB: `vserver cifs share create -vserver _vserver_name_ -share-name _share_name_ -path path -force-group-for-create _UNIX_group_name_`
++
+Se o caminho UNC (`\\servername\sharename\filepath`) do compartilhamento contiver mais de 256 carateres (excluindo o " " " inicial``\\`` no caminho UNC), a guia *Segurança* na caixa Propriedades do Windows não estará disponível. Este é um problema de cliente do Windows em vez de um problema de ONTAP. Para evitar esse problema, não crie compartilhamentos com caminhos UNC com mais de 256 carateres.
+
++
+Se você quiser remover o grupo de força depois que o compartilhamento é criado, você pode modificar o compartilhamento a qualquer momento e especificar uma string vazia ("") como o valor para o `-force-group-for-create` parâmetro. Se você remover o grupo de força modificando o compartilhamento, todas as conexões existentes a esse compartilhamento continuarão tendo o grupo de força definido anteriormente como GID principal.
+
+
+
+.Exemplo
+O comando a seguir cria um compartilhamento "webpages" que é acessível na Web no `/corp/companyinfo` diretório no qual todos os arquivos criados pelos usuários SMB são atribuídos ao grupo webgroup1:
+
+`vserver cifs share create -vserver vs1 -share-name webpages -path /corp/companyinfo -force-group-for-create webgroup1`
+
+.Informações relacionadas
+xref:optimize-user-access-force-group-share-concept.adoc[Otimize o acesso do usuário SMB com a configuração de compartilhamento de grupo de força]

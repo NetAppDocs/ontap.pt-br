@@ -1,0 +1,59 @@
+---
+permalink: nfs-config/create-qtree-task.html 
+sidebar: sidebar 
+keywords: create, qtree 
+summary: Você pode criar uma qtree para conter seus dados e especificar suas propriedades usando o comando volume qtree create. 
+---
+= Crie uma qtree
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar uma qtree para conter seus dados e especificar suas propriedades usando o `volume qtree create` comando.
+
+.O que você vai precisar
+* O SVM e o volume que conterá a nova qtree já devem existir.
+* O estilo de segurança da SVM deve ser UNIX, e o NFS deve ser configurado e executado.
+
+
+.Passos
+. Crie a qtree:
++
+`volume qtree create -vserver _vserver_name_ { -volume _volume_name_ -qtree _qtree_name_ | -qtree-path _qtree path_ } -security-style unix [-policy _export_policy_name_]`
+
++
+Você pode especificar o volume e a qtree como argumentos separados ou especificar o argumento de caminho de qtree no formato `/vol/_volume_name/_qtree_name_`.
+
++
+Por padrão, qtrees herdam as políticas de exportação de seu volume pai, mas eles podem ser configurados para usar suas próprias políticas. Se você pretende usar uma política de exportação existente, pode especificá-la quando criar a qtree. Você também pode adicionar uma política de exportação mais tarde com o `volume qtree modify` comando.
+
+. Verifique se a qtree foi criada com o caminho de junção desejado:
++
+`volume qtree show -vserver _vserver_name_ { -volume _volume_name_ -qtree _qtree_name_ | -qtree-path _qtree path_ }`
+
+
+
+.Exemplo
+O exemplo a seguir cria uma qtree chamada qt01 localizada no SVM vs1.example.com que tem um caminho de junção `/vol/data1` :
+
+[listing]
+----
+cluster1::> volume qtree create -vserver vs1.example.com -qtree-path /vol/data1/qt01 -security-style unix
+[Job 1642] Job succeeded: Successful
+
+cluster1::> volume qtree show -vserver vs1.example.com -qtree-path /vol/data1/qt01
+
+                      Vserver Name: vs1.example.com
+                       Volume Name: data1
+                        Qtree Name: qt01
+  Actual (Non-Junction) Qtree Path: /vol/data1/qt01
+                    Security Style: unix
+                       Oplock Mode: enable
+                  Unix Permissions: ---rwxr-xr-x
+                          Qtree Id: 2
+                      Qtree Status: normal
+                     Export Policy: default
+        Is Export Policy Inherited: true
+----

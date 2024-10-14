@@ -1,0 +1,136 @@
+---
+sidebar: sidebar 
+permalink: high-availability/ha_how_automatic_takeover_and_giveback_works.html 
+keywords: ontap, high availability, ha, pair, automatic, takeover, giveback, background, updates, policy, effect, node, panics, what, happens 
+summary: As operações de aquisição automática e de giveback podem trabalhar em conjunto para reduzir e evitar interrupções do cliente. 
+---
+= Como a aquisição automática e a giveback funcionam
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+As operações de aquisição automática e de giveback podem trabalhar em conjunto para reduzir e evitar interrupções do cliente.
+
+Por padrão, se um nó no par de HA ficar em pânico, reinicializa ou pára, o nó do parceiro assume automaticamente o controle e retorna o armazenamento quando o nó afetado é reinicializado. Em seguida, o par de HA retoma um estado operacional normal.
+
+As aquisições automáticas também podem ocorrer se um dos nós não responder.
+
+A giveback automática ocorre por padrão. Se você preferir controlar o impactos da giveback nos clientes, você pode desativar a giveback automática e usar o `storage failover modify -auto-giveback false -node <node>` comando. Antes de executar o giveback automático (independentemente do que o acionou), o nó do parceiro espera por uma quantidade fixa de tempo, conforme controlado pelo `-delay- seconds` parâmetro `storage failover modify` do comando. O atraso padrão é de 600 segundos. Ao atrasar a giveback, o processo resulta em duas breves interrupções: Uma durante a aquisição e outra durante a giveback.
+
+Este processo evita uma interrupção única e prolongada que inclui o tempo necessário para:
+
+* A operação de aquisição
+* O nó tomado-over para inicializar até o ponto em que está pronto para o giveback
+* A operação de giveback
+
+
+Se o giveback automático falhar em qualquer um dos agregados não-raiz, o sistema fará automaticamente duas tentativas adicionais para completar o giveback.
+
+
+NOTE: Durante o processo de aquisição, o processo automático de giveback começa antes que o nó do parceiro esteja pronto para a giveback. Quando o limite de tempo do processo de giveback automático expirar e o nó do parceiro ainda não estiver pronto, o temporizador será reiniciado. Como resultado, o tempo entre o nó do parceiro estar pronto e o giveback real sendo executado pode ser menor do que o tempo de giveback automático.
+
+
+
+== O que acontece durante a aquisição
+
+Quando um nó assume o parceiro, ele continua fornecendo e atualizando dados nos agregados e volumes do parceiro.
+
+As etapas a seguir ocorrem durante o processo de aquisição:
+
+. Se o takeover negociado for iniciado pelo usuário, os dados agregados serão movidos do nó do parceiro para o nó que está realizando o takeover. Uma breve interrupção ocorre quando o proprietário atual de cada agregado (exceto o agregado raiz) muda para o nó de aquisição. Essa interrupção é mais breve do que uma interrupção que ocorre durante uma aquisição sem realocação agregada.
++
+
+NOTE: Um takover negociado durante o pânico não pode ocorrer no caso de um pânico. Uma aquisição pode resultar de uma falha não associada a um pânico. Uma falha é sentida quando a comunicação é perdida entre um nó e seu parceiro, também chamada de perda de batimento cardíaco. Se um takeover ocorrer por causa de uma falha, a interrupção pode ser maior porque o nó do parceiro precisa de tempo para detectar a perda de batimento cardíaco.
+
++
+** Você pode monitorar o progresso usando o `storage failover show‑takeover` comando.
+** Você pode evitar a realocação agregada durante essa instância de aquisição usando o `‑bypass‑optimization` parâmetro com o `storage failover takeover` comando.
++
+Os agregados são relocados em série durante operações de aquisição planejadas para reduzir a interrupção do cliente. Se a realocação de agregados for ignorada, uma interrupção mais longa do cliente ocorrerá durante eventos de aquisição planejados.
+
+
+
+. Se o takeover iniciado pelo usuário for um takeover negociado, o nó de destino será desligado graciosamente, seguido do takeover do agregado raiz do nó de destino e de quaisquer agregados que não tenham sido relocados na primeira etapa.
+. As LIFs de dados (interfaces lógicas) migram do nó de destino para o nó de aquisição ou para qualquer outro nó no cluster com base em regras de failover de LIF. Você pode evitar a migração de LIF usando o `‑skip‑lif-migration` parâmetro com o `storage failover takeover` comando. No caso de uma aquisição iniciada pelo usuário, os LIFs de dados são migrados antes do início da aquisição de storage. Em caso de pânico ou falha, dependendo da sua configuração, os LIFs de dados podem ser migrados com o armazenamento ou após a conclusão da aquisição.
+. As sessões SMB existentes são desconetadas quando ocorre a aquisição.
++
+
+NOTE: Devido à natureza do protocolo SMB, todas as sessões SMB são interrompidas (exceto para sessões SMB 3,0 conetadas a compartilhamentos com o conjunto de propriedades disponibilidade contínua). As sessões SMB 1,0 e SMB 2.x não podem reconetar identificadores de arquivos abertos após um evento de aquisição; portanto, a aquisição é disruptiva e pode ocorrer alguma perda de dados.
+
+. As sessões SMB 3,0 estabelecidas para compartilhamentos com a propriedade disponibilidade contínua habilitada podem se reconetar aos compartilhamentos desconetados após um evento de aquisição. Se o seu site usar conexões SMB 3,0 com o Microsoft Hyper-V e a propriedade disponibilidade contínua estiver ativada nos compartilhamentos associados, as aquisições não serão disruptivas para essas sessões.
+
+
+
+
+=== O que acontece se um nó realizar uma pania de aquisição
+
+Se o nó que está executando o painel de controle de aquisição dentro de 60 segundos após o início do controle de aquisição, os seguintes eventos ocorrerão:
+
+* O nó que entrou em pânico reinicializa.
+* Após a reinicialização, o nó executa operações de auto-recuperação e não está mais no modo de aquisição.
+* O failover está desativado.
+* Se o nó ainda possuir alguns agregados do parceiro, depois de ativar o failover de storage, devolva esses agregados ao parceiro usando o `storage failover giveback` comando.
+
+
+
+
+== O que acontece durante a giveback
+
+O nó local retorna a propriedade para o nó do parceiro quando os problemas são resolvidos, quando o nó do parceiro é inicializado ou quando a giveback é iniciada.
+
+O seguinte processo ocorre em uma operação normal de giveback. Nesta discussão, o nó A assumiu o nó B. quaisquer problemas no nó B foram resolvidos e está pronto para retomar a distribuição de dados.
+
+. Quaisquer problemas no nó B são resolvidos e exibe a seguinte mensagem: `Waiting for giveback`
+. A giveback é iniciada pelo `storage failover giveback` comando ou pela giveback automática se o sistema estiver configurado para ele. Isso inicia o processo de retorno da propriedade dos agregados e volumes do nó B do nó A de volta ao nó B.
+. Nó A retorna o controle do agregado raiz primeiro.
+. O nó B completa o processo de inicialização até seu estado operacional normal.
+. Assim que o nó B atinge o ponto no processo de inicialização onde pode aceitar os agregados não-raiz, o nó A retorna a propriedade dos outros agregados, um de cada vez, até que o giveback esteja completo. Você pode monitorar o progresso do giveback usando o `storage failover show-giveback` comando.
++
+
+NOTE: O `storage failover show-giveback` comando não exibe (nem se destina) informações sobre todas as operações que ocorrem durante a operação de failover de armazenamento. Você pode usar o `storage failover show` comando para exibir detalhes adicionais sobre o status de failover atual do nó, como se o nó estiver totalmente funcional, o controle for possível e o giveback estiver concluído.
+
++
+E/S é retomado para cada agregado depois que a giveback é concluída para esse agregado, o que reduz sua janela de interrupção geral.
+
+
+
+
+
+== Política DE HA e seu efeito sobre a aquisição e a giveback
+
+A ONTAP atribui automaticamente uma política de HA de CFO (failover de controladora) e SFO (failover de storage) a um agregado. Essa diretiva determina como as operações de failover de storage ocorrem para o agregado e seus volumes.
+
+As duas opções, CFO e SFO, determinam a sequência de controle agregado que o ONTAP usa durante operações de failover de armazenamento e operações de giveback.
+
+Embora os termos CFO e SFO às vezes sejam usados informalmente para se referir a operações de failover de storage (takeover e giveback), eles realmente representam a política de HA atribuída aos agregados. Por exemplo, os termos SFO Aggregate ou CFO Aggregate referem-se simplesmente à atribuição de política de HA do agregado.
+
+As políticas DE HA afetam as operações de aquisição e giveback da seguinte forma:
+
+* Agregados criados em sistemas ONTAP (exceto para o agregado raiz que contém o volume raiz) têm uma política de HA de SFO. A aquisição iniciada manualmente é otimizada para o desempenho relocando agregados SFO (não-raiz) em série para o parceiro antes da aquisição. Durante o processo de giveback, os agregados são devolvidos em série após o arranque do sistema retomado e as aplicações de gestão ficarem online, permitindo que o nó receba os seus agregados.
+* Como as operações de realocação de agregados implicam a reatribuição da propriedade de disco agregado e a mudança de controle de um nó para seu parceiro, apenas agregados com uma política de HA de SFO podem ser qualificados para realocação de agregados.
+* O agregado raiz sempre tem uma política de HA de CFO e é devolvido no início da operação de giveback. Isto é necessário para permitir que o sistema tomado-over seja inicializado. Todos os outros agregados são entregues em série depois que o sistema retomado conclui o processo de inicialização e os aplicativos de gerenciamento ficam online, permitindo que o nó receba seus agregados.
+
+
+
+NOTE: Alterar a política de HA de um agregado de SFO para CFO é uma operação de modo de manutenção. Não modifique esta definição, a menos que seja direcionado para o fazer por um representante do apoio ao cliente.
+
+
+
+== Como as atualizações em segundo plano afetam a aquisição e a giveback
+
+As atualizações em segundo plano do firmware do disco afetarão as operações de aquisição de par de HA, giveback e realocação agregada de maneira diferente, dependendo de como essas operações são iniciadas.
+
+A lista a seguir descreve como as atualizações de firmware de disco em segundo plano afetam a aquisição, a giveback e a realocação de agregados:
+
+* Se ocorrer uma atualização de firmware de disco em segundo plano em um disco em qualquer nó, as operações de aquisição iniciadas manualmente serão atrasadas até que a atualização de firmware de disco seja concluída nesse disco. Se a atualização de firmware do disco em segundo plano demorar mais de 120 segundos, as operações de aquisição são abortadas e têm de ser reiniciadas manualmente após a conclusão da atualização do firmware do disco. Se o controle tiver sido iniciado com o `‑bypass‑optimization` parâmetro do `storage failover takeover` comando definido como `true`, a atualização de firmware do disco em segundo plano que ocorre no nó de destino não afetará o controle.
+* Se uma atualização de firmware de disco em segundo plano estiver ocorrendo em um disco no nó de origem (ou aquisição) e o controle tiver sido iniciado manualmente com o `‑options` parâmetro do `storage failover takeover` comando definido como `immediate`, as operações de aquisição serão iniciadas imediatamente.
+* Se uma atualização de firmware de disco em segundo plano estiver ocorrendo em um disco em um nó e ela entrar em pânico, o controle do nó em pânico começará imediatamente.
+* Se uma atualização de firmware de disco em segundo plano estiver ocorrendo em um disco em qualquer nó, a giveback dos agregados de dados será adiada até que a atualização de firmware de disco seja concluída nesse disco.
+* Se a atualização de firmware do disco em segundo plano demorar mais de 120 segundos, as operações de giveback são abortadas e têm de ser reiniciadas manualmente após a conclusão da atualização do firmware do disco.
+* Se uma atualização de firmware de disco em segundo plano estiver ocorrendo em um disco em qualquer nó, as operações de realocação de agregados serão atrasadas até que a atualização de firmware de disco seja concluída nesse disco. Se a atualização do firmware do disco em segundo plano demorar mais de 120 segundos, as operações de realocação agregada serão abortadas e deverão ser reiniciadas manualmente após a conclusão da atualização do firmware do disco. Se a realocação de agregados tiver sido iniciada com o `-override-destination-checks` `storage aggregate relocation` comando definido como `true`, a atualização de firmware do disco em segundo plano que ocorre no nó de destino não afetará a realocação de agregados.
+

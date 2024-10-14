@@ -1,0 +1,120 @@
+---
+permalink: revert/task_identifying_current_cluster_activity.html 
+sidebar: sidebar 
+keywords: ontap, downgrade, dowgrading, cluster, activity, running, jobs, stop, shutdown, active, SMB, sessions 
+summary: Antes de executar uma downgrade sem interrupções, você deve identificar e encerrar graciosamente todas as sessões CIFS que não estão disponíveis continuamente. 
+---
+= Verifique a atividade atual do cluster antes de fazer downgrade
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de fazer downgrade, nenhum trabalho deve estar em execução e quaisquer sessões SMB que não estejam continuamente disponíveis devem ser encerradas.
+
+
+
+== Verifique se nenhum trabalho está em execução
+
+Antes de fazer downgrade do software ONTAP, você deve verificar o status dos trabalhos de cluster. Se qualquer agregado, volume, NDMP (despejo ou restauração) ou trabalhos Snapshot (como criar, excluir, mover, modificar, replicar e montar trabalhos) estiver em execução ou na fila, você deverá permitir que os trabalhos terminem com êxito ou interrompam as entradas na fila.
+
+. Revise a lista de tarefas de agregado, volume ou Snapshot em execução ou na fila: `job show`
++
+[listing]
+----
+cluster1::> job show
+                            Owning
+Job ID Name                 Vserver    Node           State
+------ -------------------- ---------- -------------- ----------
+8629   Vol Reaper           cluster1   -              Queued
+       Description: Vol Reaper Job
+8630   Certificate Expiry Check
+                            cluster1   -              Queued
+       Description: Certificate Expiry Check
+.
+.
+.
+----
+. Exclua quaisquer trabalhos de cópia de agregado, volume ou Snapshot em execução ou na fila: `job delete -id job_id`
++
+[listing]
+----
+cluster1::> job delete -id 8629
+----
+. Verifique se nenhum agregado, volume ou trabalhos Snapshot estão em execução ou na fila: `job show`
++
+Neste exemplo, todos os trabalhos em execução e em fila foram excluídos:
+
++
+[listing]
+----
+cluster1::> job show
+                            Owning
+Job ID Name                 Vserver    Node           State
+------ -------------------- ---------- -------------- ----------
+9944   SnapMirrorDaemon_7_2147484678
+                            cluster1   node1          Dormant
+       Description: Snapmirror Daemon for 7_2147484678
+18377  SnapMirror Service Job
+                            cluster1   node0          Dormant
+       Description: SnapMirror Service Job
+2 entries were displayed
+----
+
+
+
+
+== Identifique sessões ativas de SMB que devem ser encerradas
+
+Antes de executar uma downgrade sem interrupções, você deve identificar e encerrar graciosamente todas as sessões de SMB que não estejam disponíveis continuamente.
+
+Compartilhamentos SMB continuamente disponíveis, que são acessados por clientes Hyper-V ou Microsoft SQL Server usando o protocolo SMB 3,0, não precisam ser encerrados antes de atualizar ou fazer downgrade.
+
+. Identifique quaisquer sessões SMB estabelecidas que não estejam disponíveis continuamente: `vserver cifs session show -continuously-available Yes -instance`
++
+Este comando exibe informações detalhadas sobre quaisquer sessões SMB que não tenham disponibilidade contínua. Você deve encerrá-los antes de prosseguir com o downgrade do ONTAP.
+
++
+[listing]
+----
+cluster1::> vserver cifs session show -continuously-available Yes -instance
+
+                        Node: node1
+                     Vserver: vs1
+                  Session ID: 1
+               Connection ID: 4160072788
+Incoming Data LIF IP Address: 198.51.100.5
+      Workstation IP address: 203.0.113.20
+    Authentication Mechanism: NTLMv2
+                Windows User: CIFSLAB\user1
+                   UNIX User: nobody
+                 Open Shares: 1
+                  Open Files: 2
+                  Open Other: 0
+              Connected Time: 8m 39s
+                   Idle Time: 7m 45s
+            Protocol Version: SMB2_1
+      Continuously Available: No
+1 entry was displayed.
+----
+. Se necessário, identifique os arquivos que estão abertos para cada sessão SMB que você identificou: `vserver cifs session file show -session-id _session_ID_`
++
+[listing]
+----
+cluster1::> vserver cifs session file show -session-id 1
+
+Node:       node1
+Vserver:    vs1
+Connection: 4160072788
+Session:    1
+File    File      Open Hosting                               Continuously
+ID      Type      Mode Volume          Share                 Available
+------- --------- ---- --------------- --------------------- ------------
+1       Regular   rw   vol10           homedirshare          No
+Path: \TestDocument.docx
+2       Regular   rw   vol10           homedirshare          No
+Path: \file1.txt
+2 entries were displayed.
+----
+

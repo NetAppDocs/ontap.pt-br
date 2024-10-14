@@ -1,0 +1,126 @@
+---
+permalink: s3-config/create-modify-bucket-policy-task.html 
+sidebar: sidebar 
+keywords: modify, bucket, policy 
+summary: Você pode adicionar regras de acesso à política de bucket padrão. O escopo de seu controle de acesso é o balde contendo, portanto, é mais apropriado quando há um único balde. 
+---
+= Modificar uma política de bucket
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode adicionar regras de acesso à política de bucket padrão. O escopo de seu controle de acesso é o balde contendo, portanto, é mais apropriado quando há um único balde.
+
+.Antes de começar
+Uma VM de armazenamento habilitada para S3 contendo um servidor S3 e um bucket já deve existir.
+
+Você já deve ter criado usuários ou grupos antes de conceder permissões.
+
+.Sobre esta tarefa
+Você pode adicionar novas instruções para novos usuários e grupos ou modificar os atributos de instruções existentes. Para obter mais opções, consulte as `vserver object-store-server bucket policy` páginas de manual.
+
+Permissões de usuário e grupo podem ser concedidas quando o bucket é criado ou conforme necessário mais tarde. Você também pode modificar a capacidade do bucket e a atribuição do grupo de políticas de QoS.
+
+A partir do ONTAP 9.9,1, se você planeja oferecer suporte à funcionalidade de marcação de objetos cliente AWS com o servidor ONTAP S3, as ações `GetObjectTagging` `PutObjectTagging` e `DeleteObjectTagging` precisam ser permitidas usando o bucket ou as políticas de grupo.
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Edite o bucket: Clique em *Storage > Buckets*, clique no bucket desejado e clique em *Edit*. Ao adicionar ou modificar permissões, você pode especificar os seguintes parâmetros:
++
+** *Principal*: O usuário ou grupo a quem o acesso é concedido.
+** *Efeito*: Permite ou nega o acesso a um usuário ou grupo.
+** *Ações*: Ações permitidas no intervalo para um determinado usuário ou grupo.
+** *Recursos*: Caminhos e nomes de objetos dentro do intervalo para o qual o acesso é concedido ou negado.
++
+Os padrões *_bucketname_* e *_bucketname/*_* concedem acesso a todos os objetos no bucket. Você também pode conceder acesso a objetos únicos; por exemplo, *_bucketname/_*_readme.txt*.
+
+** *Condições* (opcional): Expressões que são avaliadas quando o acesso é tentado. Por exemplo, você pode especificar uma lista de endereços IP para os quais o acesso será permitido ou negado.
+
+
+
+
+
+NOTE: A partir do ONTAP 9.14,1, você pode especificar variáveis para a política de bucket no campo *Resources*. Essas variáveis são marcadores de posição que são substituídos por valores contextuais quando a política é avaliada. Por exemplo, se `${aws:username}` for especificado como uma variável para uma política, essa variável será substituída pelo nome de usuário do contexto de solicitação e a ação da política pode ser executada como configurada para esse usuário.
+
+--
+.CLI
+--
+.Passos
+. Adicione uma instrução a uma política de bucket:
++
+`vserver object-store-server bucket policy add-statement -vserver _svm_name_ -bucket _bucket_name_ -effect {allow|deny} -action _object_store_actions_ -principal _user_and_group_names_ -resource _object_store_resources_ [-sid text] [-index integer]`
+
++
+Os seguintes parâmetros definem permissões de acesso:
+
++
+[cols="1,3"]
+|===
+
+
+ a| 
+`-effect`
+ a| 
+A declaração pode permitir ou negar acesso
+
+
+
+ a| 
+`-action`
+ a| 
+Você pode especificar `*` para indicar todas as ações ou uma lista de uma ou mais das seguintes opções: `GetObject, PutObject, DeleteObject, ListBucket, GetBucketAcl,GetObjectAcl, ListBucketMultipartUploads,` E `ListMultipartUploadParts`.
+
+
+
+ a| 
+`-principal`
+ a| 
+Uma lista de um ou mais S3 usuários ou grupos.
+
+** Um máximo de 10 usuários ou grupos podem ser especificados.
+** Se um grupo S3 for especificado, ele deverá estar no formulário `group/group_name.`
+** `*` pode ser especificado para significar acesso público; ou seja, acesso sem uma chave de acesso e chave secreta.
+** Se nenhum principal for especificado, todos os usuários do S3 na VM de armazenamento terão acesso.
+
+
+
+
+ a| 
+`-resource`
+ a| 
+O balde e qualquer objeto que ele contém. Os carateres curinga `*` e `?` podem ser usados para formar uma expressão regular para especificar um recurso. Para um recurso, você pode especificar variáveis em uma política. Estas são variáveis de política são marcadores de posição que são substituídos pelos valores contextuais quando a política é avaliada.
+
+|===
++
+Opcionalmente, você pode especificar uma cadeia de texto como comentário com a `-sid` opção.
+
+
+
+.Exemplos
+O exemplo a seguir cria uma declaração de política de bucket do servidor de armazenamento de objetos para a VM de armazenamento svm1.example.com e bucket1 que especifica o acesso permitido a uma pasta readme para o usuário do servidor de armazenamento de objetos user1.
+
+[listing]
+----
+cluster1::> vserver object-store-server bucket policy statement create -vserver svm1.example.com -bucket bucket1 -effect allow -action GetObject,PutObject,DeleteObject,ListBucket -principal user1 -resource bucket1/readme/* -sid "fullAccessToReadmeForUser1"
+----
+O exemplo a seguir cria uma declaração de política de bucket do servidor de armazenamento de objetos para a VM de armazenamento svm1.example.com e bucket1 que especifica o acesso permitido a todos os objetos para o grupo de servidores de armazenamento de objetos group1.
+
+[listing]
+----
+cluster1::> vserver object-store-server bucket policy statement create -vserver svm1.example.com -bucket bucket1 -effect allow -action GetObject,PutObject,DeleteObject,ListBucket -principal group/group1 -resource bucket1/* -sid "fullAccessForGroup1"
+----
+A partir do ONTAP 9.14,1, você pode especificar variáveis para uma política de bucket. O exemplo a seguir cria uma declaração de política de bucket do servidor para a VM de armazenamento `svm1` e `bucket1` especifica `${aws:username}` como uma variável para um recurso de diretiva. Quando a política é avaliada, a variável de política é substituída pelo nome de usuário de contexto de solicitação e a ação de política pode ser executada como configurada para esse usuário. Por exemplo, quando a seguinte declaração de política é avaliada, `${aws:username}` é substituída pelo usuário que executa a operação S3. Se um usuário `user1` executar a operação, esse usuário terá acesso ao `bucket1` as `bucket1/user1/*`.
+
+[listing]
+----
+cluster1::> object-store-server bucket policy statement create -vserver svm1 -bucket bucket1 -effect allow -action * -principal - -resource bucket1,bucket1/${aws:username}/*##
+----
+--
+====

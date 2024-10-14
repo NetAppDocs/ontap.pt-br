@@ -1,0 +1,45 @@
+---
+permalink: nfs-admin/case-sensitivity-file-directory-multiprotocol-concept.html 
+sidebar: sidebar 
+keywords: case sensitivity, file, directory, name, multiprotocol, environment 
+summary: Os nomes de arquivos e diretórios são sensíveis a maiúsculas e minúsculas para clientes NFS, mas que preservam casos para clientes SMB. Você deve entender quais são as implicações em um ambiente multiprotocolo e as ações que pode precisar tomar ao especificar o caminho ao criar compartilhamentos SMB e ao acessar dados nos compartilhamentos. 
+---
+= Sensibilidade de casos de nomes de arquivos e diretórios em um ambiente multiprotocolo
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os nomes de arquivos e diretórios são sensíveis a maiúsculas e minúsculas para clientes NFS, mas que preservam casos para clientes SMB. Você deve entender quais são as implicações em um ambiente multiprotocolo e as ações que pode precisar tomar ao especificar o caminho ao criar compartilhamentos SMB e ao acessar dados nos compartilhamentos.
+
+Se um cliente SMB criar um diretório `testdir` chamado , os clientes SMB e NFS exibirão o nome do arquivo como `testdir`. No entanto, se um usuário SMB tentar criar um nome de diretório mais tarde `TESTDIR` , o nome não será permitido porque, para o cliente SMB, esse nome existe atualmente. Se um usuário NFS criar posteriormente um diretório `TESTDIR` chamado , clientes NFS e SMB exibirão o nome do diretório de maneira diferente, da seguinte forma:
+
+* Em clientes NFS, você verá ambos os nomes de diretório à medida que foram criados, por `testdir` exemplo e `TESTDIR`, porque os nomes de diretório são sensíveis a maiúsculas e minúsculas.
+* Os clientes SMB usam os nomes 8,3 para distinguir entre os dois diretórios. Um diretório tem o nome do arquivo base. Os diretórios adicionais recebem um nome de arquivo 8,3.
++
+** Em clientes SMB, você verá `testdir` e `TESTDI~1`.
+** O ONTAP cria o `TESTDI~1` nome do diretório para diferenciar os dois diretórios.
++
+Nesse caso, você deve usar o nome 8,3 ao especificar um caminho de compartilhamento ao criar ou modificar um compartilhamento em uma máquina virtual de storage (SVM).
+
+
+
+
+
+Da mesma forma para arquivos, se um cliente SMB criar `test.txt`, os clientes SMB e NFS exibirão o nome do arquivo como `text.txt`. No entanto, se um usuário SMB tentar criar mais tarde `Test.txt` , o nome não será permitido porque, para o cliente SMB, esse nome existe atualmente. Se um usuário NFS criar mais tarde um arquivo `Test.txt` chamado , clientes NFS e SMB exibirão o nome do arquivo de forma diferente, da seguinte forma:
+
+* Em clientes NFS, você verá ambos os nomes de arquivos à medida que foram criados e `test.txt` `Test.txt` , porque os nomes de arquivos são sensíveis a maiúsculas e minúsculas.
+* Os clientes SMB usam os nomes 8,3 para distinguir entre os dois arquivos. Um arquivo tem o nome do arquivo base. Os ficheiros adicionais recebem um nome de ficheiro 8,3.
++
+** Em clientes SMB, você verá `test.txt` e `TEST~1.TXT`.
+** O ONTAP cria o `TEST~1.TXT` nome do arquivo para diferenciar os dois arquivos.
+
+
+
+
+[NOTE]
+====
+Se um mapeamento de carateres tiver sido criado usando os comandos SVM CIFS de mapeamento de carateres, uma pesquisa do Windows que normalmente seria insensível a maiúsculas e minúsculas pode se tornar sensível a maiúsculas e minúsculas. Isso significa que as pesquisas de nome de arquivo só serão sensíveis a maiúsculas e minúsculas se o mapeamento de carateres tiver sido criado e o nome de arquivo estiver usando esse mapeamento de carateres.
+
+====

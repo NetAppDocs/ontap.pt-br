@@ -1,0 +1,41 @@
+---
+permalink: tape-backup/configure-multipath-access-concept.html 
+sidebar: sidebar 
+keywords: considerations, configuring, multipath, tape, access 
+summary: Você pode configurar dois caminhos do sistema de armazenamento para acessar as unidades de fita em uma biblioteca de fitas. Se um caminho falhar, o sistema de armazenamento pode usar os outros caminhos para acessar as unidades de fita sem ter que reparar imediatamente o caminho com falha. Isso garante que as operações de fita possam ser reiniciadas. 
+---
+= Considerações ao configurar o acesso à fita multipath
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar dois caminhos do sistema de armazenamento para acessar as unidades de fita em uma biblioteca de fitas. Se um caminho falhar, o sistema de armazenamento pode usar os outros caminhos para acessar as unidades de fita sem ter que reparar imediatamente o caminho com falha. Isso garante que as operações de fita possam ser reiniciadas.
+
+Você deve considerar o seguinte ao configurar o acesso à fita multipath a partir do seu sistema de storage:
+
+* Em bibliotecas de fitas que suportam mapeamento LUN, para acesso multipath a um grupo LUN, o mapeamento LUN deve ser simétrico em cada caminho.
++
+As unidades de fita e os modificadores de Mídia são atribuídos a grupos LUN (conjunto de LUNs que compartilham o mesmo conjunto de caminhos do iniciador) em uma biblioteca de fitas. Todas as unidades de fita de um grupo LUN devem estar disponíveis para operações de backup e restauração em todos os vários caminhos.
+
+* Um máximo de dois caminhos pode ser configurado a partir do sistema de armazenamento para acessar as unidades de fita em uma biblioteca de fitas.
+* O acesso à fita multipath é compatível com o balanceamento de carga. O balanceamento de carga está desativado por padrão.
+
+
+No exemplo a seguir, o sistema de armazenamento acessa o grupo LUN 0 através de dois caminhos de iniciador: 0B e 0d. Em ambos os caminhos, o grupo LUN tem o mesmo número de LUN, 0 e contagem de LUN, 5. O sistema de armazenamento acede ao grupo LUN 1 através de apenas um caminho de iniciador, 3D.
+
+[listing]
+----
+
+STSW-3070-2_cluster::> storage tape library config show
+
+Node                    LUN Group   LUN Count  Library Name  Library Target Port  Initiator
+----------------------- ----------- ---------- ------------- -------------------- -----
+STSW-3070-2_cluster-01        0      5         IBM 3573-TL_1  510a09800000412d     0b
+                                                                                  	0d
+                              1      2         IBM 3573-TL_2  50050763124b4d6f     3d
+
+3 entries were displayed
+----
+Para obter mais informações, consulte as páginas de manual.

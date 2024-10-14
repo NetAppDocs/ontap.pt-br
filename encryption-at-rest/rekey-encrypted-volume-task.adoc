@@ -1,0 +1,77 @@
+---
+permalink: encryption-at-rest/rekey-encrypted-volume-task.html 
+sidebar: sidebar 
+keywords: changing, encryption key, volume encryption rekey start, command 
+summary: É uma prática recomendada de segurança alterar a chave de criptografia para um volume periodicamente. A partir do ONTAP 9.3, você pode usar o comando de início de inicialização de criptografia de volume para alterar a chave de criptografia. 
+---
+= Altere a chave de criptografia de um volume com o comando de início de rechavear de criptografia de volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É uma prática recomendada de segurança alterar a chave de criptografia para um volume periodicamente. A partir do ONTAP 9.3, você pode usar o `volume encryption rekey start` comando para alterar a chave de criptografia.
+
+.Sobre esta tarefa
+Depois de iniciar uma operação de rechavear, ela deve ser concluída. Não há retorno à chave antiga. Se você encontrar um problema de desempenho durante a operação, você pode executar o `volume encryption rekey pause` comando para pausar a operação e o `volume encryption rekey resume` comando para retomar a operação.
+
+Até que a operação de rechavear termine, o volume terá duas teclas. Novas gravações e suas leituras correspondentes usarão a nova chave. Caso contrário, as leituras usarão a chave antiga.
+
+[NOTE]
+====
+Você não pode usar `volume encryption rekey start` para rechavear um volume SnapLock.
+
+====
+.Passos
+. Alterar uma chave de encriptação:
++
+`volume encryption rekey start -vserver SVM_name -volume volume_name`
+
++
+O comando a seguir altera a chave de criptografia `vol1` no SVM``vs1``:
+
++
+[listing]
+----
+cluster1::> volume encryption rekey start -vserver vs1 -volume vol1
+----
+. Verifique o estado da operação de rechavear:
++
+`volume encryption rekey show`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
++
+O seguinte comando apresenta o estado da operação de rechavear:
+
++
+[listing]
+----
+cluster1::> volume encryption rekey show
+
+Vserver   Volume   Start Time           Status
+-------   ------   ------------------   ---------------------------
+vs1       vol1     9/18/2017 17:51:41   Phase 2 of 2 is in progress.
+----
+. Quando a operação de rechavear estiver concluída, verifique se o volume está ativado para encriptação:
++
+`volume show -is-encrypted true`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
++
+O comando a seguir exibe os volumes criptografados em `cluster1`:
+
++
+[listing]
+----
+cluster1::> volume show -is-encrypted true
+
+Vserver  Volume  Aggregate  State  Type  Size  Available  Used
+-------  ------  ---------  -----  ----  -----  --------- ----
+vs1      vol1    aggr2     online    RW  200GB    160.0GB  20%
+----
+

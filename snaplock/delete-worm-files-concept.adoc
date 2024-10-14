@@ -1,0 +1,98 @@
+---
+permalink: snaplock/delete-worm-files-concept.html 
+sidebar: sidebar 
+keywords: delete, worm, file, privileged, delete, enterprise, mode, retention, period, overview 
+summary: Você pode excluir arquivos WORM do modo empresarial durante o período de retenção usando o recurso de exclusão privilegiada. Antes de poder utilizar esta funcionalidade, tem de criar uma conta de administrador do SnapLock e, em seguida, utilizar a conta, ativar a funcionalidade. 
+---
+= Exclua a visão geral de arquivos WORM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode excluir arquivos WORM do modo empresarial durante o período de retenção usando o recurso de exclusão privilegiada. Antes de poder utilizar esta funcionalidade, tem de criar uma conta de administrador do SnapLock e, em seguida, utilizar a conta, ativar a funcionalidade.
+
+
+
+== Crie uma conta de administrador do SnapLock
+
+Você deve ter o administrador do SnapLock Privileges para executar uma exclusão privilegiada. Esses Privileges são definidos na função vsadmin-SnapLock. Se ainda não tiver sido atribuída essa função, você poderá solicitar ao administrador do cluster que crie uma conta de administrador SVM com a função de administrador do SnapLock.
+
+.O que você vai precisar
+* Você deve ser um administrador de cluster para executar esta tarefa.
+* Você deve ter feito login em uma conexão segura (SSH, console ou ZAPI).
+
+
+.Passos
+. Crie uma conta de administrador do SVM com a função de administrador do SnapLock:
++
+`*security login create -vserver _SVM_name_ -user-or-group-name _user_or_group_name_ -application _application_ -authmethod _authentication_method_ -role _role_ -comment _comment_*`
+
++
+O comando a seguir permite que a conta de administrador SVM `SnapLockAdmin` com a função predefinida `vsadmin-snaplock` acesse `SVM1` usando uma senha:
+
++
+[listing]
+----
+cluster1::> security login create -vserver SVM1 -user-or-group-name SnapLockAdmin -application ssh -authmethod password -role vsadmin-snaplock
+----
+
+
+
+
+== Ative o recurso de exclusão privilegiada
+
+Você deve habilitar explicitamente o recurso de exclusão privilegiada no volume Enterprise que contém os arquivos WORM que você deseja excluir.
+
+.Sobre esta tarefa
+O valor `-privileged-delete` da opção determina se a exclusão privilegiada está ativada. Os valores possíveis são `enabled`, `disabled`, e `permanently-disabled`.
+
+[NOTE]
+====
+ `permanently-disabled` é o estado do terminal. Não é possível ativar a exclusão privilegiada no volume depois de definir o estado como `permanently-disabled`.
+
+====
+.Passos
+. Ativar exclusão privilegiada para um volume SnapLock Enterprise:
++
+`*volume snaplock modify -vserver _SVM_name_ -volume _volume_name_ -privileged-delete disabled|enabled|permanently-disabled*`
+
++
+O comando a seguir habilita o recurso de exclusão privilegiada para o volume Enterprise `dataVol` `SVM1` no :
+
++
+[listing]
+----
+SVM1::> volume snaplock modify -vserver SVM1 -volume dataVol -privileged-delete enabled
+----
+
+
+
+
+== Exclua arquivos WORM do modo empresarial
+
+Você pode usar o recurso de exclusão privilegiada para excluir arquivos WORM do modo empresarial durante o período de retenção.
+
+.O que você vai precisar
+* Você deve ser um administrador do SnapLock para executar esta tarefa.
+* Você deve ter criado um log de auditoria do SnapLock e habilitado o recurso de exclusão privilegiada no volume empresa.
+
+
+.Sobre esta tarefa
+Não é possível usar uma operação de exclusão privilegiada para excluir um arquivo WORM expirado. Use o `volume file retention show` comando para visualizar o tempo de retenção do arquivo WORM que você deseja excluir. Para obter mais informações, consulte a página man para o comando.
+
+.Passo
+. Excluir um arquivo WORM em um volume empresarial:
++
+`*volume file privileged-delete -vserver _SVM_name_ -file _file_path_*`
+
++
+O comando a seguir exclui o arquivo `/vol/dataVol/f1` no SVM``SVM1``:
+
++
+[listing]
+----
+SVM1::> volume file privileged-delete -file /vol/dataVol/f1
+----
+

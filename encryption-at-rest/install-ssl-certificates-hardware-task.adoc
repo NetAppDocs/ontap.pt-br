@@ -1,0 +1,49 @@
+---
+permalink: encryption-at-rest/install-ssl-certificates-hardware-task.html 
+sidebar: sidebar 
+keywords: install, ssl, certificates, cluster 
+summary: 'O cluster e o servidor KMIP usam certificados SSL KMIP para verificar a identidade uns dos outros e estabelecer uma conexão SSL. Antes de configurar a conexão SSL com o servidor KMIP, você deve instalar os certificados SSL do cliente KMIP para o cluster e o certificado público SSL para a autoridade de certificação raiz (CA) do servidor KMIP.' 
+---
+= Instale certificados SSL no cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O cluster e o servidor KMIP usam certificados SSL KMIP para verificar a identidade uns dos outros e estabelecer uma conexão SSL. Antes de configurar a conexão SSL com o servidor KMIP, você deve instalar os certificados SSL do cliente KMIP para o cluster e o certificado público SSL para a autoridade de certificação raiz (CA) do servidor KMIP.
+
+.Sobre esta tarefa
+Em um par de HA, ambos os nós precisam usar os mesmos certificados KMIP SSL públicos e privados. Se você conectar vários pares de HA ao mesmo servidor KMIP, todos os nós dos pares de HA precisarão usar os mesmos certificados KMIP SSL públicos e privados.
+
+.Antes de começar
+* O tempo deve ser sincronizado no servidor criando os certificados, o servidor KMIP e o cluster.
+* Você deve ter obtido o certificado de cliente KMIP SSL público para o cluster.
+* Você deve ter obtido a chave privada associada ao certificado de cliente SSL KMIP para o cluster.
+* O certificado de cliente SSL KMIP não deve ser protegido por senha.
+* Você deve ter obtido o certificado público SSL para a autoridade de certificação raiz (CA) do servidor KMIP.
+* Em um ambiente MetroCluster, é necessário instalar os mesmos certificados SSL KMIP em ambos os clusters.
+
+
+
+NOTE: Você pode instalar os certificados de cliente e servidor no servidor KMIP antes ou depois de instalar os certificados no cluster.
+
+.Passos
+. Instale os certificados de cliente SSL KMIP para o cluster:
++
+`security certificate install -vserver admin_svm_name -type client`
+
++
+Você será solicitado a inserir os certificados SSL KMIP público e privado.
+
++
+`cluster1::> security certificate install -vserver cluster1 -type client`
+
+. Instale o certificado público SSL para a autoridade de certificação raiz (CA) do servidor KMIP:
++
+`security certificate install -vserver admin_svm_name -type server-ca`
+
++
+`cluster1::> security certificate install -vserver cluster1 -type server-ca`
+
+

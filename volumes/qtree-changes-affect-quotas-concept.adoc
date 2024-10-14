@@ -1,0 +1,55 @@
+---
+permalink: volumes/qtree-changes-affect-quotas-concept.html 
+sidebar: sidebar 
+keywords: how, qtree, quota, delete qtree, rename qtree, tree quotas, security, style of a qtree, security style, style 
+summary: Ao excluir, renomear ou alterar o estilo de segurança de uma qtree, as cotas aplicadas pelo ONTAP podem mudar, dependendo das cotas atuais sendo aplicadas. 
+---
+= Como as alterações de qtree afetam as cotas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Ao excluir, renomear ou alterar o estilo de segurança de uma qtree, as cotas aplicadas pelo ONTAP podem mudar, dependendo das cotas atuais sendo aplicadas.
+
+
+
+== Exclusões de Qtree e quotas de árvore
+
+Quando você exclui uma qtree, todas as cotas aplicáveis a essa qtree, explícitas ou derivadas, não são mais aplicadas pelo ONTAP.
+
+Se as regras de cota persistem depende de onde você exclui a qtree:
+
+* Se você excluir uma qtree usando o ONTAP, as regras de cota para essa qtree serão automaticamente excluídas, incluindo regras de cota de árvore e quaisquer regras de cota de usuário e grupo configuradas para essa qtree.
+* Se você excluir uma qtree usando seu cliente CIFS ou NFS, será necessário excluir quaisquer regras de cota para essa qtree para evitar erros ao reinicializar cotas. Se você criar uma nova qtree com o mesmo nome que o que você excluiu, as regras de cota existentes não serão aplicadas à nova qtree até que você reinicialize cotas.
+
+
+
+
+== Como renomear uma qtree afeta as cotas
+
+Quando você renomear uma qtree usando o ONTAP, as regras de cota para essa qtree são atualizadas automaticamente. Se você renomear uma qtree usando seu cliente CIFS ou NFS, será necessário atualizar as regras de cota para essa qtree.
+
+
+NOTE: Se você renomear uma qtree usando seu cliente CIFS ou NFS e não atualizar as regras de cota para essa qtree com o novo nome antes de reinicializar as cotas, as cotas não serão aplicadas à qtree. Cotas explícitas para a qtree, incluindo cotas de árvore e cotas de usuário ou grupo para a qtree, podem ser convertidas em cotas derivadas.
+
+
+
+== Estilos de segurança Qtree e cotas de usuário
+
+Você pode aplicar listas de controle de acesso (ACLs) em qtrees usando estilos de segurança NTFS ou mistos, mas não usando o estilo de segurança UNIX. Alterar o estilo de segurança de uma qtree pode afetar a forma como as cotas são calculadas. Você deve sempre reinicializar cotas depois de alterar o estilo de segurança de uma qtree.
+
+Se você alterar o estilo de segurança de uma qtree de NTFS ou misto para UNIX, quaisquer ACLs em arquivos nessa qtree serão ignoradas e o uso do arquivo será cobrado contra as IDs de usuário UNIX.
+
+Se você alterar o estilo de segurança de uma qtree de UNIX para Misto ou NTFS, as ACLs ocultas anteriormente ficam visíveis. Além disso, quaisquer ACLs que foram ignoradas se tornam efetivas novamente e as informações do usuário NFS são ignoradas. Se nenhuma ACL existisse antes, as informações NFS continuarão a ser usadas no cálculo da cota.
+
+
+NOTE: Para garantir que os usos de cota para usuários UNIX e Windows sejam calculados corretamente depois que você alterar o estilo de segurança de uma qtree, é necessário reinicializar as cotas para o volume que contém essa qtree.
+
+.Exemplo
+O exemplo a seguir mostra como uma alteração no estilo de segurança de uma qtree resulta em um usuário diferente sendo cobrado pelo uso de um arquivo na qtree em particular.
+
+Suponha que a segurança NTFS esteja em vigor na qtree A e uma ACL dê ao usuário do Windows A `corp\joe` propriedade de um arquivo 5MB. O usuário `corp\joe` é carregado com 5MB GB de uso de espaço em disco para uma
+
+Agora você altera o estilo de segurança da qtree A de NTFS para UNIX. Depois que as cotas forem reinicializadas, o usuário do Windows `corp\joe` não será mais cobrado por esse arquivo; em vez disso, o usuário UNIX correspondente ao UID do arquivo será cobrado pelo arquivo. O UID pode ser um usuário UNIX mapeado para `corp\joe` ou para o usuário raiz.

@@ -1,0 +1,85 @@
+---
+permalink: nfs-config/test-access-client-systems-task.html 
+sidebar: sidebar 
+keywords: testing, nfs, access, client, systems 
+summary: Depois de verificar o acesso NFS ao novo objeto de storage, você deve testar a configuração fazendo login em um host de administração NFS, lendo e gravando dados no SVM. Você deve repetir o processo como um usuário não-root em um sistema cliente. 
+---
+= Testar o acesso NFS a partir de sistemas cliente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois de verificar o acesso NFS ao novo objeto de storage, você deve testar a configuração fazendo login em um host de administração NFS, lendo e gravando dados no SVM. Você deve repetir o processo como um usuário não-root em um sistema cliente.
+
+.O que você vai precisar
+* O sistema cliente deve ter um endereço IP permitido pela regra de exportação especificada anteriormente.
+* Você deve ter as informações de login para o usuário root.
+
+
+.Passos
+. No cluster, verifique o endereço IP do LIF que está hospedando o novo volume:
++
+`network interface show –vserver _svm_name_`
+
+. Faça login como o usuário raiz no sistema de cliente de host de administração.
+. Altere o diretório para a pasta de montagem:
++
+`cd /mnt/`
+
+. Crie e monte uma nova pasta usando o endereço IP do SVM:
++
+.. Criar uma nova pasta
+`mkdir /mnt/_folder_`
+.. Monte o novo volume neste novo diretório
+`mount -t nfs -o hard _IPAddress_:/_volume_name_ /mnt/_folder_`
+.. Mude o diretório para a nova pasta
+`cd _folder_`
++
+Os comandos a seguir criam uma pasta chamada test1, montam o volume vol1 no endereço IP 192.0.2.130 na pasta de montagem test1 e mudam para o novo diretório test1:
+
++
+[listing]
+----
+host# mkdir /mnt/test1
+host# mount -t nfs -o hard 192.0.2.130:/vol1 /mnt/test1
+host# cd /mnt/test1
+----
+
+
+. Crie um novo arquivo, verifique se ele existe e escreva texto nele:
++
+.. Criar um arquivo de teste
+`touch _filename_`
+.. Verifique se o arquivo existe
+`ls -l _filename_`
+.. Digite
+`cat > _filename_`
++
+Digite algum texto e pressione Ctrl-D para escrever texto no arquivo de teste.
+
+.. Exibir o conteúdo do arquivo de teste. E
+`cat _filename_`
+.. Remova o arquivo de teste
+`rm _filename_`
+.. Retornar para o diretório pai
+`cd ..`
++
+[listing]
+----
+host# touch myfile1
+host# ls -l myfile1
+-rw-r--r-- 1 root root 0 Sep 18 15:58 myfile1
+host# cat >myfile1
+This text inside the first file
+host# cat myfile1
+This text inside the first file
+host# rm -r myfile1
+host# cd ..
+----
+
+
+. Como root, defina qualquer propriedade e permissões UNIX desejadas no volume montado.
+. Em um sistema cliente UNIX identificado em suas regras de exportação, faça login como um dos usuários autorizados que agora tem acesso ao novo volume e repita os procedimentos nas etapas 3 a 5 para verificar se você pode montar o volume e criar um arquivo.
+

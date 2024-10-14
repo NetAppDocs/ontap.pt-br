@@ -1,0 +1,148 @@
+---
+permalink: san-admin/microsoft-offloaded-data-transfer-odx-concept.html 
+sidebar: sidebar 
+keywords: microsoft, offloaded, data, transfer, odx 
+summary: 'A Microsoft Offloaded Data Transfer (ODX), também conhecida como descarga de cópia, permite transferências diretas de dados dentro de um dispositivo de armazenamento ou entre dispositivos de armazenamento compatíveis sem transferir os dados através do computador host.' 
+---
+= Microsoft offloaded Data Transfer (ODX)
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A Microsoft Offloaded Data Transfer (ODX), também conhecida como _copy offload_, permite transferências diretas de dados dentro de um dispositivo de armazenamento ou entre dispositivos de armazenamento compatíveis sem transferir os dados através do computador host.
+
+O ONTAP oferece suporte ao ODX para os protocolos SMB e SAN.
+
+Em transferências de arquivos não ODX, os dados são lidos da origem e são transferidos pela rede para o host. O host transfere os dados de volta pela rede para o destino. Na transferência de arquivos ODX, os dados são copiados diretamente da origem para o destino sem passar pelo host.
+
+Como as cópias descarregadas do ODX são executadas diretamente entre a origem e o destino, benefícios significativos de desempenho são obtidos se as cópias forem executadas dentro do mesmo volume, incluindo tempo de cópia mais rápido para cópias do mesmo volume, utilização reduzida da CPU e memória no cliente e utilização reduzida da largura de banda de e/S de rede. Se as cópias estiverem em volumes, talvez não haja ganhos significativos de desempenho em comparação com as cópias baseadas em host.
+
+Para ambientes SAN, o ODX só está disponível quando é suportado pelo host e pelo sistema de armazenamento. Os computadores clientes que suportam ODX e têm o ODX ativado automaticamente e de forma transparente usam transferência de arquivos descarregados ao mover ou copiar arquivos. O ODX é usado independentemente de você arrastar e soltar arquivos através do Windows Explorer ou usar comandos de cópia de arquivo de linha de comando ou se um aplicativo cliente inicia solicitações de cópia de arquivo.
+
+
+
+== Requisitos para usar ODX
+
+Se você planeja usar o ODX para descarregamentos de cópias, você precisa estar familiarizado com considerações de suporte de volume, requisitos de sistema e requisitos de capacidade de software.
+
+Para usar o ODX, seu sistema deve ter o seguinte:
+
+* ONTAP
++
+O ODX é ativado automaticamente em versões suportadas do ONTAP.
+
+* Volume mínimo de origem de 2 GB
++
+Para um desempenho ideal, o volume de origem deve ser superior a 260 GB.
+
+* Suporte ODX no cliente Windows
++
+O ODX é suportado no Windows Server 2012 ou posterior e no Windows 8 ou posterior. A Matriz de interoperabilidade contém as informações mais recentes sobre clientes Windows suportados.
+
++
+https://mysupport.netapp.com/matrix["Ferramenta de Matriz de interoperabilidade do NetApp"^]
+
+* Cópia de suporte de aplicativo para ODX
++
+O aplicativo que executa a transferência de dados deve suportar ODX. As operações de aplicação que suportam ODX incluem o seguinte:
+
++
+** Operações de gerenciamento do Hyper-V, como criar e converter discos rígidos virtuais (VHDs), gerenciar cópias Snapshot e copiar arquivos entre máquinas virtuais
+** Operações do Windows Explorer
+** Comandos de cópia do Windows PowerShell
+** Comandos de cópia do prompt de comando do Windows a Biblioteca Microsoft TechNet contém mais informações sobre aplicativos ODX suportados em servidores e clientes Windows.
+
+
+* Se você usar volumes compatados, o tamanho do grupo de compactação deve ser 8K.
++
+O tamanho do grupo de compressão 32K não é suportado.
+
+
+
+O ODX não funciona com os seguintes tipos de volume:
+
+* Volumes de origem com capacidades inferiores a 2 GB
+* Volumes só de leitura
+* link:../flexcache/supported-unsupported-features-concept.html["Volumes FlexCache"]
++
+
+NOTE: O ODX é compatível com volumes de origem FlexCache.
+
+* link:../san-admin/san-volumes-concept.html#semi-thick-provisioning-for-volumes["Volumes provisionados semi-grossos"]
+
+
+
+
+== Requisitos especiais de arquivo do sistema
+
+Você pode excluir arquivos ODX encontrados no qtrees. Você não deve remover ou modificar quaisquer outros arquivos de sistema ODX, a menos que você seja informado pelo suporte técnico para fazê-lo.
+
+Ao usar o recurso ODX, existem arquivos de sistema ODX que existem em cada volume do sistema. Esses arquivos permitem a representação pontual dos dados usados durante a transferência do ODX. Os seguintes arquivos de sistema estão no nível raiz de cada volume que contém LUNs ou arquivos para os quais os dados foram descarregados:
+
+* `.copy-offload` (um diretório oculto)
+* `.tokens` (arquivo sob o diretório oculto `.copy-offload`)
+
+
+Você pode usar o `copy-offload delete-tokens -path dir_path -node _node_name_` comando para excluir uma qtree contendo um arquivo ODX.
+
+
+
+== Casos de uso para ODX
+
+Você deve estar ciente dos casos de uso para usar o ODX em SVMs para que você possa determinar em que circunstâncias o ODX fornece benefícios de desempenho.
+
+Os servidores e clientes do Windows que suportam ODX usam a descarga de cópia como a forma padrão de copiar dados em servidores remotos. Se o servidor ou cliente do Windows não suportar ODX ou a descarga de cópia ODX falhar em qualquer ponto, a operação de cópia ou movimentação volta para leituras e gravações tradicionais para a operação de cópia ou movimentação.
+
+Os seguintes casos de uso suportam o uso de cópias e movimentos ODX:
+
+* Intra-volume
++
+Os arquivos de origem e destino ou LUNs estão dentro do mesmo volume.
+
+* Entre volumes, mesmo nó e SVM
++
+Os arquivos de origem e destino ou LUNs estão em volumes diferentes localizados no mesmo nó. Os dados pertencem ao mesmo SVM.
+
+* Entre volumes, nós diferentes e o mesmo SVM
++
+Os arquivos de origem e destino ou LUNs estão em volumes diferentes localizados em nós diferentes. Os dados pertencem ao mesmo SVM.
+
+* Entre SVM, mesmo nó
++
+O arquivo de origem e destino ou LUNs estão em volumes diferentes localizados no mesmo nó. Os dados pertencem a diferentes SVMs.
+
+* Entre SVM, nós diferentes
++
+O arquivo de origem e destino ou LUNs estão em volumes diferentes localizados em nós diferentes. Os dados pertencem a diferentes SVMs.
+
+* Inter-cluster
++
+As LUNs de origem e destino estão em volumes diferentes, localizados em nós diferentes, entre clusters. Isso só é suportado para SAN e não funciona para SMB.
+
+
+
+Existem alguns casos de uso especiais adicionais:
+
+* Com a implementação do ONTAP ODX, você pode usar o ODX para copiar arquivos entre compartilhamentos SMB e unidades virtuais conetadas a FC ou iSCSI.
++
+Você pode usar o Windows Explorer, a CLI do Windows ou PowerShell, Hyper-V ou outras aplicações compatíveis com ODX para copiar ou mover arquivos sem interrupções usando a descarga de cópia ODX entre compartilhamentos SMB e LUNs conetados, desde que os compartilhamentos SMB e LUNs estejam no mesmo cluster.
+
+* O Hyper-V fornece alguns casos de uso adicionais para descarga de cópia ODX:
++
+** Você pode usar a passagem de descarga de cópia ODX com o Hyper-V para copiar dados dentro ou através de arquivos de disco rígido virtual (VHD) ou para copiar dados entre compartilhamentos SMB mapeados e LUNs iSCSI conetados dentro do mesmo cluster.
++
+Isso permite que cópias de sistemas operacionais convidados passem para o storage subjacente.
+
+** Ao criar VHDs de tamanho fixo, o ODX é usado para inicializar o disco com zeros, usando um token zerado bem conhecido.
+** A descarga de cópia ODX é usada para migração de armazenamento de máquina virtual se o armazenamento de origem e destino estiver no mesmo cluster.
+
+
++
+[NOTE]
+====
+Para aproveitar os casos de uso para a passagem de descarga de cópia ODX com Hyper-V, o sistema operacional convidado deve suportar ODX e os discos do sistema operacional convidado devem ser discos SCSI suportados pelo armazenamento (SMB ou SAN) que suporte ODX. Os discos IDE no sistema operacional convidado não suportam passagem ODX.
+
+====
+

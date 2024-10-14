@@ -1,0 +1,86 @@
+---
+sidebar: sidebar 
+permalink: networking/monitor_the_health_of_network_ports.html 
+keywords: monitor, monitoring, manage, managing, automatic, health, port, monitor the health of network ports, automatic health monitoring and a set of health monitors help you identify network ports that might not be suitable for hosting lifs, network options port-health-monitor modify 
+summary: O monitoramento automático de integridade e um conjunto de monitores de integridade ajudam a identificar portas de rede que podem não ser adequadas para hospedar LIFs 
+---
+= Monitore a integridade das portas de rede
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+O gerenciamento ONTAP de portas de rede inclui monitoramento automático de integridade e um conjunto de monitores de integridade para ajudá-lo a identificar portas de rede que podem não ser adequadas para hospedar LIFs.
+
+.Sobre esta tarefa
+Se um monitor de integridade determinar que uma porta de rede não está saudável, ele avisa os administradores por meio de uma mensagem EMS ou marca a porta como degradada. O ONTAP evita hospedar LIFs em portas de rede degradadas se houver destinos de failover alternativos saudáveis para esse LIF. Uma porta pode se degradar devido a um evento de falha suave, como flapping de link (links que saltam rapidamente entre cima e baixo) ou particionamento de rede:
+
+* As portas de rede no IPspace do cluster são marcadas como degradadas quando apresentam flapping de link ou perda de acessibilidade da camada 2 (L2) a outras portas de rede no domínio de broadcast.
+* As portas de rede em IPspaces que não sejam de cluster são marcadas como degradadas quando apresentam flapping de link.
+
+
+Você deve estar ciente dos seguintes comportamentos de uma porta degradada:
+
+* Uma porta degradada não pode ser incluída em uma VLAN ou em um grupo de interfaces.
++
+Se uma porta membro de um grupo de interfaces for marcada como degradada, mas o grupo de interfaces ainda estiver marcado como saudável, LIFs podem ser hospedados nesse grupo de interfaces.
+
+* Os LIFs são migrados automaticamente de portas degradadas para portas íntegras.
+* Durante um evento de failover, uma porta degradada não é considerada como o destino de failover. Se não houver portas íntegras disponíveis, as portas degradadas hospedam LIFs de acordo com a política de failover normal.
+* Não é possível criar, migrar ou reverter um LIF para uma porta degradada.
++
+Pode modificar a `ignore-health-status` definição da porta de rede para `true`. Em seguida, você pode hospedar um LIF nas portas saudáveis.
+
+
+
+.Passos
+. Inicie sessão no modo de privilégio avançado:
++
+....
+set -privilege advanced
+....
+. Verifique quais monitores de integridade estão ativados para monitorar o estado da porta de rede:
++
+....
+network options port-health-monitor show
+....
++
+O status de integridade de uma porta é determinado pelo valor dos monitores de integridade.
+
++
+Os seguintes monitores de integridade estão disponíveis e ativados por padrão no ONTAP:
+
++
+** Monitor de saúde com link flapping: Monitora o flapping do link
++
+Se uma porta tiver um link batendo mais de uma vez em cinco minutos, essa porta será marcada como degradada.
+
+** Monitor de integridade de acessibilidade L2: Monitora se todas as portas configuradas no mesmo domínio de broadcast têm acessibilidade L2
++
+Esse monitor de integridade relata L2 problemas de acessibilidade em todos os IPspaces; no entanto, ele marca apenas as portas no IPspace do cluster como degradadas.
+
+** Monitor CRC: Monitora as estatísticas de CRC nas portas
++
+Este monitor de integridade não marca uma porta como degradada, mas gera uma mensagem EMS quando se observa uma taxa de falha de CRC muito alta.
+
+
+
+. Ative ou desative qualquer um dos monitores de integridade para um espaço IPspace conforme desejado usando o `network options port-health-monitor modify` comando.
+. Veja a integridade detalhada de um porto:
++
+....
+network port show -health
+....
+
+
+O comando output exibe o status de integridade da porta, `ignore health status` configuração e lista dos motivos pelos quais a porta é marcada como degradada.
+
+Um status de integridade da porta pode ser `healthy` ou `degraded`.
+
+Se a `ignore health status` configuração for `true`, ela indica que o status de integridade da porta foi modificado de `degraded` para `healthy` pelo administrador.
+
+Se a `ignore health status` configuração for `false`, o status de integridade da porta será determinado automaticamente pelo sistema.

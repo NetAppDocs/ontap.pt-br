@@ -1,0 +1,26 @@
+---
+permalink: smb-hyper-v-sql/witness-protocol-concept.html 
+sidebar: sidebar 
+keywords: witness, protocol, node, sfo, partner, failure, smb, client 
+summary: A ONTAP implementa o protocolo Witness usando o parceiro SFO de um nó como testemunha. Em caso de falha, o parceiro deteta rapidamente a falha e notifica o cliente SMB. 
+---
+= Como funciona o protocolo testemunha
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP implementa o protocolo Witness usando o parceiro SFO de um nó como testemunha. Em caso de falha, o parceiro deteta rapidamente a falha e notifica o cliente SMB.
+
+O protocolo Witness fornece failover aprimorado usando o seguinte processo:
+
+. Quando o servidor de aplicativos estabelece uma conexão SMB continuamente disponível ao Node1, o servidor CIFS informa ao servidor de aplicativos que a testemunha está disponível.
+. O servidor do aplicativo solicita os endereços IP do servidor testemunha de Node1 e recebe uma lista de Node2 (o parceiro SFO) endereços IP de LIF de dados atribuídos à máquina virtual de armazenamento (SVM).
+. O servidor de aplicativos escolhe um dos endereços IP, cria uma conexão testemunha com o Node2 e se Registra para ser notificado se a conexão continuamente disponível no Node1 precisar se mover.
+. Se um evento de failover ocorrer no Node1, o Witness facilita os eventos de failover, mas não está envolvido com a giveback.
+. O Witness deteta o evento de failover e notifica o servidor de aplicativos por meio da conexão Witness que a conexão SMB deve ser movida para Node2.
+. O servidor de aplicativos move a sessão SMB para Node2 e recupera a conexão sem interrupção ao acesso do cliente.
+
+
+image:how-witness-works.gif["Protocolo de testemunhas"]

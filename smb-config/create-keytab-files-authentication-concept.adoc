@@ -1,0 +1,35 @@
+---
+permalink: smb-config/create-keytab-files-authentication-concept.html 
+sidebar: sidebar 
+keywords: begin, ontap, support, svm, authentication, active, directory, ad, server, keytab, file, administrator, generate, uniform, resource, identifier, uri, supplied, supply, vserver, cifs, command, kerberos, create keytab files for smb authentication 
+summary: 'A partir do ONTAP 9.7, o ONTAP oferece suporte à autenticação SVM com servidores do ative Directory (AD) usando arquivos keytab. Os ADMINISTRADORES DE ANÚNCIOS geram um arquivo keytab e o disponibilizam aos administradores do ONTAP como um URI (identificador de recurso uniforme), que é fornecido quando os comandos cifs do vserver exigem autenticação Kerberos com o domínio AD.' 
+---
+= Crie arquivos keytab para autenticação SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.7, o ONTAP oferece suporte à autenticação SVM com servidores do ative Directory (AD) usando arquivos keytab. Os ADMINISTRADORES DE ANÚNCIOS geram um arquivo keytab e o disponibilizam aos administradores do ONTAP como um URI (identificador de recurso uniforme), que é fornecido quando `vserver cifs` os comandos exigem autenticação Kerberos com o domínio AD.
+
+Os ADMINISTRADORES DE ANÚNCIOS podem criar os arquivos keytab usando o comando padrão do Windows Server `ktpass`. O comando deve ser executado no domínio primário onde a autenticação é necessária. O `ktpass` comando pode ser usado para gerar arquivos keytab somente para usuários de domínio primário; chaves geradas usando usuários de domínio confiável não são suportadas.
+
+Os arquivos keytab são gerados para usuários administrativos específicos do ONTAP. Desde que a senha do usuário administrativo não seja alterada, as chaves geradas para o tipo de criptografia e domínio específicos não serão alteradas. Portanto, um novo arquivo keytab é necessário sempre que a senha do usuário admin é alterada.
+
+São suportados os seguintes tipos de encriptação:
+
+* AES256-SHA1
+* DES-CBC-MD5
++
+[NOTE]
+====
+O ONTAP não oferece suporte ao tipo de criptografia DES-CBC-CRC.
+
+====
+* RC4-HMAC
+
+
+AES256 é o tipo de criptografia mais alto e deve ser usado se ativado no sistema ONTAP.
+
+Os arquivos keytab podem ser gerados especificando a senha de administrador ou usando uma senha gerada aleatoriamente. No entanto, a qualquer momento, apenas uma opção de senha pode ser usada, porque uma chave privada específica para o usuário admin é necessária no servidor AD para descriptografar as chaves dentro do arquivo keytab. Qualquer alteração na chave privada para um administrador específico invalidará o arquivo keytab.

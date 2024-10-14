@@ -1,0 +1,80 @@
+---
+sidebar: sidebar 
+permalink: encryption-at-rest/configure-cluster-key-server-task.html 
+keywords: KMIP, clustered key server, external key server, secondary key server 
+summary: Ative o suporte adicional para servidores de gerenciamento de chaves externos criando um cluster. 
+---
+= Configurar servidores de chaves externas em cluster
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.11,1, é possível configurar a conetividade com servidores de gerenciamento de chaves externos em cluster em um SVM. Com servidores de chaves em cluster, você pode designar servidores de chaves primárias e secundárias em um SVM. Ao Registrar chaves, o ONTAP tentará primeiro acessar um servidor de chaves primárias antes de tentar acessar sequencialmente servidores secundários até que a operação seja concluída com êxito, evitando a duplicação de chaves.
+
+Os servidores de chaves externas podem ser usados para chaves NSE, NVE, NAE e SED. Um SVM pode dar suporte a até quatro servidores KMIP primários externos. Cada servidor principal pode suportar até três servidores de chaves secundárias.
+
+
+
+== Antes de começar
+
+* link:install-ssl-certificates-hardware-task.html["O gerenciamento de chaves KMIP deve estar habilitado para SVM"].
+* Esse processo só suporta servidores-chave que usam KMIP. Para obter uma lista de servidores de chaves suportados, verifique o link:http://mysupport.netapp.com/matrix/["Ferramenta de Matriz de interoperabilidade do NetApp"^].
+* Todos os nós no cluster devem estar executando o ONTAP 9.11,1 ou posterior.
+* A ordem dos argumentos da lista de servidores no `-secondary-key-servers` parâmetro reflete a ordem de acesso dos servidores de gerenciamento de chaves externas (KMIP).
+
+
+
+
+== Crie um servidor de chaves em cluster
+
+O procedimento de configuração depende se você configurou ou não um servidor de chave primária.
+
+[role="tabbed-block"]
+====
+.Adicionar servidores de chaves primárias e secundárias a uma SVM
+--
+. Confirme se nenhum gerenciamento de chaves foi habilitado para o cluster:
+`security key-manager external show -vserver _svm_name_` Se o SVM já tiver o máximo de quatro servidores de chaves primárias ativados, você deverá remover um dos servidores de chaves primárias existentes antes de adicionar um novo.
+. Ative o gerenciador de chaves principal:
+`security key-manager external enable -vserver _svm_name_ -key-servers _server_ip_ -client-cert _client_cert_name_ -server-ca-certs _server_ca_cert_names_`
+. Modifique o servidor de chaves primárias para adicionar servidores de chaves secundárias. O `-secondary-key-servers` parâmetro aceita uma lista separada por vírgulas de até três servidores-chave.
+`security key-manager external modify-server -vserver _svm_name_ -key-servers _primary_key_server_ -secondary-key-servers _list_of_key_servers_`
+
+
+--
+.Adicione servidores de chave secundária a um servidor de chave primária existente
+--
+. Modifique o servidor de chaves primárias para adicionar servidores de chaves secundárias. O `-secondary-key-servers` parâmetro aceita uma lista separada por vírgulas de até três servidores-chave.
+`security key-manager external modify-server -vserver _svm_name_ -key-servers _primary_key_server_ -secondary-key-servers _list_of_key_servers_` Para obter mais informações sobre servidores de chaves secundárias, <<mod-secondary>>consulte .
+
+
+--
+====
+
+
+== Modificar servidores de chaves em cluster
+
+Você pode modificar clusters de servidores de chave externos alterando o status (primário ou secundário) de servidores de chave específicos, adicionando e removendo servidores de chave secundária ou alterando a ordem de acesso de servidores de chave secundária.
+
+
+
+=== Converta servidores de chaves primárias e secundárias
+
+Para converter um servidor de chave primária em um servidor de chave secundário, primeiro remova-o do SVM com o `security key-manager external remove-servers` comando.
+
+Para converter um servidor de chave secundária em um servidor de chave primária, primeiro você deve remover o servidor de chave secundária de seu servidor de chave primária existente. <<mod-secondary>>Consulte . Se você converter um servidor de chaves secundário para um servidor primário ao remover uma chave existente, tentar adicionar um novo servidor antes de concluir a remoção e conversão pode resultar na duplicação de chaves.
+
+
+
+=== Modificar servidores de chaves secundárias
+
+Os servidores de chaves secundárias são gerenciados com o `-secondary-key-servers` parâmetro `security key-manager external modify-server` do comando. O `-secondary-key-servers` parâmetro aceita uma lista separada por vírgulas. A ordem especificada dos servidores de chaves secundárias na lista determina a sequência de acesso para os servidores de chaves secundárias. A ordem de acesso pode ser modificada executando o comando `security key-manager external modify-server` com os servidores de chaves secundárias inseridos em uma sequência diferente.
+
+Para remover um servidor de chave secundário, os `-secondary-key-servers` argumentos devem incluir os servidores de chave que você deseja manter ao omitir o que deve ser removido. Para remover todos os servidores de chaves secundárias, use o argumento `-`, significando nenhum.
+
+Para obter informações adicionais, consulte `security key-manager external` a página no link:https://docs.netapp.com/us-en/ontap-cli/["Referência do comando ONTAP"^].

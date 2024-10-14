@@ -1,0 +1,159 @@
+---
+permalink: revert/task_reverting_an_ontap_cluster.html 
+sidebar: sidebar 
+keywords: ontap, revert, reverting, reversion, cluster 
+summary: Para colocar o cluster offline para reverter para uma versão anterior do ONTAP, você deve desativar o failover de armazenamento e os LIFs de dados, pré-condições de reversão de endereço, reverter as configurações do cluster e do sistema de arquivos em um nó e repetir o processo para cada nó adicional no cluster. 
+---
+= Reverter um cluster ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para colocar o cluster offline para reverter para uma versão anterior do ONTAP, você deve desativar o failover de armazenamento e os LIFs de dados, pré-condições de reversão de endereço, reverter as configurações do cluster e do sistema de arquivos em um nó e repetir o processo para cada nó adicional no cluster.
+
+Você deve ter concluído as opções Revert link:task_things_to_verify_before_revert.html["verificações"] e link:concept_pre_revert_checks.html["pré-verificações"].
+
+Reverter um cluster requer que você coloque o cluster off-line durante a reversão.
+
+. Defina o nível de privilégio como avançado: `set -privilege advanced`
++
+Digite *y* quando solicitado a continuar.
+
+. Verifique se o software ONTAP de destino está instalado: `system image show`
++
+O exemplo a seguir mostra que a versão 9,1 está instalada como a imagem alternativa em ambos os nós:
+
++
+[listing]
+----
+cluster1::*> system image show
+                 Is      Is                 Install
+Node     Image   Default Current Version    Date
+-------- ------- ------- ------- --------   -------------------
+node0
+         image1  true    true    9.2        MM/DD/YYYY TIME
+         image2  false   false   9.1        MM/DD/YYYY TIME
+node1
+         image1  true    true    9.2        MM/DD/YYYY TIME
+         image2  false   false   9.1        MM/DD/YYYY TIME
+4 entries were displayed.
+----
+. Desative todas as LIFs de dados no cluster: `network interface modify {-role data} -status-admin down`
+. Determine se você tem relacionamentos FlexCache entre clusters: `flexcache origin show-caches -relationship-type inter-cluster`
+. Se os flexcaches entre clusters estiverem presentes, desative os dados de vida no cluster de cache: `network interface modify -vserver vserver_name -lif lif_name -status-admin down`
+. Se o cluster consistir em apenas dois nós, desative o cluster HA: `cluster ha modify -configured false`
+. [[step-5]]Desabilite o failover de storage para os nós no par de HA de qualquer um dos nós: `storage failover modify -node nodename -enabled false`
++
+Você só precisa desativar o failover de storage uma vez para o par de HA. Quando você desativa o failover de armazenamento para um nó, o failover de armazenamento também é desativado no parceiro do nó.
+
+. [[step-6]]Faça login no nó que você deseja reverter.
++
+Para reverter um nó, você deve estar conetado ao cluster por meio do LIF de gerenciamento de nós do nó.
+
+. Defina a imagem de software ONTAP de destino do nó para ser a imagem padrão: `system image modify -node nodename -image target_image -isdefault true`
+. Verifique se a imagem do software ONTAP de destino está definida como a imagem padrão para o nó que você está revertendo: `system image show`
++
+O exemplo a seguir mostra que a versão 9,1 está definida como a imagem padrão no node0:
+
++
+[listing]
+----
+cluster1::*> system image show
+                 Is      Is                 Install
+Node     Image   Default Current Version    Date
+-------- ------- ------- ------- --------   -------------------
+node0
+         image1  false   true    9.2        MM/DD/YYYY TIME
+         image2  true    false   9.1        MM/DD/YYYY TIME
+node1
+         image1  true    true    9.2        MM/DD/YYYY TIME
+         image2  false   false   9.1        MM/DD/YYYY TIME
+4 entries were displayed.
+----
+. Se o cluster consistir em apenas dois nós, verifique se o nó não contém epsilon:
++
+.. Verifique se o nó atualmente contém epsilon: `cluster show -node nodename`
++
+O exemplo a seguir mostra que o nó contém epsilon:
+
++
+[listing]
+----
+cluster1::*> cluster show -node node1
+
+          Node: node1
+          UUID: 026efc12-ac1a-11e0-80ed-0f7eba8fc313
+       Epsilon: true
+   Eligibility: true
+        Health: true
+----
+.. Se o nó possuir epsilon, marque epsilon como false no nó para que o epsilon possa ser transferido para o parceiro do nó: `cluster modify -node nodenameA -epsilon false`
+.. Transfira o epsilon para o parceiro do nó marcando o epsilon true no nó do parceiro: `cluster modify -node nodenameB -epsilon true`
+
+
+. Verifique se o nó está pronto para reversão: `system node revert-to -node nodename -check-only true -version 9.x`
++
+O parâmetro check-only identifica quaisquer pré-condições que devem ser abordadas antes de reverter, como os seguintes exemplos:
+
++
+** Desativação do failover de armazenamento
+** Desativando a política Snapshot
+** Exclusão de cópias snapshot criadas após a atualização para a versão posterior do ONTAP
+
+
+. Verifique se todas as condições prévias foram atendidas: `system node revert-to -node nodename -check-only true -version 9.x`
+. Reverter a configuração do cluster do nó: `system node revert-to -node nodename -version 9.x`
++
+A opção -version refere-se à liberação de destino. Por exemplo, se o software instalado e verificado for ONTAP 9.1, o valor correto da opção -versão é 9,1.
+
++
+A configuração do cluster é revertida e, em seguida, você é desconetado do clustershell.
+
+. Faça o login novamente no clustershell e, em seguida, mude para o nodeshell: `run -node nodename`
++
+Depois de fazer login no clustershell novamente, pode demorar alguns minutos até que ele esteja pronto para aceitar o comando nodeshell. Então, se o comando falhar, aguarde alguns minutos e tente novamente.
+
+. Reverter a configuração do sistema de arquivos do nó: `revert_to 9.x`
++
+Este comando verifica se a configuração do sistema de arquivos do nó está pronta para ser revertida e, em seguida, reverte-a. Se quaisquer pré-condições forem identificadas, você deve abordá-las e, em seguida, executar novamente o comando revert_to.
+
++
+
+NOTE: Usar um console do sistema para monitorar o processo de reversão exibe maiores detalhes do que o visto no nodeshell.
+
++
+Se AUTOBOOT for true, quando o comando terminar, o nó será reiniciado para ONTAP.
+
++
+Se AUTOBOOT for false, quando o comando terminar, o prompt Loader será exibido. Digite `yes` para reverter; em seguida, use `boot_ontap` para reinicializar manualmente o nó.
+
+. Depois que o nó reiniciar, confirme se o novo software está em execução: `system node image show`
++
+No exemplo a seguir, image1 é a nova versão do ONTAP e é definida como a versão atual no node0:
+
++
+[listing]
+----
+cluster1::*> system node image show
+                 Is      Is                 Install
+Node     Image   Default Current Version    Date
+-------- ------- ------- ------- --------   -------------------
+node0
+         image1  true    true    X.X.X       MM/DD/YYYY TIME
+         image2  false   false   Y.Y.Y      MM/DD/YYYY TIME
+node1
+         image1  true    false   X.X.X      MM/DD/YYYY TIME
+         image2  false   true    Y.Y.Y      MM/DD/YYYY TIME
+4 entries were displayed.
+----
+. [[step-16]]Verifique se o status de reversão está completo para cada nó: `system node upgrade-revert show -node nodename`
++
+O status deve ser listado como "completo", "não necessário" ou "não há entradas de tabela retornadas."
+
+. Repita <<step-6>> até <<step-16>>no outro nó no par de HA.
+. Se o cluster consistir em apenas dois nós, reative a HA do cluster: `cluster ha modify -configured true`
+. [[step-19]]reative o failover de storage em ambos os nós se ele tiver sido desativado anteriormente: `storage failover modify -node nodename -enabled true`
+. Repita <<step-5>> até <<step-19>> para cada par de HA adicional e ambos os clusters na Configuração do MetroCluster.
+

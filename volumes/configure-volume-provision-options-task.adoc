@@ -1,0 +1,62 @@
+---
+permalink: volumes/configure-volume-provision-options-task.html 
+sidebar: sidebar 
+keywords: configure, volume, provisioning, options, provision, thick, thin 
+summary: Você pode configurar um volume para thin Provisioning, thin Provisioning ou provisionamento semi-espesso. 
+---
+= Configurar opções de provisionamento de volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar um volume para thin Provisioning, provisionamento thick ou provisionamento semi-thick, dependendo dos requisitos de espaço.
+
+.Sobre esta tarefa
+Definir a `-space-slo` opção para `thick` garantir o seguinte:
+
+* Todo o volume é pré-alocado no agregado. Não é possível usar o `volume create` comando ou `volume modify` para configurar a opção do volume `-space-guarantee`.
+* 100% do espaço necessário para as substituições é reservado. Você não pode usar o `volume modify` comando para configurar a opção do volume `-fractional-reserve`
+
+
+Definir a `-space-slo` opção para `semi-thick` garantir o seguinte:
+
+* Todo o volume é pré-alocado no agregado. Não é possível usar o `volume create` comando ou `volume modify` para configurar a opção do volume `-space-guarantee`.
+* Nenhum espaço é reservado para substituições. Você pode usar o `volume modify` comando para configurar a opção do volume `-fractional-reserve`.
+* A exclusão automática de cópias Snapshot está ativada.
+
+
+.Passo
+. Configurar opções de provisionamento de volume:
++
+`volume create -vserver _vserver_name_ -volume _volume_name_ -aggregate _aggregate_name_ -space-slo none|thick|semi-thick -space-guarantee none|volume`
+
++
+A `-space-guarantee` opção padrão é `none` para sistemas AFF e para volumes DP não AFF. Caso contrário, o padrão é `volume`. Para volumes FlexVol existentes, use o `volume modify` comando para configurar opções de provisionamento.
+
++
+O comando a seguir configura o vol1 no SVM VS1 para thin Provisioning:
+
++
+[listing]
+----
+cluster1::> volume create –vserver vs1 -volume vol1 -space-guarantee none
+----
++
+O comando a seguir configura o vol1 no SVM VS1 para provisionamento espesso:
+
++
+[listing]
+----
+cluster1::> volume create –vserver vs1 -volume vol1 -space-slo thick
+----
++
+O comando a seguir configura o vol1 no SVM VS1 para provisionamento semi-espesso:
+
++
+[listing]
+----
+cluster1::> volume create –vserver vs1 -volume vol1 -space-slo semi-thick
+----
+

@@ -1,0 +1,96 @@
+---
+permalink: smb-admin/modify-server-kerberos-security-settings-task.html 
+sidebar: sidebar 
+keywords: modify, cifs, server, kerberos, security, setting, clock, skew, time, ticket, lifetime, renewal, modify the cifs server kerberos security ticket settings 
+summary: Você pode modificar certas configurações de segurança Kerberos do servidor CIFS, incluindo o tempo máximo permitido de distorção do relógio Kerberos, a vida útil do ticket Kerberos e o número máximo de dias de renovação de ticket. 
+---
+= Modifique as configurações de segurança Kerberos do servidor CIFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode modificar certas configurações de segurança Kerberos do servidor CIFS, incluindo o tempo máximo permitido de distorção do relógio Kerberos, a vida útil do ticket Kerberos e o número máximo de dias de renovação de ticket.
+
+.Sobre esta tarefa
+Modificar as configurações do Kerberos do servidor CIFS usando o `vserver cifs security modify` comando modifica as configurações somente na máquina virtual de armazenamento (SVM) única que você especificar com o `-vserver` parâmetro. Você pode gerenciar centralmente as configurações de segurança Kerberos para todos os SVMs no cluster que pertencem ao mesmo domínio do ative Directory usando os GPOs (objetos de diretiva de grupo) do ative Directory.
+
+.Passos
+. Execute uma ou mais das seguintes ações:
++
+|===
+
+
+| Se você quiser... | Digite... 
+
+
+ a| 
+Especifique o tempo máximo permitido de distorção do relógio Kerberos em minutos (9.13.1 e posterior) ou segundos (9.12.1 ou anterior).
+ a| 
+`vserver cifs security modify -vserver _vserver_name_ -kerberos-clock-skew _integer_in_minutes_`
+
+A predefinição é 5 minutos.
+
+
+
+ a| 
+Especifique a vida útil do ticket Kerberos em horas.
+ a| 
+`vserver cifs security modify -vserver _vserver_name_ -kerberos-ticket-age integer_in_hours`
+
+A predefinição é 10 horas.
+
+
+
+ a| 
+Especifique o número máximo de dias de renovação do ticket.
+ a| 
+`vserver cifs security modify -vserver _vserver_name_ -kerberos-renew-age _integer_in_days_`
+
+A configuração padrão é de 7 dias.
+
+
+
+ a| 
+Especifique o tempo limite para sockets em KDCs após o qual todos os KDCs são marcados como inalcançáveis.
+ a| 
+`vserver cifs security modify -vserver _vserver_name_ -kerberos-kdc-timeout _integer_in_seconds_`
+
+A predefinição é 3 segundos.
+
+|===
+. Verifique as configurações de segurança do Kerberos:
++
+`vserver cifs security show -vserver _vserver_name_`
+
+
+
+.Exemplo
+O exemplo a seguir faz as seguintes alterações na segurança Kerberos: "'Kerberos Clock Skew'" está definido como 3 minutos e "'Kerberos Ticket Age'" está definido como 8 horas para o SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs security modify -vserver vs1 -kerberos-clock-skew 3 -kerberos-ticket-age 8
+
+cluster1::> vserver cifs security show -vserver vs1
+
+Vserver: vs1
+
+                    Kerberos Clock Skew:                   3 minutes
+                    Kerberos Ticket Age:                   8 hours
+                   Kerberos Renewal Age:                   7 days
+                   Kerberos KDC Timeout:                   3 seconds
+                    Is Signing Required:               false
+        Is Password Complexity Required:                true
+   Use start_tls For AD LDAP connection:               false
+              Is AES Encryption Enabled:               false
+                 LM Compatibility Level:  lm-ntlm-ntlmv2-krb
+             Is SMB Encryption Required:               false
+----
+.Informações relacionadas
+link:display-server-security-settings-task.html["Exibindo informações sobre as configurações de segurança do servidor CIFS"]
+
+link:supported-gpos-concept.html["GPOs compatíveis"]
+
+link:applying-group-policy-objects-concept.html["Aplicando objetos de Diretiva de Grupo a servidores CIFS"]

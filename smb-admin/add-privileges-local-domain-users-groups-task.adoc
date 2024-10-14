@@ -1,0 +1,48 @@
+---
+permalink: smb-admin/add-privileges-local-domain-users-groups-task.html 
+sidebar: sidebar 
+keywords: manage, right, user, local, domain, add, privilege, override, default, object, enhance, customize, user, group, add privileges to local or domain users or groups 
+summary: Você pode gerenciar os direitos de usuário para usuários ou grupos locais ou de domínio adicionando o Privileges. O Privileges adicionado substitui o Privileges padrão atribuído a qualquer um desses objetos. Isso fornece segurança aprimorada, permitindo que você personalize o que o Privileges um usuário ou grupo tem. 
+---
+= Adicione Privileges a usuários ou grupos locais ou de domínio
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode gerenciar os direitos de usuário para usuários ou grupos locais ou de domínio adicionando o Privileges. O Privileges adicionado substitui o Privileges padrão atribuído a qualquer um desses objetos. Isso fornece segurança aprimorada, permitindo que você personalize o que o Privileges um usuário ou grupo tem.
+
+.Antes de começar
+O usuário ou grupo local ou domínio ao qual o Privileges será adicionado já deve existir.
+
+.Sobre esta tarefa
+Adicionar um privilégio a um objeto substitui o Privileges padrão para esse usuário ou grupo. Adicionar um privilégio não remove Privileges adicionados anteriormente.
+
+Você deve ter em mente o seguinte ao adicionar o Privileges a usuários ou grupos locais ou de domínio:
+
+* Você pode adicionar um ou mais Privileges.
+* Ao adicionar Privileges a um usuário ou grupo de domínio, o ONTAP pode validar o usuário ou grupo de domínio contatando o controlador de domínio.
++
+O comando pode falhar se o ONTAP não conseguir entrar em Contato com o controlador de domínio.
+
+
+
+.Passos
+. Adicione um ou mais Privileges a um usuário ou grupo local ou de domínio: `+vserver cifs users-and-groups privilege add-privilege -vserver _vserver_name_ -user-or-group-name name -privileges _privilege_[,...]+`
+. Verifique se os Privileges desejados são aplicados ao objeto: `vserver cifs users-and-groups privilege show -vserver _vserver_name_ ‑user-or-group-name _name_`
+
+
+.Exemplo
+O exemplo a seguir adiciona o "SeTcbPrivilege" e o "SeTakeOwnershipPrivilege" do Privileges ao usuário ""SERVIDOR_Sue"" na máquina virtual de armazenamento (SVM, anteriormente conhecida como CIFS) VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups privilege add-privilege -vserver vs1 -user-or-group-name CIFS_SERVER\sue -privileges SeTcbPrivilege,SeTakeOwnershipPrivilege
+
+cluster1::> vserver cifs users-and-groups privilege show -vserver vs1
+Vserver   User or Group Name    Privileges
+--------- --------------------- ---------------
+vs1       CIFS_SERVER\sue       SeTcbPrivilege
+                                SeTakeOwnershipPrivilege
+----

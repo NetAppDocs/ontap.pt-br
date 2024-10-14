@@ -1,0 +1,68 @@
+---
+permalink: smb-admin/display-types-users-connected-task.html 
+sidebar: sidebar 
+keywords: display, information, type, connect, smb, session, appropriate, type, storage, virtual, machine, svm 
+summary: 'Você pode exibir informações sobre que tipo de usuários estão conetados em sessões SMB. Isso pode ajudar você a garantir que apenas o tipo apropriado de usuário esteja se conetando por sessões SMB na máquina virtual de storage (SVM).' 
+---
+= Exiba informações sobre quais tipos de usuários estão conetados em sessões SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode exibir informações sobre que tipo de usuários estão conetados em sessões SMB. Isso pode ajudar você a garantir que apenas o tipo apropriado de usuário esteja se conetando por sessões SMB na máquina virtual de storage (SVM).
+
+.Sobre esta tarefa
+Os seguintes tipos de usuários podem se conetar através de sessões SMB:
+
+* `local-user`
++
+Autenticado como um usuário CIFS local
+
+* `domain-user`
++
+Autenticado como um usuário de domínio (do domínio doméstico do servidor CIFS ou de um domínio confiável)
+
+* `guest-user`
++
+Autenticado como usuário convidado
+
+* `anonymous-user`
++
+Autenticado como um usuário anônimo ou nulo
+
+
+
+.Passos
+. Determine que tipo de usuário está conetado em uma sessão SMB: `vserver cifs session show -vserver _vserver_name_ -windows-user _windows_user_name_ -fields windows-user,address,lif-address,user-type`
++
+|===
+| Se você quiser exibir informações de tipo de usuário para sessões estabelecidas... | Digite o seguinte comando... 
+
+
+ a| 
+Para todas as sessões com um tipo de usuário especificado
+ a| 
+`vserver cifs session show -vserver _vserver_name_ -user-type {local-user|domain-user|guest-user|anonymous-user}`
+
+
+
+ a| 
+Para um usuário específico
+ a| 
+`vserver cifs session show -vserver _vserver_name_ -windows-user _windows_user_name_ -fields windows-user,address,lif-address,user-type`
+
+|===
+
+
+.Exemplos
+O comando a seguir exibe informações de sessão sobre o tipo de usuário para sessões no SVM VS1 estabelecido pelo usuário "" iebubs user1":
+
+[listing]
+----
+cluster1::> vserver cifs session show -vserver pub1 -windows-user iepubs\user1 -fields windows-user,address,lif-address,user-type
+node      vserver session-id connection-id lif-address  address       windows-user         user-type
+--------- ------- ---------- ------------- ------------ ------------- -------------------- -----------
+pub1node1 pub1    1          3439441860    10.0.0.1     10.1.1.1      IEPUBS\user1         domain-user
+----

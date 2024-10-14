@@ -1,0 +1,101 @@
+---
+permalink: smb-admin/statistics-monitor-automatic-node-referral-task.html 
+sidebar: sidebar 
+keywords: smb, connection, refer, monitor, automatic, node, referral, extent, locating, locate, host, redistribute, lif, local, access, cifs, use statistics to monitor automatic node referral activity 
+summary: Para determinar quantas conexões SMB são referidas, você pode monitorar a atividade automática de referência de nó usando o comando statistics. Ao monitorar referências, você pode determinar em que medida as referências automáticas estão localizando conexões em nós que hospedam os compartilhamentos e se você deve redistribuir seus LIFs de dados para fornecer melhor acesso local aos compartilhamentos no servidor CIFS. 
+---
+= Use as estatísticas para monitorar a atividade automática de referência de nós
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para determinar quantas conexões SMB são referidas, você pode monitorar a atividade automática de referência de nó usando o `statistics` comando. Ao monitorar referências, você pode determinar em que medida as referências automáticas estão localizando conexões em nós que hospedam os compartilhamentos e se você deve redistribuir seus LIFs de dados para fornecer melhor acesso local aos compartilhamentos no servidor CIFS.
+
+.Sobre esta tarefa
+O `cifs` objeto fornece vários contadores no nível de privilégio avançado que são úteis ao monitorar referências automáticas de nó SMB:
+
+* `node_referral_issued`
++
+Número de clientes que receberam uma referência para o nó da raiz de compartilhamento depois que o cliente se conetou usando um LIF hospedado por um nó diferente do nó da raiz de compartilhamento.
+
+* `node_referral_local`
++
+Número de clientes que se conetaram usando um LIF hospedado pelo mesmo nó que hospeda a raiz de compartilhamento. O acesso local geralmente proporciona um desempenho ideal.
+
+* `node_referral_not_possible`
++
+Número de clientes que não receberam uma referência para o nó que hospeda a raiz de compartilhamento depois de se conetar usando um LIF hospedado por um nó diferente do nó da raiz de compartilhamento. Isso ocorre porque um LIF de dados ativo para o nó da raiz de compartilhamento não foi encontrado.
+
+* `node_referral_remote`
++
+Número de clientes que se conetaram usando um LIF hospedado por um nó diferente do nó que hospeda a raiz de compartilhamento. O acesso remoto pode resultar em desempenho degradado.
+
+
+
+Você pode monitorar as estatísticas automáticas de referência de nós na sua máquina virtual de storage (SVM) coletando e visualizando dados para um período de tempo específico (uma amostra). Você pode exibir dados da amostra se não parar a coleta de dados. Parar a coleta de dados dá-lhe uma amostra fixa. Não interromper a coleta de dados dá a você a capacidade de obter dados atualizados que você pode usar para comparar com consultas anteriores. A comparação pode ajudá-lo a identificar tendências de desempenho.
+
+[NOTE]
+====
+Para avaliar e usar as informações que você coleta a partir do `statistics` comando, você deve entender a distribuição de clientes em seus ambientes.
+
+====
+.Passos
+. Defina o nível de privilégio como avançado: `set -privilege advanced`
+. Visualize estatísticas automáticas de referência de nó usando o `statistics` comando.
++
+Este exemplo exibe estatísticas automáticas de referência de nó coletando e visualizando dados para um período de tempo de amostragem:
+
++
+.. Inicie a coleção: `statistics start -object cifs -instance vs1 -sample-id sample1`
++
+[listing]
+----
+Statistics collection is being started for Sample-id: sample1
+----
+.. Aguarde até que o tempo de recolha pretendido decorra.
+.. Parar a coleção: `statistics stop -sample-id sample1`
++
+[listing]
+----
+Statistics collection is being stopped for Sample-id: sample1
+----
+.. Veja as estatísticas automáticas de referência de nó: `statistics show -sample-id sample1 -counter *node*`
++
+[listing]
+----
+Object: cifs
+Instance: vs1
+Start-time: 2/4/2013 19:27:02
+End-time: 2/4/2013 19:30:11
+Cluster: cluster1
+
+    Counter                                             Value
+    ----------------------------- ---------------------------
+    node_name                                          node1
+    node_referral_issued                                    0
+    node_referral_local                                     1
+    node_referral_not_possible                              2
+    node_referral_remote                                    2
+    ...
+
+    node_name                                          node2
+    node_referral_issued                                    2
+    node_referral_local                                     1
+    node_referral_not_possible                              0
+    node_referral_remote                                    2
+    ...
+----
++
+A saída exibe contadores para todos os nós participantes do SVM VS1. Para maior clareza, apenas os campos de saída relacionados às estatísticas automáticas de referência de nó são fornecidos no exemplo.
+
+
+
+. Voltar ao nível de privilégio de administrador: `set -privilege admin`
+
+
+.Informações relacionadas
+xref:display-statistics-task.adoc[Exibindo estatísticas]
+
+link:../performance-config/index.html["Configuração do monitoramento de desempenho"]

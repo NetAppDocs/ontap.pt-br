@@ -1,0 +1,48 @@
+---
+permalink: performance-admin/check-fc-adapter-port-speed-task.html 
+sidebar: sidebar 
+keywords: check, fc, adapter, port, speed 
+summary: A velocidade da porta de destino do adaptador deve corresponder à velocidade do dispositivo ao qual se coneta, para otimizar o desempenho. Se a porta estiver definida para negociação automática, pode demorar mais tempo para se reconetar após uma tomada de posse e giveback ou outra interrupção. 
+---
+= Verifique a velocidade da porta do adaptador FC
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A velocidade da porta de destino do adaptador deve corresponder à velocidade do dispositivo ao qual se coneta, para otimizar o desempenho. Se a porta estiver definida para negociação automática, pode demorar mais tempo para se reconetar após uma tomada de posse e giveback ou outra interrupção.
+
+.O que você vai precisar
+Todos os LIFs que usam esse adaptador como porta inicial devem estar offline.
+
+.Passos
+. Coloque o adaptador offline:
++
+`network fcp adapter modify -node _nodename_ -adapter _adapter_ -state _down_`
+
+. Verifique a velocidade máxima do adaptador de porta:
++
+`fcp adapter show -instance`
+
+. Altere a velocidade da porta, se necessário:
++
+`network fcp adapter modify -node _nodename_ -adapter _adapter_ -speed {1|2|4|8|10|16|auto}`
+
+. Coloque o adaptador online:
++
+`network fcp adapter modify -node _nodename_ -adapter _adapter_ -state up`
+
+. Coloque todos os LIFs no adaptador online:
++
+`network interface modify -vserver * -lif * { -home-node node1 -home-port e0c } -status-admin up`
+
+
+
+.Exemplo
+O exemplo a seguir altera a velocidade da porta do adaptador `0d` `node1` para 2 Gbps:
+
+[listing]
+----
+cluster1::> network fcp adapter modify -node node1 -adapter 0d -speed 2
+----

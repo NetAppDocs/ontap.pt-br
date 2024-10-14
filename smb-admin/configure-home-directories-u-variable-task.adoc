@@ -1,0 +1,139 @@
+---
+permalink: smb-admin/configure-home-directories-u-variable-task.html 
+sidebar: sidebar 
+keywords: 'create, home, directory, configuration, designate, share, name, variable, user, windows, dynamic, configure, configure home directories using the %u variable' 
+summary: 'Você pode criar uma configuração de diretório base onde designe o nome de compartilhamento usando a variável %W, mas você usa a variável %u para designar o caminho relativo para o compartilhamento do diretório base. Em seguida, os usuários podem se conetar ao compartilhamento doméstico usando compartilhamentos criados dinamicamente usando o nome de usuário do Windows sem estar ciente do nome ou caminho real do diretório inicial.' 
+---
+= Configure diretórios base usando a variável %u
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar uma configuração de diretório inicial onde você designar o nome de compartilhamento usando a `%w` variável, mas você usa a `%u` variável para designar o caminho relativo para o compartilhamento de diretório inicial. Em seguida, os usuários podem se conetar ao compartilhamento doméstico usando compartilhamentos criados dinamicamente usando o nome de usuário do Windows sem estar ciente do nome ou caminho real do diretório inicial.
+
+.Passos
+. Crie uma qtree para conter os diretórios iniciais do usuário: `volume qtree create -vserver vserver_name -qtree-path qtree_path`
+. Verifique se a qtree está usando o estilo de segurança correto: `volume qtree show`
+. Se a qtree não estiver usando o estilo de segurança desejado, altere o estilo de segurança usando o `volume qtree security` comando.
+. Adicionar uma partilha de diretório base: `+vserver cifs share create -vserver vserver -share-name %w -path %u -share-properties homedirectory ,...]+`
++
+`-vserver` `vserver` Especifica a máquina virtual de storage (SVM) habilitada para CIFS na qual adicionar o caminho de pesquisa.
+
++
+`-share-name` `%w` especifica o nome de compartilhamento do diretório base. O nome do compartilhamento é criado dinamicamente à medida que cada usuário se coneta ao seu diretório inicial e é do formulário _Windows_user_name_.
+
++
+[NOTE]
+====
+Você também pode usar a `%u` variável para a `-share-name` opção. Isso cria um caminho de compartilhamento relativo que usa o nome de usuário UNIX mapeado.
+
+====
++
+`-path` `%u` especifica o caminho relativo para o diretório home. O caminho relativo é criado dinamicamente à medida que cada usuário se coneta ao seu diretório inicial e é do formulário _mapeado_UNIX_user_name_.
+
++
+[NOTE]
+====
+O valor para esta opção também pode conter elementos estáticos. Por exemplo, `eng/%u`.
+
+====
++
+`-share-properties` `+homedirectory\[,...\]+` especifica as propriedades de compartilhamento para esse compartilhamento. Você deve especificar o `homedirectory` valor. Você pode especificar propriedades de compartilhamento adicionais usando uma lista delimitada por vírgulas.
+
+. Verifique se o compartilhamento tem a configuração desejada usando o `vserver cifs share show` comando.
+. Adicionar um caminho de pesquisa de diretório base: `vserver cifs home-directory search-path add -vserver vserver -path path`
++
+`-vserver` `vserver` Especifica o SVM habilitado para CIFS no qual adicionar o caminho de pesquisa.
+
++
+`-path` `path` especifica o caminho absoluto do diretório para o caminho de pesquisa.
+
+. Verifique se você adicionou com êxito o caminho de pesquisa usando o `vserver cifs home-directory search-path show` comando.
+. Se o usuário UNIX não existir, crie o usuário UNIX usando o `vserver services unix-user create` comando.
++
+[NOTE]
+====
+O nome de usuário UNIX para o qual você mapeia o nome de usuário do Windows deve existir antes de mapear o usuário.
+
+====
+. Crie um mapeamento de nomes para o usuário do Windows para o usuário UNIX usando o seguinte comando: `vserver name-mapping create -vserver vserver_name -direction win-unix -priority integer -pattern windows_user_name -replacement unix_user_name`
++
+[NOTE]
+====
+Se já existirem mapeamentos de nomes que mapeiem os usuários do Windows para usuários UNIX, você não precisará executar a etapa de mapeamento.
+
+====
++
+O nome de usuário do Windows é mapeado para o nome de usuário UNIX correspondente. Quando o usuário do Windows se coneta ao compartilhamento do diretório inicial, ele se coneta a um diretório inicial criado dinamicamente com um nome de compartilhamento que corresponde ao nome de usuário do Windows sem saber que o nome do diretório corresponde ao nome de usuário do UNIX.
+
+. Para usuários com um diretório home, crie um diretório correspondente na qtree ou volume designado para conter diretórios home.
++
+Por exemplo, se você criou uma qtree com o caminho `/vol/vol1/users` e o nome de usuário UNIX mapeado do usuário cujo diretório você deseja criar é ""unixuser1"", você criará um diretório com o seguinte caminho: `/vol/vol1/users/unixuser1`.
+
++
+Se você criou um volume chamado "'home1" montado no `/home1`, você criará um diretório com o seguinte caminho: `/home1/unixuser1`.
+
+. Verifique se um usuário pode se conetar com êxito ao compartilhamento doméstico mapeando uma unidade ou conetando-se usando o caminho UNC.
++
+Por exemplo, se o usuário mydomain/user1 mapeia para o usuário UNIX unixuser1 e quiser se conetar ao diretório criado na Etapa 10 que está localizado na SVM VS1, o user1 se conetaria usando o caminho UNC `\\vs1\user1` .
+
+
+
+.Exemplo
+Os comandos no exemplo a seguir criam uma configuração de diretório base com as seguintes configurações:
+
+* O nome da partilha é %w.
+* O caminho relativo do diretório base é %u.
+* O caminho de pesquisa usado para conter os diretórios base `/home1` , é um volume configurado com estilo de segurança UNIX.
+* A configuração é criada no SVM VS1.
+
+
+Você pode usar esse tipo de configuração de diretório base quando os usuários acessam seus diretórios base de hosts do Windows ou hosts do Windows e UNIX e o administrador do sistema de arquivos usa usuários e grupos baseados em UNIX para controlar o acesso ao sistema de arquivos.
+
+[listing]
+----
+cluster::> vserver cifs share create -vserver vs1 -share-name %w -path %u ‑share-properties oplocks,browsable,changenotify,homedirectory
+
+cluster::> vserver cifs share show -vserver vs1 -share-name %u
+
+                      Vserver: vs1
+                        Share: %w
+     CIFS Server NetBIOS Name: VS1
+                         Path: %u
+             Share Properties: oplocks
+                               browsable
+                               changenotify
+                               homedirectory
+           Symlink Properties: enable
+      File Mode Creation Mask: -
+ Directory Mode Creation Mask: -
+                Share Comment: -
+                    Share ACL: Everyone / Full Control
+File Attribute Cache Lifetime: -
+                  Volume Name: -
+                Offline Files: manual
+Vscan File-Operations Profile: standard
+
+cluster::> vserver cifs home-directory search-path add -vserver vs1 ‑path /home1
+
+cluster::> vserver cifs home-directory search-path show -vserver vs1
+Vserver     Position Path
+----------- -------- -----------------
+vs1         1        /home1
+
+cluster::> vserver name-mapping create -vserver vs1 -direction win-unix ‑position 5 -pattern user1 -replacement unixuser1
+
+cluster::> vserver name-mapping show -pattern user1
+Vserver        Direction Position
+-------------- --------- --------
+vs1            win-unix  5        Pattern: user1
+                              Replacement: unixuser1
+----
+.Informações relacionadas
+xref:create-home-directory-config-w-d-variables-task.adoc[Criando uma configuração de diretório base usando as variáveis %W e %d]
+
+xref:home-directory-config-concept.adoc[Configurações adicionais do diretório base]
+
+xref:display-user-home-directory-path-task.adoc[Exibindo informações sobre o caminho do diretório inicial de um usuário SMB]

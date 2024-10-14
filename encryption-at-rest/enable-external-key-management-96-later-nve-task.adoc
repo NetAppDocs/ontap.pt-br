@@ -1,0 +1,134 @@
+---
+permalink: encryption-at-rest/enable-external-key-management-96-later-nve-task.html 
+sidebar: sidebar 
+keywords: enabling, external key management, ontap 9.6, later, nve 
+summary: Você pode usar um ou mais servidores KMIP para proteger as chaves que o cluster usa para acessar dados criptografados. A partir do ONTAP 9.6, você pode usar um ou mais servidores KMIP para proteger as chaves que um determinado SVM usa para acessar dados criptografados. 
+---
+= Habilite o gerenciamento de chaves externas no ONTAP 9.6 e versões posteriores (NVE)
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar um ou mais servidores KMIP para proteger as chaves que o cluster usa para acessar dados criptografados. A partir do ONTAP 9.6, você tem a opção de configurar um gerenciador de chaves externo separado para proteger as chaves que um SVM de dados usa para acessar dados criptografados.
+
+A partir do ONTAP 9.11,1, você pode adicionar até 3 servidores de chaves secundárias por servidor de chaves primárias para criar um servidor de chaves em cluster. Para obter mais informações, xref:configure-cluster-key-server-task.html[Configurar servidores de chaves externas em cluster]consulte .
+
+.Sobre esta tarefa
+É possível conectar até quatro servidores KMIP a um cluster ou SVM. Recomenda-se um mínimo de dois servidores para redundância e recuperação de desastres.
+
+O escopo do gerenciamento de chaves externas determina se os servidores de gerenciamento de chaves protegem todos os SVMs no cluster ou somente SVMs selecionadas:
+
+* Você pode usar um _cluster scope_ para configurar o gerenciamento de chaves externas para todos os SVMs no cluster. O administrador do cluster tem acesso a todas as chaves armazenadas nos servidores.
+* A partir do ONTAP 9.6, você pode usar um _escopo SVM_ para configurar o gerenciamento de chaves externas para um SVM de dados no cluster. Isso é melhor para ambientes com alocação a vários clientes nos quais cada locatário usa um SVM diferente (ou conjunto de SVMs) para fornecer dados. Somente o administrador do SVM de um determinado locatário tem acesso às chaves desse locatário.
+* Para ambientes multitenant, instale uma licença para _MT_EK_MGMT_ usando o seguinte comando:
++
+`system license add -license-code <MT_EK_MGMT license code>`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
+
+
+Você pode usar ambos os escopos no mesmo cluster. Se os servidores de gerenciamento de chaves tiverem sido configurados para um SVM, o ONTAP usará apenas esses servidores para proteger chaves. Caso contrário, o ONTAP protege as chaves com os servidores de gerenciamento de chaves configurados para o cluster.
+
+Você pode configurar o gerenciamento de chaves integradas no escopo do cluster e o gerenciamento de chaves externas no escopo da SVM. Você pode usar o `security key-manager key migrate` comando para migrar chaves do gerenciamento de chaves integradas no escopo do cluster para gerenciadores de chaves externos no escopo da SVM.
+
+.Antes de começar
+* Os certificados de cliente e servidor KMIP SSL devem ter sido instalados.
+* Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
+* Para habilitar o gerenciamento de chaves externas para um ambiente MetroCluster, o MetroCluster deve estar totalmente configurado antes de habilitar o gerenciamento de chaves externas.
+* Em um ambiente MetroCluster, é necessário instalar o mesmo certificado KMIP SSL em ambos os clusters.
+
+
+.Passos
+. Configurar a conetividade do gerenciador de chaves para o cluster:
++
+`security key-manager external enable -vserver admin_SVM -key-servers host_name|IP_address:port,... -client-cert client_certificate -server-ca-cert server_CA_certificates`
+
++
+[NOTE]
+====
+** O `security key-manager external enable` comando substitui o `security key-manager setup` comando. Se você executar o comando no prompt de login do cluster, `_admin_SVM_` o padrão será o administrador SVM do cluster atual. Você deve ser o administrador do cluster para configurar o escopo do cluster. Você pode executar o `security key-manager external modify` comando para alterar a configuração de gerenciamento de chaves externas.
+** Em um ambiente MetroCluster, se você estiver configurando o gerenciamento de chaves externas para o SVM de administrador, repita o `security key-manager external enable` comando no cluster de parceiros.
+
+
+====
++
+O comando a seguir habilita o gerenciamento de chaves externas para `cluster1` com três servidores de chaves externas. O primeiro servidor de chaves é especificado usando seu nome de host e porta, o segundo é especificado usando um endereço IP e a porta padrão, e o terceiro é especificado usando um endereço IPv6 e porta:
+
++
+[listing]
+----
+clusterl::> security key-manager external enable -vserver cluster1 -key-servers ks1.local:15696,10.0.0.10,[fd20:8b1e:b255:814e:32bd:f35c:832c:5a09]:1234 -client-cert AdminVserverClientCert -server-ca-certs AdminVserverServerCaCert
+----
+. Configurar um gerenciador de chaves e uma SVM:
++
+`security key-manager external enable -vserver SVM -key-servers host_name|IP_address:port,... -client-cert client_certificate -server-ca-cert server_CA_certificates`
+
++
+[NOTE]
+====
+** Se você executar o comando no prompt de login SVM, `SVM` o padrão será SVM atual. Você precisa ser um administrador de cluster ou SVM para configurar o escopo do SVM. Você pode executar o `security key-manager external modify` comando para alterar a configuração de gerenciamento de chaves externas.
+** Em um ambiente MetroCluster, se você estiver configurando o gerenciamento de chaves externas para um SVM de dados, não será necessário repetir o `security key-manager external enable` comando no cluster de parceiros.
+
+
+====
++
+O comando a seguir habilita o gerenciamento de chaves externas para `svm1` que um servidor de chave única esteja escutando na porta padrão 5696:
+
++
+[listing]
+----
+svm1l::> security key-manager external enable -vserver svm1 -key-servers keyserver.svm1.com -client-cert SVM1ClientCert -server-ca-certs SVM1ServerCaCert
+----
+. Repita a última etapa para quaisquer SVMs adicionais.
++
+[NOTE]
+====
+Você também pode usar o `security key-manager external add-servers` comando para configurar SVMs adicionais. O `security key-manager external add-servers` comando substitui o `security key-manager add` comando. Para obter a sintaxe completa do comando, consulte a página man.
+
+====
+. Verifique se todos os servidores KMIP configurados estão conetados:
++
+`security key-manager external show-status -node node_name`
+
++
+[NOTE]
+====
+O `security key-manager external show-status` comando substitui o `security key-manager show -status` comando. Para obter a sintaxe completa do comando, consulte a página man.
+
+====
++
+[listing]
+----
+cluster1::> security key-manager external show-status
+
+Node  Vserver  Key Server                                     Status
+----  -------  ---------------------------------------        -------------
+node1
+      svm1
+               keyserver.svm1.com:5696                        available
+      cluster1
+               10.0.0.10:5696                                 available
+               fd20:8b1e:b255:814e:32bd:f35c:832c:5a09:1234   available
+               ks1.local:15696                                available
+node2
+      svm1
+               keyserver.svm1.com:5696                        available
+      cluster1
+               10.0.0.10:5696                                 available
+               fd20:8b1e:b255:814e:32bd:f35c:832c:5a09:1234   available
+               ks1.local:15696                                available
+
+8 entries were displayed.
+----
+. Opcionalmente, converta volumes de texto simples em volumes criptografados.
++
+`volume encryption conversion start`
+
++
+Um gerenciador de chaves externo deve estar totalmente configurado antes de converter os volumes. Em um ambiente MetroCluster, um gerenciador de chaves externo deve ser configurado em ambos os locais.
+
+

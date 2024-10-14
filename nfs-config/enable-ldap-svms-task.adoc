@@ -1,0 +1,57 @@
+---
+permalink: nfs-config/enable-ldap-svms-task.html 
+sidebar: sidebar 
+keywords: associate, ldap, client, configuration, svms 
+summary: Para ativar o LDAP em um SVM, você deve usar o comando vserver services name-service LDAP create para associar uma configuração de cliente LDAP ao SVM. 
+---
+= Associe a configuração do cliente LDAP a SVMs
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para ativar o LDAP em um SVM, você deve usar o `vserver services name-service ldap create` comando para associar uma configuração de cliente LDAP ao SVM.
+
+.O que você vai precisar
+* Um domínio LDAP já deve existir na rede e deve estar acessível ao cluster no qual o SVM está localizado.
+* Uma configuração de cliente LDAP deve existir no SVM.
+
+
+.Passos
+. Ative o LDAP no SVM:
++
+`vserver services name-service ldap create -vserver _vserver_name_ -client-config _client_config_name_`
+
++
+[NOTE]
+====
+A partir do ONTAP 9.2, o `vserver services name-service ldap create` comando executa uma validação automática de configuração e relata uma mensagem de erro se o ONTAP não conseguir entrar em Contato com o servidor de nomes.
+
+====
++
+O comando a seguir habilita o LDAP no "VS1"SVM e o configura para usar a configuração de cliente LDAP "ldap1":
+
++
+[listing]
+----
+cluster1::> vserver services name-service ldap create -vserver vs1 -client-config ldap1 -client-enabled true
+----
+. Valide o status dos servidores de nomes usando o comando de verificação ldap do serviço de nomes dos serviços vserver.
++
+O comando a seguir valida servidores LDAP no SVM VS1.
+
++
+[listing]
+----
+cluster1::> vserver services name-service ldap check -vserver vs1
+
+| Vserver: vs1                                                |
+| Client Configuration Name: c1                               |
+| LDAP Status: up                                             |
+| LDAP Status Details: Successfully connected to LDAP server "10.11.12.13".                                              |
+----
++
+O comando name Service check está disponível a partir de ONTAP 9.2.
+
+

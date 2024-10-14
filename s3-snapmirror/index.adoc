@@ -1,0 +1,139 @@
+---
+sidebar: sidebar 
+permalink: s3-snapmirror/index.html 
+keywords: s3 snapmirror buckets, snapmirror buckets SVM, s3 snapmirror data protection, hybrid cloud bundle, s3 snapmirror relationship, VM peering, cluster and storage VM peering, Fan-in deployments, data protection, s3 snapmirror policy, peering 
+summary: A partir do ONTAP 9.10,1, você pode proteger buckets em armazenamentos de objetos do ONTAP S3 usando o já conhecido recurso de espelhamento e backup do SnapMirror. 
+---
+= Visão geral do SnapMirror S3
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.10,1, você pode proteger buckets em armazenamentos de objetos do ONTAP S3 usando a funcionalidade de espelhamento e backup do SnapMirror. Ao contrário do SnapMirror padrão, o SnapMirror S3 permite o espelhamento e os backups para destinos que não sejam NetApp, como o AWS S3.
+
+O SnapMirror S3 é compatível com espelhos ativos e categorias de backup dos buckets do ONTAP S3 nos seguintes destinos:
+
+[cols="50,25,25"]
+|===
+| Alvo | É compatível com espelhos ativos e takeover? | É compatível com backup e restauração? 
+
+
+ a| 
+ONTAP S3
+
+* Buckets no mesmo SVM
+* Buckets em diferentes SVMs no mesmo cluster
+* Buckets em SVMs em diferentes clusters
+
+| Sim | Sim 
+
+
+| StorageGRID | Não | Sim 
+
+
+| AWS S3 | Não | Sim 
+
+
+| Cloud Volumes ONTAP para Azure | Sim | Sim 
+
+
+| Cloud Volumes ONTAP para AWS | Sim | Sim 
+
+
+| Cloud Volumes ONTAP para Google Cloud | Sim | Sim 
+|===
+Você pode proteger buckets existentes nos servidores do ONTAP S3 ou criar novos buckets com a proteção de dados ativada imediatamente.
+
+
+
+== Requisitos do SnapMirror S3
+
+* Versão de ONTAP
++
+O ONTAP 9.10,1 ou posterior deve estar em execução nos clusters de origem e destino.
+
+* Licenciamento
++
+As seguintes licenças estão disponíveis no link:../system-admin/manage-licenses-concept.html["ONTAP One"]pacote de software são necessárias em sistemas de origem e destino ONTAP para fornecer acesso a:
+
++
+** Protocolo e storage ONTAP S3
+** SnapMirror S3 para segmentar outros destinos de armazenamento de objetos NetApp (ONTAP S3, StorageGRID e Cloud Volumes ONTAP)
+** SnapMirror S3 para segmentar armazenamentos de objetos de terceiros, incluindo AWS S3 (disponível no link:../data-protection/install-snapmirror-cloud-license-task.html["Pacote de compatibilidade ONTAP One"])
+
+
+* ONTAP S3
++
+** Os servidores ONTAP S3 devem estar executando SVMs de origem e destino.
+** Recomenda-se, mas não é necessário, que os certificados de CA para acesso TLS sejam instalados em sistemas que hospedem servidores S3.
++
+*** Os certificados de CA usados para assinar os certificados dos servidores S3 devem ser instalados na VM de armazenamento de administrador dos clusters que hospedam os servidores S3.
+*** Você pode usar um certificado de CA autoassinado ou um certificado assinado por um fornecedor de CA externo.
+*** Se as VMs de armazenamento de origem ou destino não estiverem escutando em HTTPS, não será necessário instalar certificados de CA.
+
+
+
+
+* Peering (para alvos ONTAP S3)
++
+** Os LIFs entre clusters devem ser configurados (para destinos ONTAP remotos) e os LIFs entre clusters do cluster de origem e destino podem se conetar às LIFs de dados do servidor S3 de origem e destino.
+** Os clusters de origem e destino são direcionados (para destinos ONTAP remotos).
+** As VMs de armazenamento de origem e destino são direcionadas (para todos os destinos do ONTAP).
+
+
+* Política de SnapMirror
++
+** Uma política SnapMirror específica para S3 é necessária para todos os relacionamentos do SnapMirror S3, mas você pode usar a mesma política para vários relacionamentos.
+** Você pode criar sua própria política ou aceitar a política padrão *contínua*, que inclui os seguintes valores:
++
+*** Acelerador (limite superior em taxa de transferência/largura de banda) - ilimitado.
+*** Tempo para objetivo do ponto de recuperação: 1 hora (3600 segundos).
+
+
+
+
+
+
+
+NOTE: Você deve estar ciente de que quando dois buckets do S3 estiverem em um relacionamento do SnapMirror, se houver políticas de ciclo de vida configuradas para que a versão atual de um objeto expire (seja excluída), a mesma ação será replicada para o bucket do parceiro. Isso é verdade mesmo que o intervalo do parceiro seja somente leitura ou passivo.
+
+* Chaves de usuário raiz armazenamento VM chaves de acesso de usuário raiz são necessárias para relacionamentos do SnapMirror S3; o ONTAP não as atribui por padrão. Na primeira vez que você criar uma relação do SnapMirror S3, você deve verificar se as chaves existem nas VMs de armazenamento de origem e destino e regenerá-las se não o fizerem. Se você precisar regenerá-los, você deve garantir que todos os clientes e todas as configurações de armazenamento de objetos do SnapMirror usando o par de chaves secretas e de acesso sejam atualizados com as novas chaves.
+
+
+Para obter informações sobre a configuração do servidor S3, consulte os seguintes tópicos:
+
+* link:../task_object_provision_enable_s3_server.html["Ative um servidor S3 em uma VM de armazenamento"]
+* link:../s3-config/index.html["Sobre o processo de configuração do S3"]
+
+
+Para obter informações sobre peering de VM de cluster e armazenamento, consulte o seguinte tópico:
+
+* link:../task_dp_prepare_mirror.html["Prepare-se para espelhamento e cofre (System Manager, passos 1-6)"]
+* link:../peering/index.html["Peering de cluster e SVM (CLI)"]
+
+
+
+
+== Relacionamentos SnapMirror compatíveis
+
+O SnapMirror S3 é compatível com relações em fan-out e cascata. Para obter uma visão geral,link:../data-protection/supported-deployment-config-concept.html["Implantações de proteção de dados em cascata e fan-out"]consulte .
+
+O SnapMirror S3 não é compatível com implantações fan-in (relacionamentos de proteção de dados entre vários buckets de origem e um único bucket de destino). O SnapMirror S3 é compatível com vários espelhos de bucket de vários clusters para um único cluster secundário, mas cada bucket do origem deve ter seu próprio bucket do destino no cluster secundário.
+
+
+
+== Controle o acesso aos buckets do S3
+
+Ao criar novos buckets, você pode controlar o acesso criando usuários e grupos. Para obter mais informações, consulte os seguintes tópicos:
+
+* link:../task_object_provision_add_s3_users_groups.html["Adicionar S3 usuários e grupos (System Manager)"]
+* link:../s3-config/create-s3-user-task.html["Criar um usuário S3 (CLI)"]
+* link:../s3-config/create-modify-groups-task.html["Criar ou modificar S3 grupos (CLI)"]
+

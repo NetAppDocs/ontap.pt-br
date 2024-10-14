@@ -1,0 +1,203 @@
+---
+permalink: nas-audit/plan-fpolicy-policy-config-concept.html 
+sidebar: sidebar 
+keywords: plan, fpolicy, policy, configuration 
+summary: Antes de configurar a política FPolicy, você deve entender quais parâmetros são necessários e por que você pode configurar determinados parâmetros opcionais. 
+---
+= Planeje a visão geral da configuração da política FPolicy
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de configurar a política FPolicy, você deve entender quais parâmetros são necessários ao criar a política, bem como por que você pode querer configurar determinados parâmetros opcionais. Essas informações ajudam você a determinar quais valores definir para cada parâmetro.
+
+Ao criar uma política FPolicy, você associa a política ao seguinte:
+
+* A máquina virtual de storage (SVM)
+* Um ou mais eventos FPolicy
+* Um motor externo FPolicy
+
+
+Você também pode configurar várias configurações de política opcionais.
+
+
+
+== O que contém a configuração da política FPolicy
+
+Você pode usar a seguinte lista de parâmetros opcionais e de política FPolicy disponíveis para ajudá-lo a Planejar sua configuração:
+
+[cols="40,20,20,20"]
+|===
+
+
+| Tipo de informação | Opção | Obrigatório | Padrão 
+
+
+ a| 
+_Nome da SVM_
+
+Especifica o nome do SVM no qual você deseja criar uma política de FPolicy.
+ a| 
+`-vserver` `vserver_name`
+ a| 
+Sim
+ a| 
+Nenhum
+
+
+
+ a| 
+_Nome da política_
+
+Especifica o nome da política FPolicy.
+
+O nome pode ter até 256 carateres.
+
+[NOTE]
+====
+O nome deve ter até 200 carateres se a diretiva estiver configurada em uma configuração de recuperação de desastres do MetroCluster ou SVM.
+
+====
+O nome pode conter qualquer combinação dos seguintes carateres de intervalo ASCII:
+
+* `a` através `z`
+* `A` através `Z`
+* `0` através `9`
+* "»_", "-`", and "`»."
+
+ a| 
+`-policy-name` `policy_name`
+ a| 
+Sim
+ a| 
+Nenhum
+
+
+
+ a| 
+_Nomes de eventos_
+
+Especifica uma lista delimitada por vírgulas de eventos a serem associados à política FPolicy.
+
+* Você pode associar mais de um evento a uma política.
+* Um evento é específico de um protocolo.
+* Você pode usar uma única política para monitorar eventos de acesso a arquivos para mais de um protocolo, criando um evento para cada protocolo que você deseja que a diretiva monitore e associando os eventos à política.
+* Os eventos já devem existir.
+
+ a| 
+`-events` `event_name`, ...
+ a| 
+Sim
+ a| 
+Nenhum
+
+
+
+ a| 
+_Armazenamento persistente_
+
+A partir do ONTAP 9.14,1, este parâmetro especifica o armazenamento persistente para capturar eventos de acesso a arquivos para políticas assíncronas não obrigatórias no SVM.
+ a| 
+`-persistent-store` `persistent_store_name`
+ a| 
+Não
+ a| 
+Nenhum
+
+
+
+ a| 
+_Nome externo do motor_
+
+Especifica o nome do mecanismo externo a ser associado à política FPolicy.
+
+* Um mecanismo externo contém informações exigidas pelo nó para enviar notificações para um servidor FPolicy.
+* Você pode configurar o FPolicy para usar o mecanismo externo nativo do ONTAP para bloqueio de arquivos simples ou para usar um mecanismo externo configurado para usar servidores FPolicy externos (servidores FPolicy) para bloqueio de arquivos e gerenciamento de arquivos mais sofisticados.
+* Se você quiser usar o mecanismo externo nativo, você não pode especificar um valor para esse parâmetro ou pode especificar `native` como o valor.
+* Se você quiser usar servidores FPolicy, a configuração para o mecanismo externo já deve existir.
+
+ a| 
+`-engine` `engine_name`
+ a| 
+Sim (a menos que a política use o mecanismo nativo do ONTAP interno)
+ a| 
+`native`
+
+
+
+ a| 
+_É obrigatório rastreio_
+
+Especifica se a triagem obrigatória de acesso a arquivos é necessária.
+
+* A configuração de triagem obrigatória determina qual ação é tomada em um evento de acesso a arquivos em um caso em que todos os servidores primário e secundário estão inativos ou nenhuma resposta é recebida dos servidores FPolicy dentro de um determinado período de tempo limite.
+* Quando definido como `true`, os eventos de acesso ao arquivo são negados.
+* Quando definido como `false`, eventos de acesso a arquivos são permitidos.
+
+ a| 
+`-is-mandatory` {`true`|`false`Selecione
+ a| 
+Não
+ a| 
+`true`
+
+
+
+ a| 
+_Permitir acesso privilegiado_
+
+Especifica se você deseja que o servidor FPolicy tenha acesso privilegiado aos arquivos e pastas monitorados usando uma conexão de dados privilegiada.
+
+Se configurado, os servidores FPolicy podem acessar arquivos da raiz do SVM que contém os dados monitorados usando a conexão de dados privilegiada.
+
+Para acesso privilegiado a dados, o SMB deve ser licenciado no cluster e todas as LIFs de dados usadas para se conetar aos servidores FPolicy devem ser configuradas para ter `cifs` como um dos protocolos permitidos.
+
+Se você quiser configurar a diretiva para permitir acesso privilegiado, você também deve especificar o nome de usuário para a conta que deseja que o servidor FPolicy use para acesso privilegiado.
+ a| 
+`-allow-privileged-access` {`yes`|`no`Selecione
+ a| 
+Não (a menos que a leitura de passagem esteja ativada)
+ a| 
+`no`
+
+
+
+ a| 
+_Nome de usuário privilegiado_
+
+Especifica o nome de usuário da conta que os servidores FPolicy usam para acesso privilegiado a dados.
+
+* O valor para este parâmetro deve usar o formato "nome de usuário".
+* Se `-allow-privileged-access` estiver definido como `no`, qualquer valor definido para este parâmetro será ignorado.
+
+ a| 
+`-privileged-user-name` `user_name`
+ a| 
+Não (a menos que o acesso privilegiado esteja ativado)
+ a| 
+Nenhum
+
+
+
+ a| 
+_Permitir passagem-leitura_
+
+Especifica se os servidores FPolicy podem fornecer serviços de leitura de passagem para arquivos que foram arquivados em armazenamento secundário (arquivos off-line) pelos servidores FPolicy:
+
+* A passagem-leitura é uma maneira de ler dados para arquivos off-line sem restaurar os dados para o armazenamento primário.
++
+A passagem-leitura reduz as latências de resposta porque não há necessidade de recuperar arquivos de volta ao storage primário antes de responder à solicitação de leitura. Além disso, a passagem-leitura otimiza a eficiência de storage eliminando a necessidade de consumir espaço de storage primário com arquivos que são recuperados exclusivamente para atender às solicitações de leitura.
+
+* Quando ativado, os servidores FPolicy fornecem os dados para o arquivo em um canal de dados privilegiado separado aberto especificamente para leituras de passagem.
+* Se você quiser configurar a passagem-leitura, a política também deve ser configurada para permitir acesso privilegiado.
+
+ a| 
+`-is-passthrough-read-enabled` {`true`|`false`Selecione
+ a| 
+Não
+ a| 
+`false`
+
+|===

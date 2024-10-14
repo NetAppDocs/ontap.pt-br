@@ -1,0 +1,62 @@
+---
+permalink: encryption-at-rest/assign-authentication-keys-seds-onboard-task.html 
+sidebar: sidebar 
+keywords: assign, data, authentication, key, fips, drive, sed, onboard, key, management 
+summary: Você pode usar o comando Storage Encryption Disk Modify para atribuir uma chave de autenticação de dados a uma unidade FIPS ou SED. Os nós de cluster usam essa chave para acessar dados na unidade. 
+---
+= Atribuir uma chave de autenticação de dados a uma unidade FIPS ou SED (gerenciamento de chaves integradas)
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `storage encryption disk modify` comando para atribuir uma chave de autenticação de dados a uma unidade FIPS ou SED. Os nós de cluster usam essa chave para acessar dados na unidade.
+
+.Sobre esta tarefa
+Uma unidade com autocriptografia é protegida contra acesso não autorizado somente se o ID da chave de autenticação estiver definido como um valor não padrão. O ID seguro do fabricante (MSID), que tem ID de chave 0x0, é o valor padrão para unidades SAS. Para unidades NVMe, o valor padrão é uma chave nula, representada como um ID de chave em branco. Quando você atribui o ID da chave a uma unidade de autocriptografia, o sistema altera o ID da chave de autenticação para um valor não padrão.
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa.
+
+.Passos
+. Atribuir uma chave de autenticação de dados a uma unidade FIPS ou SED:
++
+`storage encryption disk modify -disk _disk_ID_ -data-key-id _key_ID_`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
++
+[NOTE]
+====
+Você pode usar o `security key-manager key query -key-type NSE-AK` comando para exibir IDs de chave.
+
+====
++
+[listing]
+----
+cluster1::> storage encryption disk modify -disk 0.10.* -data-key-id 0000000000000000020000000000010019215b9738bc7b43d4698c80246db1f4
+
+Info: Starting modify on 14 disks.
+      View the status of the operation by using the
+      storage encryption disk show-status command.
+----
+. Verifique se as chaves de autenticação foram atribuídas:
++
+`storage encryption disk show`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[listing]
+----
+cluster1::> storage encryption disk show
+Disk    Mode Data Key ID
+-----   ---- ----------------------------------------------------------------
+0.0.0   data 0000000000000000020000000000010019215b9738bc7b43d4698c80246db1f4
+0.0.1   data 0000000000000000020000000000010059851742AF2703FC91369B7DB47C4722
+[...]
+----
+

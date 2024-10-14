@@ -1,0 +1,51 @@
+---
+permalink: nas-audit/fpolicy-passthrough-read-enhances-usability-concept.html 
+sidebar: sidebar 
+keywords: fpolicy, passthrough-read, enhances, usability, hierarchical, storage management 
+summary: 'A passagem-leitura permite que o servidor FPolicy (funcionando como servidor de gerenciamento de armazenamento hierárquico (HSM)) forneça acesso de leitura a arquivos off-line sem ter que recuperar o arquivo do sistema de armazenamento secundário para o sistema de armazenamento primário.' 
+---
+= Como o FPolicy passa-leitura melhora a usabilidade para o gerenciamento hierárquico de armazenamento
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A passagem-leitura permite que o servidor FPolicy (funcionando como servidor de gerenciamento de armazenamento hierárquico (HSM)) forneça acesso de leitura a arquivos off-line sem ter que recuperar o arquivo do sistema de armazenamento secundário para o sistema de armazenamento primário.
+
+Quando um servidor FPolicy é configurado para fornecer HSM a arquivos residentes em um servidor SMB, a migração de arquivos baseada em políticas ocorre onde os arquivos são armazenados off-line no armazenamento secundário e apenas um arquivo stub permanece no armazenamento primário. Mesmo que um arquivo stub apareça como um arquivo normal para os clientes, ele é na verdade um arquivo esparso que é do mesmo tamanho do arquivo original. O arquivo esparso tem o bit off-line SMB definido e aponta para o arquivo real que foi migrado para o armazenamento secundário.
+
+Normalmente, quando uma solicitação de leitura para um arquivo off-line é recebida, o conteúdo solicitado deve ser recuperado de volta para o armazenamento primário e, em seguida, acessado através do armazenamento primário. A necessidade de recuperar dados de volta ao armazenamento primário tem vários efeitos indesejáveis. Entre os efeitos indesejáveis está o aumento da latência das solicitações do cliente causado pela necessidade de recuperar o conteúdo antes de responder à solicitação e o aumento do consumo de espaço necessário para os arquivos recuperados no armazenamento primário.
+
+O FPolicy Passthrough-read permite que o servidor HSM (o servidor FPolicy) forneça acesso de leitura a arquivos offline migrados sem ter que recuperar o arquivo do sistema de armazenamento secundário para o sistema de armazenamento primário. Em vez de recuperar os arquivos de volta ao armazenamento primário, as solicitações de leitura podem ser atendidas diretamente do armazenamento secundário.
+
+[NOTE]
+====
+O descarregamento de cópia (ODX) não é suportado com a operação de passagem-leitura FPolicy.
+
+====
+A passagem-leitura melhora a usabilidade, fornecendo os seguintes benefícios:
+
+* As solicitações de leitura podem ser atendidas mesmo que o armazenamento primário não tenha espaço suficiente para recuperar os dados solicitados de volta ao armazenamento primário.
+* Melhor gerenciamento de capacidade e desempenho quando um surto de recuperação de dados pode ocorrer, como se um script ou uma solução de backup precisar acessar muitos arquivos off-line.
+* As solicitações de leitura de arquivos off-line em cópias Snapshot podem ser atendidas.
++
+Como as cópias Snapshot são somente leitura, o servidor FPolicy não pode restaurar o arquivo original se o arquivo stub estiver localizado em uma cópia Snapshot. Usar a passagem-leitura elimina esse problema.
+
+* As políticas podem ser configuradas para controlar quando as solicitações de leitura são atendidas por meio do acesso ao arquivo no armazenamento secundário e quando o arquivo off-line deve ser recuperado para o armazenamento primário.
++
+Por exemplo, uma política pode ser criada no servidor HSM que especifica o número de vezes que o arquivo off-line pode ser acessado em um período de tempo especificado antes que o arquivo seja migrado de volta para o armazenamento primário. Este tipo de política evita a memorização de ficheiros que raramente são acedidos.
+
+
+
+
+
+== Como as solicitações de leitura são gerenciadas quando a passagem-leitura FPolicy está ativada
+
+Você deve entender como as solicitações de leitura são gerenciadas quando o FPolicy Passthrough-READ está habilitado para que você possa configurar de forma otimizada a conetividade entre a máquina virtual de armazenamento (SVM) e os servidores FPolicy.
+
+Quando a leitura de passagem FPolicy está ativada e o SVM recebe uma solicitação para um arquivo off-line, o FPolicy envia uma notificação para o servidor FPolicy (servidor HSM) por meio do canal de conexão padrão.
+
+Após receber a notificação, o servidor FPolicy lê os dados do caminho do arquivo enviado na notificação e envia os dados solicitados para o SVM por meio da conexão de dados privilegiados de leitura de passagem estabelecida entre o SVM e o servidor FPolicy.
+
+Depois que os dados são enviados, o servidor FPolicy responde à solicitação de leitura como uma PERMISSÃO ou NEGAÇÃO. Com base se a solicitação de leitura é permitida ou negada, o ONTAP envia as informações solicitadas ou envia uma mensagem de erro ao cliente.

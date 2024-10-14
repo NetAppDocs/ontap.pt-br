@@ -1,0 +1,37 @@
+---
+permalink: nvme/disable-secure-authentication-nvme-task.html 
+sidebar: sidebar 
+keywords: manage, nvme, secure, authentication, tcp, dh-hmac-hcap, chap, disable, in-band, in band 
+summary: Se você estiver executando o protocolo NVMe e tiver estabelecido autenticação segura usando DH-HMAC-CHAP, poderá optar por desativá-lo a qualquer momento. 
+---
+= Desativar a autenticação na banda pelo NVMe
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você configurou a autenticação na banda pelo NVMe usando DH-HMAC-CHAP, você pode optar por desativá-la a qualquer momento.
+
+Se estiver a reverter do ONTAP 9.12,1 ou posterior para o ONTAP 9.12,0 ou anterior, tem de desativar a autenticação na banda antes de reverter. Se a autenticação na banda usando DH-HMAC-CHAP não estiver desativada, a reversão falhará.
+
+.Passos
+. Remova o host do subsistema para desativar a autenticação DH-HMAC-CHAP:
++
+[source, cli]
+----
+vserver nvme subsystem host remove -vserver <svm_name> -subsystem <subsystem> -host-nqn <host_nqn>
+----
+. Verifique se o protocolo de autenticação DH-HMAC-CHAP foi removido do host:
++
+[source, cli]
+----
+vserver nvme subsystem host show
+----
+. Adicione o host de volta ao subsistema sem autenticação:
++
+[source, cli]
+----
+vserver nvme subsystem host add vserver <svm_name> -subsystem <subsystem> -host-nqn <host_nqn>
+----
+

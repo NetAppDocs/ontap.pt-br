@@ -1,0 +1,117 @@
+---
+permalink: nfs-admin/manage-nfsv4-storepool-controls-task.html 
+sidebar: sidebar 
+keywords: enable, disable, nfsv4, storepool, controls, limit, client, resource, blocked, 
+summary: A partir do ONTAP 9.13, os administradores podem habilitar seus servidores NFS para negar recursos aos clientes NFS quando eles tiverem atingido os limites de recursos do pool de armazenamento de clientes. 
+---
+= Gerenciar NFSv4 limites de storepool
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.13, os administradores podem habilitar seus servidores NFSv4 para negar recursos a clientes NFSv4 quando eles tiverem atingido os limites de recursos do storepool de clientes. Quando os clientes consomem muitos recursos do storepool de NFSv4 isso pode levar a outros clientes NFSv4 serem bloqueados devido à indisponibilidade de recursos do storepool de NFSv4.
+
+Ativar esse recurso também permite que os clientes visualizem o consumo de recursos do storepool ativo por cada cliente. Isso facilita a identificação de clientes que esgotam os recursos do sistema e possibilita impor limites de recursos por cliente.
+
+
+
+== Veja os recursos do storepool consumidos
+
+O `vserver nfs storepool show` comando mostra o número de recursos do storepool consumidos. Um storepool é um pool de recursos usado por clientes NFSv4.
+
+.Passo
+. Como administrador, execute o `vserver nfs storepool show` comando para exibir as informações do storepool de clientes NFSv4.
+
+
+.Exemplo
+Este exemplo exibe as informações do storepool de clientes NFSv4.
+
+[listing]
+----
+cluster1::*> vserver nfs storepool show
+
+Node: node1
+
+Vserver: vs1
+
+Data-Ip: 10.0.1.1
+
+Client-Ip Protocol IsTrunked OwnerCount OpenCount DelegCount LockCount
+
+-------------- --------- --------- ---------- ---------- ---------- ---------
+
+10.0.2.1          nfs4.1     true    2 1 0 4
+
+10.0.2.2          nfs4.2     true    2 1 0 4
+
+2 entries were displayed.
+----
+
+
+== Ative ou desative os controles de limite do storepool
+
+Os administradores podem usar os seguintes comandos para ativar ou desativar os controles de limite do storepool.
+
+.Passo
+. Como administrador, execute uma das seguintes ações:
++
+[cols="2*"]
+|===
+| Se você quiser... | Digite o seguinte comando... 
+
+
+ a| 
+Ative os controles de limite do storepool
+ a| 
+`vserver nfs storepool config modify -limit-enforce enabled`
+
+
+
+ a| 
+Desative os controles de limite do storepool
+ a| 
+`vserver nfs storepool config modify -limit-enforce disabled`
+
+|===
+
+
+
+
+== Exibir uma lista de clientes bloqueados
+
+Se o limite storepool estiver ativado, os administradores poderão ver quais clientes foram bloqueados ao atingir o limite de recursos por cliente. Os administradores podem usar o seguinte comando para ver quais clientes foram marcados como clientes bloqueados.
+
+.Passos
+. Use o `vserver nfs storepool blocked-client show` comando para exibir a lista de clientes bloqueados do NFSv4.
+
+
+
+
+== Remova um cliente da lista de clientes bloqueados
+
+Os clientes que atingirem seu limite por cliente serão desconetados e adicionados ao cache block-client. Os administradores podem usar o seguinte comando para remover o cliente do cache de cliente de bloco. Isso permitirá que o cliente se conete ao servidor ONTAP NFSv4.
+
+.Passos
+. Use o `vserver nfs storepool blocked-client flush -client-ip <ip address>` comando para lavar o cache de cliente bloqueado storepool.
+. Use o `vserver nfs storepool blocked-client show` comando para verificar se o cliente foi removido do cache de cliente de bloco.
+
+
+.Exemplo
+Este exemplo exibe um cliente bloqueado com o endereço IP "10,2.1,1" sendo lavado de todos os nós.
+
+[listing]
+----
+cluster1::*>vserver nfs storepool blocked-client flush -client-ip 10.2.1.1
+
+cluster1::*>vserver nfs storepool blocked-client show
+
+Node: node1
+
+Client IP
+----------
+10.1.1.1
+
+1 entries were displayed.
+----

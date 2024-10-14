@@ -1,0 +1,53 @@
+---
+permalink: san-admin/map-nvme-namespace-subsystem-task.html 
+sidebar: sidebar 
+keywords: map, nvme, namespace, subsystem 
+summary: É necessário mapear um namespace para um subsistema ao usar o NVMe. 
+---
+= Mapear um namespace NVMe para um subsistema
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O mapeamento de um namespace NVMe para um subsistema permite acesso aos dados do seu host. É possível mapear um namespace NVMe para um subsistema quando você provisiona o storage ou pode fazê-lo depois que o storage tiver sido provisionado.
+
+A partir do ONTAP 9.14,1, você pode priorizar a alocação de recursos para hosts específicos. Por padrão, quando um host é adicionado ao subsistema NVMe, ele recebe prioridade regular. Você pode usar a interface de linha de comando (CLI) do ONTAP para alterar manualmente a prioridade padrão de regular para alta. Os hosts atribuídos a uma alta prioridade são alocadas contagens de filas de e/S maiores e profundidades de filas.
+
+
+NOTE: Se você quiser dar uma alta prioridade a um host que foi adicionado a um subsistema no ONTAP 9.13,1 ou anterior, você pode xref:../nvme/change-host-priority-nvme-task.html[altere a prioridade do host].
+
+.Antes de começar
+Seu namespace e subsistema já devem ser criados. Se precisar criar um namespace e um subsistema, link:create-nvme-namespace-subsystem-task.html["Provisionamento de storage NVMe"]consulte .
+
+.Passos
+. Obtenha o NQN do host.
+. Adicione o NQN do host ao subsistema:
++
+[source, cli]
+----
+vserver nvme subsystem host add -vserver <SVM_name> -subsystem <subsystem_name> -host-nqn <Host_NQN_:subsystem._subsystem_name>
+----
++
+Se você quiser alterar a prioridade padrão do host de regular para alta, use a `-priority high` opção. Esta opção está disponível a partir de ONTAP 9.14,1.
+
+. Mapeie o namespace para o subsistema:
++
+[source, cli]
+----
+vserver nvme subsystem map add -vserver <SVM_name> -subsystem <subsystem_name> -path <path>
+----
++
+Um namespace só pode ser mapeado para um único subsistema.
+
+. Verifique se o namespace está mapeado para o subsistema:
++
+[source, cli]
+----
+vserver nvme namespace show -vserver <SVM_name> -instance
+----
++
+O subsistema deve ser listado como `Attached subsystem` .
+
+

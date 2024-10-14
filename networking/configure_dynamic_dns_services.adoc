@@ -1,0 +1,49 @@
+---
+sidebar: sidebar 
+permalink: networking/configure_dynamic_dns_services.html 
+keywords: dns, service, services, configuration, configure, configuring, set, up, setup, nfs, smb, cifs, active, directory, statistics, configure dns services for the svm before creating an nfs or smb server, ddns, vserver services name-service dns dynamic-update modify, vserver services name-service dns dynamic-update show 
+summary: Configure os serviços DNS para o SVM antes de criar um servidor NFS ou SMB 
+---
+= Configurar serviços DNS dinâmicos
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Se desejar que o servidor DNS integrado ao ative Directory Registre dinamicamente os Registros DNS de um servidor NFS ou SMB no DNS, você deverá configurar o DNS dinâmico (DDNS) no SVM.
+
+.Antes de começar
+Os serviços de nomes DNS devem ser configurados no SVM. Se você estiver usando o DDNS seguro, use servidores de nomes DNS integrados ao ative Directory e crie um servidor NFS ou SMB ou uma conta do ative Directory para o SVM.
+
+.Sobre esta tarefa
+O FQDN especificado deve ser exclusivo.
+
+
+NOTE: Para evitar uma falha de configuração de um FQDN SVM que não esteja em conformidade com as regras RFC para atualizações DDNS, use um nome FQDN compatível com RFC.
+
+.Passos
+. Configurar o DDNS na SVM:
++
+`vserver services name-service dns dynamic-update modify -vserver _vserver_name_ -is- enabled _true_ [-use-secure {true|false} -vserver-fqdn _FQDN_used_for_DNS_updates_`
+
++
+`vserver services name-service dns dynamic-update modify -vserver _vs1_ -is-enabled _true_ - use-secure _true_ -vserver-fqdn _vs1.example.com_`
+
++
+Asteriscos não podem ser usados como parte do FQDN personalizado. Por exemplo, `*.netapp.com` não é válido.
+
+. Verifique se a configuração DDNS está correta:
++
+`vserver services name-service dns dynamic-update show`
+
++
+....
+Vserver  Is-Enabled Use-Secure Vserver FQDN      TTL
+-------- ---------- ---------- ----------------- -------
+vs1      true       true       vs1.example.com   24h
+....
+

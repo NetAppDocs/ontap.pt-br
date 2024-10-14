@@ -1,0 +1,42 @@
+---
+permalink: san-config/configure-fc-adapters-target-mode-task.html 
+sidebar: sidebar 
+keywords: configure, fc, adapters, target mode 
+summary: Você pode configurar portas FC individuais de adaptadores integrados e determinadas placas de adaptador FC para o modo de destino. O modo de destino é usado para conetar as portas aos iniciadores FC. 
+---
+= Configurar adaptadores FC para o modo de destino
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar portas FC individuais de adaptadores integrados e determinadas placas de adaptador FC para o modo de destino. O modo de destino é usado para conetar as portas aos iniciadores FC.
+
+.Sobre esta tarefa
+Cada porta FC integrada pode ser configurada individualmente como iniciador ou destino. As portas em certos adaptadores FC também podem ser configuradas individualmente como uma porta de destino ou uma porta de iniciador, assim como as portas FC integradas. Uma lista de adaptadores que podem ser configurados para o modo de destino está disponível no link:https://hwu.netapp.com["NetApp Hardware Universe"^].
+
+As mesmas etapas são usadas na configuração de adaptadores FC para o protocolo FC e para o protocolo FC-NVMe. No entanto, apenas certos adaptadores FC são compatíveis com FC-NVMe. Consulte link:https://hwu.netapp.com["NetApp Hardware Universe"^] a para obter uma lista de adaptadores compatíveis com o protocolo FC-NVMe.
+
+.Passos
+. Coloque o adaptador offline:
++
+`node run -node _node_name_ storage disable adapter _adapter_name_`
+
++
+Se o adaptador não ficar offline, você também pode remover o cabo da porta apropriada do adaptador no sistema.
+
+. Altere o adaptador do iniciador para o destino:
++
+`system node hardware unified-connect modify -t target -node _node_name_ adapter _adapter_name_`
+
+. Reinicie o nó que hospeda o adaptador que você alterou.
+. Verifique se a porta de destino tem a configuração correta:
++
+`network fcp adapter show -node _node_name_`
+
+. Coloque o adaptador online:
++
+`network fcp adapter modify -node _node_name_ -adapter _adapter_port_ -state up`
+
+

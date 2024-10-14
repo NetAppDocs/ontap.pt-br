@@ -1,0 +1,134 @@
+---
+permalink: flexgroup/provision-automatically-task.html 
+sidebar: sidebar 
+keywords: provision, flexgroup, volume, automatic, create, flex group, aggregate, space 
+summary: Ao criar um volume FlexGroup, você pode optar por fazer com que o ONTAP provisione o volume FlexGroup selecionando automaticamente os agregados. Os agregados são selecionados com base nas melhores práticas para um desempenho ideal. 
+---
+= Provisionar um volume FlexGroup automaticamente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Ao criar um volume FlexGroup, você pode optar por que o ONTAP provisione automaticamente o volume FlexGroup selecionando os agregados. Os agregados são selecionados com base nas práticas recomendadas para desempenho e capacidade ideais.
+
+.Antes de começar
+Cada nó no cluster deve ter pelo menos um agregado.
+
+[NOTE]
+====
+Para criar um volume FlexGroup para FabricPool no ONTAP 9.5, cada nó deve ter pelo menos um agregado que seja o FabricPool.
+
+====
+.Sobre esta tarefa
+O ONTAP seleciona dois agregados com a maior quantidade de espaço utilizável em cada nó para criar o volume FlexGroup. Se dois agregados não estiverem disponíveis, o ONTAP selecionará um agregado por nó para criar o volume FlexGroup.
+
+A partir do ONTAP 9.15,1, quando você provisiona automaticamente um volume FlexGroup, o ONTAP usa o posicionamento balanceado (BP) para escolher os agregados e o layout do componente FlexGroup. Um aspeto da BP é como ela limita o provisionamento excessivo de agregados ao criar volumes FlexGroup garantidos "nenhum". O tamanho do volume FlexGroup global é limitado pela quantidade de espaço livre nos agregados, embora o limite seja maior do que para volumes FlexGroup garantidos por "volume". Quando você cria um volume FlexGroup usando APIs REST ou `auto-provision-as` com a CLI do ONTAP, o provisionamento pode falhar devido ao espaço insuficiente devido a esse limite. Você pode evitar isso criando volumes FlexGroup menores ou link:create-task.html["Criando um volume FlexGroup e selecionando os agregados manualmente"]usando o `aggr-list` parâmetro.
+
+.Passos
+. Provisione o volume FlexGroup:
++
+|===
+
+
+| Se você estiver usando... | Use este comando... 
+
+
+ a| 
+ONTAP 9 .2 ou posterior
+ a| 
+`volume create -vserver svm_name -volume fg_vol_name –auto-provision-as flexgroup -size fg_size [–encrypt true] [-qos-policy-group qos_policy_group_name] [-support-tiering true]`
+
+A partir do ONTAP 9.5, você pode criar volumes do FlexGroup para FabricPool. Para provisionar automaticamente um volume FlexGroup no FabricPool, você deve definir o `-support-tiering` parâmetro como `true`. A garantia de volume deve estar sempre definida como `none` para FabricPool. Você também pode especificar a política de disposição em categorias e o período mínimo de resfriamento de disposição em camadas para o volume FlexGroup.
+
+link:../disks-aggregates/index.html["Gerenciamento de disco e agregado"]
+
+A partir do ONTAP 9.3, é possível especificar um limite máximo de taxa de transferência (QoS máximo) para volumes FlexGroup, o que limita os recursos de performance que o volume FlexGroup pode consumir. A partir do ONTAP 9.4, é possível especificar andares de taxa de transferência (QoS min) e QoS adaptável para volumes FlexGroup.
+
+link:../performance-admin/index.html["Gerenciamento de desempenho"]
+
+A partir do ONTAP 9.2, pode definir o `-encrypt` parâmetro para `true` se pretender ativar a encriptação no volume FlexGroup. Para criar um volume criptografado, você deve ter instalado a licença de criptografia de volume e o gerenciador de chaves.
+
+
+NOTE: Você deve habilitar a criptografia em volumes FlexGroup no momento da criação. Não é possível ativar a encriptação em volumes FlexGroup existentes.
+
+link:../encryption-at-rest/index.html["Criptografia de dados em repouso"]
+
+
+
+ a| 
+ONTAP 9,1
+ a| 
+`volume flexgroup deploy -vserver svm_name -size fg_size`
+
+|===
++
+O `size` parâmetro especifica o tamanho do volume FlexGroup em KB, MB, GB, TB ou PB.
+
++
+O exemplo a seguir mostra como provisionar um volume FlexGroup de tamanho 400 TB no ONTAP 9.2:
+
++
+[listing]
+----
+cluster-1::> volume create -vserver vs0 -volume fg –auto-provision-as flexgroup -size 400TB
+Warning: The FlexGroup "fg" will be created with the following number of constituents of size 25TB: 16.
+The constituents will be created on the following aggregates: aggr1,aggr2
+Do you want to continue? {y|n}: y
+[Job 34] Job succeeded: Successful
+----
++
+O exemplo a seguir mostra como criar um grupo de políticas de QoS para limite de taxa de transferência e como aplicá-lo a um volume FlexGroup:
+
++
+[listing]
+----
+cluster1::> qos policy-group create -policy group pg-vs1 -vserver vs1 -max-throughput 5000iops
+----
++
+[listing]
+----
+cluster-1::> volume create -vserver vs0 -volume fg –auto-provision-as flexgroup -size 400TB -qos-policy-group pg-vs1
+Warning: The FlexGroup "fg" will be created with the following number of constituents of size 25TB: 16.
+The constituents will be created on the following aggregates: aggr1,aggr2
+Do you want to continue? {y|n}: y
+[Job 34] Job succeeded: Successful
+----
++
+O exemplo a seguir mostra como provisionar um volume FlexGroup de tamanho 400 TB em agregados no FabricPool no ONTAP 9.5:
+
++
+[listing]
+----
+cluster-1::> volume create -vserver vs0 -volume fg –auto-provision-as flexgroup -size 400TB -support-tiering true -tiering-policy auto
+Warning: The FlexGroup "fg" will be created with the following number of constituents of size 25TB: 16.
+The constituents will be created on the following aggregates: aggr1,aggr2
+Do you want to continue? {y|n}: y
+[Job 34] Job succeeded: Successful
+----
++
+O volume FlexGroup é criado com oito componentes em cada nó no cluster. Os constituintes são distribuídos igualmente entre os dois maiores agregados em cada nó.
+
++
+Por padrão, o volume FlexGroup é criado com a `volume` configuração de garantia de espaço, exceto em sistemas AFF. Para sistemas AFF, por padrão, o volume FlexGroup é criado com a `none` garantia de espaço.
+
+. Monte o volume FlexGroup com um caminho de junção: `volume mount -vserver vserver_name -volume vol_name -junction-path junction_path`
++
+[listing]
+----
+cluster1::> volume mount -vserver vs0 -volume fg2 -junction-path /fg2
+----
+
+
+.Depois de terminar
+Você deve montar o volume FlexGroup do cliente.
+
+Se você estiver executando o ONTAP 9.6 ou anterior e se a máquina virtual de armazenamento (SVM) tiver o NFSv3 e o NFSv4 configurados, a montagem do volume FlexGroup do cliente poderá falhar. Nesses casos, você deve especificar explicitamente a versão NFS ao montar o volume FlexGroup do cliente.
+
+[listing]
+----
+# mount -t nfs -o vers=3 192.53.19.64:/fg2 /mnt/fg2
+# ls /mnt/fg2
+file1  file2
+----

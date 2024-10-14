@@ -1,0 +1,93 @@
+---
+permalink: system-admin/manage-banner-motd-concept.html 
+sidebar: sidebar 
+keywords: manage, banner, motd, clu, user, svm, storage, virtual, machine, cluster 
+summary: 'O ONTAP permite configurar um banner de login ou uma mensagem do dia (MOTD) para comunicar informações administrativas aos usuários da CLI do cluster ou máquina virtual de armazenamento (SVM).' 
+---
+= Gerencie o banner e a visão geral do MOTD
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP permite configurar um banner de login ou uma mensagem do dia (MOTD) para comunicar informações administrativas aos usuários da CLI do cluster ou máquina virtual de armazenamento (SVM).
+
+Um banner é exibido em uma sessão de console (apenas para acesso ao cluster) ou uma sessão SSH (para acesso ao cluster ou SVM) antes que um usuário seja solicitado a autenticação, como uma senha. Por exemplo, você pode usar o banner para exibir uma mensagem de aviso como a seguinte para alguém que tenta fazer login no sistema:
+
+[listing]
+----
+$ ssh admin@cluster1-01
+
+This system is for authorized users only. Your IP Address has been logged.
+
+Password:
+
+----
+Um MOTD é exibido em uma sessão de console (apenas para acesso de cluster) ou uma sessão SSH (para acesso de cluster ou SVM) depois que um usuário é autenticado, mas antes que o prompt de clustershell seja exibido. Por exemplo, você pode usar o MOTD para exibir uma mensagem de boas-vindas ou informativa, como a seguinte, que somente usuários autenticados verão:
+
+[listing]
+----
+$ ssh admin@cluster1-01
+
+Password:
+
+Greetings. This system is running ONTAP 9.0.
+Your user name is 'admin'. Your last login was Wed Apr 08 16:46:53 2015 from 10.72.137.28.
+
+----
+Você pode criar ou modificar o conteúdo do banner ou MOTD usando o `security login banner modify` comando ou `security login motd modify`, respetivamente, das seguintes maneiras:
+
+* Você pode usar a CLI interativamente ou não interativamente para especificar o texto a ser usado para o banner ou MOTD.
++
+O modo interativo, iniciado quando o comando é usado sem o `-message` parâmetro ou `-uri`, permite que você use novas linhas (também conhecidas como final de linhas) na mensagem.
+
++
+O modo não interativo, que usa o `-message` parâmetro para especificar a cadeia de carateres da mensagem, não suporta novas linhas.
+
+* Você pode fazer upload de conteúdo de um local FTP ou HTTP para usar para o banner ou MOTD.
+* Pode configurar o MOTD para apresentar conteúdo dinâmico.
++
+Exemplos do que você pode configurar o MOTD para exibir dinamicamente incluem o seguinte:
+
++
+** Nome do cluster, nome do nó ou nome do SVM
+** Data e hora do cluster
+** Nome do utilizador que inicia sessão
+** Último login para o usuário em qualquer nó no cluster
+** Nome do dispositivo de início de sessão ou endereço IP
+** Nome do sistema operacional
+** Versão de versão do software
+** String de versão de cluster eficaz a `security login motd modify` página man descreve as sequências de escape que você pode usar para ativar o MOTD para exibir conteúdo gerado dinamicamente.
+
+
++
+O banner não suporta conteúdo dinâmico.
+
+
+
+Você pode gerenciar o banner e o MOTD no nível do cluster ou SVM:
+
+* Os seguintes fatos se aplicam ao banner:
++
+** O banner configurado para o cluster também é usado para todos os SVMs que não têm uma mensagem de banner definida.
+** É possível configurar um banner no nível da SVM para cada SVM.
++
+Se um banner no nível do cluster tiver sido configurado, ele será substituído pelo banner no nível da SVM para determinado SVM.
+
+
+
+* Os seguintes factos aplicam-se ao MOTD:
++
+** Por padrão, o MOTD configurado para o cluster também é ativado para todos os SVMs.
+** Além disso, é possível configurar um MOTD no nível da SVM para cada SVM.
++
+Nesse caso, os usuários que fizerem login no SVM verão dois MOTDs, um definido no nível do cluster e o outro no nível SVM.
+
+** O MOTD no nível do cluster pode ser ativado ou desativado por SVM pelo administrador do cluster.
++
+Se o administrador do cluster desativar o MOTD em nível de cluster para um SVM, um usuário que faz login no SVM não verá o MOTD em nível de cluster.
+
+
+
+

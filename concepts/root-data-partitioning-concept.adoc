@@ -1,0 +1,44 @@
+---
+permalink: concepts/root-data-partitioning-concept.html 
+sidebar: sidebar 
+keywords: root-data partition, root aggregate, root partition 
+summary: Cada nó deve ter um agregado de raiz para arquivos de configuração do sistema de storage. O agregado raiz tem o tipo RAID do agregado de dados. 
+---
+= Particionamento de dados raiz
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Cada nó deve ter um agregado de raiz para arquivos de configuração do sistema de storage. O agregado raiz tem o tipo RAID do agregado de dados.
+
+O System Manager não suporta o particionamento root-data ou root-data-data-data.
+
+Um agregado de raiz do tipo RAID-DP normalmente consiste em um disco de dados e dois discos de paridade. Isso é um "imposto de paridade" significativo para pagar pelos arquivos do sistema de armazenamento, quando o sistema já está reservando dois discos como discos de paridade para cada grupo RAID no agregado.
+
+_Root-data partitioning_ reduz o imposto de paridade ao dividir o agregado de raiz entre partições de disco, reservando uma pequena partição em cada disco como partição raiz e uma grande partição para dados.
+
+image:root-data.gif["exemplo de particionamento de dados raiz"]
+
+Como a ilustração sugere, quanto mais discos forem usados para armazenar o agregado raiz, menor a partição raiz. Esse também é o caso de uma forma de particionamento de dados-raiz chamada _root-data-data-data partitioning_, que cria uma pequena partição como a partição raiz e duas partições maiores, igualmente dimensionadas para dados.
+
+image:root-data-data.gif["exemplo de particionamento root-data-data"]
+
+Ambos os tipos de particionamento de dados raiz fazem parte do recurso ONTAP _Advanced Drive Partitioning (ADP)_. Ambos são configurados de fábrica: Particionamento de dados raiz para sistemas FAS2xxx, FAS9000, FAS8200, FAS80xx e AFF de nível básico, particionamento de dados-raiz apenas para sistemas AFF.
+
+Saiba mais link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/What_are_the_rules_for_Advanced_Disk_Partitioning["Advanced Drive Partitioning"^]sobre o .
+
+
+
+== Unidades particionadas e usadas para o agregado raiz
+
+As unidades particionadas para uso no agregado raiz dependem da configuração do sistema.
+
+Saber quantas unidades são usadas para o agregado raiz ajuda você a determinar quanto da capacidade das unidades é reservada para a partição raiz e quanto está disponível para uso em um agregado de dados.
+
+A funcionalidade de particionamento de dados raiz é compatível com plataformas de nível básico, todas as plataformas Flash FAS e plataformas FAS com apenas SSDs anexados.
+
+Para plataformas de nível básico, apenas as unidades internas são particionadas.
+
+Para todas as plataformas Flash FAS e plataformas FAS com apenas SSDs conetados, todas as unidades conetadas ao controlador quando o sistema é inicializado são particionadas, até um limite de 24 TB por nó. As unidades adicionadas após a configuração do sistema não são particionadas.

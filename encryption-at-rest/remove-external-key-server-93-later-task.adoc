@@ -1,0 +1,62 @@
+---
+permalink: encryption-at-rest/remove-external-key-server-93-later-task.html 
+sidebar: sidebar 
+keywords: deleting, external key manager, connection 
+summary: Você pode desconetar um servidor KMIP de um nó quando não precisar mais do servidor. Por exemplo, você pode desconetar um servidor KMIP quando estiver migrando para a criptografia de volume. 
+---
+= Remova uma conexão externa do gerenciador de chaves
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode desconetar um servidor KMIP de um nó quando não precisar mais do servidor. Por exemplo, você pode desconetar um servidor KMIP quando estiver migrando para a criptografia de volume.
+
+.Sobre esta tarefa
+Ao desconetar um servidor KMIP de um nó em um par de HA, o sistema desconeta automaticamente o servidor de todos os nós de cluster.
+
+
+NOTE: Se você pretende continuar usando o gerenciamento de chaves externas depois de desconetar um servidor KMIP, verifique se outro servidor KMIP está disponível para servir as chaves de autenticação.
+
+.Antes de começar
+Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
+
+.Passo
+. Desconete um servidor KMIP do nó atual:
++
+[cols="35,65"]
+|===
+
+
+| Para esta versão ONTAP... | Use este comando... 
+
+
+ a| 
+ONTAP 9 F.6 e mais tarde
+ a| 
+`security key-manager external remove-servers -vserver SVM -key-servers host_name|IP_address:port,...`
+
+
+
+ a| 
+ONTAP 9 F.5 e anteriores
+ a| 
+`security key-manager delete -address key_management_server_ipaddress`
+
+|===
++
+Em um ambiente do MetroCluster, você deve repetir esses comandos nos dois clusters para o SVM de administrador.
+
++
+Para obter a sintaxe completa do comando, consulte as páginas man.
+
++
+O seguinte comando ONTAP 9.6 desativa as conexões a dois servidores de gerenciamento de chaves externas para `cluster1`, o primeiro chamado `ks1`, ouvindo na porta padrão 5696, o segundo com o endereço IP 10,0.0,20, ouvindo na porta 24482:
+
++
+[listing]
+----
+clusterl::> security key-manager external remove-servers -vserver cluster-1 -key-servers ks1,10.0.0.20:24482
+----
+

@@ -1,0 +1,51 @@
+---
+permalink: nfs-trunking/reestablish-client-mount-task.html 
+sidebar: sidebar 
+keywords: NFS, servers, network, NFS trunking, data, shares, Linux, VMware, mounts, client 
+summary: Para converter conexões de cliente não truncadas em conexões truncadas, as montagens existentes nos clientes Linux e VMware devem ser desmontadas e remontadas usando informações sobre LIFs. 
+---
+= Restabelecer montagens de clientes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para converter conexões de cliente não truncadas em conexões truncadas, as montagens existentes nos clientes Linux e VMware devem ser desmontadas e remontadas usando informações sobre LIFs.
+
+Ao inserir comandos de montagem nos clientes, você deve inserir endereços IP para cada LIF no grupo de entroncamento.
+
+Saiba mais link:index.html#supported-clients["clientes suportados"]sobre .
+
+
+NOTE: A desinstalação de clientes VMware causa interrupções em todas as VMs no datastore. Uma alternativa seria criar um novo datastore habilitado para entroncamento e usar *Storage vmotion* para mover suas VMs do datastore antigo para o novo. Consulte a documentação da VMware para obter detalhes.
+
+[role="tabbed-block"]
+====
+.Requisitos do cliente Linux
+--
+Um ponto de montagem separado é necessário para cada conexão no grupo de entroncamento.
+
+Monte os volumes exportados com comandos semelhantes aos seguintes:
+
+`mount lif1_ip:/vol-test /mnt/test1 -o vers=4.1,max_connect=2`
+
+`mount lif2_ip:/vol-test /mnt/test2 -o vers=4.1,max_connect=2`
+
+O `vers` valor deve ser `4.1` ou posterior.
+
+O `max_connect` valor deve corresponder ao número de conexões no grupo de entroncamento.
+
+--
+.Requisitos do cliente VMware
+--
+É necessário um comando mount que inclua um endereço IP para cada conexão no grupo de entroncamento.
+
+Monte o datastore exportado com um comando semelhante ao seguinte:
+
+`#esxcli storage nfs41 -H lif1_ip, lif2_ip -s /mnt/sh are1 -v nfs41share`
+
+Os `-H` valores devem corresponder às conexões no grupo de entroncamento.
+
+--
+====

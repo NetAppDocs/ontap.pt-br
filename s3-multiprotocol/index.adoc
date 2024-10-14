@@ -1,0 +1,116 @@
+---
+permalink: s3-multiprotocol/index.html 
+sidebar: sidebar 
+keywords: multiprotocol, s3, configuration, overview, nfs, smb 
+summary: A partir do ONTAP 9.12,1, é possível permitir que os clientes que executam o protocolo S3 acessem os mesmos dados que estão sendo atendidos aos clientes que usam os protocolos NFS e SMB sem reformatação. 
+---
+= Visão geral do multiprotocolo S3
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.12,1, é possível permitir que os clientes que executam o protocolo S3 acessem os mesmos dados que estão sendo atendidos aos clientes que usam os protocolos NFS e SMB sem reformatação. Esse recurso permite que os dados nas continuem sendo servidos a clientes nas, enquanto apresentam dados de objetos a clientes S3 que executam aplicações S3 (como data mining e inteligência artificial).
+
+A funcionalidade multiprotocolo S3 aborda dois casos de uso:
+
+. Acesso a dados nas existentes usando clientes S3
++
+Se os dados existentes tiverem sido criados usando clientes nas tradicionais (NFS ou SMB) e estiverem localizados em volumes nas (volumes FlexVol ou FlexGroup), agora você poderá usar ferramentas de análise em clientes do S3 para acessar esses dados.
+
+. Storage de back-end para clientes modernos com capacidade para executar e/S usando protocolos nas e S3
++
+Agora você pode fornecer acesso integrado para aplicativos como Spark e Kafka que podem ler e gravar os mesmos dados usando protocolos nas e S3.
+
+
+
+
+
+== Como o multiprotocolo S3 funciona
+
+O multiprotocolo ONTAP permite que você apresente o mesmo conjunto de dados que uma hierarquia de arquivos ou objetos em um bucket. Para fazer isso, o ONTAP cria "S3 buckets nas" que permitem que os clientes do S3 criem, leiam, excluam e enumerem arquivos no storage nas usando solicitações de objetos do S3. Este mapeamento está em conformidade com a configuração de segurança nas, observando permissões de acesso a arquivos e diretórios, bem como gravar na trilha de auditoria de segurança, conforme necessário.
+
+Esse mapeamento é realizado apresentando uma hierarquia de diretórios nas especificada como um bucket S3. Cada arquivo na hierarquia de diretórios é representado como um objeto S3 cujo nome é relativo do diretório mapeado para baixo, com limites de diretório representados pelo caractere de barra ('/').
+
+Os usuários normais do S3 definidos pela ONTAP podem acessar esse storage, conforme governado pelas políticas de bucket definidas para o bucket que mapeia para o diretório nas. Para que isso seja possível, mapeamentos devem ser definidos entre os usuários S3 e os usuários SMB/NFS. As credenciais do usuário SMB/NFS serão usadas para a verificação de permissões nas e incluídas em todos os Registros de auditoria resultantes desses acessos.
+
+Quando criado por clientes SMB ou NFS, um arquivo é colocado imediatamente em um diretório e, portanto, visível para clientes, antes que qualquer dado seja gravado nele. Os clientes S3 esperam semântica diferente, na qual o novo objeto não é visível no namespace até que todos os seus dados tenham sido escritos. Esse mapeamento do S3 para o armazenamento nas cria arquivos usando semântica S3, mantendo os arquivos invisíveis externamente até que o comando de criação S3 seja concluído.
+
+
+
+== Proteção de dados para buckets do nas S3
+
+S3 "buckets" nas são simplesmente mapeamentos de dados nas para clientes S3, e não são buckets do S3 padrão. Portanto, não há necessidade de proteger buckets do nas S3 usando a funcionalidade do NetApp SnapMirror S3. Em vez disso, você pode proteger volumes que contêm S3 buckets do nas usando a replicação de volume assíncrona do SnapMirror. A recuperação de desastres síncrona SnapMirror e SVM não é compatível.
+
+A partir do ONTAP 9.14,1, os buckets nas de S3 GB são compatíveis com agregados espelhados e sem espelhamento para configurações MetroCluster IP e FC.
+
+Saiba mais link:../data-protection/snapmirror-disaster-recovery-concept.html#data-protection-relationships["Assíncrono com SnapMirror"]sobre .
+
+
+
+== Auditoria para buckets do nas S3
+
+Como os buckets do nas S3 não são buckets do S3 convencionais, a auditoria do S3 não pode ser configurada para auditar o acesso neles. Saiba mais link:../s3-audit/index.html["Auditoria S3"]sobre o .
+
+No entanto, os arquivos e diretórios nas mapeados em buckets do nas S3 podem ser auditados para eventos de acesso usando procedimentos de auditoria convencionais do ONTAP. As operações S3 podem, portanto, acionar eventos de auditoria nas, com as seguintes exceções:
+
+* Se o acesso de cliente S3 for negado pela configuração de diretiva S3 (política de grupo ou bucket), a auditoria nas para o evento não será iniciada. Isso ocorre porque as permissões do S3 são verificadas antes que as verificações de auditoria SVM possam ser feitas.
+* Se o arquivo de destino de uma solicitação de S3 GET for de tamanho 0, o conteúdo 0 será retornado à solicitação de GET e o acesso de leitura não será registrado.
+* Se o arquivo de destino de uma solicitação de S3 GET estiver em uma pasta para a qual o usuário não tenha permissão de avanço, a tentativa de acesso falhará e o evento não será registrado.
+
+
+Saiba mais link:../nas-audit/index.html["Auditoria de eventos nas em SVMs"]sobre .
+
+
+
+== Interoperabilidade do S3 e nas
+
+Os buckets do ONTAP S3 nas suportam a funcionalidade nas e S3 padrão, exceto conforme listado aqui.
+
+
+
+=== Funcionalidade nas atualmente não suportada por buckets do nas S3
+
+Camada de capacidade do FabricPool:: Os buckets do nas S3 não podem ser configurados como uma camada de capacidade para o FabricPool.
+
+
+
+
+=== Funcionalidade S3 não suportada atualmente por buckets do nas S3
+
+Metadados de usuários da AWS::
++
+--
+* Os pares de valores-chave recebidos como parte dos metadados de usuário do S3 não são armazenados no disco juntamente com os dados de objeto na versão atual.
+* Cabeçalhos de solicitação com o prefixo "x-amz-meta" são ignorados.
+
+
+--
+Tags da AWS::
++
+--
+* Em pedidos PUT object e Multipart Initiate, cabeçalhos com o prefixo "x-amz-tagging" são ignorados.
+* As solicitações para atualizar tags em um arquivo existente (ou seja, um put, get e Delete Requests com a string de consulta ?tagging) são rejeitadas com um erro.
+
+
+--
+Controle de versão:: Não é possível especificar o controle de versão na configuração de mapeamento de bucket.
++
+--
+* Solicitações que incluem especificações de versão não null (a query-string) recebem respostas de erro.
+* As solicitações para afetar o estado de controle de versão de um bucket são rejeitadas com erros.
+
+
+--
+Operações multipeças:: As seguintes operações não são suportadas:
++
+--
+* AbortMultipartUpload
+* CompleteMultipartUpload
+* CreateMultipartUpload
+* ListMultipartUpload
+
+
+--
+

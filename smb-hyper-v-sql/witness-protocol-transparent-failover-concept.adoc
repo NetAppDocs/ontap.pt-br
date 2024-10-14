@@ -1,0 +1,30 @@
+---
+permalink: smb-hyper-v-sql/witness-protocol-transparent-failover-concept.html 
+sidebar: sidebar 
+keywords: witness, protocol, transparent, failover, lif, ca, share, client, smb, recovery 
+summary: 'O protocolo Witness fornece recursos aprimorados de failover de cliente para compartilhamentos continuamente disponíveis (compartilhamentos CA) SMB 3,0. O Witness facilita o failover mais rápido porque ignora o período de recuperação de failover de LIF. Ele notifica os servidores de aplicativos quando um nó não está disponível sem a necessidade de esperar que a conexão SMB 3,0 expire.' 
+---
+= O que o protocolo Witness faz para melhorar o failover transparente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O protocolo Witness fornece recursos aprimorados de failover de cliente para compartilhamentos continuamente disponíveis (compartilhamentos CA) SMB 3,0. O Witness facilita o failover mais rápido porque ignora o período de recuperação de failover de LIF. Ele notifica os servidores de aplicativos quando um nó não está disponível sem a necessidade de esperar que a conexão SMB 3,0 expire.
+
+O failover é contínuo, com as aplicações em execução no cliente não cientes de que ocorreu um failover. Se a testemunha não estiver disponível, as operações de failover ainda ocorrem com sucesso, mas o failover sem testemunha é menos eficiente.
+
+O failover aprimorado de testemunhas é possível quando os seguintes requisitos são atendidos:
+
+* Ele só pode ser usado com servidores CIFS compatíveis com SMB 3,0 que tenham SMB 3,0 habilitado.
+* Os compartilhamentos devem usar o SMB 3,0 com o conjunto de propriedades de compartilhamento de disponibilidade contínua.
+* O parceiro SFO do nó ao qual os servidores de aplicativos estão conetados deve ter pelo menos um LIF de dados operacional atribuído à máquina virtual de armazenamento (SVM) que hospeda dados para os servidores de aplicativos.
++
+[NOTE]
+====
+O protocolo testemunha opera entre pares SFO. Como os LIFs podem migrar para qualquer nó dentro do cluster, qualquer nó pode precisar ser a testemunha de seu parceiro SFO. O protocolo Witness não pode fornecer failover rápido de conexões SMB em um determinado nó se os dados de hospedagem SVM para os servidores de aplicações não tiverem um LIF de dados ativo no nó de parceiro. Portanto, cada nó no cluster precisa ter pelo menos um data LIF para cada SVM que hospeda uma dessas configurações.
+
+====
+* Os servidores de aplicativos devem se conetar ao servidor CIFS usando o nome do servidor CIFS que é armazenado no DNS em vez de usando endereços IP de LIF individuais.
+

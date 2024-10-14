@@ -1,0 +1,228 @@
+---
+permalink: data-protection/snapmirror-synchronous-disaster-recovery-basics-concept.html 
+sidebar: sidebar 
+keywords: snapmirror, synchronous, disaster, recovery 
+summary: 'A partir do ONTAP 9.5, a tecnologia SnapMirror Synchronous (SM-S) é suportada em todas as plataformas FAS e AFF que tenham pelo menos 16 GB de memória e em todas as plataformas ONTAP Select. A tecnologia síncrona SnapMirror é um recurso licenciado por nó que fornece replicação de dados síncrona no nível do volume.' 
+---
+= Noções básicas de recuperação de desastres síncrona SnapMirror
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.5, a tecnologia SnapMirror Synchronous (SM-S) é suportada em todas as plataformas FAS e AFF que tenham pelo menos 16 GB de memória e em todas as plataformas ONTAP Select. A tecnologia síncrona SnapMirror é um recurso licenciado por nó que fornece replicação de dados síncrona no nível do volume.
+
+Esse recurso atende aos mandatos regulatórios e nacionais para replicação síncrona nos setores financeiro, de saúde e outros que tenham regulamentação com perda de dados zero.
+
+
+
+== Operações síncronas do SnapMirror permitidas
+
+O limite do número de operações de replicação síncrona SnapMirror por par de HA depende do modelo de controladora.
+
+A tabela a seguir lista o número de operações síncronas do SnapMirror permitidas por par de HA de acordo com o tipo de plataforma e o lançamento do ONTAP.
+
+|===
+
+
+| Plataforma | Versões anteriores ao ONTAP 9.9,1 | ONTAP 9.9,1 | ONTAP 9.10,1 | ONTAP 9.11,1 através de ONTAP 9.14,1 
+
+
+ a| 
+AFF
+ a| 
+80
+ a| 
+160
+ a| 
+200
+ a| 
+400
+
+
+
+ a| 
+ASA
+ a| 
+80
+ a| 
+160
+ a| 
+200
+ a| 
+400
+
+
+
+ a| 
+FAS
+ a| 
+40
+ a| 
+80
+ a| 
+80
+ a| 
+80
+
+
+
+ a| 
+ONTAP Select
+ a| 
+20
+ a| 
+40
+ a| 
+40
+ a| 
+40
+
+|===
+
+
+== Recursos suportados
+
+A tabela a seguir indica os recursos compatíveis com o SnapMirror Synchronous e as versões do ONTAP nas quais o suporte está disponível.
+
+[cols="3,1,4"]
+|===
+
+
+| Recurso | Lançamento primeiro suportado | Informações adicionais 
+
+
+| Antivírus sobre o volume principal da relação síncrona SnapMirror | ONTAP 9,6 |  
+
+
+| Replicação de cópia Snapshot criada pela aplicação | ONTAP 9,7 | Se uma cópia Snapshot estiver marcada com o rótulo apropriado no momento `snapshot create` da operação, usando a CLI ou a API ONTAP, o SnapMirror Synchronous replica as cópias Snapshot, criadas pelo usuário ou criadas com scripts externos, após a desativação das aplicações. As cópias Snapshot programadas criadas usando uma política Snapshot não são replicadas. Para obter mais informações sobre como replicar cópias Snapshot criadas por aplicativos, consulte o artigo da base de dados de Conhecimento: link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Protection_and_Security/SnapMirror/How_to_replicate_application_created_snapshots_with_SnapMirror_Synchronous["Como replicar snapshots criados pela aplicação com o SnapMirror síncrono"^]. 
+
+
+| Clonar a eliminação automática | ONTAP 9,6 |  
+
+
+| Agregados FabricPool com política de disposição em camadas nenhuma, Snapshot ou Automático são compatíveis com origem e destino síncronos SnapMirror. | ONTAP 9,5 | O volume de destino em um agregado do FabricPool não pode ser definido para todas as políticas de disposição em camadas. 
+
+
+| FC | ONTAP 9,5 | Em todas as redes para as quais a latência não exceda 10ms ms 
+
+
+| FC-NVMe | ONTAP 9,7 |  
+
+
+| Clones de arquivos | ONTAP 9,7 |  
+
+
+| FPolicy no volume principal da relação síncrona SnapMirror | ONTAP 9,6 |  
+
+
+| Cotas rígidas e flexíveis sobre o volume primário do relacionamento síncrono SnapMirror | ONTAP 9,6 | As regras de cota não são replicadas para o destino; portanto, o banco de dados de cota não é replicado para o destino. 
+
+
+| Relações síncronas intra-cluster | ONTAP 9.14,1 | Alta disponibilidade é fornecida quando os volumes de origem e destino são colocados em diferentes pares de HA. Se todo o cluster ficar inativo, o acesso aos volumes não será possível até que o cluster seja recuperado. As relações síncronas de SnapMirror intramcluster contribuirão para o limite geral de simultâneos xref:SnapMirror synchronous operations allowed[Relacionamentos por par de HA]. 
+
+
+| ISCSI | ONTAP 9,5 |  
+
+
+| Clones de LUN e clones de namespace NVMe | ONTAP 9,7 |  
+
+
+| Clones de LUN com respaldo de cópias Snapshot criadas pela aplicação | ONTAP 9,7 |  
+
+
+| Acesso a protocolo misto (NFS v3 e SMB) | ONTAP 9,6 |  
+
+
+| Restauração NDMP/NDMP | ONTAP 9.13,1 | Tanto o cluster de origem quanto o de destino devem estar executando o ONTAP 9.13,1 ou posterior para usar o NDMP com o SnapMirror Synchronous. Para obter mais informações, xref:../tape-backup/transfer-data-ndmpcopy-task.html[Transfira dados usando cópia ndmp]consulte . 
+
+
+| Operações síncronas de SnapMirror (NDO) sem interrupções em plataformas AFF/ASA, somente. | ONTAP 9.12,1 | O suporte a operações sem interrupções permite que você execute muitas tarefas de manutenção comuns sem agendar o tempo de inatividade. As operações suportadas incluem takeover e giveback e movimentação de volume, desde que um único nó sobreviva a cada um dos dois clusters. 
+
+
+| NFS v4.2 | ONTAP 9.10,1 |  
+
+
+| NFS v4.3 | ONTAP 9,5 |  
+
+
+| NFS v4.0 | ONTAP 9,6 |  
+
+
+| NFS v4.1 | ONTAP 9,6 |  
+
+
+| NVMe/TCP | 9.10.1 |  
+
+
+| Remoção de limitação de frequência de operação de metadados elevados | ONTAP 9,6 |  
+
+
+| Segurança para dados confidenciais em trânsito usando criptografia TLS 1,2 | ONTAP 9,6 |  
+
+
+| Restauração de arquivo único e parcial | ONTAP 9.13,1 |  
+
+
+| SMB 2,0 ou posterior | ONTAP 9,6 |  
+
+
+| Cascata de espelho-espelho síncrono SnapMirror | ONTAP 9,6 | A relação do volume de destino da relação síncrona do SnapMirror deve ser uma relação assíncrona do SnapMirror. 
+
+
+| Recuperação de desastres da SVM | ONTAP 9,6 | * Uma fonte síncrona SnapMirror também pode ser uma fonte de recuperação de desastres do SVM, por exemplo, uma configuração de fan-out com SnapMirror síncrono como uma etapa e a recuperação de desastres do SVM, como a outra. * Uma fonte síncrona SnapMirror não pode ser um destino de recuperação de desastres da SVM, pois o SnapMirror síncrono não oferece suporte a uma fonte de proteção de dados em cascata. É necessário liberar a relação síncrona antes de executar uma flip-ressincronização da recuperação de desastres da SVM no cluster de destino. * Um destino síncrono do SnapMirror não pode ser uma fonte de recuperação de desastres do SVM, pois a recuperação de desastres do SVM não dá suporte à replicação de volumes de DP. Uma nova sincronização da fonte síncrona resultaria na recuperação de desastres da SVM, excluindo o volume de DP no cluster de destino. 
+
+
+| Restauração baseada em fita para o volume de origem | ONTAP 9.13,1 |  
+
+
+| Paridade de carimbo de data/hora entre volumes de origem e destino para nas | ONTAP 9,6 | Se você atualizou do ONTAP 9.5 para o ONTAP 9.6, o carimbo de data/hora será replicado apenas para quaisquer arquivos novos e modificados no volume de origem. O carimbo de data/hora dos arquivos existentes no volume de origem não é sincronizado. 
+|===
+
+
+== Funcionalidades não suportadas
+
+Os recursos a seguir não são compatíveis com relacionamentos síncronos do SnapMirror:
+
+* Grupos de consistência
+* Sistemas DP_Optimized (DPO)
+* Volumes FlexGroup
+* Volumes FlexCache
+* Limitação global
+* Em uma configuração de fan-out, apenas uma relação pode ser uma relação síncrona do SnapMirror; todas as outras relações do volume de origem devem ser relações assíncronas do SnapMirror.
+* Movimento LUN
+* Configurações do MetroCluster
+* LUNs de acesso mistos SAN e NVMe e namespaces NVMe não são compatíveis com o mesmo volume ou SVM.
+* SnapCenter
+* Volumes SnapLock
+* Cópias Snapshot à prova de violações
+* Backup ou restauração em fita usando dump e SMTape no volume de destino
+* Piso de taxa de transferência (QoS min) para volumes de origem
+* Volume SnapRestore
+* VVol
+
+
+
+
+== Modos de funcionamento
+
+O SnapMirror Synchronous tem dois modos de operação com base no tipo da política SnapMirror usada:
+
+* *Modo de sincronização* no modo de sincronização, as operações de e/S do aplicativo são enviadas em paralelo aos sistemas de armazenamento primário e secundário. Se a gravação no storage secundário não for concluída por qualquer motivo, o aplicativo poderá continuar gravando no storage primário. Quando a condição de erro é corrigida, a tecnologia síncrona SnapMirror ressincroniza automaticamente com o storage secundário e retoma a replicação do storage primário para o storage secundário no modo síncrono. No modo de sincronização, o RPO 0 e o rto são muito baixos até que ocorra uma falha de replicação secundária no momento em que o RPO e o rto se tornam indeterminados, mas equivalem ao tempo de reparar o problema que fez com que a replicação secundária falhasse e para que o ressync fosse concluído.
+* *Modo StrictSync* SnapMirror síncrono pode operar opcionalmente no modo StrictSync. Se a gravação no storage secundário não for concluída por qualquer motivo, a e/S do aplicativo falhará, garantindo assim que o storage primário e secundário sejam idênticos. A e/S da aplicação para o primário é retomada somente após a relação SnapMirror retornar ao `InSync` status. Se o storage primário falhar, a e/S da aplicação poderá ser retomada no storage secundário, após o failover, sem perda de dados. No modo StrictSync, o RPO é sempre zero, e o rto é muito baixo.
+
+
+
+
+== Status do relacionamento
+
+O status de uma relação síncrona SnapMirror está sempre no `InSync` status durante a operação normal. Se a transferência SnapMirror falhar por qualquer motivo, o destino não está sincronizado com a origem e pode ir para o `OutofSync` status.
+
+Para relações síncronas do SnapMirror, o sistema verifica automaticamente o status da relação  `InSync`ou `OutofSync`) em um intervalo fixo. Se o status do relacionamento for `OutofSync`, o ONTAP acionará automaticamente o processo de ressincronização automática para trazer de volta a relação ao `InSync` status. A ressincronização automática é acionada apenas se a transferência falhar devido a qualquer operação, como failover não planejado de armazenamento na origem ou destino ou uma interrupção de rede. Operações iniciadas pelo usuário, `snapmirror quiesce` como e `snapmirror break` não acionam a ressincronização automática.
+
+Se o status do relacionamento se tornar `OutofSync` para um relacionamento síncrono SnapMirror no modo StrictSync, todas as operações de e/S para o volume primário serão interrompidas.  `OutofSync`O estado da relação síncrona SnapMirror no modo de sincronização não causa interrupções para as operações primárias e/S são permitidas no volume primário.
+
+.Informações relacionadas
+https://www.netapp.com/pdf.html?item=/media/17174-tr4733pdf.pdf["Relatório técnico da NetApp 4733: Configuração síncrona da SnapMirror e práticas recomendadas"^]

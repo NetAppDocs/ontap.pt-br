@@ -1,0 +1,63 @@
+---
+permalink: flexcache/enable-file-access-time-updates-task.html 
+sidebar: sidebar 
+keywords: atime, atime-update, flexcache, flex cache, access time 
+summary: 'Você pode ativar o `-atime-update` campo no volume FlexCache para permitir atualizações de tempo de acesso ao arquivo. Você também pode definir um período de atualização de tempo de acesso com o `-atime-update-period` atributo. O período de atualização de tempo controla a frequência com que atualizações de tempo ocorrem e quando elas podem se propagar para o volume de origem.' 
+---
+= Ativar atualizações de tempo de acesso ao ficheiro
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.11,1, é possível ativar o `-atime-update` campo no volume FlexCache para permitir atualizações de tempo de acesso ao arquivo. Você também pode definir um período de atualização de tempo de acesso com o `-atime-update-period` atributo. O `-atime-update-period` atributo controla a frequência com que atualizações de tempo de acesso podem ocorrer e quando elas podem se propagar para o volume de origem.
+
+
+
+== Visão geral
+
+O ONTAP fornece um campo de nível de volume chamado `-atime-update`, para gerenciar atualizações de tempo de acesso em arquivos e diretórios que são lidos usando LEITURA, READLINK e READDIR. Atime é usado para decisões de ciclo de vida de dados para arquivos e diretórios que são acessados com pouca frequência. Os arquivos acessados com pouca frequência são eventualmente migrados para o armazenamento de arquivos e, muitas vezes, são movidos mais tarde para fita.
+
+O campo atime-update é desativado por padrão em volumes FlexCache existentes e recém-criados. Se você estiver usando o FlexCache volumes com versões do ONTAP anteriores a 9.11.1, você deve deixar o campo atime-update desativado para que os caches não sejam desnecessariamente despejados quando uma operação de leitura for executada no volume de origem. No entanto, com grandes caches do FlexCache, os administradores usam ferramentas especiais para gerenciar dados e ajudar a garantir que os dados ativos permaneçam no cache e que os dados inativos sejam purgados. Isto não é possível quando a atualização de tempo está desativada. No entanto, a partir do ONTAP 9.11,1, você pode ativar `-atime-update` e `-atime-update-period,` usar as ferramentas necessárias para gerenciar os dados em cache.
+
+
+
+== Antes de começar
+
+Todos os volumes do FlexCache devem estar executando o ONTAP 9.11,1 ou posterior.
+
+
+
+== Sobre esta tarefa
+
+A configuração `-atime-update-period` para 86400 segundos não permite mais de uma atualização de tempo de acesso por período de 24 horas, independentemente do número de operações semelhantes a leitura realizadas em um arquivo.
+
+Definir `-atime-update-period` como 0 envia mensagens para a origem para cada acesso de leitura. A origem então informa cada volume de FlexCache que o tempo está desatualizado, o que afeta o desempenho.
+
+.Passos
+. Ative as atualizações de tempo de acesso aos ficheiros e defina a frequência de atualização:
++
+`volume modify -volume vol_name -vserver _SVM_name_ -atime-update true -atime-update-period _seconds_`
+
++
+O exemplo a seguir ativa `-atime-update` e define `-atime-update-period` para 86400 segundos ou 24 horas:
+
++
+[listing]
+----
+c1: volume modify -volume origin1 vs1_c1 -atime-update true -atime-update-period 86400
+----
+. Verifique se `-atime-update` está ativado:
++
+`volume show -volume _vol_name_ -fields atime-update,atime-update-period`
+
++
+[listing]
+----
+c1::*> volume show -volume cache1_origin1 -fields atime-update,atime-update-period
+vserver volume         atime-update atime-update-period
+------- -------------- ------------ -------------------
+vs2_c1  cache1_origin1 true         86400
+----
+

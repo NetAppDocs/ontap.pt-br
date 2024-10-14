@@ -1,0 +1,45 @@
+---
+permalink: fabricpool/setup-ibm-object-storage-cloud-tier-task.html 
+sidebar: sidebar 
+keywords: setting up, ibm cloud, object storage, cloud tier 
+summary: Se você estiver executando o ONTAP 9.5 ou posterior, poderá configurar o IBM Cloud Object Storage como a camada de nuvem do FabricPool. 
+---
+= Configure o IBM Cloud Object Storage como a camada de nuvem
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você estiver executando o ONTAP 9.5 ou posterior, poderá configurar o IBM Cloud Object Storage como a camada de nuvem do FabricPool.
+
+.Considerações sobre o uso do IBM Cloud Object Storage com FabricPool
+* A link:https://bluexp.netapp.com/cloud-tiering["Licença de disposição em camadas do BlueXP"]é necessário ao dispor em camadas no IBM Cloud Object Storage.
+* Recomenda-se que o LIF que o ONTAP usa para se conetar ao servidor de objetos IBM Cloud esteja em uma porta de 10 Gbps.
+
+
+.Passos
+. Especifique as informações de configuração do IBM Cloud Object Storage usando o `storage aggregate object-store config create` comando com o `-provider-type` `IBM_COS` parâmetro.
++
+** O `storage aggregate object-store config create` comando falhará se o ONTAP não puder acessar o IBM Cloud Object Storage com as informações fornecidas.
+** Use o `-access-key` parâmetro para especificar a chave de acesso para autorizar solicitações ao armazenamento de objetos IBM Cloud Object Storage.
+** Use o `-secret-password` parâmetro para especificar a senha (chave de acesso secreto) para autenticar solicitações no armazenamento de objetos do IBM Cloud Object Storage.
+** Se a senha do IBM Cloud Object Storage for alterada, você deverá atualizar a senha correspondente armazenada no ONTAP imediatamente.
++
+Com isso, o ONTAP pode acessar os dados no IBM Cloud Object Storage sem interrupção.
+
+
+
++
+[listing]
+----
+storage aggregate object-store config create
+-object-store-name MyIBM -provider-type IBM_COS
+-server s3.us-east.objectstorage.softlayer.net
+-container-name my-ibm-cos-bucket -access-key DXJRXHPXHYXA9X31X3JX
+----
+. Exiba e verifique as informações de configuração do IBM Cloud Object Storage usando o `storage aggregate object-store config show` comando.
++
+O `storage aggregate object-store config modify` comando permite modificar as informações de configuração do IBM Cloud Object Storage para FabricPool.
+
+

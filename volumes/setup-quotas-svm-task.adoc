@@ -1,0 +1,62 @@
+---
+permalink: volumes/setup-quotas-svm-task.html 
+sidebar: sidebar 
+keywords: set up, quotas on svm 
+summary: É possível configurar cotas em uma nova SVM para gerenciar e monitorar a utilização de recursos. 
+---
+= Configure cotas em um SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É possível configurar cotas em uma nova SVM para gerenciar e monitorar a utilização de recursos.
+
+.Sobre esta tarefa
+Em alto nível, há várias etapas envolvidas na configuração de cotas, incluindo:
+
+. Crie uma política de quota
+. Adicione as regras de cota à política
+. Atribua a política ao SVM
+. Inicialize as cotas em cada FlexVol volume no SVM
+
+
+.Passos
+. Digite o comando `vserver show -instance` para exibir o nome da política de cota padrão criada automaticamente quando o SVM foi criado.
++
+Se um nome não foi especificado quando o SVM foi criado, o nome será "padrão". Você pode usar o `vserver quota policy rename` comando para dar um nome à política padrão.
+
++
+[NOTE]
+====
+Você também pode criar uma nova política usando o `volume quota policy create` comando.
+
+====
+. Use o `volume quota policy rule create` comando para criar _any_ das seguintes regras de cota para cada volume na SVM:
++
+** Regras de cota padrão para todos os usuários
+** Regras de quota explícitas para utilizadores específicos
+** Regras de cota padrão para todos os grupos
+** Regras de quota explícitas para grupos específicos
+** Regras de cota padrão para todos os qtrees
+** Regras de cota explícitas para qtrees específicos
+
+
+. Use o `volume quota policy rule show` comando para verificar se as regras de cota estão configuradas corretamente.
+. Se você estiver trabalhando em uma nova política, use o `vserver modify` comando para atribuir a nova política ao SVM.
+. Use o `volume quota on` comando para inicializar as cotas em cada volume na SVM.
++
+Você pode monitorar o processo de inicialização das seguintes maneiras:
+
++
+** Ao utilizar o `volume quota on` comando, pode adicionar o `-foreground` parâmetro para executar a quota no trabalho em primeiro plano. (Por padrão, o trabalho é executado em segundo plano.)
++
+Quando o trabalho é executado em segundo plano, você pode monitorar seu progresso usando o `job show` comando.
+
+** Você pode usar o `volume quota show` comando para monitorar o status da inicialização da cota.
+
+
+. Use o `volume quota show -instance` comando para verificar se há erros de inicialização, como regras de cota que não foram inicializadas.
+. Use o `volume quota report` comando para exibir um relatório de cota para garantir que as cotas aplicadas correspondam às suas expetativa.
+

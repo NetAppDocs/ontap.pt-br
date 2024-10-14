@@ -1,0 +1,51 @@
+---
+sidebar: sidebar 
+permalink: s3-snapmirror/takeover-local-destination-task.html 
+keywords: takeover and serve data from the destination bucket, local cluster, s3 snapmirror relationship 
+summary: Se os dados em um bucket de origem ficarem indisponíveis, você poderá interromper a relação do SnapMirror para tornar o bucket de destino gravável e começar a fornecer dados. 
+---
+= Takeover e fornecimento de dados do bucket do destino (cluster local)
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se os dados em um bucket de origem ficarem indisponíveis, você poderá interromper a relação do SnapMirror para tornar o bucket de destino gravável e começar a fornecer dados.
+
+.Sobre esta tarefa
+Quando uma operação de aquisição é executada, o bucket de origem é convertido em somente leitura e o bucket de destino original é convertido em leitura-gravação, revertendo assim a relação do SnapMirror S3.
+
+Quando o bucket de origem desativado estiver disponível novamente, o SnapMirror S3 ressincroniza automaticamente o conteúdo dos dois buckets. Não é necessário ressincronizar explicitamente a relação, como é necessário para implantações padrão de volume SnapMirror.
+
+Se o intervalo de destino estiver em um cluster remoto, a operação de aquisição deve ser iniciada a partir do cluster remoto.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+Faça failover do bucket indisponível e comece a fornecer dados:
+
+. Clique em *proteção > relacionamentos* e selecione *SnapMirror S3*.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"]em , selecione *failover* e, em seguida, clique em *failover*.
+
+
+--
+.CLI
+--
+. Inicie uma operação de failover para o bucket de destino:
+`snapmirror failover start -destination-path _svm_name_:/bucket/_bucket_name_`
+. Verifique o status da operação de failover:
+`snapmirror show -fields status`
+
+
+.Exemplo
+`clusterA::> snapmirror failover start -destination-path vs1:/bucket/test-bucket-mirror`
+
+--
+====

@@ -1,0 +1,107 @@
+---
+permalink: s3-config/create-s3-object-store-server-task.html 
+sidebar: sidebar 
+keywords: tr-4814, create, s3 object, store, server 
+summary: O servidor de armazenamento de objetos ONTAP gerencia dados como objetos S3, em vez de armazenamento de arquivos ou blocos fornecido pelos servidores ONTAP nas e SAN. 
+---
+= Crie o servidor de armazenamento de objetos S3
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O servidor de armazenamento de objetos ONTAP gerencia dados como objetos S3, em vez de armazenamento de arquivos ou blocos fornecido pelos servidores ONTAP nas e SAN.
+
+.Antes de começar
+Você deve estar preparado para inserir o nome do servidor S3 como um nome de domínio totalmente qualificado (FQDN), que os clientes usarão para o acesso S3. O FQDN não deve começar com um nome de intervalo. Ao acessar buckets usando o estilo virtual hospedado, o nome do servidor será usado como `mydomain.com`. Por exemplo, `bucketname.mydomain.com`.
+
+Você deve ter um certificado de CA autoassinado (criado em etapas anteriores) ou um certificado assinado por um fornecedor de CA externo. Um certificado de CA não é necessário para um caso de uso local de disposição em camadas, em que o tráfego IP está passando apenas pelas LIFs de cluster.
+
+.Sobre esta tarefa
+Quando um servidor de armazenamento de objetos é criado, um usuário raiz com UID 0 é criado. Nenhuma chave de acesso ou chave secreta é gerada para este usuário raiz. O administrador do ONTAP deve executar o `object-store-server users regenerate-keys` comando para definir a chave de acesso e a chave secreta para esse usuário.
+
+[NOTE]
+====
+Como uma prática recomendada do NetApp, não use esse usuário root. Qualquer aplicativo cliente que use a chave de acesso ou chave secreta do usuário raiz tem acesso total a todos os buckets e objetos no armazenamento de objetos.
+
+====
+Consulte as `vserver object-store-server` páginas de manual para obter opções adicionais de configuração e exibição.
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+Use este procedimento se estiver adicionando um servidor S3 a uma VM de armazenamento existente. Para adicionar um servidor S3 a uma nova VM de armazenamento, link:create-svm-s3-task.html["Criar um SVM de storage em S3"]consulte .
+
+Você deve estar preparado para inserir endereços IP para dados de função de interface.
+
+. Habilite o S3 em uma VM de storage existente.
++
+.. Selecione a VM de armazenamento: Clique em *Storage > Storage VMs*, selecione uma VM de armazenamento, clique em *Settings* e, em seguida, clique em image:icon_gear.gif["Ícone ações"]*S3*.
+.. Clique em *Ativar S3* e, em seguida, introduza o nome do servidor S3.
+.. Selecione o tipo de certificado.
++
+Se você selecionar um certificado gerado pelo sistema ou um de seu, ele será necessário para acesso ao cliente.
+
+.. Introduza as interfaces de rede.
+
+
+. Se você selecionou o certificado gerado pelo sistema, as informações do certificado serão exibidas quando a nova criação da VM de armazenamento for confirmada. Clique em *Download* e salve-o para acesso ao cliente.
++
+** A chave secreta não será exibida novamente.
+** Se você precisar das informações do certificado novamente: Clique em *armazenamento > armazenamento de VMs*, selecione a VM de armazenamento e clique em *Configurações*.
+
+
+
+
+--
+.CLI
+--
+. Crie o servidor S3:
++
+`vserver object-store-server create -vserver _svm_name_ -object-store-server _s3_server_fqdn_ -certificate-name _server_certificate_name_ -comment _text_ [additional_options]`
+
++
+Você pode especificar opções adicionais ao criar o servidor S3 ou a qualquer momento mais tarde.
+
++
+** Se você estiver configurando a disposição em categorias locais, o nome do SVM pode ser um nome de data SVM ou SVM do sistema (cluster).
+** O nome do certificado deve ser o nome do certificado do servidor (usuário final ou certificado de folha) e não o certificado de CA do servidor (certificado de CA intermediário ou raiz).
+** O HTTPS é ativado por padrão na porta 443. Pode alterar o número da porta com a `-secure-listener-port` opção.
++
+Quando o HTTPS está ativado, os certificados de CA são necessários para a integração correta com SSL/TLS. A partir do ONTAP 9.15,1, o TLS 1,3 é compatível com armazenamento de objetos S3.
+
+** O HTTP está desativado por padrão. Quando ativado, o servidor escuta na porta 80. Você pode ativá-lo com a `-is-http-enabled` opção ou alterar o número da porta com a `-listener-port` opção.
++
+Quando o HTTP está ativado, a solicitação e as respostas são enviadas pela rede em texto não criptografado.
+
+
+
+. Verifique se o S3 está configurado:
++
+`vserver object-store-server show`
+
+
+
+.Exemplo
+Este comando verifica os valores de configuração de todos os servidores de armazenamento de objetos:
+
+[listing]
+----
+cluster1::> vserver object-store-server show
+
+            Vserver: vs1
+
+                      Object Store Server Name: s3.example.com
+                          Administrative State: up
+                        Listener Port For HTTP: 80
+                Secure Listener Port For HTTPS: 443
+                                  HTTP Enabled: false
+                                 HTTPS Enabled: true
+             Certificate for HTTPS Connections: svm1_ca
+                                       Comment: Server comment
+----
+--
+====

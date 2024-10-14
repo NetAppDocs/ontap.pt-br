@@ -1,0 +1,124 @@
+---
+sidebar: sidebar 
+permalink: networking/add_or_remove_ports_from_a_broadcast_domain.html 
+keywords: adding, add, create, creating, remove, removing, delete, deleting, port, broadcast, domain, reachability, repair, physical, switch, configuration, add or remove ports from a broadcast domain, system manager, reassign, broadcast domain, port, unassign, move, change 
+summary: Adicionar e remover manualmente portas de domínios de broadcast não é necessário ou recomendado 
+---
+= Adicionar ou remover portas de um domínio de broadcast (ONTAP 9.8 e posterior)
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os domínios de broadcast são criados automaticamente durante a operação de criação ou associação de cluster. Não é necessário remover manualmente as portas dos domínios de broadcast.
+
+Se a acessibilidade da porta de rede tiver sido alterada, seja por meio de conetividade de rede física ou configuração de switch, e uma porta de rede pertencer a um domínio de broadcast diferente, consulte o seguinte tópico:
+
+link:repair_port_reachability.html["Acessibilidade da porta de reparo"]
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.14,1, você pode usar o Gerenciador do sistema para reatribuir portas Ethernet em domínios de broadcast. É recomendável atribuir todas as portas Ethernet a um domínio de broadcast. Portanto, se você cancelar a atribuição de uma porta Ethernet de um domínio de broadcast, será necessário reatribuí-la a um domínio de broadcast diferente.
+
+.Passos
+Para reatribuir portas Ethernet, execute as seguintes etapas:
+
+. Selecione *rede > Visão geral*.
+. Na seção *Broadcast Domains*, selecione image:icon_kabob.gif["Ícone de opções do menu"] ao lado do nome de domínio.
+. No menu suspenso, selecione *Editar*.
+. Na página *Editar domínio de transmissão*, desmarque as portas Ethernet que deseja reatribuir a outro domínio.
+. Para cada porta desmarcada, a janela *Reatribuir porta Ethernet* é exibida. Selecione o domínio de broadcast ao qual deseja reatribuir a porta e selecione *Reatribuir*.
+. Selecione todas as portas que você deseja atribuir ao domínio de broadcast atual e salve as alterações.
+
+
+--
+.CLI
+--
+Se a acessibilidade da porta de rede tiver sido alterada, seja por meio de conetividade de rede física ou configuração de switch, e uma porta de rede pertencer a um domínio de broadcast diferente, consulte o seguinte tópico:
+
+link:repair_port_reachability.html["Acessibilidade da porta de reparo"]
+
+Como alternativa, você pode adicionar ou remover portas manualmente de domínios de broadcast usando o `network port broadcast-domain add-ports` comando ou `network port broadcast-domain remove-ports` .
+
+.Antes de começar
+* Você deve ser um administrador de cluster para executar esta tarefa.
+* As portas que pretende adicionar a um domínio de difusão não devem pertencer a outro domínio de difusão.
+* As portas que já pertencem a um grupo de interfaces não podem ser adicionadas individualmente a um domínio de broadcast.
+
+
+.Sobre esta tarefa
+As regras a seguir se aplicam ao adicionar e remover portas de rede:
+
+|===
+
+
+| Ao adicionar portas... | Ao remover portas... 
+
+
+| As portas podem ser portas de rede, VLANs ou grupos de interface (ifgrps). | N/A. 
+
+
+| As portas são adicionadas ao grupo de failover definido pelo sistema do domínio de broadcast. | As portas são removidas de todos os grupos de failover no domínio de broadcast. 
+
+
+| A MTU das portas é atualizada para o valor MTU definido no domínio de broadcast. | A MTU das portas não muda. 
+
+
+| O IPspace das portas é atualizado para o valor IPspace do domínio de broadcast. | As portas são movidas para o espaço IPspace 'padrão' sem atributo de domínio de broadcast. 
+|===
+
+NOTE: Se você remover a última porta membro de um grupo de interfaces usando o `network port ifgrp remove-port` comando, isso fará com que a porta do grupo de interfaces seja removida do domínio de broadcast porque uma porta de grupo de interfaces vazia não é permitida em um domínio de broadcast.
+
+.Passos
+. Exiba as portas que estão atualmente atribuídas ou não atribuídas a um domínio de broadcast usando o `network port show` comando.
+. Adicionar ou remover portas de rede do domínio de broadcast:
++
+[cols="40,60"]
+|===
+
+
+| Se você quiser... | Utilizar... 
+
+
+ a| 
+Adicionar portas a um domínio de broadcast
+ a| 
+`network port broadcast-domain add-ports`
+
+
+
+ a| 
+Remover portas de um domínio de broadcast
+ a| 
+`network port broadcast-domain remove-ports`
+
+|===
+. Verifique se as portas foram adicionadas ou removidas do domínio de broadcast:
++
+`network port show`
+
+
+
+Para obter mais informações sobre esses comandos, consulte https://docs.netapp.com/us-en/ontap-cli["Referência do comando ONTAP"^]
+
+.Exemplos de adição e remoção de portas
+O comando a seguir adiciona a porta e0g no cluster de nó-1-01 e a porta e0g no cluster de nó-1-02 para transmitir o domínio bcast1 no IPspace padrão:
+
+`cluster-1::> network port broadcast-domain add-ports -broadcast-domain bcast1 -ports cluster-1-01:e0g,cluster1-02:e0g`
+
+O comando a seguir adiciona duas portas de cluster ao cluster de domínio de broadcast no Cluster IPspace:
+
+`cluster-1::> network port broadcast-domain add-ports -broadcast-domain Cluster -ports cluster-2-03:e0f,cluster2-04:e0f -ipspace Cluster`
+
+O comando a seguir remove a porta e0e no nó cluster1-01 do domínio de broadcast bcast1 no IPspace padrão:
+
+`cluster-1::> network port broadcast-domain remove-ports -broadcast-domain bcast1 -ports cluster-1-01:e0e`
+
+--
+====

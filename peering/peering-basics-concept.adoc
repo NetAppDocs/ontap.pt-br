@@ -1,0 +1,28 @@
+---
+permalink: peering/peering-basics-concept.html 
+sidebar: sidebar 
+keywords: peer, basics 
+summary: 'Clusters e SVMs em relacionamentos de pares se comunicam pela rede entre clusters usando interfaces lógicas (LIFs) entre clusters. Um LIF é um LIF que suporta o serviço de interface de rede "entre clusters-core" e é normalmente criado usando a política de serviço de interface de rede "falha-clusters". É necessário criar LIFs entre clusters em cada nó nos clusters que estão sendo perados.' 
+---
+= Noções básicas de peering
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve criar relacionamentos _peer_ entre clusters de origem e destino e entre SVMs de origem e destino antes de poder replicar cópias Snapshot usando o SnapMirror. Um relacionamento de pares define conexões de rede que permitem que clusters e SVMs troquem dados com segurança.
+
+Clusters e SVMs em relações entre pares se comunicam pela rede entre clusters usando _interfaces lógicas (LIFs)._ um LIF entre clusters é um LIF que suporta o serviço de interface de rede "entre clusters-core" e é normalmente criado usando a política de serviço de interface de rede "default-clusters". É necessário criar LIFs entre clusters em cada nó nos clusters que estão sendo perados.
+
+Os LIFs usam rotas que pertencem ao SVM do sistema ao qual são atribuídos. O ONTAP cria automaticamente um sistema SVM para comunicações em nível de cluster em um espaço de IPspace.
+
+Topologias de fan-out e cascata são suportadas. Em uma topologia em cascata, você só precisa criar redes entre clusters primários e secundários e entre clusters secundários e secundários. Não é necessário criar uma rede entre clusters primário e terciário.
+
+[NOTE]
+====
+É possível (mas não aconselhável) que um administrador remova o serviço entre clusters da política de serviços padrão entre clusters. Se isso ocorrer, LIFs criadas usando "default-clusters" não serão, na verdade, LIFs entre clusters. Para confirmar que a política de serviço padrão contém o serviço entre clusters-core, use o seguinte comando:
+
+`network interface service-policy show -policy default-intercluster`
+
+====

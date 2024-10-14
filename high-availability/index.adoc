@@ -1,0 +1,56 @@
+---
+sidebar: sidebar 
+permalink: high-availability/index.html 
+keywords: high availability, ha, overview 
+summary: Takeover é o processo no qual um nó assume o controle do storage de seu parceiro. Giveback é o processo em que o armazenamento é devolvido ao parceiro. 
+---
+= Visão geral do gerenciamento do par HA
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Os nós de cluster são configurados em pares de alta disponibilidade (HA) para tolerância de falhas e operações ininterruptas. Se um nó falhar ou se você precisar reduzir um nó para manutenção de rotina, o parceiro poderá assumir o storage e continuar fornecendo dados a partir dele. O parceiro devolve o storage quando o nó é colocado de volta na linha.
+
+A configuração do controlador de par de HA consiste em um par de controladores de storage FAS/AFF correspondentes (nó local e nó parceiro). Cada um desses nós é conectado às gavetas de disco do outro. Quando um nó em um par de HA encontra um erro e pára o processamento de dados, o parceiro deteta o status com falha do parceiro e assume todo o Data Processing desse controlador.
+
+_Takeover_ é o processo no qual um nó assume o controle do storage de seu parceiro.
+
+_Giveback_ é o processo em que o armazenamento é devolvido ao parceiro.
+
+Por padrão, as aquisições ocorrem automaticamente em qualquer uma das seguintes situações:
+
+* Uma falha de software ou sistema ocorre em um nó que leva a um pânico. Faz failover automático de controladoras de par de HA para o nó de parceiro. Depois que o parceiro se recuperar do pânico e inicializar, o nó automaticamente executa um giveback, retornando o parceiro à operação normal.
+* Uma falha do sistema ocorre em um nó e o nó não pode reinicializar. Por exemplo, quando um nó falha devido à perda de energia, os controladores de par de HA fazem failover automático para o nó do parceiro e fornecem dados do controlador de storage que sobreviveu.
+
+
+
+NOTE: Se o storage de um nó também perder energia ao mesmo tempo, um takeover padrão não será possível.
+
+* As mensagens Heartbeat não são recebidas do parceiro do nó. Isso pode acontecer se o parceiro tiver sofrido uma falha de hardware ou software (por exemplo, uma falha de interconexão) que não resultou em pânico, mas ainda impediu que ele funcionasse corretamente.
+* Você interrompe um dos nós sem usar o `-f` parâmetro ou `-inhibit-takeover true`.
+
+
+
+NOTE: Em um cluster de dois nós com o cluster HA ativado, interromper ou reinicializar um nó usando o `‑inhibit‑takeover true` parâmetro faz com que ambos os nós parem de fornecer dados, a menos que você primeiro desative a HA do cluster e atribua o epsilon ao nó que você deseja permanecer online.
+
+* Você reinicializa um dos nós sem usar o `‑inhibit‑takeover true` parâmetro. (O `‑onboot` parâmetro `storage failover` do comando está ativado por padrão.)
+* O dispositivo de gerenciamento remoto (processador de serviço) deteta falha do nó do parceiro. Isso não se aplica se você desabilitar a aquisição assistida por hardware.
+
+
+Você também pode iniciar manualmente as aquisições com o `storage failover takeover` comando.
+
+
+
+== Melhorias no diagnóstico e resiliência do cluster
+
+A partir do ONTAP 9.9,1, as seguintes adições de resiliência e diagnóstico melhoram a operação do cluster:
+
+* *Monitoramento e evitação de portas*: Em configurações de cluster sem switch de dois nós, o sistema evita portas que sofrem perda total de pacotes (perda de conetividade). No ONTAP 9.8,1 e anterior, esta funcionalidade só estava disponível em configurações comutadas.
+* * Failover automático de nó*: Se um nó não puder servir dados em sua rede de cluster, esse nó não deve possuir nenhum disco. Em vez disso, seu parceiro de HA deve assumir, se o parceiro for saudável.
+* *Comandos para analisar problemas de conetividade*: Use o seguinte comando para exibir quais caminhos de cluster estão enfrentando perda de pacotes: `network interface check cluster-connectivity show`
+

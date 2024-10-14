@@ -1,0 +1,35 @@
+---
+permalink: system-admin/methods-extended-queries-concept.html 
+sidebar: sidebar 
+keywords: method, extended, queries, operations, perform, specified, values 
+summary: Você pode usar consultas estendidas para corresponder e executar operações em objetos que tenham valores especificados. 
+---
+= Métodos de uso de consultas estendidas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar consultas estendidas para corresponder e executar operações em objetos que tenham valores especificados.
+
+Você especifica consultas estendidas, anexando-as entre colchetes encaracolados ("colchetes"). Uma consulta estendida deve ser especificada como o primeiro argumento após o nome do comando, antes de quaisquer outros parâmetros. Por exemplo, para definir offline todos os volumes cujos nomes incluem a cadeia de carateres `tmp`, execute o comando no exemplo a seguir:
+
+[listing]
+----
+cluster1::> volume modify {-volume *tmp*} -state offline
+----
+Consultas estendidas geralmente são úteis apenas com `modify` comandos e `delete`. Eles não têm nenhum significado em `create` ou `show` comandos.
+
+A combinação de consultas e operações de modificação é uma ferramenta útil. No entanto, ele pode potencialmente causar confusão e erros se implementado incorretamente. Por exemplo, usar o comando (privilégio avançado) `system node image modify` para definir a imagem de software padrão de um nó automaticamente define a outra imagem de software para não ser a padrão. O comando no exemplo a seguir é efetivamente uma operação nula:
+
+[listing]
+----
+cluster1::*> system node image modify {-isdefault true} -isdefault false
+----
+Este comando define a imagem padrão atual como a imagem não padrão e, em seguida, define a nova imagem padrão (a imagem não padrão anterior) para a imagem não padrão, resultando na retenção das configurações padrão originais. Para executar a operação corretamente, você pode usar o comando como indicado no exemplo a seguir:
+
+[listing]
+----
+cluster1::*> system node image modify {-iscurrent false} -isdefault true
+----

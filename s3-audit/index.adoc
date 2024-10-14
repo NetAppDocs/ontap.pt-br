@@ -1,0 +1,69 @@
+---
+permalink: s3-audit/index.html 
+sidebar: sidebar 
+keywords: S3, audit, management events 
+summary: este artigo explica como auditar dados e eventos de gerenciamento em ambientes ONTAP S3. 
+---
+= Auditoria S3 eventos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.10,1, você pode auditar dados e eventos de gerenciamento em ambientes ONTAP S3. A funcionalidade de auditoria do S3 é semelhante aos recursos de auditoria nas existentes, e a auditoria do S3 e nas pode coexistir em um cluster.
+
+Quando você cria e ativa uma configuração de auditoria do S3 em um SVM, os eventos do S3 são registrados em um arquivo de log. O pode especificar os seguintes eventos a registar:
+
+* Eventos de acesso a objetos (dados)
++
+GetObject, PutObject e DeleteObject
+
+* Eventos de gestão
++
+PutBucket e DeleteBucket
+
+
+
+O formato de log é JavaScript Object Notation (JSON).
+
+O limite combinado para configurações de auditoria S3 e NFS é de 50 SVMs por cluster.
+
+É necessário o seguinte pacote de licença:
+
+* Pacote básico, para protocolo e storage ONTAP S3
+
+
+Para obter mais informações, link:../nas-audit/auditing-process-concept.html["Como funciona o processo de auditoria do ONTAP"]consulte .
+
+
+
+== Auditoria garantida
+
+Por padrão, a auditoria S3 e nas é garantida. O ONTAP garante que todos os eventos de acesso de bucket auditáveis sejam registrados, mesmo que um nó não esteja disponível. Uma operação de bucket solicitada não pode ser concluída até que o Registro de auditoria dessa operação seja salvo no volume de estadiamento no armazenamento persistente. Se os Registros de auditoria não puderem ser confirmados nos arquivos de teste, seja por espaço insuficiente ou por causa de outros problemas, as operações do cliente serão negadas.
+
+
+
+== Requisitos de espaço para auditoria
+
+No sistema de auditoria do ONTAP, os Registros de auditoria são armazenados inicialmente em arquivos de teste binário em nós individuais. Periodicamente, eles são consolidados e convertidos em logs de eventos legíveis pelo usuário, que são armazenados no diretório de log de eventos de auditoria do SVM.
+
+Os arquivos de estadiamento são armazenados em um volume de estadiamento dedicado, que é criado pelo ONTAP quando a configuração de auditoria é criada. Há um volume de estadiamento por agregado.
+
+Você precisa Planejar espaço disponível suficiente na configuração de auditoria:
+
+* Para os volumes de estadiamento em agregados que contêm buckets auditados.
+* Para o volume que contém o diretório onde os logs de eventos convertidos são armazenados.
+
+
+Você pode controlar o número de logs de eventos e, portanto, o espaço disponível no volume, usando um de dois métodos ao criar a configuração de auditoria S3:
+
+* Um limite numérico; o `-rotate-limit` parâmetro controla o número mínimo de arquivos de auditoria que devem ser preservados.
+* Um limite de tempo; o `-retention-duration` parâmetro controla o período máximo que os arquivos podem ser preservados.
+
+
+Em ambos os parâmetros, uma vez que o configurado é excedido, os arquivos de auditoria mais antigos podem ser excluídos para abrir espaço para os mais novos. Para ambos os parâmetros, o valor é 0, indicando que todos os arquivos devem ser mantidos. Para garantir espaço suficiente, é, portanto, uma prática recomendada definir um dos parâmetros para um valor não zero.
+
+Devido à auditoria garantida, se o espaço disponível para os dados de auditoria acabar antes do limite de rotação, os dados de auditoria mais recentes não podem ser criados, resultando em falha no acesso dos clientes aos dados. Portanto, a escolha desse valor e do espaço alocado à auditoria deve ser escolhida cuidadosamente, e você deve responder a avisos sobre o espaço disponível do sistema de auditoria.
+
+Para obter mais informações, link:../nas-audit/basic-auditing-concept.html["Conceitos básicos de auditoria"]consulte .

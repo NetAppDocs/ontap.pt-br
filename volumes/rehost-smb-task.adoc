@@ -1,0 +1,88 @@
+---
+permalink: volumes/rehost-smb-task.html 
+sidebar: sidebar 
+keywords: rehost, cifs volumes, smb 
+summary: Rehospede um volume que forneça dados usando o protocolo SMB. 
+---
+= Rehospede um volume SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É possível rehospedar um volume que serve dados usando o protocolo SMB. Para permitir que os clientes continuem acessando os dados após a operação de rehospedagem, você deve configurar manualmente as políticas e as regras associadas.
+
+.Sobre esta tarefa
+* A rehospedagem é uma operação disruptiva.
+* Se a operação de rehospedagem falhar, talvez seja necessário reconfigurar as políticas de volume e as regras associadas no volume de origem.
+* Se os domínios SVM de origem e SVM de destino forem diferentes, você poderá perder o acesso aos objetos no volume.
+* A partir do ONTAP 9.8, é suportado o realojamento de um volume com encriptação de volume NetApp (NVE). Se você estiver usando um gerenciador de chaves integrado, os metadados criptografados serão modificados durante a operação de rehost. Os dados do utilizador não são alterados.
++
+Se você estiver usando o ONTAP 9.8 ou anterior, será necessário descriptografar o volume antes de executar a operação de rehost.
+
+
+
+* Quando o SVM de origem tiver usuários e grupos locais, as permissões para os arquivos e diretórios (ACLs) definidos não serão mais efetivas após a operação de rehost de volume.
++
+O mesmo se aplica às ACLs de auditoria (SACLs)
+
+* Após a operação de rehost, as seguintes políticas de volume, regras de política e configurações são perdidas do volume de origem e devem ser reconfiguradas manualmente no volume rehospedado:
++
+** Políticas de exportação de volume e qtree
+** Políticas de antivírus
+** Política de eficiência de volume
+** Políticas de qualidade do serviço (QoS)
+** Políticas do Snapshot
+** Regras de quota
+** política e regras de exportação de configuração de serviços de nomes e de switch ns
+** IDs de usuário e grupo
+
+
+
+
+.Antes de começar
+* O volume deve estar online.
+* As operações de gerenciamento de volumes, como movimentação de volume ou movimentação de LUN, não devem estar em execução.
+* O acesso aos dados ao volume que está sendo rehospedado deve ser interrompido.
+* A configuração do ns-switch e dos serviços de nome do SVM de destino deve ser configurada para dar suporte ao acesso aos dados do volume de rehospedagem.
+* O SVM de origem e o SVM de destino devem ter o mesmo domínio do active Directory e do realmDNS.
+* O ID de usuário e o ID de grupo do volume devem estar disponíveis no SVM de destino ou alterados no volume de hospedagem.
++
+
+NOTE: Se os usuários e grupos locais estiverem configurados e houver arquivos e diretórios nesse volume com permissões definidas para esses usuários ou grupos, essas permissões não serão mais efetivas.
+
+
+
+.Passos
+. Registre informações sobre os compartilhamentos CIFS para evitar a perda de informações sobre compartilhamentos CIFS caso a operação de rehost de volume falhe.
+. Desmontar o volume do volume pai:
++
+`volume unmount`
+
+. Mude para o nível de privilégio avançado:
++
+`set -privilege advanced`
+
+. Rehospede o volume no SVM de destino:
++
+`volume rehost -vserver _source_svm_ -volume _vol_name_ -destination-vserver _destination_svm_`
+
+. Monte o volume sob o caminho de junção apropriado no SVM de destino:
++
+`volume mount`
+
+. Criar compartilhamentos CIFS para o volume rehospedado:
++
+`vserver cifs share create`
+
+. Se os domínios DNS diferirem entre a SVM de origem e a SVM de destino, crie novos usuários e grupos.
+. Atualize o cliente CIFS com os novos LIFs SVM de destino e o caminho de junção para o volume rehospedado.
+
+
+.Depois de terminar
+Você deve reconfigurar manualmente as políticas e as regras associadas no volume rehospedado.
+
+https://docs.netapp.com/us-en/ontap-system-manager-classic/smb-config/index.html["Configuração SMB"]
+
+https://docs.netapp.com/us-en/ontap-system-manager-classic/nas-multiprotocol-config/index.html["Configuração multiprotocolo SMB e NFS"]

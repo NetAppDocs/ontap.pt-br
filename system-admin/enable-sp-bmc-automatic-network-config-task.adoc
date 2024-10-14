@@ -1,0 +1,44 @@
+---
+permalink: system-admin/enable-sp-bmc-automatic-network-config-task.html 
+sidebar: sidebar 
+keywords: enable, sp, bmc, automatic, network, configuration 
+summary: É preferível ativar o SP para utilizar a configuração automática de rede em vez de configurar manualmente a rede SP. Como a configuração automática de rede do SP é de todo o cluster, você não precisa gerenciar manualmente a rede SP para nós individuais. 
+---
+= Ative a configuração automática de rede SP/BMC
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É preferível ativar o SP para utilizar a configuração automática de rede em vez de configurar manualmente a rede SP. Como a configuração automática de rede do SP é de todo o cluster, você não precisa gerenciar manualmente a rede SP para nós individuais.
+
+[NOTE]
+====
+Esta tarefa aplica-se tanto ao SP como ao BMC.
+
+====
+* A sub-rede que você deseja usar para a configuração automática de rede SP já deve estar definida no cluster e não deve ter conflitos de recursos com a interface de rede SP.
++
+O `network subnet show` comando exibe informações de sub-rede para o cluster.
+
++
+O parâmetro que força a associação de sub-rede (o `-force-update-lif-associations` parâmetro `network subnet` dos comandos) é suportado apenas em LIFs de rede e não na interface de rede SP.
+
+* Se você quiser usar conexões IPv6 para o SP, o IPv6 já deve estar configurado e habilitado para o ONTAP.
++
+O `network options ipv6 show` comando exibe o estado atual de IPv6 configurações para ONTAP.
+
+
+
+.Passos
+. Especifique a família de endereços IPv4 ou IPv6 e o nome da sub-rede que você deseja que o SP use usando o `system service-processor network auto-configuration enable` comando.
+. Apresentar a configuração automática da rede SP utilizando o `system service-processor network auto-configuration show` comando.
+. Se, posteriormente, pretender desativar ou reativar a interface de rede SP IPv4 ou IPv6 para todos os nós que estão em quórum, utilize o `system service-processor network modify` comando com os `-address-family`  [`true`|`false`parâmetros[`IPv4`|`IPv6` ] e `-enable`].
++
+Quando a configuração automática de rede do SP está ativada, não é possível modificar o endereço IP do SP para um nó que está no quórum. Só pode ativar ou desativar a interface de rede SP IPv4 ou IPv6.
+
++
+Se um nó estiver fora do quórum, você poderá modificar a configuração de rede SP do nó, incluindo o endereço IP do SP, executando `system service-processor network modify` a partir do nó e confirmando que deseja substituir a configuração automática de rede do SP para o nó. No entanto, quando o nó se junta ao quórum, a reconfiguração automática do SP ocorre para o nó com base na sub-rede especificada.
+
+

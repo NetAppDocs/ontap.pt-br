@@ -1,0 +1,132 @@
+---
+permalink: smb-hyper-v-sql/smb-share-config-worksheet-reference.html 
+sidebar: sidebar 
+keywords: complete, smb, share, configuration, worksheet, information, settings 
+summary: Use esta Planilha para Registrar os valores de que você precisa ao criar compartilhamentos SMB continuamente disponíveis para configurações do SQL Server e do Hyper-V sobre SMB. 
+---
+= Conclua a Planilha de configuração do compartilhamento SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Use esta Planilha para Registrar os valores de que você precisa ao criar compartilhamentos SMB continuamente disponíveis para configurações do SQL Server e do Hyper-V sobre SMB.
+
+
+
+== Informações sobre as propriedades de compartilhamentos SMB e configurações
+
+Para cada compartilhamento, você deve especificar as seguintes informações:
+
+* Nome da máquina virtual de storage (SVM)
++
+O nome do SVM é o mesmo para todos os compartilhamentos
+
+* Nome da partilha
+* Caminho
+* Compartilhar propriedades
++
+Você deve configurar as duas propriedades de compartilhamento a seguir:
+
++
+** `oplocks`
+** `continuously-available`
+
+
+
+
+As seguintes propriedades de compartilhamento não devem ser definidas:
+
+* `homedirectory attributecache`
+* `branchcache`
+* `access-based-enumeration`
++
+** Links simbólicos devem ser desativados (o valor para o `-symlink-properties` parâmetro deve ser nulo ["]).
+
+
+
+
+
+
+== Informações sobre caminhos de compartilhamento
+
+Se você estiver usando o VSS remoto para fazer backup de arquivos Hyper-V, a escolha de caminhos de compartilhamento a serem usados ao fazer conexões SMB dos servidores Hyper-V para os locais de armazenamento onde os arquivos da máquina virtual são armazenados é importante. Embora os compartilhamentos possam ser criados em qualquer ponto do namespace, os caminhos para compartilhamentos que os servidores Hyper-V usam não devem conter volumes juntados. As operações de cópia sombra não podem ser executadas em caminhos de partilha que contenham pontos de junção.
+
+O SQL Server não pode cruzar junções ao criar a estrutura do diretório do banco de dados. Você não deve criar caminhos de compartilhamento para o servidor SQL que contenham pontos de junção.
+
+Por exemplo, dado o namespace mostrado, se você quiser armazenar arquivos de máquina virtual ou arquivos de banco de dados nos volumes "'vol1", "'vol2", "'vol3"" e "'vol4", você deve criar compartilhamentos para os servidores de aplicativos nos seguintes caminhos: `/data1/vol1`, , `/data1/vol2`, `/data2/vol3` E `/data2/vol4`.
+
+[listing]
+----
+
+                     Junction                       Junction
+Vserver Volume       Active   Junction Path         Path Source
+------- ------------ -------- -------------------   -----------
+vs1     data1         true     /data1               RW_volume
+vs1     vol1          true     /data1/vol1          RW_volume
+vs1     vol2          true     /data1/vol2          RW_volume
+vs1     data2         true     /data2               RW_volume
+vs1     vol3          true     /data2/vol3          RW_volume
+vs1     vol4          true     /data2/vol4          RW_volume
+----
+[NOTE]
+====
+Embora seja possível criar compartilhamentos `/data1` nos caminhos e `/data2` para gerenciamento administrativo, não é necessário configurar os servidores de aplicativos para usar esses compartilhamentos para armazenar dados.
+
+====
+
+
+== Folha de trabalho de planeamento
+
+|===
+| Tipos de informação | Valores 
+
+
+ a| 
+_Volume 1: Nome e caminho do compartilhamento SMB_
+ a| 
+
+
+
+ a| 
+_Volume 2: Nome e caminho do compartilhamento SMB_
+ a| 
+
+
+
+ a| 
+_Volume 3: Nome e caminho do compartilhamento SMB_
+ a| 
+
+
+
+ a| 
+_Volume 4: Nome e caminho do compartilhamento SMB_
+ a| 
+
+
+
+ a| 
+_Volume 5: Nome e caminho do compartilhamento SMB_
+ a| 
+
+
+
+ a| 
+_Volume 6: Nome e caminho do compartilhamento SMB_
+ a| 
+
+
+
+ a| 
+_Volume 7: Nome e caminho do compartilhamento SMB_
+ a| 
+
+
+
+ a| 
+_Volumes adicionais: Nomes e caminhos de compartilhamento SMB_
+ a| 
+
+|===

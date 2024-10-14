@@ -1,0 +1,140 @@
+---
+sidebar: sidebar 
+permalink: task_admin_add_a_volume.html 
+keywords: system manager, volume, storage, add, increase storage, NFS volume, create, add a volume, create a volume, access permissions 
+summary: Você pode criar um volume e adicioná-lo a uma VM de storage existente que esteja configurada para o serviço NFS ou SMB. 
+---
+= Adicione um volume
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode criar um volume e adicioná-lo a uma VM de storage existente que esteja configurada para o serviço NFS ou SMB.
+
+image:workflow_admin_add_a_volume.gif["Passos para adicionar um volume"]
+
+.Antes de começar
+* Uma VM de storage configurada para serviço NFS ou SMB deve existir no cluster.
+* A partir do ONTAP 9.13,1, você pode habilitar a análise de capacidade e o acompanhamento de atividades por padrão em novos volumes. No System Manager, você pode gerenciar as configurações padrão no nível de cluster ou VM de armazenamento. Para obter mais informações, https://docs.netapp.com/us-en/ontap/task_nas_file_system_analytics_enable.html["Ative a análise do sistema de ficheiros"]consulte .
+
+
+.Passos
+. Aceda a *armazenamento > volumes*.
+. image:icon_add.gif["Adicionar ícone"]Selecione .
+. Especifique um nome e tamanho para o volume.
+. Execute um dos seguintes passos:
++
+[cols="35,65"]
+|===
+
+
+| Selecione este botão... | Para executar esta ação... 
+
+
+| *Guardar* | O volume é criado e adicionado usando os padrões do sistema. Não são necessários passos adicionais. 
+
+
+| *Mais opções* | Avance para para para <<step5>>definir as especificações do volume. 
+|===
+. [[step5,Etapa 5]] o nome e o tamanho do volume são mostrados se você os especificou anteriormente. Caso contrário, introduza o nome e o tamanho.
+. Selecione uma VM de armazenamento na lista suspensa.
++
+Somente as VMs de storage configuradas com o protocolo NFS são listadas. Se apenas uma VM de armazenamento configurada com o protocolo NFS estiver disponível, o campo *Storage VM* não será exibido.
+
+. Para adicionar um cache para o volume remoto, selecione *Adicionar um cache para o volume remoto* e especifique os seguintes valores:
++
+** Selecione um cluster.
+** Selecione uma VM de storage.
+** Selecione o volume que pretende ser um volume de cache.
+
+
+. Na seção *armazenamento e Otimização*, especifique os seguintes valores:
++
+.. A capacidade do volume já é mostrada, mas você pode modificá-lo.
+.. No campo *nível de serviço de desempenho*, selecione um nível de serviço:
++
+[cols="60,40"]
+|===
+
+
+| Ao selecionar este nível de serviço... | Isso ocorre... 
+
+
+ a| 
+Um nível de serviço existente, como "Extreme", "Performance" ou "Value".
+
+Somente os níveis de serviço válidos para a plataforma do sistema (AFF, FAS ou outros) são exibidos.
+| Um nível local ou níveis são escolhidos automaticamente. Prossiga para <<step9>>. 
+
+
+| Personalizado | Avance para para para <<step8c>>definir um novo nível de serviço. 
+|===
+.. [[step8c, passo 8c]] começando com o ONTAP 9.9,1, você pode usar o Gerenciador do sistema para selecionar manualmente o nível local no qual deseja colocar o volume que você está criando (se você selecionou o nível de serviço "Personalizado").
++
+
+NOTE: Essa opção não estará disponível se você selecionar *Adicionar como cache para um volume remoto* ou *distribuir dados de volume pelo cluster* (veja abaixo).
+
++
+|===
+
+
+| Quando você faz esta escolha... | Você executa estes passos... 
+
+
+| *Colocação manual* | A colocação manual está ativada. A seleção *distribuir dados de volume através do cluster* está desativada (veja abaixo). Prossiga para <<step8d>>concluir o processo. 
+
+
+| Sem seleção | A colocação manual não está ativada. O nível local é selecionado automaticamente. Prossiga para <<step9>>. 
+|===
+.. [[step8d,Step 8d]] Selecione um nível local no menu suspenso.
+.. Selecione uma política de QoS.
++
+Selecione "existente" para escolher a partir de uma lista de políticas existentes ou selecione "novo" para introduzir as especificações de uma nova política.
+
+
+
+. [[step9,Etapa 9]] na seção *Opções de otimização*, determine se você deseja distribuir os dados de volume pelo cluster:
++
+[cols="40,60"]
+|===
+
+
+| Quando você faz esta escolha... | Isso ocorre... 
+
+
+| *Distribuir dados de volume pelo cluster* | O volume que você está adicionando se torna um volume FlexGroup. Esta opção não está disponível se tiver selecionado anteriormente *colocação manual*. 
+
+
+| Sem seleção | O volume que você está adicionando se torna um FlexVol volume por padrão. 
+|===
+. Na seção *permissões de acesso*, especifique as permissões de acesso para os protocolos para os quais o volume está configurado.
++
+Começando com ONTAP 9.11,1, o novo volume não será compartilhável por padrão. Você pode especificar as permissões de acesso padrão garantindo que as seguintes caixas de seleção estejam marcadas:
+
++
+** *Exportar via NGS*: Cria o volume com a política de exportação "falha" que concede aos usuários acesso total aos dados.
+** *Compartilhar via SMB/CIFS*: Cria um compartilhamento com um nome gerado automaticamente, que você pode editar. O acesso é concedido a "todos". Além disso, você pode especificar o nível de permissão.
+
+
+. Na seção *proteção*, especifique as proteções para o volume.
++
+** A partir do ONTAP 9.12,1, você pode selecionar *Ativar cópias snapshot (local)* e escolher uma política de cópia Snapshot em vez de usar o padrão.
+** Se você selecionar *Enable SnapMirror (local ou remoto)*, especifique a política de proteção e as configurações para o cluster de destino nas listas suspensas.
+
+
+. Selecione *Guardar*.
++
+O volume é criado e adicionado ao cluster e à VM de armazenamento.
+
++
+
+NOTE: Você também pode salvar as especificações desse volume em um Playbook do Ansible. Para obter mais detalhes, link:https://docs.netapp.com/us-en/ontap/task_use_ansible_playbooks_add_edit_volumes_luns.html["Use os Playbooks do Ansible para adicionar ou editar volumes ou LUNs"^]visite .
+
+

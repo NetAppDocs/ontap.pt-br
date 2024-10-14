@@ -1,0 +1,143 @@
+---
+sidebar: sidebar 
+permalink: high-availability/halt-reboot-node-wo-takeover-task.html 
+keywords: high availability pair, hair, inhibit-takeover, reboot, epsilon, HA 
+summary: Você interrompe ou reinicializa um nó em um cluster de dois nós sem iniciar o takeover quando executa determinada manutenção de hardware em um nó ou compartimento. Além disso, você deseja limitar o tempo mantendo o nó do parceiro ativo ou quando há problemas para impedir um takeover manual e manter os agregados e fornecendo dados. Além disso, se o suporte técnico estiver ajudando você na solução de problemas, eles podem fazer com que você execute este procedimento como parte desses esforços. 
+---
+= Interrompa ou reinicie um nó sem iniciar o takeover em um cluster de dois nós
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você interrompe ou reinicializa um nó em um cluster de dois nós sem iniciar o takeover quando executa determinada manutenção de hardware em um nó ou compartimento. Além disso, você deseja limitar o tempo mantendo o nó do parceiro ativo ou quando há problemas para impedir um takeover manual e manter os agregados e fornecendo dados. Além disso, se o suporte técnico estiver ajudando você na solução de problemas, eles podem fazer com que você execute este procedimento como parte desses esforços.
+
+.Sobre esta tarefa
+* Antes de inibir a aquisição (utilizando o `-inhibit-takeover true` parâmetro), desative a HA do cluster.
+
+
+[CAUTION]
+====
+* Em um cluster de dois nós, o cluster HA garante que a falha de um nó não desabilite o cluster. No entanto, se você não desativar a HA do cluster antes de usar o  `-inhibit-takeover true` parâmetro, ambos os nós param de fornecer dados.
+* Se você tentar interromper ou reinicializar um nó antes de desativar o HA do cluster, o ONTAP emitirá um aviso e instrui você a desabilitar o HA do cluster.
+
+
+====
+* Você migra LIFs (interfaces lógicas) para o nó de parceiro que deseja permanecer online.
+* Se no nó que você está interrompendo ou reinicializando há agregados que você deseja manter, você os move para o nó que deseja permanecer online.
+
+
+.Passos
+. Verifique se ambos os nós estão íntegros:
+`cluster show`
++
+Para ambos os nós, `true` aparece `Health` na coluna.
+
++
+[listing]
+----
+cluster::> cluster show
+Node         Health  Eligibility
+------------ ------- ------------
+node1        true     true
+node2        true     true
+----
+. Migre todas as LIFs do nó que você interromperá ou reinicializará para o nó do parceiro:
+`network interface migrate-all -node _node_name_`
+. Se no nó você parar ou reinicializar houver agregados que você deseja manter on-line quando o nó estiver inativo, reposicione-os para o nó do parceiro; caso contrário, vá para a próxima etapa.
++
+.. Mostrar os agregados no nó que você interromperá ou reiniciará:
+`storage aggregates show -node _node_name_`
++
+Por exemplo, node1 é o nó que será interrompido ou reinicializado:
+
++
+[listing]
+----
+cluster::> storage aggregates show -node node1
+Aggregate  Size  Available  Used%  State  #Vols   Nodes   RAID  Status
+---------  ----  ---------  -----  -----  -----   -----   ----  ------
+aggr0_node_1_0
+           744.9GB   32.68GB   96% online       2 node1    raid_dp,
+                                                                normal
+aggr1       2.91TB    2.62TB   10% online       8 node1    raid_dp,
+                                                                normal
+aggr2
+            4.36TB    3.74TB   14% online      12 node1    raid_dp,
+                                                                normal
+test2_aggr  2.18TB    2.18TB    0% online       7 node1    raid_dp,
+                                                                normal
+4 entries were displayed.
+----
+.. Mova os agregados para o nó de parceiro:
+`storage aggregate relocation start -node _node_name_ -destination _node_name_ -aggregate-list _aggregate_name_`
++
+Por exemplo, agregados aggr1, aggr2 e test2_aggr estão sendo movidos de node1 para node2:
+
++
+`storage aggregate relocation start -node _node1_ -destination _node2_ -aggregate-list _aggr1_,_aggr2_,_test2_aggr_`
+
+
+
+. Desativar cluster HA:
+`cluster ha modify -configured false`
++
+A saída de retorno confirma que HA está desativada: `Notice: HA is disabled`
+
++
+
+NOTE: Esta operação não desativa o failover de armazenamento.
+
+. Interrompa ou reinicie e inibir a aquisição do nó de destino, usando o comando apropriado:
++
+** `system node halt -node _node_name_ -inhibit-takeover true`
+** `system node reboot -node _node_name_ -inhibit-takeover true`
++
+
+NOTE: Na saída do comando, você verá um aviso perguntando se deseja continuar, digite `y`.
+
+
+
+. Verifique se o nó que ainda está on-line está em um estado saudável (enquanto o parceiro está inativo):
+`cluster show`
++
+Para o nó on-line, `true` aparece `Health` na coluna.
+
++
+
+NOTE: Na saída do comando, você verá um aviso de que o cluster HA não está configurado. Neste momento, pode ignorar o aviso.
+
+. Execute as ações necessárias para interromper ou reinicializar o nó.
+. Inicialize o nó desalinhado a partir do prompt DO Loader:
+`boot_ontap`
+. Verifique se ambos os nós estão íntegros:
+`cluster show`
++
+Para ambos os nós, `true` aparece `Health` na coluna.
+
++
+
+NOTE: Na saída do comando, você verá um aviso de que o cluster HA não está configurado. Neste momento, pode ignorar o aviso.
+
+. Reative o cluster HA:
+`cluster ha modify -configured true`
+. Se anteriormente neste procedimento você realocou agregados para o nó de parceiro, mova-os de volta para o nó inicial; caso contrário, vá para a próxima etapa:
+`storage aggregate relocation start -node _node_name_ -destination _node_name_ -aggregate-list _aggregate_name_`
++
+Por exemplo, agregados aggr1, aggr2 e test2_aggr estão sendo movidos do nó node2 para o nó node1:
+`storage aggregate relocation start -node _node2_ -destination _node1_ -aggregate-list _aggr1_,_aggr2_,_test2_aggr_`
+
+. Reverter LIFs para suas portas domésticas:
++
+.. Veja LIFs que não estão em casa:
+`network interface show -is-home false`
+.. Se houver LIFs não residenciais que não foram migrados do nó para baixo, verifique se é seguro movê-los antes de reverter.
+.. Se for seguro fazê-lo, reverta todos os LIFs para casa.
+`network interface revert *`
+
+
+

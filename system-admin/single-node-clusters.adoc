@@ -1,0 +1,172 @@
+---
+permalink: system-admin/single-node-clusters.html 
+sidebar: sidebar 
+keywords: ways, configure, iscsi, san, hosts, single, nodes 
+summary: Um cluster de nó único é uma implementação especial de um cluster executado em um nó autônomo. Os clusters de nó único não são recomendados porque não fornecem redundância. Se o nó ficar inativo, o acesso aos dados será perdido. 
+---
+= Gerenciar clusters de nó único
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um cluster de nó único é uma implementação especial de um cluster executado em um nó autônomo. Os clusters de nó único não são recomendados porque não fornecem redundância. Se o nó ficar inativo, o acesso aos dados será perdido.
+
+[NOTE]
+====
+Para tolerância de falhas e operações ininterruptas, é altamente recomendável configurar seu cluster com link:../concepts/high-availability-pairs-concept.html["Alta disponibilidade (pares de HA)"]o .
+
+====
+Se você optar por configurar ou atualizar um cluster de nó único, você deve estar ciente do seguinte:
+
+* A criptografia de volume raiz não é compatível com clusters de nó único.
+* Se você remover nós para ter um cluster de nó único, modifique as portas do cluster para servir o tráfego de dados, modificando as portas do cluster para serem portas de dados e criando LIFs de dados nas portas de dados.
+* Para clusters de nó único, você pode especificar o destino do backup de configuração durante a configuração do software. Após a configuração, essas configurações podem ser modificadas usando comandos ONTAP.
+* Se houver vários hosts conetados ao nó, cada host pode ser configurado com um sistema operacional diferente, como Windows ou Linux. Se houver vários caminhos do host para o controlador, o ALUA deve estar habilitado no host.
+
+
+
+
+== Maneiras de configurar hosts SAN iSCSI com nós únicos
+
+Você pode configurar hosts SAN iSCSI para se conetar diretamente a um único nó ou para se conetar através de um ou mais switches IP. O nó pode ter várias conexões iSCSI ao switch.
+
+.Configurações de nó único com conexão direta
+Nas configurações de nó único com conexão direta, um ou mais hosts são conectados diretamente ao nó.
+
+image:scrn_en_drw_fc-302020-direct-sing-on.png["Configuração de nó único com conexão direta"]
+
+.Configurações de nó único de rede única
+Em configurações de nó único de rede única, um switch coneta um único nó a um ou mais hosts. Como há um único switch, essa configuração não é totalmente redundante.
+
+image:r-oc-set-iscsi-singlenetwork-singlenode.png["Configuração de nó único de rede única"]
+
+.Configurações de nó único multi-rede
+Em configurações de nó único de várias redes, dois ou mais switches conetam um único nó a um ou mais hosts. Como existem vários switches, essa configuração é totalmente redundante.
+
+image:scrn-en-drw-iscsi-multinw-singlen.png["Configuração de nó único multi-rede"]
+
+
+
+== Maneiras de configurar hosts SAN FC e FC-NVMe com nós únicos
+
+É possível configurar hosts SAN FC e FC-NVMe com nós únicos por meio de uma ou mais malhas. O NPIV (N-Port ID Virtualization) é necessário e deve ser ativado em todos os switches FC na malha. Não é possível conectar diretamente hosts SAN FC ou FC-NMVE a nós únicos sem usar um switch FC.
+
+.Configurações de nó único de malha única
+Nas configurações de nó único de estrutura única, há um switch que conecta um único nó a um ou mais hosts. Como há um único switch, essa configuração não é totalmente redundante.
+
+Em configurações de nó único de malha única, o software de multipathing não é necessário se você tiver apenas um caminho único do host para o nó.
+
+.Configurações de nó único de MultiFabric
+Nas configurações de nó único de várias estruturas, há dois ou mais switches que conectam um único nó a um ou mais hosts. Para simplificar, a figura a seguir mostra uma configuração de nó único de várias malhas com apenas duas malhas. No entanto, você pode ter duas ou mais malhas em qualquer configuração de várias malhas. Nesta figura, o controlador de armazenamento é montado no chassi superior e o chassi inferior pode estar vazio ou pode ter um módulo IOMX, como acontece neste exemplo.
+
+As portas de destino FC (0a, 0C, 0b, 0d) nas ilustrações são exemplos. Os números reais das portas variam dependendo do modelo do nó de armazenamento e se você está usando adaptadores de expansão.
+
+image:scrn_en_drw_fc-62xx-multi-singlecontroller.png["Configuração de nó único MultiFabric com apenas duas malhas"]
+
+.Informações relacionadas
+https://www.netapp.com/pdf.html?item=/media/10681-tr4684pdf.pdf["Relatório técnico da NetApp 4684: Implementando e configurando SANs modernas com NVMe-of"^]
+
+
+
+== Atualização do ONTAP para cluster de nó único
+
+A partir do ONTAP 9.2, você pode usar a CLI do ONTAP para executar uma atualização automatizada de um cluster de nó único. Como os clusters de nó único não têm redundância, as atualizações são sempre disruptivas. As atualizações disruptivas não podem ser realizadas usando o System Manager.
+
+.Antes de começar
+Você deve concluir as etapas de atualizaçãolink:../upgrade/prepare.html["preparação"].
+
+.Passos
+. Elimine o pacote de software ONTAP anterior:
++
+[source, cli]
+----
+cluster image package delete -version <previous_package_version>
+----
+. Faça o download do pacote de software ONTAP de destino:
++
+[source, cli]
+----
+cluster image package get -url location
+----
++
+[listing]
+----
+cluster1::> cluster image package get -url http://www.example.com/software/9.7/image.tgz
+
+Package download completed.
+Package processing completed.
+----
+. Verifique se o pacote de software está disponível no repositório de pacotes de cluster:
++
+[source, cli]
+----
+cluster image package show-repository
+----
++
+[listing]
+----
+cluster1::> cluster image package show-repository
+Package Version  Package Build Time
+---------------- ------------------
+9.7              M/DD/YYYY 10:32:15
+----
+. Verifique se o cluster está pronto para ser atualizado:
++
+[source, cli]
+----
+cluster image validate -version <package_version_number>
+----
++
+[listing]
+----
+cluster1::> cluster image validate -version 9.7
+
+WARNING: There are additional manual upgrade validation checks that must be performed after these automated validation checks have completed...
+----
+. Monitorize o progresso da validação:
++
+[source, cli]
+----
+cluster image show-update-progress
+----
+. Conclua todas as ações necessárias identificadas pela validação.
+. Opcionalmente, gere uma estimativa de atualização de software:
++
+[source, cli]
+----
+cluster image update -version <package_version_number> -estimate-only
+----
++
+A estimativa de atualização de software exibe detalhes sobre cada componente a ser atualizado e a duração estimada da atualização.
+
+. Execute a atualização de software:
++
+[source, cli]
+----
+cluster image update -version <package_version_number>
+----
++
+
+NOTE: Se for encontrado um problema, a atualização será interrompida e solicitará que você tome medidas corretivas. Você pode usar o comando show-update-progress da imagem de cluster para exibir detalhes sobre quaisquer problemas e o andamento da atualização. Depois de corrigir o problema, você pode retomar a atualização usando o comando de retomada-atualização da imagem de cluster.
+
+. Apresentar o progresso da atualização do cluster:
++
+[source, cli]
+----
+cluster image show-update-progress
+----
++
+O nó é reinicializado como parte da atualização e não pode ser acessado durante a reinicialização.
+
+. Acionar uma notificação:
++
+[source, cli]
+----
+autosupport invoke -node * -type all -message "Finishing_Upgrade"
+----
++
+Se o cluster não estiver configurado para enviar mensagens, uma cópia da notificação será salva localmente.
+
+

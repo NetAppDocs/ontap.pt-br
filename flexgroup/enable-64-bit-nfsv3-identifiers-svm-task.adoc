@@ -1,0 +1,38 @@
+---
+permalink: flexgroup/enable-64-bit-nfsv3-identifiers-svm-task.html 
+sidebar: sidebar 
+keywords: enable, nfsv3, identifier, svm 
+summary: Para oferecer suporte à alta contagem de arquivos de volumes FlexGroup e evitar colisões de ID de arquivo, você deve habilitar identificadores de arquivo de 64 bits no SVM no qual o volume FlexGroup deve ser criado. 
+---
+= Habilite identificadores NFSv3 de 64 bits em um SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para oferecer suporte à alta contagem de arquivos de volumes FlexGroup e evitar colisões de ID de arquivo, você deve habilitar identificadores de arquivo de 64 bits no SVM no qual o volume FlexGroup deve ser criado.
+
+.Passos
+. Inicie sessão no nível de privilégio avançado: `set -privilege advanced`
+. Modifique o SVM para usar FSIDs NFSv3 de 64 bits e IDs de arquivo: `vserver nfs modify -vserver svm_name -v3-64bit-identifiers enabled`
++
+[listing]
+----
+cluster1::*> vserver nfs modify -vserver vs0 -v3-64bit-identifiers enabled
+
+Warning: You are attempting to increase the number of bits used for NFSv3
+         FSIDs and File IDs from 32 to 64 on Vserver "vs0". This could
+         result in older client software no longer working with the volumes
+         owned by Vserver "vs0".
+Do you want to continue? {y|n}: y
+
+Warning: Based on the changes you are making to the NFS server on Vserver
+         "vs0", it is highly recommended that you remount all NFSv3 clients
+         connected to it after the command completes.
+Do you want to continue? {y|n}: y
+----
+
+
+.Depois de terminar
+Todos os clientes devem ser remontados. Isso é necessário porque as IDs do sistema de arquivos mudam e os clientes podem receber mensagens de manipulação de arquivos obsoletos ao tentar operações NFS.

@@ -1,0 +1,279 @@
+---
+permalink: fabricpool/requirements-concept.html 
+sidebar: sidebar 
+keywords: considerations, requirements, using, fabricpool 
+summary: Para ajudar a garantir que você otimize suas configurações do FabricPool, você deve se familiarizar com algumas considerações e requisitos sobre o uso do FabricPool. 
+---
+= Considerações e requisitos para usar o FabricPool
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para ajudar a garantir que você otimize suas configurações do FabricPool, você deve se familiarizar com algumas considerações e requisitos sobre o uso do FabricPool.
+
+
+
+== Considerações gerais e requisitos
+
+
+
+=== ONTAP 9,2
+
+Você deve estar executando o ONTAP 9.2 ou posterior FabricPool.
+
+
+
+=== ONTAP 9,4
+
+* Você deve estar executando o ONTAP 9.4 ou versões posteriores para a seguinte funcionalidade do FabricPool:
++
+** O `auto` link:tiering-policies-concept.html#types-of-fabricpool-tiering-policies["política de disposição em camadas"]
+** Especificando o período mínimo de resfriamento em camadas
+** Relatório de dados inativos (IDR)
+** Uso do storage de Blob do Microsoft Azure para a nuvem como a categoria de nuvem do FabricPool
+** Usando o FabricPool com ONTAP Select
+
+
+
+
+
+
+=== ONTAP 9,5
+
+* Você deve estar executando o ONTAP 9.5 ou versões posteriores para a seguinte funcionalidade do FabricPool:
++
+** Especificando o limite de preenchimento de disposição em camadas
+** Uso do IBM Cloud Object Storage como camada de nuvem do FabricPool
+** Criptografia de volume NetApp (NVE) da camada de nuvem, habilitada por padrão.
+
+
+
+
+
+
+=== ONTAP 9,6
+
+* Você deve estar executando o ONTAP 9.6 ou versões posteriores para a seguinte funcionalidade do FabricPool:
++
+** A `all` política de disposição em camadas
+** Relatórios de dados inativos ativados manualmente em agregados HDD
+** Relatórios de dados inativos ativados automaticamente para agregados SSD quando você atualiza para o ONTAP 9.6 e, no momento, o agregado é criado, exceto em sistemas low-end com menos de 4 CPUs, menos de 6 GB de RAM, ou quando o tamanho do cache de buffer WAFL é inferior a 3 GB.
++
+O ONTAP monitora a carga do sistema e, se a carga permanecer alta por 4 minutos contínuos, o IDR é desativado e não é ativado automaticamente. Você pode reativar o IDR manualmente, no entanto, o IDR ativado manualmente não é desativado automaticamente.
+
+** Usar o storage de objetos na nuvem Alibaba como camada de nuvem para FabricPool
+** Uso do Google Cloud Platform como camada de nuvem do FabricPool
+** Movimentação de volumes sem cópia de dados de categoria de nuvem
+
+
+
+
+
+
+=== ONTAP 9,7
+
+* Você deve estar executando o ONTAP 9.7 ou versões posteriores para a seguinte funcionalidade do FabricPool:
++
+** Proxy HTTP e HTTPS não transparente para fornecer acesso apenas a pontos de acesso em branco e para fornecer recursos de auditoria e relatórios.
+** Espelhamento FabricPool para categorizar dados inativos em dois armazenamentos de objetos simultaneamente
+** Espelhos FabricPool nas configurações do MetroCluster
+** Despejo de NDMP e restauração ativados por padrão em agregados conetados ao FabricPool.
++
+[NOTE]
+====
+Se a aplicação de backup usar um protocolo diferente do NDMP, como NFS ou SMB, todos os dados que estiverem sendo copiados na categoria de performance aquecem e podem afetar a disposição em camadas desses dados na categoria de nuvem. Leituras não NDMP podem causar a migração de dados da camada de nuvem de volta para a camada de performance.
+
+====
++
+https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/NDMP_Backup_and_Restore_supported_for_FabricPool%3F["Suporte de backup e restauração NDMP para FabricPool"]
+
+
+
+
+
+
+
+=== ONTAP 9,8
+
+* Você deve estar executando o ONTAP 9.8 ou posterior para a seguinte funcionalidade do FabricPool:
++
+** Recuperação da nuvem
+** FabricPool com SnapLock Enterprise. O FabricPool com SnapLock Enterprise requer uma solicitação de variação de produto (FPVR). Para criar um FPVR, entre em Contato com sua equipe de vendas.
+** Período mínimo de resfriamento máximo de 183 dias
+** Marcação de objetos usando tags personalizadas criadas pelo usuário
+** Agregados HDD FabricPool
++
+HDD FabricPools são suportados com discos SAS, FSAS, BSAS e MSATA somente em sistemas com 6 ou mais núcleos de CPU.
+
++
+Verifique https://hwu.netapp.com/Home/Index["Hardware Universe"^] se existem os modelos suportados mais recentes.
+
+
+
+
+
+
+
+=== ONTAP 9.10,1
+
+* Você deve estar executando o ONTAP 9.10,1 ou posterior para a seguinte funcionalidade do FabricPool:
++
+** COLOQUE estrangulamento
+** Eficiência de armazenamento sensível à temperatura (TSSE).
+
+
+
+
+
+
+=== ONTAP 9.12,1
+
+* Você deve estar executando o ONTAP 9.12,1 ou posterior para a seguinte funcionalidade do FabricPool:
++
+** Migração da SVM
+** Suporte para FabricPool, FlexGroup e SVM-DR trabalhando em conjunto. (Antes de 9.12.1, quaisquer dois desses recursos trabalharam juntos, mas nem todos os três em conjunto.)
+
+
+
+
+
+
+=== ONTAP 9.14,1
+
+* Você deve estar executando o ONTAP 9.14,1 ou posterior para a seguinte funcionalidade do FabricPool:
++
+** Gravação na nuvem
+** Preparação agressiva
+
+
+
+
+
+
+== Plataformas
+
+* O FabricPool é compatível com todas as plataformas capazes de executar o ONTAP 9.2, exceto para o seguinte:
++
+** FAS8020
+** FAS2554
+** FAS2552
+** FAS2520
+
+
+
+
+
+
+== Camadas locais (agregados)
+
+O FabricPool oferece suporte aos seguintes tipos de agregados:
+
+* Em sistemas AFF, você só pode usar agregados SSD para FabricPool.
+* Em sistemas FAS, você pode usar agregados SSD ou HDD para FabricPool.
+* No Cloud Volumes ONTAP e no ONTAP Select, você pode usar agregados SSD ou HDD para FabricPool. Recomenda-se o uso de agregados SSD.
+
+
+[NOTE]
+====
+Agregados Flash Pool, que contêm SSDs e HDDs, não são compatíveis.
+
+====
+
+
+== Categorias de nuvem
+
+O FabricPool é compatível com o uso dos seguintes armazenamentos de objetos como a camada de nuvem:
+
+* Alibaba Cloud Object Storage Service (padrão, acesso não frequente)
+* Amazon S3 (Standard, Standard-IA, One Zone-IA, Intelligent-Tiering, Glacier Instant Retrieval)
+* Serviços de nuvem comerciais da Amazon (C2S)
+* Google Cloud Storage (Multi-Regional, Regional, Nearline, Coldline, Archive)
+* IBM Cloud Object Storage (padrão, Vault, Cold Vault, Flex)
+* Microsoft Azure Blob Storage (ativo e inativo)
+* NetApp ONTAP S3 (ONTAP 9 .8 e posterior)
+* NetApp StorageGRID (StorageGRID 10,3 e posterior)
+
+
+[NOTE]
+====
+O Glacier Flexible Retrieval e o Glacier Deep Archive não são suportados.
+
+====
+* O repositório de objetos "'bucket'" (contentor) que você pretende usar deve já ter sido configurado, deve ter pelo menos 10 GB de espaço de armazenamento e não deve ser renomeado.
+* Os pares DE HA que usam FabricPool exigem LIFs entre clusters para se comunicar com o armazenamento de objetos.
+* Não é possível separar um nível de nuvem de um nível local depois que ele é anexado. No entanto, é possível link:create-mirror-task.html["Espelho FabricPool"]anexar um nível local a um nível de nuvem diferente.
+
+
+
+
+== Eficiência de storage da ONTAP
+
+Preservamos eficiências de storage, como compressão, deduplicação e compactação, ao mover dados para a camada de nuvem, reduzindo a capacidade de storage de objetos e os custos de transporte necessários.
+
+
+NOTE: A partir do ONTAP 9.15,1, o FabricPool suporta a tecnologia Intel QuickAssist (QAT4), que proporciona uma economia de eficiência de armazenamento mais agressiva e com melhor desempenho.
+
+A deduplicação in-line agregada é compatível com a categoria local, mas as eficiências de storage associadas não são transferidas para objetos armazenados na categoria de nuvem.
+
+Ao usar a política de disposição em categorias de todos os volumes, as eficiências de storage associadas aos processos de deduplicação em segundo plano podem ser reduzidas, pois é provável que os dados sejam dispostos em camadas antes da aplicação das eficiências de storage adicionais.
+
+
+
+== Licença de disposição em camadas do BlueXP
+
+O FabricPool requer uma licença baseada em capacidade ao anexar fornecedores de storage de objetos de terceiros (como Amazon S3) como camadas de nuvem para sistemas AFF e FAS. Não é necessária uma licença de disposição em camadas do BlueXP  ao usar o StorageGRID ou o ONTAP S3 como camada de nuvem ou ao dispor em camadas no Cloud Volumes ONTAP, no Amazon FSX for NetApp ONTAP ou no Azure NetApp Files.
+
+As licenças BlueXP  (incluindo suplementos ou extensões para licenças FabricPool pré-existentes) são ativadas no link:https://docs.netapp.com/us-en/bluexp-tiering/concept-cloud-tiering.html["Carteira digital BlueXP"^].
+
+
+
+== Controles de consistência do StorageGRID
+
+Os controles de consistência do StorageGRID afetam a forma como os metadados que o StorageGRID usa para rastrear objetos são distribuídos entre nós e a disponibilidade de objetos para solicitações de clientes. A NetApp recomenda usar o controle de consistência padrão, leitura após nova gravação, para buckets usados como destinos do FabricPool.
+
+
+NOTE: Não use o controle de consistência disponível para buckets usados como alvos FabricPool.
+
+
+
+== Considerações adicionais para disposição em camadas de dados acessados por protocolos SAN
+
+Ao dispor em camadas os dados acessados por protocolos SAN, a NetApp recomenda o uso de nuvens privadas, como o ONTAP S3 ou o StorageGRID, devido a considerações de conectividade.
+
+
+IMPORTANT: Você deve estar ciente de que ao usar o FabricPool em um ambiente SAN com um host Windows, se o armazenamento de objetos ficar indisponível por um período prolongado de tempo ao categorizar dados na nuvem, os arquivos no LUN NetApp no host do Windows podem ficar inacessíveis ou desaparecer. Consulte o artigo da base de dados de Conhecimento link:https://kb.netapp.com/onprem/ontap/os/During_FabricPool_S3_object_store_unavailable_Windows_SAN_host_reported_filesystem_corruption["Durante o armazenamento de objetos do FabricPool S3 não disponível, o host do Windows SAN relatou corrupção do sistema de arquivos"^].
+
+
+
+== Qualidade do serviço
+
+* Se você usar andares de taxa de transferência (QoS min), a política de disposição em categorias nos volumes deve ser definida como `none` antes que o agregado possa ser anexado ao FabricPool.
++
+Outras políticas de disposição em camadas impedem que o agregado seja anexado ao FabricPool. Uma política de QoS não irá impor pisos de taxa de transferência quando o FabricPool estiver ativado.
+
+
+
+
+
+== Funcionalidade ou recursos não suportados pelo FabricPool
+
+* Armazenamentos de objetos com WORM ativado e controle de versão de objetos habilitado.
+* Políticas de gerenciamento do ciclo de vida das informações (ILM) aplicadas aos buckets do armazenamento de objetos
++
+O FabricPool é compatível com as políticas de gerenciamento do ciclo de vida das informações da StorageGRID apenas para replicação de dados e codificação de apagamento a fim de proteger os dados da camada de nuvem contra falhas. No entanto, o FabricPool _não_ suporta regras avançadas de ILM, como filtragem baseada em metadados ou tags do usuário. O ILM geralmente inclui várias políticas de movimento e exclusão. Essas políticas podem causar interrupções nos dados na camada de nuvem do FabricPool. Usar o FabricPool com políticas ILM configuradas em armazenamentos de objetos pode resultar em perda de dados.
+
+* Transição de dados de 7 modos usando os comandos CLI do ONTAP ou a ferramenta de transição de 7 modos
+* Virtualização FlexArray
+* RAID SyncMirror, exceto em uma configuração MetroCluster
+* Volumes do SnapLock ao usar o ONTAP 9.7 e versões anteriores
+* Backup em fita usando SMTape para agregados habilitados para FabricPool
+* A funcionalidade de equilíbrio automático
+* Volumes que utilizam uma garantia de espaço diferente de `none`
++
+Com a exceção dos volumes raiz da SVM e dos volumes de preparação de auditoria CIFS, o FabricPool não é compatível com a inclusão de uma camada de nuvem a um agregado que contenha volumes usando uma garantia de espaço diferente `none`do . Por exemplo, um volume usando uma garantia de espaço `volume` (`-space-guarantee` `volume`do ) não é suportado.
+
+* Clusters com link:../data-protection/snapmirror-licensing-concept.html#data-protection-optimized-license["Licença DP_otimizada"]
+* Agregados Flash Pool
+

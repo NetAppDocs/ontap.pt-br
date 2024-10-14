@@ -1,0 +1,112 @@
+---
+permalink: flexgroup/convert-flexvol-volume-task.html 
+sidebar: sidebar 
+keywords: convert, flexvol, volume, flexgroup, conversion, flex vol, flex group, transitioned, 
+summary: A partir do ONTAP 9.7, você pode executar uma conversão no local de um FlexVol volume para um volume FlexGroup sem exigir uma cópia de dados ou espaço em disco adicional. 
+---
+= Converter um FlexVol volume em um volume FlexGroup
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.7, você pode executar uma conversão no local de um FlexVol volume para um volume FlexGroup sem exigir uma cópia de dados ou espaço em disco adicional.
+
+.Antes de começar
+* Os volumes transferidos podem ser convertidos para volumes FlexGroup a partir do ONTAP 9.8.
+* O FlexVol volume que está sendo convertido deve estar on-line.
+* As operações e configurações no FlexVol volume devem ser compatíveis com o processo de conversão.
++
+Verifique se existem as seguintes condições que podem impedir que a conversão seja bem-sucedida:
+
++
+** Um FlexVol volume foi transferido do modo 7 usando 7MTT (ONTAP 9.7).
++
+Os volumes transicionados podem ser convertidos a partir de ONTAP 9.8.
+
+** Algo está ativado no volume que ainda não é compatível com o volume FlexGroup; por exemplo, LUNs SAN, Windows NFS, SMB1, Snapshot naming/slip, vmalign Set, SnapLock, SLO de espaço ou imposição/geração de relatórios de espaço lógico. Para obter mais informações, link:supported-unsupported-config-concept.html["Configurações com suporte e sem suporte para volumes FlexGroup"]consulte .
+** O SVM DR no momento, o FlexVol volume a ser convertido está usando o SVM DR.
+** Os volumes NetApp FlexClone estão presentes e o FlexVol volume é o volume pai. O volume que está sendo convertido não pode ser um pai ou um clone.
+** O volume é um volume de origem NetApp FlexCache.
+** Para o ONTAP 9.7 e versões anteriores, as cópias Snapshot do NetApp não devem ser superiores a 255. Para o ONTAP 9.8 e posterior, há suporte para cópias Snapshot de 1023.
+** As eficiências de storage são habilitadas. Estes devem ser desativados e podem ser reativados após a conversão.
+** O volume é uma fonte de um relacionamento SnapMirror e o destino ainda não foi convertido.
+** O volume faz parte de uma relação SnapMirror ativa (não quiesced).
+** As quotas estão ativadas. Estes devem ser desativados e podem ser reativados após a conversão.
+** Os nomes dos volumes têm mais de 197 carateres.
+** O volume está associado a uma aplicação.
++
+Isto é aplicável apenas ao ONTAP 9.7. A limitação é removida no ONTAP 9.8.
+
+** Os processos do ONTAP estão em execução, como espelhamento, tarefas, wafliron, backup NDMP e conversão de inode em processo.
+** O volume é um volume raiz da SVM.
+** O volume está demasiado cheio.
++
+Se alguma dessas incompatibilidades existir, uma mensagem de erro será gerada se o FlexVol volume e a conversão de volume for abortada. Você pode tomar ações corretivas e tentar novamente a conversão.
+
+
+
+* Se um FlexVol volume estiver atualmente com 80% ou mais de capacidade máxima, considere copiar os dados para um volume FlexGroup recém-criado em vez de executar uma conversão no local. Embora os volumes membros do FlexGroup reequilibrem naturalmente com o tempo, ao converter um FlexVol volume de alta capacidade em um volume de FlexGroup pode criar problemas de performance ou equilíbrio que não serão rebalanceados rapidamente nos volumes dos membros.
++
+[NOTE]
+====
+Converter um volume FlexGroup muito grande resulta em um componente membro do volume FlexGroup muito completo, o que pode criar problemas de desempenho. Para obter mais informações, consulte a seção chamada "quando não criar um volume FlexGroup" no link:https://www.netapp.com/media/12385-tr4571.pdf["FlexGroup volumes - Guia de práticas recomendadas e implementação"]TR .
+
+====
+
+
+.Passos
+. Verifique se o FlexVol volume está online: `volume show vol_name volume-style-extended,state`
++
+[listing]
+----
+cluster-1::> volume show my_volume -fields volume-style-extended,state
+vserver volume    state  volume-style-extended
+------- --------- ------ ---------------------
+vs0     my_volume online flexvol
+----
+. Verifique se o FlexVol volume pode ser convertido sem problemas:
++
+.. Inicie sessão no modo de privilégio avançado: `set -privilege advanced`
+.. Verifique o processo de conversão: `volume conversion start -vserver vs1 -volume flexvol -check-only true`
++
+Você deve corrigir todos os erros antes de converter o volume.
+
++
+[NOTE]
+====
+Não é possível converter um volume FlexGroup de volta para um FlexVol volume.
+
+====
+
+
+. Inicie a conversão: `volume conversion start -vserver svm_name -volume vol_name`
++
+[listing]
+----
+cluster-1::*> volume conversion start -vserver vs0 -volume my_volume
+
+Warning: Converting flexible volume "my_volume" in Vserver "vs0" to a FlexGroup
+         will cause the state of all Snapshot copies from the volume to be set
+         to "pre-conversion". Pre-conversion Snapshot copies cannot be
+         restored.
+Do you want to continue? {y|n}: y
+[Job 57] Job succeeded: success
+----
+. Verifique se a conversão foi bem-sucedida: `volume show vol_name -fields volume-style-extended,state`
++
+[listing]
+----
+cluster-1::*> volume show my_volume -fields volume-style-extended,state
+vserver volume    state  volume-style-extended
+------- --------- ------ ---------------------
+vs0     my_volume online flexgroup
+----
+
+
+.Resultados
+O FlexVol volume é convertido em um volume FlexGroup de membro único.
+
+.Depois de terminar
+Você pode expandir o volume FlexGroup, conforme necessário.

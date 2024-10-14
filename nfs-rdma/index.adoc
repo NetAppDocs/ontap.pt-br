@@ -1,0 +1,87 @@
+---
+permalink: nfs-rdma/index.html 
+sidebar: sidebar 
+keywords: NFS over RDMA, GPU, NVIDIA GDX 
+summary: O NFS sobre RDMA utiliza adaptadores RDMA, permitindo que os dados sejam copiados diretamente entre a memória do sistema de armazenamento e a memória do sistema host, contornando as interrupções da CPU e a sobrecarga. 
+---
+= NFS sobre RDMA
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O NFS sobre RDMA utiliza adaptadores RDMA, permitindo que os dados sejam copiados diretamente entre a memória do sistema de armazenamento e a memória do sistema host, contornando as interrupções da CPU e a sobrecarga.
+
+As configurações NFS sobre RDMA são projetadas para clientes com workloads sensíveis à latência ou com alta largura de banda, como machine learning e análises. A NVIDIA estendeu o NFS por RDMA para habilitar o armazenamento direto da GPU (GDS). O GDS acelera ainda mais as cargas de trabalho com GPU, ignorando completamente a CPU e a memória principal, usando RDMA para transferir dados entre o sistema de armazenamento e a memória GPU diretamente.
+
+A partir do ONTAP 9.10,1, as configurações NFS sobre RDMA são suportadas para o protocolo NFSv4,0 quando usado com o adaptador Mellanox CX-5 ou CX-6, que fornece suporte para RDMA usando a versão 2 do protocolo RoCE. O GDS só é suportado usando GPUs da família NVIDIA Tesla e Ampere com placas de rede Mellanox e software MOFED. Consulte o gráfico em requisitos para entender o suporte à versão NFS nas versões subsequentes do ONTAP.
+
+
+NOTE: Tamanhos de montagem de NFS maiores que 64k mm resultam em desempenho instável com configurações NFS em RDMA.
+
+.Requisitos
+* Os sistemas de armazenamento devem estar executando o ONTAP 9.10,1 ou posterior.
+* Certifique-se de que está a executar a versão correta do ONTAP para a versão NFS que pretende utilizar.
++
+[cols="2"]
+|===
+| Versão de NFS | Suporte à ONTAP 
+
+
+| NFSv4.0 | ONTAP 9.10,1 e posterior 
+
+
+| NFSv4.1 | ONTAP 9.14,1 e posterior 
+
+
+| NFSv3 | ONTAP 9.15,1 e posterior 
+|===
++
+** Você pode configurar o NFS através do RDMA com o Gerenciador de sistemas a partir do ONTAP 9.12,1. No ONTAP 9.10,1 e 9.11.1, você precisa usar a CLI para configurar o NFS em RDMA.
+
+
+* Ambos os nós no par de HA devem ter a mesma versão.
+* Os controladores do sistema de storage devem ter suporte a RDMA
++
+[cols="2"]
+|===
+| Começando em ONTAP... | Os seguintes controladores suportam RDMA... 
+
+
+| 9.10.1 e mais tarde  a| 
+** AFF A400
+** AFF A700
+** AFF A800
+
+
+
+
+| ONTAP 9.14,1 e posterior  a| 
+** Série C da AFF
+** AFF A900
+
+
+|===
+* Dispositivo de armazenamento configurado com hardware suportado por RDMA (por exemplo, Mellanox CX-5 ou CX-6).
+* As LIFs de dados devem ser configuradas para suportar RDMA.
+* Os clientes devem estar usando placas NIC compatíveis com RDMA Mellanox e software de rede Mellanox OFED (MOFED).
+
+
+
+NOTE: Os grupos de interfaces não são compatíveis com NFS em RDMA.
+
+.Próximas etapas
+* xref:./configure-nics-task.adoc[Configurar NICs para NFS em RDMA]
+* xref:./configure-lifs-task.adoc[Configurar LIFs para NFS em RDMA]
+* xref:./configure-nfs-task.adoc[Configurações de NFS para NFS em RDMA]
+
+
+.Informações relacionadas
+* link:../concepts/rdma-concept.html["RDMA"]
+* xref:../nfs-trunking/index.html[Visão geral do trunking NFS]
+* https://datatracker.ietf.org/doc/html/rfc7530["RFC 7530: Protocolo NFS versão 4"^]
+* https://datatracker.ietf.org/doc/html/rfc8166["RFC 8166: Transporte remoto de acesso direto à memória para chamada de procedimento remoto versão 1"^]
+* https://datatracker.ietf.org/doc/html/rfc8167["RFC 8167: Chamada de procedimento remoto bidirecional em transportes RPC-over-RDMA"^]
+* https://datatracker.ietf.org/doc/html/rfc8267["RFC 8267: Vinculação de camada superior NFS para RPC-over-RDMA versão 1"^]
+

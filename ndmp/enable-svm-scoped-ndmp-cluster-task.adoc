@@ -1,0 +1,61 @@
+---
+permalink: ndmp/enable-svm-scoped-ndmp-cluster-task.html 
+sidebar: sidebar 
+keywords: enable, svm, scope, ndmp, cluster 
+summary: 'Se o DMA oferecer suporte à extensão CAB (Cluster Aware Backup), você poderá fazer backup de todos os volumes hospedados em diferentes nós em um cluster habilitando NDMP com escopo SVM, habilitando o serviço NDMP no cluster (admin SVM) e configurando LIFs para conexão de dados e controle.' 
+---
+= Habilite NDMP com escopo SVM no cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se o DMA oferecer suporte à extensão CAB (Cluster Aware Backup), você poderá fazer backup de todos os volumes hospedados em diferentes nós em um cluster habilitando NDMP com escopo SVM, habilitando o serviço NDMP no cluster (admin SVM) e configurando LIFs para conexão de dados e controle.
+
+.O que você vai precisar
+A extensão DA CABINA tem de ser suportada pelo DMA.
+
+.Sobre esta tarefa
+Desativar o modo NDMP com escopo de nó ativa o modo NDMP com escopo SVM no cluster.
+
+.Passos
+. Ativar o modo NDMP com escopo SVM:
++
+[source, cli]
+----
+cluster1::> system services ndmp node-scope-mode off
+----
++
+O modo NDMP com escopo SVM está ativado.
+
+. Habilite o serviço NDMP no administrador SVM:
++
+[source, cli]
+----
+cluster1::> vserver services ndmp on -vserver cluster1
+----
++
+O tipo de autenticação é definido como `challenge` por padrão e a autenticação de texto sem formatação é desativada.
+
++
+[NOTE]
+====
+Para uma comunicação segura, você deve manter a autenticação em texto simples desativada.
+
+====
+. Verifique se o serviço NDMP está ativado:
++
+[source, cli]
+----
+cluster1::> vserver services ndmp show
+----
++
+[listing]
+----
+Vserver       Enabled   Authentication type
+------------- --------- -------------------
+cluster1      true      challenge
+vs1           false     challenge
+----
+

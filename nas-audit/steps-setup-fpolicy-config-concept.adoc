@@ -1,0 +1,69 @@
+---
+permalink: nas-audit/steps-setup-fpolicy-config-concept.html 
+sidebar: sidebar 
+keywords: steps, setting, fpolicy configuration 
+summary: Antes que o FPolicy possa monitorar o acesso a arquivos, uma configuração do FPolicy deve ser criada e ativada no SVM para o qual os serviços do FPolicy são necessários. 
+---
+= Quais são os passos para configurar uma configuração FPolicy
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes que o FPolicy possa monitorar o acesso a arquivos, uma configuração FPolicy deve ser criada e ativada na máquina virtual de storage (SVM) para a qual os serviços FPolicy são necessários.
+
+As etapas para configurar e habilitar uma configuração FPolicy no SVM são as seguintes:
+
+. Crie um mecanismo externo FPolicy.
++
+O mecanismo externo FPolicy identifica os servidores FPolicy externos (servidores FPolicy) que estão associados a uma configuração FPolicy específica. Se o mecanismo FPolicy "'nativo" interno for usado para criar uma configuração nativa de bloqueio de arquivos, você não precisará criar um mecanismo externo FPolicy.
+
++
+Começando com ONTAP 9.15,1, você pode usar o `protobuf` formato do motor. Quando definido como `protobuf`, as mensagens de notificação são codificadas de forma binária usando o Google Protobuf. Antes de definir o formato do mecanismo como `protobuf`, certifique-se de que o servidor FPolicy também suporta `protobuf` a desserialização. Para obter mais informações, consulte link:plan-fpolicy-external-engine-config-concept.html["Planeie a configuração do motor externo FPolicy"]
+
+. Criar um evento FPolicy.
++
+Um evento FPolicy descreve o que a política FPolicy deve monitorar. Os eventos consistem em protocolos e operações de arquivo a serem monitoradas e podem conter uma lista de filtros. Eventos Use filtros para restringir a lista de eventos monitorados para os quais o mecanismo externo FPolicy deve enviar notificações. Os eventos também especificam se a diretiva monitora as operações de volume.
+
+. Crie um armazenamento persistente FPolicy (opcional).
++
+A partir do ONTAP 9.14,1, o FPolicy permite que você configure link:persistent-stores.html["armazenamentos persistentes"]para capturar eventos de acesso a arquivos para políticas assíncronas não obrigatórias no SVM. Configurações síncronas (obrigatórias ou não obrigatórias) e assíncronas obrigatórias não são suportadas.
+
++
+Armazenamentos persistentes podem ajudar a desacoplar o processamento de e/S do cliente do processamento de notificações FPolicy para reduzir a latência do cliente.
+
++
+A partir do ONTAP 9.15,1, a configuração de armazenamento persistente do FPolicy é simplificada. O `persistent-store-create` comando automatiza a criação de volume para o SVM e configura o volume para o armazenamento persistente.
+
+. Crie uma política FPolicy.
++
+A política FPolicy é responsável por associar, com o escopo apropriado, o conjunto de eventos que precisam ser monitorados e para qual das notificações de eventos monitorados deve ser enviado para o servidor FPolicy designado (ou para o mecanismo nativo se nenhum servidor FPolicy estiver configurado). A política também define se o servidor FPolicy tem acesso privilegiado aos dados para os quais recebe notificações. Um servidor FPolicy precisa de acesso privilegiado se o servidor precisar acessar os dados. Os casos de uso típicos em que o acesso privilegiado é necessário incluem bloqueio de arquivos, gerenciamento de cotas e gerenciamento de storage hierárquico. A política é onde você especifica se a configuração para essa política usa um servidor FPolicy ou o servidor FPolicy interno "'nativo".
+
++
+Uma política especifica se a triagem é obrigatória. Se a triagem for obrigatória e todos os servidores FPolicy estiverem inativos ou se nenhuma resposta for recebida dos servidores FPolicy dentro de um período de tempo limite definido, o acesso ao arquivo será negado.
+
++
+Os limites de uma política são o SVM. Uma política não pode se aplicar a mais de um SVM. No entanto, um SVM específico pode ter várias políticas de FPolicy, cada uma com a mesma combinação ou diferente de configurações de escopo, evento e servidor externo.
+
+. Configure o escopo da política.
++
+O escopo da FPolicy determina quais volumes, compartilhamentos ou políticas de exportação a política atua ou exclui do monitoramento. Um escopo também determina quais extensões de arquivo devem ser incluídas ou excluídas do monitoramento FPolicy.
+
++
+[NOTE]
+====
+Excluir listas têm precedência sobre incluir listas.
+
+====
+. Ative a política FPolicy.
++
+Quando a política está ativada, os canais de controle e, opcionalmente, os canais de dados privilegiados são conetados. O processo de FPolicy nos nós nos quais o SVM participa começa a monitorar o acesso a arquivos e pastas e, para eventos que correspondam aos critérios configurados, envia notificações para os servidores FPolicy (ou para o mecanismo nativo se nenhum servidor FPolicy estiver configurado).
+
+
+
+[NOTE]
+====
+Se a política usar bloqueio de arquivos nativo, um mecanismo externo não será configurado ou associado à política.
+
+====

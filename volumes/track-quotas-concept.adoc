@@ -1,0 +1,34 @@
+---
+permalink: volumes/track-quotas-concept.html 
+sidebar: sidebar 
+keywords: how, you, use, tracking, quotas 
+summary: Uma cota de rastreamento gera um relatório de uso de disco e arquivo, torna a modificação de valores de cota menos disruptiva e não limita o uso de recursos. 
+---
+= Use cotas de rastreamento
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Uma cota de rastreamento gera um relatório de uso de disco e arquivo e não limita o uso de recursos. Quando as cotas de rastreamento são usadas, modificar os valores de cota é menos disruptivo porque você pode redimensionar as cotas em vez de desativá-las e ativá-las novamente.
+
+Para criar uma cota de rastreamento, você omita os parâmetros limite de disco e limite de arquivos. Isso diz ao ONTAP para monitorar o uso de disco e arquivos para esse destino nesse nível (volume ou qtree), sem impor limites. As cotas de rastreamento são indicadas na saída `show` de comandos e no relatório de cota com um traço ("-") para todos os limites. O ONTAP cria automaticamente cotas de rastreamento quando você usa a IU do Gerenciador do sistema para criar cotas explícitas (cotas com alvos específicos). Ao usar a CLI, o administrador de armazenamento cria cotas de rastreamento em cima de cotas explícitas.
+
+Você também pode especificar uma cota de rastreamento _padrão_, que se aplica a todas as instâncias do destino. As cotas de rastreamento padrão permitem rastrear o uso de todas as instâncias de um tipo de cota (por exemplo, todos os qtrees ou todos os usuários). Além disso, eles permitem que você use o redimensionamento em vez de reinicialização quando você deseja que as alterações de cota entrem em vigor.
+
+.Exemplos
+A saída de uma regra de rastreamento mostra cotas de rastreamento em vigor para uma qtree, usuário e grupo, como mostrado no exemplo a seguir para uma regra de rastreamento em nível de volume:
+
+[listing]
+----
+Vserver: vs0             Policy: default             Volume: fv1
+
+                                      Soft          Soft
+                       User    Disk   Disk   Files  Files
+Type  Target   Qtree   Mapping Limit  Limit  Limit  Limit  Threshold
+----- -------- ------- ------- ------ ------ ------ ------ ---------
+tree  ""       ""      -       -      -      -      -      -
+user  ""       ""      off     -      -      -      -      -
+group ""       ""      -       -      -      -      -      -
+----

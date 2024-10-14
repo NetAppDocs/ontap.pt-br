@@ -1,0 +1,97 @@
+---
+permalink: smb-admin/create-ntfs-security-descriptor-audit-task.html 
+sidebar: sidebar 
+keywords: create, creating, ntfs, security, descriptor, audit, policy, configure, configuring, apply, access, control, list, acl, file, residing, reside, svm, associate, folder, policy, task, create an ntfs security descriptor 
+summary: 'Criar uma política de auditoria do descritor de segurança NTFS é a primeira etapa na configuração e aplicação de listas de controle de acesso (ACLs) NTFS a arquivos e pastas residentes em SVMs. Você associará o descritor de segurança ao caminho do arquivo ou da pasta em uma tarefa de diretiva.' 
+---
+= Crie um descritor de segurança NTFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Criar uma política de auditoria do descritor de segurança NTFS é a primeira etapa na configuração e aplicação de listas de controle de acesso (ACLs) NTFS a arquivos e pastas residentes em SVMs. Você associará o descritor de segurança ao caminho do arquivo ou da pasta em uma tarefa de diretiva.
+
+.Sobre esta tarefa
+Você pode criar descritores de segurança NTFS para arquivos e pastas que residem em volumes de estilo de segurança NTFS ou para arquivos e pastas que residem em volumes de estilo de segurança misto.
+
+Por padrão, quando um descritor de segurança é criado, quatro entradas de controle de acesso (ACEs) da lista de controle de acesso discricionária (DACL) são adicionadas a esse descritor de segurança. Os quatro ACEs predefinidos são os seguintes:
+
+|===
+| Objeto | Tipo de acesso | Direitos de acesso | Onde aplicar as permissões 
+
+
+ a| 
+CRIAR/Administradores
+ a| 
+Permitir
+ a| 
+Controlo total
+ a| 
+esta pasta, subpastas, ficheiros
+
+
+
+ a| 
+CONSTRUIR/usuários
+ a| 
+Permitir
+ a| 
+Controlo total
+ a| 
+esta pasta, subpastas, ficheiros
+
+
+
+ a| 
+PROPRIETÁRIO DO CRIADOR
+ a| 
+Permitir
+ a| 
+Controlo total
+ a| 
+esta pasta, subpastas, ficheiros
+
+
+
+ a| 
+AUTORIDADE NT/SISTEMA
+ a| 
+Permitir
+ a| 
+Controlo total
+ a| 
+esta pasta, subpastas, ficheiros
+
+|===
+Você pode personalizar a configuração do descritor de segurança usando os seguintes parâmetros opcionais:
+
+* Proprietário do descritor de segurança
+* Grupo primário do proprietário
+* Flags de controle bruto
+
+
+O valor de qualquer parâmetro opcional é ignorado para o Storage-Level Access Guard. Consulte as páginas de manual para obter mais informações.
+
+.Passos
+. Se pretender utilizar os parâmetros avançados, defina o nível de privilégio para avançado: `set -privilege advanced`
+. Criar um descritor de segurança: `vserver security file-directory ntfs create -vserver vserver_name -ntfs-sd SD_nameoptional_parameters`
++
+`vserver security file-directory ntfs create -ntfs-sd sd1 -vserver vs1 -owner DOMAIN\joe`
+
+. Verifique se a configuração do descritor de segurança está correta: `vserver security file-directory ntfs show -vserver vserver_name -ntfs-sd SD_name`
++
+[listing]
+----
+vserver security file-directory ntfs show -vserver vs1 -ntfs-sd sd1
+----
++
+[listing]
+----
+                                     Vserver: vs1
+                           Security Descriptor Name: sd1
+                   Owner of the Security Descriptor: DOMAIN\joe
+----
+. Se estiver no nível de privilégio avançado, regresse ao nível de privilégio admin: `set -privilege admin`
+

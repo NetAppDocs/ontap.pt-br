@@ -1,0 +1,102 @@
+---
+sidebar: sidebar 
+permalink: networking/add_broadcast_domain.html 
+keywords: broadcast, domain, adding, add, network, ports, cluster, svm, IPspace, mtu 
+summary: Os domínios de broadcast agrupam portas de rede no cluster que pertencem à mesma rede de camada 2. As portas podem então ser usadas por SVMs. 
+---
+= Adicione um domínio de broadcast
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os domínios de broadcast agrupam portas de rede no cluster que pertencem à mesma rede de camada 2. As portas podem então ser usadas por SVMs.
+
+A partir do ONTAP 9.8, os domínios de broadcast são criados automaticamente durante a operação de criação ou associação de cluster. A partir do ONTAP 9.12,0, além dos domínios de broadcast criados automaticamente, você pode adicionar manualmente um domínio de broadcast no Gerenciador de sistema.
+
+.Antes de começar
+As portas que pretende adicionar ao domínio de difusão não devem pertencer a outro domínio de difusão. Se as portas que você deseja usar pertencerem a outro domínio de broadcast, mas não forem utilizadas, remova essas portas do domínio de broadcast original.
+
+.Sobre esta tarefa
+* Todos os nomes de domínio de broadcast devem ser exclusivos dentro de um espaço IPspace.
+* As portas adicionadas a um domínio de broadcast podem ser portas de rede físicas, VLANs ou grupos de agregação de links/grupos de interface (LAGs/ifgrps).
+* Se as portas que você deseja usar pertencerem a outro domínio de broadcast, mas não forem utilizadas, remova-as do domínio de broadcast existente antes de adicioná-las ao novo.
+* A unidade máxima de transmissão (MTU) das portas adicionadas a um domínio de broadcast são atualizadas para o valor MTU definido no domínio de broadcast.
+* O valor MTU deve corresponder a todos os dispositivos conetados a essa rede de camada 2, exceto para o tráfego de gerenciamento de manipulação de portas e0M.
+* Se você não especificar um nome de IPspace, o domínio de broadcast será criado no IPspace "padrão".
+
+
+Para facilitar a configuração do sistema, um grupo de failover com o mesmo nome é criado automaticamente que contém as mesmas portas.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *rede > Visão geral > domínio Broadcast*.
+. Clique em image:icon_add.gif["Adicionar ícone"]
+. Nomeie o domínio de broadcast.
+. Defina a MTU.
+. Selecione o espaço IPspace.
+. Salve o domínio de broadcast.
+
+
+Você pode editar ou excluir um domínio de broadcast depois que ele foi adicionado.
+
+--
+.CLI
+--
+No ONTAP 9.7 ou anterior, você pode criar manualmente um domínio de broadcast.
+
+Se você estiver usando o ONTAP 9.8 e posterior, os domínios de broadcast serão criados automaticamente com base na acessibilidade da camada 2. Para obter mais informações, link:repair_port_reachability.html["Acessibilidade da porta de reparo"]consulte .
+
+.Passos
+. Exibir as portas que não estão atualmente atribuídas a um domínio de broadcast:
++
+`network port show`
+
++
+Se a exibição for grande, use o `network port show -broadcast-domain` comando para exibir somente portas não atribuídas.
+
+. Criar um domínio de broadcast:
++
+`network port broadcast-domain create -broadcast-domain _broadcast_domain_name_ -mtu _mtu_value_ [-ipspace _ipspace_name_] [-ports _ports_list_]`
+
++
+.. `broadcast_domain_name` é o nome do domínio de broadcast que você deseja criar.
+.. `mtu_value` É o tamanho MTU para pacotes IP; 1500 e 9000 são valores típicos.
++
+Esse valor é aplicado a todas as portas que são adicionadas a esse domínio de broadcast.
+
+.. `ipspace_name` É o nome do IPspace ao qual este domínio de broadcast será adicionado.
++
+O espaço IPspace "padrão" é usado a menos que você especifique um valor para este parâmetro.
+
+.. `ports_list` é a lista de portas que serão adicionadas ao domínio de broadcast.
++
+As portas são adicionadas no formato `node_name:port_number`, por exemplo, `node1:e0c`.
+
+
+
+. Verifique se o domínio de broadcast foi criado conforme desejado:
++
+`network port show -instance -broadcast-domain new_domain`
+
+
+
+.Exemplo
+O comando a seguir cria o domínio de broadcast bcast1 no IPspace padrão, define o MTU como 1500 e adiciona quatro portas:
+
+`network port broadcast-domain create -broadcast-domain _bcast1_ -mtu _1500_ -ports _cluster1-01:e0e,cluster1-01:e0f,cluster1-02:e0e,cluster1-02:e0f_`
+
+.Depois de terminar
+Você pode definir o pool de endereços IP que estará disponível no domínio de broadcast criando uma sub-rede ou pode atribuir SVMs e interfaces ao IPspace neste momento. Para obter mais informações, link:../peering/index.html["Peering de cluster e SVM"]consulte .
+
+Se você precisar alterar o nome de um domínio de broadcast existente, use o `network port broadcast-domain rename` comando.
+
+--
+====

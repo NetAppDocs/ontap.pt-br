@@ -1,0 +1,57 @@
+---
+permalink: disks-aggregates/determine-drive-raid-group-info-aggregate-task.html 
+sidebar: sidebar 
+keywords: determine, drive, raid group, information, aggregate, local tier 
+summary: 'Algumas tarefas de administração de camadas locais (agregadas) exigem que você saiba quais tipos de unidades compõem a camada local, seu tamanho, checksum e status, se elas são compartilhadas com outros agregados e o tamanho e a composição dos grupos RAID.' 
+---
+= Determinar informações de unidade e grupo RAID para um nível local (agregado)
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Algumas tarefas de administração de camadas locais (agregadas) exigem que você saiba quais tipos de unidades compõem o nível local, seu tamanho, checksum e status, se eles são compartilhados com outros níveis locais e o tamanho e a composição dos grupos RAID.
+
+.Passo
+. Mostrar as unidades para o agregado, por grupo RAID:
++
+`storage aggregate show-status _aggr_name_`
+
++
+As unidades são exibidas para cada grupo RAID no agregado.
+
++
+Você pode ver o tipo RAID da unidade (dados, paridade, dparidade) `Position` na coluna. Se a `Position` coluna for exibida `shared`, a unidade será compartilhada: Se for um disco rígido, será um disco particionado; se for um SSD, ele fará parte de um pool de armazenamento.
+
+
+
+....
+cluster1::> storage aggregate show-status nodeA_fp_1
+
+Owner Node: cluster1-a
+ Aggregate: nodeA_fp_1 (online, mixed_raid_type, hybrid) (block checksums)
+  Plex: /nodeA_fp_1/plex0 (online, normal, active, pool0)
+   RAID Group /nodeA_fp_1/plex0/rg0 (normal, block checksums, raid_dp)
+
+                                             Usable Physical
+     Position Disk       Pool Type     RPM     Size     Size Status
+     -------- ---------- ---- ----- ------ -------- -------- -------
+     shared   2.0.1       0   SAS    10000  472.9GB  547.1GB (normal)
+     shared   2.0.3       0   SAS    10000  472.9GB  547.1GB (normal)
+     shared   2.0.5       0   SAS    10000  472.9GB  547.1GB (normal)
+     shared   2.0.7       0   SAS    10000  472.9GB  547.1GB (normal)
+     shared   2.0.9       0   SAS    10000  472.9GB  547.1GB (normal)
+     shared   2.0.11      0   SAS    10000  472.9GB  547.1GB (normal)
+
+   RAID Group /nodeA_flashpool_1/plex0/rg1
+   (normal, block checksums, raid4) (Storage Pool: SmallSP)
+
+                                             Usable Physical
+     Position Disk       Pool Type     RPM     Size     Size Status
+     -------- ---------- ---- ----- ------ -------- -------- -------
+     shared   2.0.13      0   SSD        -  186.2GB  745.2GB (normal)
+     shared   2.0.12      0   SSD        -  186.2GB  745.2GB (normal)
+
+8 entries were displayed.
+....

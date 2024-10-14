@@ -1,0 +1,74 @@
+---
+permalink: software_setup/convert-ipv4-to-ipv6-task.html 
+sidebar: sidebar 
+keywords: software, setup, ontap, covert, converting, ipv4, ipv6 
+summary: A partir do ONTAP 9.13,1, você pode atribuir endereços IPv6 para LIFs de gerenciamento em plataformas A800 a FAS8700. Para versões do ONTAP anteriores a 9.13.1, para 9.13.1 e posteriores em outras plataformas, você deve atribuir endereços IPv4 para LIFs de gerenciamento e converter endereços IPv6 depois de concluir a configuração do cluster. 
+---
+= Converter LIFs de gerenciamento de IPv4 para IPv6
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.13,1, você pode atribuir endereços IPv6 a LIFs de gerenciamento em plataformas A800 e FAS8700 durante a configuração inicial do cluster. Para versões do ONTAP anteriores a 9.13.1, ou para 9.13.1 e posteriores em outras plataformas, primeiro você deve atribuir endereços IPv4 a LIFs de gerenciamento e depois converter para endereços IPv6 depois de concluir a configuração do cluster.
+
+.Passos
+. Ativar IPv6 para o cluster:
++
+[source, cli]
+----
+network options ipv6 modify -enable true
+----
+. Definir privilégio como avançado:
++
+[source, cli]
+----
+set priv advanced
+----
+. Veja a lista de prefixos RA aprendidos em várias interfaces:
++
+[source, cli]
+----
+network ndp prefix show
+----
+. Crie um LIF de gerenciamento IPv6:
++
+Use o formato `prefix::id` no parâmetro address para construir o endereço IPv6 manualmente.
+
++
+[source, cli]
+----
+network interface create -vserver <svm_name> -lif <LIF> -home-node <home_node> -home-port <home_port> -address <IPv6prefix::id> -netmask-length <netmask_length> -failover-policy <policy> -service-policy <service_policy> -auto-revert true
+----
+. Verifique se o LIF foi criado:
++
+[source, cli]
+----
+network interface show
+----
+. Verifique se o endereço IP configurado está acessível:
++
+[source, cli]
+----
+network ping6
+----
+. Marque o IPv4 LIF como administrativamente para baixo:
++
+[source, cli]
+----
+network interface modify -vserver <svm_name> -lif <lif_name> -status-admin down
+----
+. Eliminar o LIF de gestão IPv4:
++
+[source, cli]
+----
+network interface delete -vserver <svm_name> -lif <lif_name>
+----
+. Confirme se o LIF de gerenciamento IPv4 é excluído:
++
+[source, cli]
+----
+network interface show
+----
+

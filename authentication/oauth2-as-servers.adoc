@@ -1,0 +1,139 @@
+---
+sidebar: sidebar 
+permalink: authentication/oauth2-as-servers.html 
+keywords: oauth 2.0, oauth2, access token, grant type, jwt 
+summary: Os servidores de autorização executam várias funções importantes como um componente central dentro da estrutura de autorização do OAuth 2,0. 
+---
+= Servidores de autorização e tokens de acesso
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Os servidores de autorização executam várias funções importantes como um componente central dentro da estrutura de autorização do OAuth 2,0.
+
+
+
+== Servidores de autorização OAuth 2,0
+
+Os servidores de autorização são os principais responsáveis pela criação e assinatura de tokens de acesso. Esses tokens contêm informações de identidade e autorização, permitindo que um aplicativo cliente acesse seletivamente recursos protegidos. Os servidores geralmente são isolados uns dos outros e podem ser implementados de várias maneiras diferentes, incluindo como um servidor dedicado autônomo ou como parte de um produto maior de gerenciamento de identidade e acesso.
+
+
+NOTE: Terminologia diferente às vezes pode ser usada para um servidor de autorização, especialmente quando a funcionalidade OAuth 2,0 é empacotada dentro de um produto ou solução de gerenciamento de identidade e acesso maior. Por exemplo, o termo *provedor de identidade (IDP)* é frequentemente usado de forma intercambiável com *servidor de autorização*.
+
+
+
+=== Administração
+
+Além de emitir tokens de acesso, os servidores de autorização também fornecem serviços administrativos relacionados, normalmente através de uma interface de usuário da Web. Por exemplo, você pode definir e administrar:
+
+* Autenticação de usuários e usuários
+* Escopos
+* Segregação administrativa através de inquilinos e reinos
+* Aplicação da política
+* Conexão com vários serviços externos
+* Suporte para outros protocolos de identidade (como SAML)
+
+
+O ONTAP é compatível com servidores de autorização compatíveis com o padrão OAuth 2,0.
+
+
+
+=== Definindo para ONTAP
+
+Você precisa definir um ou mais servidores de autorização para o ONTAP. O ONTAP se comunica com segurança com cada servidor para verificar tokens e executar outras tarefas relacionadas no suporte aos aplicativos cliente.
+
+Os principais aspetos da configuração do ONTAP são apresentados abaixo. Consulte também link:../authentication/oauth2-deployment-scenarios.html["Cenários de implantação do OAuth 2,0"]para obter mais informações.
+
+.Como e onde os tokens de acesso são validados
+Existem duas opções para validar tokens de acesso.
+
+* Validação local
++
+O ONTAP pode validar tokens de acesso localmente com base nas informações fornecidas pelo servidor de autorização que emitiu o token. As informações recuperadas do servidor de autorização são armazenadas em cache pelo ONTAP e atualizadas em intervalos regulares.
+
+* Introspeção remota
++
+Você também pode usar introspeção remota para validar tokens no servidor de autorização. Introspeção é um protocolo que permite que partes autorizadas consultem um servidor de autorização sobre um token de acesso. Ele fornece ao ONTAP uma maneira de extrair determinados metadados de um token de acesso e validar o token. O ONTAP armazena em cache alguns dos dados por motivos de desempenho.
+
+
+
+.Localização da rede
+O ONTAP pode estar atrás de um firewall. Nesse caso, você precisa identificar um proxy como parte da configuração.
+
+.Como os servidores de autorização são definidos
+Você pode definir um servidor de autorização para o ONTAP usando qualquer uma das interfaces administrativas, incluindo a CLI, o Gerenciador de sistema ou a API REST. Por exemplo, com a CLI você usa o comando `security oauth2 client create`.
+
+.Número de servidores de autorização
+Você pode definir até oito servidores de autorização para um único cluster ONTAP. O mesmo servidor de autorização pode ser definido mais de uma vez para o mesmo cluster do ONTAP desde que as reivindicações do emissor ou do emissor/público sejam únicas. Por exemplo, com KeyCloak, esse será sempre o caso ao usar reinos diferentes.
+
+
+
+== Usando tokens de acesso OAuth 2,0
+
+Os tokens de acesso OAuth 2,0 emitidos pelos servidores de autorização são verificados pelo ONTAP e usados para tomar decisões de acesso baseadas em função para as solicitações de cliente de API REST.
+
+
+
+=== Adquirir um token de acesso
+
+Você precisa adquirir um token de acesso a partir de um servidor de autorização definido para o cluster ONTAP onde você usa a API REST. Para adquirir um token, você deve entrar em Contato diretamente com o servidor de autorização.
+
+
+CAUTION: O ONTAP não emite tokens de acesso nem redireciona solicitações de clientes para os servidores de autorização.
+
+A forma como você solicita um token depende de vários fatores, incluindo:
+
+* Servidor de autorização e suas opções de configuração
+* OAuth 2,0 tipo de concessão
+* Ferramenta cliente ou software usada para emitir a solicitação
+
+
+
+
+=== Tipos de concessão
+
+Um _Grant_ é um processo bem definido, incluindo um conjunto de fluxos de rede, usado para solicitar e receber um token de acesso OAuth 2,0. Vários tipos de concessão diferentes podem ser usados dependendo dos requisitos de cliente, ambiente e segurança. Uma lista dos tipos de concessão populares é apresentada na tabela abaixo.
+
+[cols="25,75"]
+|===
+| Tipo de concessão | Descrição 
+
+
+| Credenciais do cliente | Um tipo de concessão popular baseado no uso apenas de credenciais (como um ID e segredo compartilhado). Presume-se que o cliente tenha uma relação de confiança próxima com o proprietário do recurso. 
+
+
+| Palavra-passe | O tipo de concessão de credenciais de senha do proprietário do recurso pode ser usado nos casos em que o proprietário do recurso tenha uma relação de confiança estabelecida com o cliente. Também pode ser útil ao migrar clientes HTTP legados para o OAuth 2,0. 
+
+
+| Código de autorização | Este é um tipo de concessão ideal para clientes confidenciais e é baseado em um fluxo baseado em redirecionamento. Ele pode ser usado para obter um token de acesso e atualizar token. 
+|===
+
+
+=== Conteúdo do JWT
+
+Um token de acesso OAuth 2,0 é formatado como JWT. O conteúdo é criado pelo servidor de autorização com base na sua configuração. No entanto, os tokens são opacos para as aplicações cliente. Um cliente não tem razão para inspecionar um token ou estar ciente do conteúdo.
+
+Cada token de acesso JWT contém um conjunto de reivindicações. As reclamações descrevem as caraterísticas do emissor e a autorização com base nas definições administrativas do servidor de autorização. Algumas das reclamações registadas com a norma estão descritas na tabela abaixo. Todas as cordas são sensíveis a maiúsculas e minúsculas.
+
+[cols="20,15,65"]
+|===
+| Pedido de reembolso | Palavra-chave | Descrição 
+
+
+| Emissor | iss | Identifica o principal que emitiu o token. O processamento da reclamação é específico da aplicação. 
+
+
+| Assunto | sub | O assunto ou usuário do token. O nome é definido para ser global ou localmente único. 
+
+
+| Público-alvo | aud | Os destinatários para os quais o token se destina. Implementado como uma matriz de strings. 
+
+
+| Expiração | exp | O tempo após o qual o token expira e deve ser rejeitado. 
+|===
+Consulte https://www.rfc-editor.org/info/rfc7519["RFC 7519: JSON Web tokens"^] para obter mais informações.

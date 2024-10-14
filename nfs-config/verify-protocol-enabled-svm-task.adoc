@@ -1,0 +1,63 @@
+---
+permalink: nfs-config/verify-protocol-enabled-svm-task.html 
+sidebar: sidebar 
+keywords: verify, nfs, protocol, enabled, svm 
+summary: Antes de configurar e usar NFS em SVMs, você deve verificar se o protocolo está ativado. 
+---
+= Verifique se o protocolo NFS está habilitado no SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de configurar e usar NFS em SVMs, você deve verificar se o protocolo está ativado.
+
+.Sobre esta tarefa
+Isso geralmente é feito durante a configuração do SVM, mas se você não ativou o protocolo durante a configuração, poderá ativá-lo mais tarde usando o `vserver add-protocols` comando.
+
+[NOTE]
+====
+Não é possível adicionar ou remover um protocolo de um LIF depois de criado.
+
+====
+Você também pode desativar protocolos em SVMs usando o `vserver remove-protocols` comando.
+
+.Passos
+. Verifique quais protocolos estão atualmente ativados e desativados para o SVM:
++
+`vserver show -vserver _vserver_name_ -protocols`
+
++
+Você também pode usar o `vserver show-protocols` comando para exibir os protocolos atualmente habilitados em todos os SVMs no cluster.
+
+. Se necessário, ative ou desative um protocolo:
++
+** Para ativar o protocolo NFS
+`vserver add-protocols -vserver _vserver_name_ -protocols nfs`
+** Para desativar um protocolo
+`vserver remove-protocols -vserver    _vserver_name_ -protocols _protocol_name_[,_protocol_name_,...]`
+
+
+. Confirme se os protocolos ativados e desativados foram atualizados corretamente:
++
+`vserver show -vserver _vserver_name_ -protocols`
+
+
+
+.Exemplo
+O comando a seguir exibe quais protocolos estão atualmente ativados e desativados (permitidos e não permitidos) no SVM chamado VS1:
+
+[listing]
+----
+vs1::> vserver show -vserver vs1.example.com -protocols
+Vserver           Allowed Protocols         Disallowed Protocols
+-----------       ----------------------    -----------------------
+vs1.example.com   nfs                       cifs, fcp, iscsi, ndmp
+----
+O comando a seguir permite o acesso por NFS adicionando `nfs` à lista de protocolos habilitados no SVM chamado VS1:
+
+[listing]
+----
+vs1::> vserver add-protocols -vserver vs1.example.com -protocols nfs
+----

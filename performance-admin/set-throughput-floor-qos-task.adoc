@@ -1,0 +1,134 @@
+---
+permalink: performance-admin/set-throughput-floor-qos-task.html 
+sidebar: sidebar 
+keywords: setting, throughput, floor, qos 
+summary: 'Você pode usar o campo taxa de transferência mínima para um grupo de políticas para definir um piso de taxa de transferência para workloads de objetos de storage (QoS min). Você pode aplicar o grupo de políticas ao criar ou modificar o objeto de armazenamento. A partir do ONTAP 9.8, você pode especificar o piso da taxa de transferência em IOPS ou Mbps, ou IOPS e Mbps.' 
+---
+= Defina um piso de taxa de transferência com QoS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `min-throughput` campo de um grupo de políticas para definir um piso de taxa de transferência para workloads de objetos de storage (QoS min). Você pode aplicar o grupo de políticas ao criar ou modificar o objeto de armazenamento. A partir do ONTAP 9.8, você pode especificar o piso da taxa de transferência em IOPS ou Mbps, ou IOPS e Mbps.
+
+.Antes de começar
+* Você deve estar executando o ONTAP 9.2 ou posterior. Os pisos de taxa de transferência estão disponíveis a partir do ONTAP 9.2.
+* Você deve ser um administrador de cluster para criar um grupo de políticas.
+* A partir do ONTAP 9.13,1, você pode aplicar pisos de taxa de transferência no nível SVM usando um xref:adaptive-policy-template-task.html[modelo de grupo de políticas adaptável]. Não é possível definir um modelo de grupo de políticas adaptável em um SVM com um grupo de políticas de QoS.
+
+
+.Sobre esta tarefa
+* A partir do ONTAP 9.4, você pode usar um grupo de políticas de QoS _não compartilhado_ para especificar que o piso da taxa de transferência definido seja aplicado individualmente a cada workload de membro. Essa é a única condição em que um grupo de políticas para uma área de transferência pode ser aplicado a várias cargas de trabalho.
++
+Defina `-is-shared=false` para que o `qos policy-group create` comando especifique um grupo de políticas não compartilhado.
+
+* A taxa de transferência para uma carga de trabalho pode ficar abaixo do nível especificado se houver capacidade de desempenho (espaço livre) insuficiente no nó ou no agregado.
+* Um objeto de storage que esteja sujeito a um limite de QoS precisa estar contido pelo SVM a que o grupo de políticas pertence. Vários grupos de políticas podem pertencer ao mesmo SVM.
+* É uma prática recomendada de QoS aplicar um grupo de políticas ao mesmo tipo de objetos de storage.
+* Um grupo de políticas que define um piso de taxa de transferência não pode ser aplicado a um SVM.
+
+
+.Passos
+. Verifique se há capacidade de desempenho adequada no nó ou no agregado, conforme descrito link:identify-remaining-performance-capacity-task.html["Identificação da capacidade de performance restante"]em .
+. Criar um grupo de políticas:
++
+`qos policy-group create -policy group _policy_group_ -vserver _SVM_ -min-throughput _qos_target_ -is-shared true|false`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para sua versão do ONTAP. Você pode usar o `qos policy-group modify` comando para ajustar os andares de taxa de transferência.
+
++
+O comando a seguir cria o grupo de políticas compartilhadas `pg-vs2` com uma taxa de transferência mínima de 1.000 IOPS:
+
++
+[listing]
+----
+cluster1::> qos policy-group create -policy group pg-vs2 -vserver vs2 -min-throughput 1000iops -is-shared true
+----
++
+O comando a seguir cria o grupo de políticas não compartilhadas `pg-vs4` sem um limite de taxa de transferência:
+
++
+[listing]
+----
+cluster1::> qos policy-group create -policy group pg-vs4 -vserver vs4 -is-shared false
+----
+. Aplicar um grupo de políticas a um volume ou LUN:
++
+`_storage_object_ create -vserver _SVM_ -qos-policy-group _policy_group_`
+
++
+Para obter a sintaxe completa do comando, consulte as páginas man. Você pode usar o `_storage_object_modify` comando para aplicar um grupo de políticas diferente ao objeto de armazenamento.
+
++
+O comando a seguir aplica o grupo de políticas `pg-app2` ao volume `app2`:
+
++
+[listing]
+----
+cluster1::> volume create -vserver vs2 -volume app2 -aggregate aggr1 -qos-policy-group pg-app2
+----
+. Monitorar o desempenho do grupo de políticas:
++
+`qos statistics performance show`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[NOTE]
+====
+Monitore o desempenho do cluster. Não use uma ferramenta no host para monitorar o desempenho.
+
+====
++
+O comando a seguir mostra o desempenho do grupo de políticas:
+
++
+[listing]
+----
+cluster1::> qos statistics performance show
+Policy Group           IOPS      Throughput   Latency
+-------------------- -------- --------------- ----------
+-total-                 12316       47.76MB/s  1264.00us
+pg_app2                  7216       28.19MB/s   420.00us
+_System-Best-Effort        62       13.36KB/s     4.13ms
+_System-Background         30           0KB/s        0ms
+----
+. Monitorar a performance do workload:
++
+`qos statistics workload performance show`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[NOTE]
+====
+Monitore o desempenho do cluster. Não use uma ferramenta no host para monitorar o desempenho.
+
+====
++
+O comando a seguir mostra o desempenho da carga de trabalho:
+
++
+[listing]
+----
+cluster1::> qos statistics workload performance show
+Workload          ID     IOPS      Throughput    Latency
+--------------- ------ -------- ---------------- ----------
+-total-              -    12320        47.84MB/s  1215.00us
+app2-wid7967      7967     7219        28.20MB/s   319.00us
+vs1-wid12279     12279     5026        19.63MB/s     2.52ms
+_USERSPACE_APPS     14       55        10.92KB/s   236.00us
+_Scan_Backgro..   5688       20            0KB/s        0ms
+----
++
+[NOTE]
+====
+Use o `qos statistics workload latency show` comando para visualizar estatísticas detalhadas de latência para workloads de QoS.
+
+====
+

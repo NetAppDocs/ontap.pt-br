@@ -1,0 +1,113 @@
+---
+permalink: smb-hyper-v-sql/verify-domain-accounts-map-default-unix-user-task.html 
+sidebar: sidebar 
+keywords: verfiy, domain, account, default, unix, server, smb, share, user 
+summary: Hyper-V e SQL Server usam contas de domínio para criar conexões SMB para compartilhamentos continuamente disponíveis. Para criar a conexão com êxito, a conta do computador deve mapear com êxito para um usuário UNIX. A maneira mais conveniente de fazer isso é mapear a conta do computador para o usuário UNIX padrão. 
+---
+= Verifique se as contas de domínio são mapeadas para o usuário UNIX padrão
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Hyper-V e SQL Server usam contas de domínio para criar conexões SMB para compartilhamentos continuamente disponíveis. Para criar a conexão com êxito, a conta do computador deve mapear com êxito para um usuário UNIX. A maneira mais conveniente de fazer isso é mapear a conta do computador para o usuário UNIX padrão.
+
+.Sobre esta tarefa
+Hyper-V e SQL Server usam as contas de computador de domínio para criar conexões SMB. Além disso, o SQL Server usa uma conta de usuário de domínio como a conta de serviço que também faz conexões SMB.
+
+Quando você cria uma máquina virtual de armazenamento (SVM), o ONTAP cria automaticamente o usuário padrão chamado "'pcuser'" (com um UID do `65534`) e o grupo chamado "'pcuser'" (com um GID do `65534`) e adiciona o usuário padrão ao grupo "'pcuser'". Se você estiver configurando uma solução Hyper-V sobre SMB em um SVM que existia antes de atualizar o cluster para o Data ONTAP 8.2, o usuário e o grupo padrão podem não existir. Se não o fizerem, você deverá criá-los antes de configurar o usuário UNIX padrão do servidor CIFS.
+
+.Passos
+. Determine se há um usuário UNIX padrão:
++
+`*vserver cifs options show -vserver _vserver_name_*`
+
+. Se a opção de usuário padrão não estiver definida, determine se há um usuário UNIX que pode ser designado como o usuário UNIX padrão:
++
+`*vserver services unix-user show -vserver _vserver_name_*`
+
+. Se a opção de usuário padrão não estiver definida e não houver um usuário UNIX que possa ser designado como usuário UNIX padrão, crie o usuário UNIX padrão e o grupo padrão e adicione o usuário padrão ao grupo.
++
+Geralmente, o usuário padrão recebe o nome de usuário ""pcuser"" e deve ser atribuído o UID de `65534`. O grupo padrão geralmente recebe o nome do grupo ""pcuser"". O GID atribuído ao grupo deve ser `65534`.
+
++
+.. Criar o grupo padrão
+`*vserver services unix-group create -vserver _vserver_name_ -name pcuser -id 65534*`
+.. Crie o usuário padrão e adicione o usuário padrão ao grupo padrão
+`*vserver services unix-user create -vserver _vserver_name_ -user pcuser -id 65534 -primary-gid 65534*`
+.. Verifique se o usuário padrão e o grupo padrão estão configurados corretamente
+`*vserver services unix-user show -vserver _vserver_name_*`
+`*vserver services unix-group show -vserver _vserver_name_ -members*`
+
+
+. Se o usuário padrão do servidor CIFS não estiver configurado, execute o seguinte procedimento:
++
+.. Configurar o utilizador predefinido:
++
+`*vserver cifs options modify -vserver *vserver_name* -default-unix-user pcuser*`
+
+.. Verifique se o usuário UNIX padrão está configurado corretamente:
++
+`*vserver cifs options show -vserver _vserver_name_*`
+
+
+
+. Para verificar se a conta do computador do servidor de aplicativos mapeia corretamente para o usuário padrão, mapeie uma unidade para um compartilhamento residente no SVM e confirme o mapeamento do usuário do Windows para o UNIX usando o `vserver cifs session show` comando.
++
+Para obter mais informações sobre como usar esse comando, consulte as páginas man.
+
+
+
+.Exemplo
+Os comandos a seguir determinam que o usuário padrão do servidor CIFS não está definido, mas determina que o usuário "'pcuser'" e o grupo "'pcuser'" existem. O usuário "'pcuser'" é atribuído como o usuário padrão do servidor CIFS na SVM VS1.
+
+[listing]
+----
+cluster1::> vserver cifs options show
+
+Vserver: vs1
+
+  Client Session Timeout : 900
+  Default Unix Group     : -
+  Default Unix User      : -
+  Guest Unix User        : -
+  Read Grants Exec       : disabled
+  Read Only Delete       : disabled
+  WINS Servers           : -
+
+
+
+cluster1::> vserver services unix-user show
+          User            User   Group  Full
+Vserver   Name            ID     ID     Name
+--------- --------------- ------ ------ ----------------
+vs1       nobody          65535  65535  -
+vs1       pcuser          65534  65534  -
+vs1       root            0      1      -
+
+cluster1::> vserver services unix-group show -members
+Vserver        Name                ID
+vs1            daemon              1
+       Users: -
+vs1            nobody              65535
+       Users: -
+vs1            pcuser              65534
+       Users: -
+vs1            root                0
+       Users: -
+
+cluster1::> vserver cifs options modify -vserver vs1 -default-unix-user pcuser
+
+cluster1::> vserver cifs options show
+
+Vserver: vs1
+
+  Client Session Timeout : 900
+  Default Unix Group     : -
+  Default Unix User      : pcuser
+  Guest Unix User        : -
+  Read Grants Exec       : disabled
+  Read Only Delete       : disabled
+  WINS Servers           : -
+----

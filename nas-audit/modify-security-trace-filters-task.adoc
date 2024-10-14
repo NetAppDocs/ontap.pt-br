@@ -1,0 +1,53 @@
+---
+permalink: nas-audit/modify-security-trace-filters-task.html 
+sidebar: sidebar 
+keywords: modify, security trace filters 
+summary: Se você quiser alterar os parâmetros de filtro opcionais usados para determinar quais eventos de acesso são rastreados, você pode modificar os filtros de rastreamento de segurança existentes. 
+---
+= Modificar filtros de rastreamento de segurança
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você quiser alterar os parâmetros de filtro opcionais usados para determinar quais eventos de acesso são rastreados, você pode modificar os filtros de rastreamento de segurança existentes.
+
+.Sobre esta tarefa
+Você deve identificar qual filtro de rastreamento de segurança deseja modificar especificando o nome da máquina virtual de armazenamento (SVM) no qual o filtro é aplicado e o número de índice do filtro. Você pode modificar todos os parâmetros de filtro opcionais.
+
+.Passos
+. Modificar um filtro de rastreamento de segurança:
++
+`vserver security trace filter modify -vserver vserver_name -index index_numberfilter_parameters`
+
++
+** `vserver_name` É o nome do SVM no qual você deseja aplicar um filtro de rastreamento de segurança.
+** `index_number` é o número de índice que você deseja aplicar ao filtro. Os valores permitidos para este parâmetro são de 1 a 10.
+** `filter_parameters` é uma lista de parâmetros de filtro opcionais.
+
+
+. Verifique a entrada do filtro de rastreamento de segurança:
++
+`vserver security trace filter show -vserver vserver_name -index index_number`
+
+
+
+.Exemplo
+O comando a seguir modifica o filtro de rastreamento de segurança com o índice número 1. O filtro rastreia eventos para qualquer usuário acessando um arquivo com um caminho de compartilhamento `\\server\share1\dir1\dir2\file.txt` a partir de qualquer endereço IP. O filtro usa um caminho completo para a `-path` opção. Os rastreamentos de filtro permitem e negam eventos:
+
+[listing]
+----
+cluster1::> vserver security trace filter modify -vserver vs1 -index 1 -path /dir1/dir2/file.txt -trace-allow yes
+
+cluster1::> vserver security trace filter show -vserver vs1 -index 1
+                                 Vserver: vs1
+                            Filter Index: 1
+              Client IP Address to Match: -
+                                    Path: /dir1/dir2/file.txt
+                       Windows User Name: -
+                          UNIX User Name: -
+                      Trace Allow Events: yes
+                          Filter Enabled: enabled
+               Minutes Filter is Enabled: 60
+----

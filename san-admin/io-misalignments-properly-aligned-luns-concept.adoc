@@ -1,0 +1,69 @@
+---
+permalink: san-admin/io-misalignments-properly-aligned-luns-concept.html 
+sidebar: sidebar 
+keywords: i/o misalignments, occur, properly, aligned, luns 
+summary: O ONTAP pode relatar desalinhamentos de e/S em LUNs alinhados corretamente. Em geral, esses avisos de desalinhamento podem ser desconsiderados, desde que você esteja confiante de que seu LUN está corretamente provisionado e que sua tabela de particionamento está correta. 
+---
+= Desalinhamentos de e/S na visão geral dos LUNs alinhados adequadamente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP pode relatar desalinhamentos de e/S em LUNs alinhados corretamente. Em geral, esses avisos de desalinhamento podem ser desconsiderados, desde que você esteja confiante de que seu LUN está corretamente provisionado e que sua tabela de particionamento está correta.
+
+LUNs e discos rígidos fornecem armazenamento como blocos. Como o tamanho do bloco para discos no host é de 512 bytes, os LUNs apresentam blocos desse tamanho ao host, enquanto usam blocos maiores de 4 KB para armazenar dados. O bloco de dados de 512 bytes usado pelo host é referido como um bloco lógico. O bloco de dados de 4 KB usado pelo LUN para armazenar dados é referido como um bloco físico. Isso significa que existem oito blocos lógicos de 512 bytes em cada bloco físico de 4 KB.
+
+image:bsag-cmode-lbpb.gif["Blocos lógicos em blocos físicos em LUNs"]
+
+O sistema operacional do host pode iniciar uma operação de e/S de leitura ou gravação em qualquer bloco lógico. As operações de e/S só são consideradas alinhadas quando começam no primeiro bloco lógico no bloco físico. Se uma operação de e/S começar em um bloco lógico que também não é o início de um bloco físico, a e/S é considerada desalinhada. O ONTAP deteta automaticamente o desalinhamento e informa-o no LUN. No entanto, a presença de e/S desalinhadas não significa necessariamente que o LUN também esteja desalinhado. É possível que e/S desalinhadas sejam relatadas em LUNs alinhados corretamente.
+
+Se necessitar de mais investigação, consulte o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/How_to_identify_unaligned_IO_on_LUNs["Como identificar e/S desalinhadas em LUNs?"^]
+
+Para obter mais informações sobre ferramentas para corrigir problemas de alinhamento, consulte a seguinte documentação
+
+* https://docs.netapp.com/us-en/ontap-sanhost/hu_wuhu_71.html["Utilitários do Windows Unified Host 7,1"]
+* link:../san-admin/provision-storage.html["Provisione a documentação de storage SAN"]
+
+
+
+
+== Obtenha alinhamento de e/S usando os tipos de SO LUN
+
+Para o ONTAP 9.7 ou anterior, você deve usar o valor de LUN ONTAP `ostype` recomendado que mais corresponde ao seu sistema operacional para alcançar o alinhamento de e/S com o esquema de particionamento do sistema operacional.
+
+O esquema de partição empregado pelo sistema operacional host é um fator importante que contribui para desalinhamentos de e/S. Alguns valores de LUN do ONTAP `ostype` usam um deslocamento especial conhecido como "prefixo" para permitir que o esquema de particionamento padrão usado pelo sistema operacional do host seja alinhado.
+
+
+NOTE: Em algumas circunstâncias, uma tabela de particionamento personalizada pode ser necessária para alcançar o alinhamento de e/S. No entanto, para `ostype` valores com um valor "'prefixo'" maior que `0`, uma partição personalizada pode criar e/S desalinhadas
+
+Para obter mais informações sobre LUNs provisionados no ONTAP 9.7 ou anterior, consulte o artigo da KB link:https://kb.netapp.com/onprem/ontap/da/SAN/How_to_identify_unaligned_IO_on_LUNs["Como identificar e/S desalinhadas em LUNs"^].
+
+
+NOTE: Por padrão, os novos LUNs provisionados no ONTAP 9.8 ou posterior têm um tamanho de prefixo e sufixo de zero para todos os tipos de sistema operacional LUN. A e/S deve estar alinhada com o sistema operacional de host suportado por padrão.
+
+
+
+== Considerações especiais de alinhamento de e/S para Linux
+
+As distribuições Linux oferecem uma ampla variedade de maneiras de usar um LUN, incluindo como dispositivos brutos para bancos de dados, vários gerenciadores de volume e sistemas de arquivos. Não é necessário criar partições em um LUN quando usado como um dispositivo bruto ou como volume físico em um volume lógico.
+
+Para RHEL 5 e anteriores e SLES 10 e anteriores, se o LUN será usado sem um gerenciador de volume, você deve particionar o LUN para ter uma partição que começa em um deslocamento alinhado, que é um setor que é um mesmo múltiplo de oito blocos lógicos.
+
+
+
+== Considerações especiais de alinhamento de e/S para LUNs Solaris
+
+Você precisa considerar vários fatores ao determinar se você deve usar o `solaris` ostype ou o ostype. `solaris_efi`
+
+Consulte http://mysupport.netapp.com/documentation/productlibrary/index.html?productID=61343["Guia de instalação e administração dos Utilitários do Solaris Host"^] para obter informações detalhadas.
+
+
+
+== Os LUNs de inicialização do ESX relatam como desalinhados
+
+Os LUNs usados como LUNs de inicialização do ESX geralmente são relatados pelo ONTAP como desalinhados. O ESX cria várias partições no LUN de inicialização, dificultando o alinhamento. LUNs de inicialização do ESX desalinhados geralmente não são um problema de desempenho porque a quantidade total de e/S desalinhados é pequena. Supondo que o LUN foi corretamente provisionado com o VMware `ostype`, nenhuma ação é necessária.
+
+.Informações relacionadas
+https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/Virtual_Storage_Console_for_VMware_vSphere/Guest_VM_file_system_partition%2F%2Fdisk_alignment_for_VMware_vSphere["Alinhamento de partição/disco do sistema de arquivos VM convidada para VMware vSphere, outros ambientes virtuais e sistemas de storage NetApp"^]

@@ -1,0 +1,151 @@
+---
+permalink: volumes/manage-svm-capacity.html 
+sidebar: sidebar 
+keywords: svm capacity, size, auto size, auto size alert, space, limit 
+summary: A partir do ONTAP 9.13,1, é possível definir limites de capacidade para um SVM. 
+---
+= Gerenciar limites de capacidade do SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.13,1, é possível definir a capacidade máxima para uma VM de storage (SVM). Você também pode configurar alertas quando o SVM se aproximar de um nível de capacidade limite.
+
+.Sobre esta tarefa
+A capacidade em um SVM é calculada como a soma de FlexVols, volumes FlexGroup, FlexClones e volumes FlexCache. Os volumes afetam o cálculo da capacidade mesmo que estejam restritos, offline ou na fila de recuperação após a exclusão. Se você tiver volumes configurados com crescimento automático, o valor máximo de dimensionamento automático do volume será calculado para o tamanho do SVM; sem crescimento automático, o tamanho real do volume será calculado.
+
+A tabela a seguir captura como `autosize-mode` os parâmetros afetam o cálculo da capacidade.
+
+|===
+
+
+| `autosize-mode off` | O parâmetro de tamanho será usado para computação 
+
+
+| `autosize-mode grow` | O `max-autosize` parâmetro será usado para computação 
+
+
+| `autosize-mode grow-shrink` | O `max-autosize` parâmetro será usado para computação 
+|===
+.Antes de começar
+* Você deve ser um administrador de cluster para definir um limite de SVM.
+* Os limites de storage não podem ser configurados para qualquer SVM que contenha volumes de proteção de dados, volumes em uma relação do SnapMirror ou em uma configuração do MetroCluster.
+* Ao migrar um SVM, a fonte SVM não pode ter um limite de storage habilitado. Para concluir a operação de migração, desative o limite de armazenamento na origem e, em seguida, conclua a migração.
+* A capacidade do SVM é diferente xref:../volumes/quotas-concept.html[quotas]de . As quotas não podem exceder o tamanho máximo.
+* Você não pode definir um limite de storage quando outras operações estiverem em andamento no SVM. Use o `job show vservser _svm_name_` comando para ver os trabalhos existentes. Tente executar o comando novamente quando quaisquer trabalhos tiverem sido concluídos.
+
+
+
+
+== Impacto na capacidade
+
+Quando você atingir o limite de capacidade, as seguintes operações falharão:
+
+* Criando um LUN, namespace ou volume
+* Clonar um LUN, namespace ou volume
+* Modificação de um LUN, namespace ou volume
+* Aumentar o tamanho de um LUN, namespace ou volume
+* Expansão de um LUN, namespace ou volume
+* Rehospedando um LUN, namespace ou volume
+
+
+
+
+== Defina um limite de capacidade para um novo SVM
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *Storage* > *Storage VMs*.
+. image:icon_add_blue_bg.gif["Adicionar ícone"]Selecione para criar o SVM.
+. Nomeie o SVM e selecione um *protocolo de acesso*.
+. Em *Storage VM settings*, selecione *Enable maximum capacity limit* (Ativar limite máximo de capacidade).
++
+Fornecer um tamanho máximo de capacidade para o SVM.
+
+. Selecione *Guardar*.
+
+
+--
+.CLI
+--
+.Passos
+. Crie o SVM. Para definir um limite de armazenamento, forneça um `storage-limit` valor. Para definir um alerta de limite para o limite de armazenamento, forneça um valor percentual para `-storage-limit-threshold-alert`o .
++
+`vserver create -vserver _vserver_name_ -aggregate _aggregate_name_ -rootvolume _root_volume_name_ -rootvolume-security-style {unix|ntfs|mixed} -storage-limit _value_ [GiB|TIB] -storage-limit-threshold-alert _percentage_ [-ipspace IPspace_name] [-language <language>] [-snapshot-policy _snapshot_policy_name_] [-quota-policy _quota_policy_name_] [-comment _comment_]`
+
++
+Se você não fornecer o valor limite, por padrão, um alerta será acionado quando o SVM tiver 90% de capacidade. Para desativar o alerta de limite, forneça um valor de zero.
+
+. Confirme se o SVM foi criado com sucesso:
++
+`vserver show -vserver _vserver_name_`
+
+. Se você deseja desativar o limite de armazenamento, modifique o parâmetro SVM com `-storage-limit` zero:
++
+`vserver modify -vserver _vserver_name_ -storage-limit 0`
+
+
+
+--
+====
+
+
+== Definir ou modificar um limite de capacidade em um SVM existente
+
+Você pode definir um alerta de limite e limite de capacidade em um SVM existente ou desativar um limite de capacidade.
+
+Depois de definir o limite de capacidade, não é possível modificar o limite para um valor inferior à capacidade atualmente alocada.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *Storage* > *Storage VMs*.
+. Selecione o SVM que você deseja modificar. Ao lado do nome do SVM, selecione image:icon_kabob.gif["Ícone de opções do menu"]*Editar*.
+. Para ativar um limite de capacidade, selecione a caixa ao lado de *Ativar limite de capacidade*. Introduza um valor para *capacidade máxima* e um valor percentual para *limiar de alerta*.
++
+Se desejar desativar o limite de capacidade, desmarque a caixa seguinte *Ativar limite de capacidade*.
+
+. Selecione *Guardar*.
+
+
+--
+.CLI
+--
+.Passos
+. No cluster que hospeda o SVM, emita o `vserver modify` comando. Forneça um valor numérico para `-storage-limit` e um valor percentual para `-storage-limit-threshold-alert`.
++
+`vserver modify -vserver _vserver_name_ -storage-limit _value_ [GiB|TIB] -storage-limit-threshold-alert _percentage_`
+
++
+Se você não fornecer o valor limite, terá um alerta padrão com 90% de capacidade. Para desativar o alerta de limite, forneça um valor de zero.
+
+. Se você deseja desativar o limite de armazenamento, modifique o SVM com `-storage-limit` definido como zero:
++
+`vserver modify -vserver _vserver_name_ -storage-limit 0`
+
+
+
+--
+====
+
+
+== Atingindo limites de capacidade
+
+Quando você atinge a capacidade máxima ou o limite de alerta, você pode consultar as `vserver.storage.threshold` mensagens EMS ou usar a página *Insights* no System Manager para saber mais sobre possíveis ações. As possíveis resoluções incluem:
+
+* Edição dos limites de capacidade máxima do SVM
+* Limpando a fila de recuperação de volumes para liberar espaço
+* Eliminar instantâneo para fornecer espaço para o volume
+
+
+.Informações adicionais
+* xref:../concepts/capacity-measurements-in-sm-concept.adoc[Medições de capacidade no System Manager]
+* xref:../task_admin_monitor_capacity_in_sm.html[Monitorar a capacidade no System Manager]
+

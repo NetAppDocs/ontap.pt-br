@@ -1,0 +1,120 @@
+---
+permalink: nfs-config/verify-permissions-kerberos-config-task.html 
+sidebar: sidebar 
+keywords: verify, permissions, kerberos, configuration 
+summary: O Kerberos requer que certas permissões UNIX sejam definidas para o volume raiz do SVM e para usuários e grupos locais. 
+---
+= Verifique as permissões para a configuração Kerberos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O Kerberos requer que certas permissões UNIX sejam definidas para o volume raiz do SVM e para usuários e grupos locais.
+
+.Passos
+. Exiba as permissões relevantes no volume raiz da SVM:
++
+`volume show -volume _root_vol_name_-fields user,group,unix-permissions`
+
++
+O volume raiz do SVM precisa ter a seguinte configuração:
+
++
+|===
+| Nome... | A definir... 
+
+
+ a| 
+UID
+ a| 
+Raiz ou ID 0
+
+
+
+ a| 
+GID
+ a| 
+Raiz ou ID 0
+
+
+
+ a| 
+Permissões da UNIX
+ a| 
+755
+
+|===
++
+Se esses valores não forem exibidos, use o `volume modify` comando para atualizá-los.
+
+. Exibir os usuários locais do UNIX:
++
+`vserver services name-service unix-user show -vserver _vserver_name_`
+
++
+O SVM deve ter os seguintes usuários UNIX configurados:
+
++
+|===
+| Nome de utilizador | ID de utilizador | ID do grupo principal | Comentário 
+
+
+ a| 
+nfs
+ a| 
+500
+ a| 
+0
+ a| 
+Necessário para a fase INIT do GSS.
+
+O primeiro componente do usuário cliente NFS SPN é usado como usuário.
+
+O usuário nfs não é necessário se existir um mapeamento de nomes Kerberos-UNIX para o SPN do usuário cliente NFS.
+
+
+
+ a| 
+raiz
+ a| 
+0
+ a| 
+0
+ a| 
+Necessário para a montagem.
+
+|===
++
+Se esses valores não forem exibidos, você pode usar o `vserver services name-service unix-user modify` comando para atualizá-los.
+
+. Exibir os grupos UNIX locais:
++
+`vserver services name-service unix-group show -vserver _vserver_ _name`
+
++
+O SVM deve ter os seguintes grupos UNIX configurados:
+
++
+|===
+| Nome do grupo | ID do grupo 
+
+
+ a| 
+daemon
+ a| 
+1
+
+
+
+ a| 
+raiz
+ a| 
+0
+
+|===
++
+Se esses valores não forem exibidos, você pode usar o `vserver services name-service unix-group modify` comando para atualizá-los.
+
+

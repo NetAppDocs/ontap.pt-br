@@ -1,0 +1,57 @@
+---
+permalink: smb-admin/multi-byte-file-directory-qtree-names-concept.html 
+sidebar: sidebar 
+keywords: ontap, suppot, byte, utf, encode, name, enable, creation, display, file, directory, tree, unicode, supplement, character, multilingual, plane, bmp, release, display, environment, how ontap handles multi-byte file, qtree 
+summary: 'Começando com ONTAP 9.5, o suporte para nomes codificados UTF-8 de 4 bytes permite a criação e exibição de nomes de arquivos, diretórios e árvores que incluem carateres suplementares Unicode fora do plano multilíngue básico (BMP). Em versões anteriores, esses carateres suplementares não foram exibidos corretamente em ambientes multiprotocolo.' 
+---
+= Como o ONTAP lida com nomes de arquivos, diretórios e qtree de vários bytes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Começando com ONTAP 9.5, o suporte para nomes codificados UTF-8 de 4 bytes permite a criação e exibição de nomes de arquivos, diretórios e árvores que incluem carateres suplementares Unicode fora do plano multilíngue básico (BMP). Em versões anteriores, esses carateres suplementares não foram exibidos corretamente em ambientes multiprotocolo.
+
+Para ativar o suporte para nomes codificados UTF-8 de 4 bytes, um novo código de linguagem _utf8mb4_ está disponível para as `vserver` famílias de comandos e `volume` .
+
+Você deve criar um novo volume de uma das seguintes maneiras:
+
+* Definir a opção de volume `-language` explicitamente: `volume create -language utf8mb4 {…}`
+* Herdando a opção de volume `-language` de uma SVM que foi criada ou modificada para a opção: `vserver [create|modify] -language utf8mb4 {…}``volume create {…}`
+* No ONTAP 9.6 e anteriores, não é possível modificar volumes existentes para suporte a utf8mb4; é necessário criar um novo volume pronto para utf8mb4 e migrar os dados usando ferramentas de cópia baseadas em cliente.
++
+Você pode atualizar SVMs para suporte a utf8mb4, mas os volumes existentes mantêm seus códigos de idioma originais.
+
++
+Se você estiver usando o ONTAP 9.7P1 ou posterior, poderá modificar volumes existentes para o utf8mb4 com uma solicitação de suporte. Para obter mais informações, link:https://kb.netapp.com/onprem/ontap/da/NAS/Can_the_volume_language_be_changed_after_creation_in_ONTAP["O idioma do volume pode ser alterado após a criação no ONTAP?"^]consulte .
+
+
+
+* Começando com ONTAP 9.8, você pode usar o `[-language <Language code>]` parâmetro para alterar o idioma do volume de *.UTF-8 para utf8mb4. Para alterar o idioma de um volume, link:http://mysupport.netapp.com/["Suporte à NetApp"^]contacte .
+
+
+
+NOTE: Nomes LUN com carateres UTF-8 de 4 bytes não são suportados atualmente.
+
+* Os dados de carateres Unicode são normalmente representados em aplicações de sistemas de ficheiros Windows utilizando o formato de transformação Unicode de 16 bits (UTF-16) e em sistemas de ficheiros NFS utilizando o formato de transformação Unicode de 8 bits (UTF-8).
++
+Em versões anteriores ao ONTAP 9.5, nomes incluindo carateres suplementares UTF-16 que foram criados por clientes Windows foram exibidos corretamente para outros clientes Windows, mas não foram traduzidos corretamente para UTF-8 para clientes NFS. Da mesma forma, nomes com carateres suplementares UTF-8 por clientes NFS criados não foram traduzidos corretamente para UTF-16 para clientes Windows.
+
+* Quando você cria nomes de arquivo em sistemas que executam o ONTAP 9.4 ou anteriores que contêm carateres suplementares válidos ou inválidos, o ONTAP rejeita o nome do arquivo e retorna um erro de nome de arquivo inválido.
++
+Para evitar esse problema, use apenas carateres BMP em nomes de arquivo e evite usar carateres suplementares ou atualize para o ONTAP 9.5 ou posterior.
+
+
+
+Começando com ONTAP 9, carateres Unicode são permitidos em nomes de qtree.
+
+* Você pode usar a `volume qtree` família de comandos ou o System Manager para definir ou modificar nomes de qtree.
+* Os nomes de qtree podem incluir carateres de vários bytes no formato Unicode, como carateres japoneses e chineses.
+* Em versões anteriores ao ONTAP 9.5, apenas os carateres BMP (ou seja, aqueles que poderiam ser representados em 3 bytes) foram suportados.
++
+
+NOTE: Em versões anteriores ao ONTAP 9.5, o caminho de junção do volume pai da qtree pode conter nomes de qtree e diretório com carateres Unicode. O `volume show` comando exibe esses nomes corretamente quando o volume pai tem uma configuração de idioma UTF-8. No entanto, se o idioma do volume pai não for uma das configurações de idioma UTF-8, algumas partes do caminho de junção serão exibidas usando um nome alternativo NFS numérico.
+
+* Em versões 9,5 e posteriores, os carateres de 4 bytes são suportados em nomes de qtree, desde que a qtree esteja em um volume habilitado para utf8mb4.
+

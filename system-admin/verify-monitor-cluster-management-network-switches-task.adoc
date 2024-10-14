@@ -1,0 +1,75 @@
+---
+permalink: system-admin/verify-monitor-cluster-management-network-switches-task.html 
+sidebar: sidebar 
+keywords: verify, monitor, cluster, management, network, switches, heath, monitor 
+summary: O monitor de integridade do switch de cluster tenta monitorar automaticamente os switches que ele descobre; no entanto, o monitoramento pode não acontecer automaticamente se os switches não estiverem configurados corretamente. Você deve verificar se o monitor de integridade está configurado corretamente para monitorar seus switches. 
+---
+= Verifique o monitoramento dos switches de rede de gerenciamento e cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O monitor de integridade do switch de cluster tenta monitorar automaticamente os switches que ele descobre; no entanto, o monitoramento pode não acontecer automaticamente se os switches não estiverem configurados corretamente. Você deve verificar se o monitor de integridade está configurado corretamente para monitorar seus switches.
+
+.Passos
+. Para identificar os switches detetados pelo monitor de integridade do switch de cluster, digite o seguinte comando:
++
+[role="tabbed-block"]
+====
+.ONTAP 9 F.8 e mais tarde
+--
+`system switch ethernet show`
+
+--
+.ONTAP 9 F.7 e anteriores
+--
+`system cluster-switch show`
+
+--
+====
++
+Se a `Model` coluna exibir o valor `OTHER`, o ONTAP não poderá monitorar o switch. O ONTAP define o valor para `OTHER` se um switch que ele descobre automaticamente não for suportado para monitoramento de integridade.
+
++
+[NOTE]
+====
+Se um switch não for exibido na saída do comando, você deverá configurar a descoberta do switch.
+
+====
+. Atualize para o software de switch suportado mais recente e consulte o arquivo de configuração (RCF) no site de suporte da NetApp.
++
+https://mysupport.netapp.com/site/downloads["Página de transferências do suporte da NetApp"^]
+
++
+A cadeia de carateres da comunidade no RCF do switch deve corresponder à cadeia de carateres da comunidade que o monitor de integridade está configurado para usar. Por padrão, o monitor de integridade usa a cadeia de carateres da comunidade `cshm1!` .
+
++
+[NOTE]
+====
+Neste momento, o monitor de integridade só suporta SNMPv2.
+
+====
++
+Se você precisar alterar informações sobre um switch que o cluster monitora, você poderá modificar a cadeia de carateres da comunidade usada pelo monitor de integridade usando o seguinte comando:
+
++
+[role="tabbed-block"]
+====
+.ONTAP 9 F.8 e mais tarde
+--
+`system switch ethernet modify`
+
+--
+.ONTAP 9 F.7 e anteriores
+--
+`system cluster-switch modify`
+
+--
+====
+. Verifique se a porta de gerenciamento do switch está conetada à rede de gerenciamento.
++
+Esta conexão é necessária para executar consultas SNMP.
+
+

@@ -1,0 +1,109 @@
+---
+permalink: encryption-at-rest/sanitize-fips-drive-sed-task.html 
+sidebar: sidebar 
+keywords: sanitize, fips, drive, sed, inaccessible, psid, physical secure ID, nrd plus, encrypt 
+summary: 'Se você quiser tornar os dados em uma unidade FIPS ou SED permanentemente inacessíveis e usar a unidade para novos dados, use o `storage encryption disk sanitize` comando para higienizar a unidade.' 
+---
+= Higienize uma unidade FIPS ou SED
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você quiser tornar os dados em uma unidade FIPS ou SED permanentemente inacessíveis e usar a unidade para novos dados, use o `storage encryption disk sanitize` comando para higienizar a unidade.
+
+.Sobre esta tarefa
+Quando você limpa uma unidade de autocriptografia, o sistema altera a chave de criptografia de disco para um novo valor aleatório, redefine o estado de bloqueio de inicialização para falso e define o ID da chave para um valor padrão, seja a ID segura do fabricante 0x0 (unidades SAS) ou uma chave nula (unidades NVMe). Isso torna os dados no disco inacessíveis e impossível de recuperar. Você pode reutilizar discos higienizados como discos sobressalentes não zerados.
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa.
+
+.Passos
+. Migre qualquer dado que precise ser preservado para um agregado em outro disco.
+. Exclua o agregado na unidade FIPS ou SED para ser higienizado:
++
+`storage aggregate delete -aggregate _aggregate_name_`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[listing]
+----
+cluster1::> storage aggregate delete -aggregate aggr1
+----
+. Identifique a ID do disco para a unidade FIPS ou SED a ser higienizada:
++
+`storage encryption disk show -fields data-key-id,fips-key-id,owner`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[listing]
+----
+cluster1::> storage encryption disk show
+Disk    Mode Data Key ID
+-----   ---- ----------------------------------------------------------------
+0.0.0   data F1CB30AFF1CB30B00101000000000000A68B167F92DD54196297159B5968923C
+0.0.1   data F1CB30AFF1CB30B00101000000000000A68B167F92DD54196297159B5968923C
+1.10.2  data F1CB30AFF1CB30B00101000000000000CF0EFD81EA9F6324EA97B369351C56AC
+[...]
+----
+. Se uma unidade FIPS estiver em execução no modo de conformidade com FIPS, defina o ID da chave de autenticação FIPS para o nó novamente para o MSID padrão 0x0:
++
+`storage encryption disk modify -disk _disk_id_ -fips-key-id 0x0`
+
++
+Você pode usar o `security key-manager query` comando para exibir IDs de chave.
+
++
+[listing]
+----
+cluster1::> storage encryption disk modify -disk 1.10.2 -fips-key-id 0x0
+
+Info: Starting modify on 1 disk.
+      View the status of the operation by using the
+      storage encryption disk show-status command.
+----
+. Higienize a unidade:
++
+`storage encryption disk sanitize -disk _disk_id_`
+
++
+Você pode usar este comando para higienizar discos hot spare ou quebrados somente. Para higienizar todos os discos independentemente do tipo, use a `-force-all-state` opção. Para obter a sintaxe completa do comando, consulte a página man.
+
++
+
+NOTE: O ONTAP solicitará que você insira uma frase de confirmação antes de continuar. Insira a frase exatamente como mostrado na tela.
+
++
+[listing]
+----
+cluster1::> storage encryption disk sanitize -disk 1.10.2
+
+Warning: This operation will cryptographically sanitize 1 spare or broken self-encrypting disk on 1 node.
+         To continue, enter sanitize disk: sanitize disk
+
+Info: Starting sanitize on 1 disk.
+      View the status of the operation using the
+      storage encryption disk show-status command.
+----
+. Desfalhe o disco higienizado:
+`storage disk unfail -spare true -disk _disk_id_`
+. Verifique se o disco tem um proprietário:
+`storage disk show -disk _disk_id_` Se o disco não tem um proprietário, atribua um.
+`storage disk assign -owner node -disk _disk_id_`
+. Introduza o nodeshell para o nó que possui os discos que pretende higienizar:
++
+`system node run -node _node_name_`
+
++
+Executar o `disk sanitize release` comando.
+
+. Saia do nodeshell. Desfalhe o disco novamente:
+`storage disk unfail -spare true -disk _disk_id_`
+. Verifique se o disco agora está sobressalente e pronto para ser reutilizado em um agregado:
+`storage disk show -disk _disk_id_`
+

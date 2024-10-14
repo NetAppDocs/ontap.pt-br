@@ -1,0 +1,30 @@
+---
+permalink: concepts/nas-path-failover-concept.html 
+sidebar: sidebar 
+keywords: nas path failover 
+summary: Um LIF nas migra automaticamente para uma porta de rede sobrevivente após uma falha de link em sua porta atual. A porta para a qual o LIF migra deve ser membro do grupo de failover para o LIF. A política de grupo de failover restringe os destinos de failover de um LIF de dados para portas no nó que é proprietário dos dados e de seu parceiro de HA. 
+---
+= Failover de caminho nas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um LIF nas migra automaticamente para uma porta de rede sobrevivente após uma falha de link em sua porta atual. A porta para a qual o LIF migra deve ser um membro do grupo _failover_ para o LIF. A política de grupo _failover_ restringe os destinos de failover para um LIF de dados para portas no nó que possui os dados e seu parceiro de HA.
+
+Para conveniência administrativa, o ONTAP cria um grupo de failover para cada domínio _broadcast_ na arquitetura de rede. Os domínios de broadcast agrupam portas que pertencem à mesma rede de camada 2. Se você estiver usando VLANs, por exemplo, para segregar o tráfego por departamento (Engenharia, Marketing, Finanças e assim por diante), cada VLAN define um domínio de broadcast separado. O grupo de failover associado ao domínio de broadcast é atualizado automaticamente sempre que você adicionar ou remover uma porta de domínio de broadcast.
+
+É quase sempre uma boa ideia usar um domínio de broadcast para definir um grupo de failover para garantir que o grupo de failover permaneça atual. Ocasionalmente, no entanto, você pode querer definir um grupo de failover que não esteja associado a um domínio de broadcast. Por exemplo, você pode querer que LIFs fail over apenas para portas em um subconjunto das portas definidas no domínio de broadcast.
+
+image:nas-lif-migration.gif["Diagrama de migração de LIF após falha de link em uma porta."]
+
+|===
+
+
+ a| 
+*_sub-redes_*
+
+Uma _sub-rede_ reserva um bloco de endereços IP em um domínio de broadcast. Esses endereços pertencem à mesma rede de camada 3 e são alocados às portas no domínio de broadcast quando você cria um LIF. Geralmente é mais fácil e menos propenso a erros especificar um nome de sub-rede quando você define um endereço LIF do que especificar um endereço IP e uma máscara de rede.
+
+|===

@@ -1,0 +1,37 @@
+---
+permalink: flexcache/audit-flexcache-volumes-concept.html 
+sidebar: sidebar 
+keywords: considerations, auditing, flexcache, volumes 
+summary: A partir do ONTAP 9.7, você pode auditar eventos de acesso a arquivos NFS em relacionamentos do FlexCache usando auditoria nativa do ONTAP e gerenciamento de políticas de arquivos com o FPolicy. 
+---
+= Considerações para auditoria de volumes do FlexCache
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.7, você pode auditar eventos de acesso a arquivos NFS em relacionamentos do FlexCache usando auditoria nativa do ONTAP e gerenciamento de políticas de arquivos com o FPolicy.
+
+A partir do ONTAP 9.14,1, o FPolicy é compatível com volumes FlexCache com NFS ou SMB. Anteriormente, FPolicy não era compatível com volumes FlexCache com SMB.
+
+Auditoria nativa e FPolicy são configurados e gerenciados com os mesmos comandos de CLI usados para volumes FlexVol. No entanto, há algum comportamento diferente com os volumes FlexCache.
+
+* * Auditoria nativa*
++
+** Não é possível usar um volume FlexCache como destino para logs de auditoria.
+** Para auditar a leitura e a gravação em volumes do FlexCache, configure a auditoria tanto na SVM do cache quanto na SVM de origem.
++
+Isso ocorre porque as operações do sistema de arquivos são auditadas onde são processadas. Ou seja, as leituras são auditadas no SVM do cache e as gravações são auditadas no SVM de origem.
+
+** Para rastrear a origem das operações de gravação, o UUID SVM e o MSID são anexados no log de auditoria para identificar o volume FlexCache a partir do qual a gravação se originou.
+** Embora as listas de controle de acesso do sistema (SACLs) possam ser definidas em um arquivo usando protocolos NFSv4 ou SMB, os volumes FlexCache suportam apenas NFSv3. Portanto, os SACLs só podem ser definidos no volume de origem.
+
+
+* *FPolicy*
++
+** Embora as gravações em um volume FlexCache sejam confirmadas no volume de origem, as configurações do FPolicy monitoram as gravações no volume de cache. Isso é diferente da auditoria nativa, na qual as gravações são auditadas no volume de origem.
+** Embora o ONTAP não exija a mesma configuração de FPolicy nos SVMs de cache e origem, é recomendável que você implante duas configurações semelhantes. Você pode fazer isso criando uma nova política de FPolicy para o cache, configurada como a SVM de origem, mas com o escopo da nova política limitada ao cache SVM.
+
+
+

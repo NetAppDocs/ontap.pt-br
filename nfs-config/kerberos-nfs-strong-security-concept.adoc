@@ -1,0 +1,47 @@
+---
+permalink: nfs-config/kerberos-nfs-strong-security-concept.html 
+sidebar: sidebar 
+keywords: use, kerberos, nfs, strong, security 
+summary: Se o Kerberos for usado em seu ambiente para autenticação forte, você precisará trabalhar com o administrador do Kerberos para determinar os requisitos e as configurações apropriadas do sistema de armazenamento e, em seguida, ativar o SVM como um cliente Kerberos. 
+---
+= Visão geral do uso do Kerberos com NFS para segurança forte
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se o Kerberos for usado em seu ambiente para autenticação forte, você precisará trabalhar com o administrador do Kerberos para determinar os requisitos e as configurações apropriadas do sistema de armazenamento e, em seguida, ativar o SVM como um cliente Kerberos.
+
+Seu ambiente deve atender às seguintes diretrizes:
+
+* A implantação do seu site deve seguir as práticas recomendadas para a configuração do servidor Kerberos e do cliente antes de configurar o Kerberos para ONTAP.
+* Se possível, use NFSv4 ou posterior se a autenticação Kerberos for necessária.
++
+NFSv3 pode ser usado com Kerberos. No entanto, os benefícios completos de segurança do Kerberos só são realizados em implantações ONTAP de NFSv4 ou posterior.
+
+* Para promover o acesso redundante ao servidor, o Kerberos deve ser habilitado em várias LIFs de dados em vários nós no cluster usando o mesmo SPN.
+* Quando o Kerberos está habilitado no SVM, um dos seguintes métodos de segurança deve ser especificado em regras de exportação para volumes ou qtrees, dependendo da configuração do cliente NFS.
++
+** `krb5` (Protocolo Kerberos v5)
+** `krb5i` (Protocolo Kerberos v5 com verificação de integridade usando checksums)
+** `krb5p` (Protocolo Kerberos v5 com serviço de privacidade)
+
+
+
+
+Além do servidor Kerberos e clientes, os seguintes serviços externos devem ser configurados para que o ONTAP suporte Kerberos:
+
+* Serviço de diretório
++
+Você deve usar um serviço de diretório seguro em seu ambiente, como o ative Directory ou o OpenLDAP, configurado para usar LDAP em SSL/TLS. Não use NIS, cujos pedidos são enviados em texto não criptografado e, portanto, não são seguros.
+
+* NTP
++
+Você deve ter um servidor de tempo de trabalho executando NTP. Isso é necessário para evitar a falha de autenticação Kerberos devido ao desvio de tempo.
+
+* Resolução de nome de domínio (DNS)
++
+Cada cliente UNIX e cada SVM LIF devem ter um Registro de serviço (SRV) adequado registrado no KDC em zonas de pesquisa direta e inversa. Todos os participantes devem ser solucionáveis corretamente via DNS.
+
+

@@ -1,0 +1,46 @@
+---
+permalink: upgrade/task-change-svm-42v-xattrs-option.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, svm, xattr, nfsv4.2 
+summary: Antes de atualizar o ONTAP 9.12,1 e posterior, certifique-se de fornecer um valor explícito para uma opção de atributos estendidos NFSv4,2 para evitar erros de resposta NFS. 
+---
+= Atribua um valor explícito à opção v4,2-xattrs
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você tiver um cliente NFSv4,2, antes de atualizar a partir de certas versões e patches do ONTAP 9.12,1 e posteriores, você precisa dar um valor explícito para a opção NFSv4,2 Extended Attributes para evitar erros de resposta NFS após a atualização.
+
+Se a `v4.2-xattrs` opção nunca for explicitamente atribuído um valor antes da atualização do ONTAP para versões afetadas, os clientes NFSv4,2 não serão informados de que a opção de atributos estendidos do servidor foi alterada. Isso causa erros de resposta NFS a chamadas específicas `xattrs` devido a uma incompatibilidade de cliente e servidor.
+
+.Antes de começar
+Você precisa atribuir um valor explícito para a opção NFSv4,2 atributos estendidos se o seguinte for verdadeiro:
+
+* Você está usando o NFSv4,2 com um SVM criado usando o ONTAP 9.11,1 ou anterior
+* Você está atualizando o ONTAP de qualquer uma dessas versões e patches afetados:
++
+** 9.12.1RC1 a 9.12.1P11
+** 9.13.1RC1 a 9.13.1P8
+** 9.14.1RC1 a 9.14.1P1
+
+
+
+
+.Sobre esta tarefa
+Você deve estar executando o ONTAP 9.12,1 ou posterior para definir o valor usando o comando descrito neste procedimento.
+
+Se `v4.2-xattrs` já estiver definido como `enabled`, ele ainda deve ser explicitamente definido como `enabled` para evitar interrupções futuras. Se você definir `v4.2-xattrs` como desativado, os clientes NFSv4,2 podem receber respostas "argumento inválido" até que sejam remontados ou a `v4.2-xattrs` opção esteja definida como `enabled`.
+
+.Passos
+* Atribua um valor explícito à `v4.2-xattrs` opção:
++
+[source, cli]
+----
+nfs modify -v4.2-xattrs <enabled/disabled> -vserver <vserver_name>
+----
+
+
+.Informações relacionadas
+https://kb.netapp.com/on-prem/ontap/da/NAS/NAS-Issues/CONTAP-120160["O campo NFS v4,2-xattrs está sendo virado após atualizações"^]

@@ -1,0 +1,59 @@
+---
+permalink: nfs-trunking/index.html 
+sidebar: sidebar 
+keywords: NFSv4.1, trunking, Linux, VMware, FlexGroup, volumes, multipathing, AI/ML, rdma, data lake 
+summary: A partir do ONTAP 9.14,1, os clientes NFS que executam o v4,1 ou posterior podem aproveitar a funcionalidade de entroncamento de sessão para abrir várias conexões ao servidor NFS, aumentando assim a velocidade de transferência de dados e fornecendo resiliência por meio de multipathing 
+---
+= Visão geral do trunking NFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.14,1, os clientes NFSv4,1 podem aproveitar o entroncamento de sessão para abrir várias conexões a diferentes LIFs no servidor NFS, aumentando assim a velocidade de transferência de dados e fornecendo resiliência por meio de multipathing.
+
+O entroncamento é vantajoso para exportar volumes FlexVol para clientes com capacidade de entroncamento, em particular clientes VMware e Linux, ou para NFS sobre RDMA, TCP ou pNFS.
+
+No ONTAP 9.14,1, o entroncamento é restrito a LIFs em um único nó; o entroncamento não pode abranger LIFs em vários nós.
+
+Os volumes FlexGroup são compatíveis com o entroncamento. Embora isso possa proporcionar melhor desempenho, o acesso multipath a um volume FlexGroup só pode ser configurado em um único nó.
+
+Somente o entroncamento de sessão é suportado para multipathing nesta versão.
+
+
+
+== Como usar o entroncamento
+
+Para aproveitar os benefícios de vários pathing oferecidos pelo entroncamento, você precisa de um conjunto de LIFs – conhecido como _entroncamento group_ – que esteja associado ao SVM que contém um servidor NFS habilitado para entroncamento. Os LIFs em um grupo de entroncamento devem ter portas home no mesmo nó do cluster e devem residir nessas portas home. É uma prática recomendada que todos os LIFs de um grupo de entroncamento sejam membros do mesmo grupo de failover.
+
+O ONTAP suporta até 16 conexões truncadas por nó de um determinado cliente.
+
+Quando um cliente monta exportações de um servidor habilitado para entroncamento, ele especifica um número de endereços IP para LIFs em um grupo de entroncamento. Depois que o cliente se coneta ao primeiro LIF, LIFs adicionais só são adicionados à sessão NFSv4,1 e usados para entroncamento se eles estiverem em conformidade com os requisitos do grupo de entroncamento. Em seguida, o cliente distribui operações NFS pelas várias conexões com base em seu próprio algoritmo (como round-robin).
+
+Para obter a melhor performance, configure o entroncamento em uma SVM dedicada a fornecer exportações de multipath, e não exportações de caminho único. Ou seja, você só deve habilitar o entroncamento em um servidor NFS em um SVM cujas exportações são fornecidas apenas para clientes habilitados para entroncamento.
+
+
+
+== Clientes suportados
+
+O servidor ONTAP NFSv4,1 suporta entroncamento com qualquer cliente capaz de entroncamento de sessão NFSv4,1.
+
+Os seguintes clientes foram testados com o ONTAP 9.14,1:
+
+* VMware - ESXi 7.0U3F e posterior
+* Linux - Red Hat Enterprise Linux (RHEL) 8,8 e 9,3
+
+
+
+NOTE: Quando o entroncamento é ativado em um servidor NFS, os usuários que acessam compartilhamentos exportados em clientes NFS que não suportam entroncamento podem ver uma queda de desempenho. Isso ocorre porque apenas uma única conexão TCP é usada para várias montagens nos LIFs de dados da SVM.
+
+
+
+== Diferença entre o entroncamento NFS e o nconnect
+
+A partir do ONTAP 9.8, a funcionalidade nconnect está disponível por predefinição quando o NFSv4,1 está ativado. Em clientes compatíveis com nconnect, uma única montagem NFS pode ter várias conexões TCP (até 16) em um único LIF.
+
+Em contraste, o entroncamento é a funcionalidade _multipathing_, que fornece várias conexões TCP sobre vários LIFs. Se você tiver a capacidade de empregar NICs adicionais em seu ambiente, o entroncamento fornece maior paralelismo e desempenho além da capacidade do nconnect.
+
+Saiba mais sobre link:../nfs-admin/ontap-support-nfsv41-concept.html["nligar."]

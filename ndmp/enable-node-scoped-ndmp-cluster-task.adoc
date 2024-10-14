@@ -1,0 +1,75 @@
+---
+permalink: ndmp/enable-node-scoped-ndmp-cluster-task.html 
+sidebar: sidebar 
+keywords: enable, node, scope, ndmp, cluster 
+summary: Você pode configurar NDMP com escopo de nó habilitando NDMP com escopo de nó no cluster e no serviço NDMP em todos os nós do cluster. Você também deve configurar o usuário raiz para NDMP ao ativar o serviço NDMP. 
+---
+= Habilite NDMP com escopo de nó no cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode fazer backup de volumes hospedados em um único nó habilitando NDMP com escopo de nó, habilitando o serviço NDMP e configurando um LIF para conexão de dados e controle. Isso pode ser feito para todos os nós do cluster.
+
+
+NOTE: O NDMP com escopo de nó está obsoleto no ONTAP 9.
+
+.Sobre esta tarefa
+Ao usar NDMP no modo de escopo de nó, a autenticação deve ser configurada por nó. Para obter mais informações, link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Protection_and_Security/NDMP/How_to_configure_NDMP_authentication_in_the_%E2%80%98node-scope%E2%80%99_mode["O artigo da base de dados de Conhecimento "como configurar a autenticação NDMP no modo 'nó-escopo'""^]consulte .
+
+.Passos
+. Ativar o modo NDMP com escopo de nó:
++
+[source, cli]
+----
+cluster1::> system services ndmp node-scope-mode on
+----
++
+O modo de escopo do nó NDMP está ativado.
+
+. Habilite o serviço NDMP em todos os nós do cluster:
++
+O uso do curinga "'*" permite o serviço NDMP em todos os nós ao mesmo tempo.
+
++
+Você deve especificar uma senha para autenticação da conexão NDMP pelo aplicativo de backup.
+
++
+[source, cli]
+----
+cluster1::> system services ndmp on -node *
+----
++
+[listing]
+----
+Please enter password:
+Confirm password:
+2 entries were modified.
+----
+. Desative a `-clear-text` opção de comunicação segura da senha NDMP:
++
+Usando a opção curinga ""*`" disables the `-clear-text` em todos os nós ao mesmo tempo.
+
++
+[source, cli]
+----
+cluster1::> system services ndmp modify -node * -clear-text false
+----
+. Verifique se o serviço NDMP está ativado e se a `-clear-text` opção está desativada:
++
+[source, cli]
+----
+cluster1::> system services ndmp show
+----
++
+[listing]
+----
+Node                  Enabled   Clear text  User Id
+--------------------- --------- ----------- ---------
+cluster1-1            true      false        root
+cluster1-2            true      false        root
+2 entries were displayed.
+----
+

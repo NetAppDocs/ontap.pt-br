@@ -1,0 +1,53 @@
+---
+permalink: smb-admin/create-name-mapping-task.html 
+sidebar: sidebar 
+keywords: vserver, name-mapping, create, command, name, map, windows, enable, user, access, unix, security, style, volume, reverse, create a name mapping 
+summary: Você pode usar o comando vserver name-mapping create para criar um mapeamento de nomes. Use mapeamentos de nomes para permitir que os usuários do Windows acessem volumes de estilo de segurança UNIX e o inverso. 
+---
+= Crie um mapeamento de nomes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `vserver name-mapping create` comando para criar um mapeamento de nomes. Use mapeamentos de nomes para permitir que os usuários do Windows acessem volumes de estilo de segurança UNIX e o inverso.
+
+.Sobre esta tarefa
+Para cada SVM, o ONTAP oferece suporte a até 12.500 mapeamentos de nomes para cada direção.
+
+.Passo
+. Criar um mapeamento de nomes: `vserver name-mapping create -vserver _vserver_name_ -direction {krb-unix|win-unix|unix-win} -position _integer_ -pattern text -replacement _text_`
++
+[NOTE]
+====
+As `-pattern` declarações e `-replacement` podem ser formuladas como expressões regulares. Você também pode usar a `-replacement` instrução para negar explicitamente um mapeamento para o usuário usando a cadeia de substituição nula `" "` (o caractere de espaço). Consulte a `vserver name-mapping create` página de manual para obter detalhes.
+
+====
++
+Quando os mapeamentos do Windows para UNIX são criados, todos os clientes SMB que tenham conexões abertas ao sistema ONTAP no momento em que os novos mapeamentos são criados devem fazer logout e fazer login novamente para ver os novos mapeamentos.
+
+
+
+.Exemplos
+O comando a seguir cria um mapeamento de nomes no SVM chamado VS1. O mapeamento é um mapeamento do UNIX para o Windows na posição 1 na lista de prioridades. O mapeamento mapeia o usuário UNIX johnd para o usuário do Windows Eng.
+
+[listing]
+----
+vs1::> vserver name-mapping create -vserver vs1 -direction unix-win -position 1 -pattern johnd
+-replacement "ENG\\JohnDoe"
+----
+O comando a seguir cria outro mapeamento de nomes no SVM chamado VS1. O mapeamento é um mapeamento do Windows para o UNIX na posição 1 na lista de prioridades. Aqui o padrão e a substituição incluem expressões regulares. O mapeamento mapeia cada usuário CIFS no domínio ENG para usuários no domínio LDAP associado ao SVM.
+
+[listing]
+----
+vs1::> vserver name-mapping create -vserver vs1 -direction win-unix -position 1 -pattern "ENG\\(.+)"
+-replacement "\1"
+----
+O comando a seguir cria outro mapeamento de nomes no SVM chamado VS1. Aqui, o padrão inclui "" como um elemento no nome de usuário do Windows que deve ser escapado. O mapeamento mapeia as operações do usuário do Windows para o usuário do UNIX John_OPS.
+
+[listing]
+----
+vs1::> vserver name-mapping create -direction win-unix -position 1 -pattern ENG\\john\$ops
+-replacement john_ops
+----

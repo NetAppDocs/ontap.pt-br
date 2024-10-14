@@ -1,0 +1,289 @@
+---
+permalink: volumes/examples-quota-config-concept.html 
+sidebar: sidebar 
+keywords: examples, quota, configuration, volume quota policy 
+summary: Esses exemplos ajudam você a entender como configurar cotas e ler relatórios de cotas. 
+---
+= Exemplos de configuração de cotas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Esses exemplos ajudam você a entender como configurar cotas e ler relatórios de cotas.
+
+.Sobre estes exemplos
+Para ver os exemplos a seguir, suponha que você tenha um sistema de storage que inclua um SVM, `vs1`, com um volume, `vol1`.
+
+. Para iniciar a configuração de cotas, crie uma nova política de cotas para o SVM:
++
+[listing]
+----
+cluster1::>volume quota policy create -vserver vs1 -policy-name quota_policy_vs1_1
+----
+. Como a política de cota é nova, você a atribui ao SVM:
++
+[listing]
+----
+cluster1::>vserver modify -vserver vs1 -quota-policy quota_policy_vs1_1
+----
+
+
+.Exemplo 1: Cota de usuário padrão
+. Você decide impor um limite rígido de 50MB para cada usuário no `vol1`:
++
+[listing]
+----
+cluster1::>volume quota policy rule create -vserver vs1 -policy-name quota_policy_vs1_1 -volume vol1 -type user -target "" -disk-limit 50MB -qtree ""
+----
+. Para ativar a nova regra, inicialize cotas no volume:
++
+[listing]
+----
+cluster1::>volume quota on -vserver vs1 -volume vol1 -foreground
+----
+. Você vê o relatório de cota:
++
+[listing]
+----
+cluster1::>volume quota report
+----
+
+
+O relatório de quota resultante é semelhante ao seguinte relatório:
+
+[listing]
+----
+Vserver: vs1
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol1               user    *           0B   50MB       0       -   *
+vol1               user    jsmith    49MB   50MB      37       -   *
+vol1               user    root        0B      -       1       -
+----
+A primeira linha mostra a cota de usuário padrão que você criou, incluindo o limite de disco. Como todas as cotas padrão, essa cota de usuário padrão não exibe informações sobre o uso do disco ou do arquivo. Para além da quota criada, aparecem duas outras quotas. Há uma cota para cada usuário que atualmente possui arquivos no `vol1`. Essas cotas adicionais são cotas de usuário que foram derivadas automaticamente da cota de usuário padrão. A quota de utilizador derivada para o utilizador `jsmith` tem o mesmo limite de disco de 50MB GB que a quota de utilizador predefinida. A cota de usuário derivada para o usuário raiz é uma cota de rastreamento (sem limites).
+
+Se qualquer usuário no sistema (que não seja o usuário raiz) tentar executar uma ação que usaria mais de 50MB em `vol1` (por exemplo, gravar em um arquivo de um editor), a ação falhará.
+
+.Exemplo 2: Quota de utilizador explícita que substitui uma quota de utilizador predefinida
+. Se for necessário fornecer mais espaço em volume `vol1` ao usuário `jsmith`, digite o seguinte comando:
++
+[listing]
+----
+cluster1::>volume quota policy rule create -vserver vs1 -policy-name quota_policy_vs1_1 -volume vol1 -type user -target jsmith -disk-limit 80MB -qtree ""
+----
++
+Essa é uma cota de usuário explícita, porque o usuário está explicitamente listado como o destino da regra de cota.
+
++
+Essa é uma alteração para um limite de cota existente, porque altera o limite de disco da cota de usuário derivada para o usuário `jsmith` no volume. Portanto, você não precisa reinicializar cotas no volume para ativar a alteração.
+
+. Para redimensionar cotas:
++
+[listing]
+----
+cluster1::>volume quota resize -vserver vs1 -volume vol1 -foreground
+----
++
+As cotas permanecem em vigor enquanto você redimensiona, e o processo de redimensionamento é curto.
+
+
+
+O relatório de quota resultante é semelhante ao seguinte relatório:
+
+[listing]
+----
+cluster1::> volume quota report
+Vserver: vs1
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol1               user    *           0B   50MB       0       -   *
+vol1               user    jsmith    50MB   80MB      37       -   jsmith
+vol1               user    root        0B      -       1       -
+3 entries were displayed.
+----
+A segunda linha agora mostra um limite de disco de `80MB` e um especificador de cota `jsmith` de .
+
+Portanto `jsmith`, pode usar até 80MBMB de espaço `vol1`, mesmo que todos os outros usuários ainda estejam limitados a 50MBMB.
+
+.Exemplo 3: Limites
+Suponha que você deseja receber uma notificação quando os usuários atingem dentro de 5MB de seus limites de disco.
+
+. Para criar um limite de 45MB para todos os usuários e um limite de 75MB para `jsmith`, você altera as regras de cota existentes:
++
+[listing]
+----
+cluster1::>volume quota policy rule modify -vserver vs1 -policy quota_policy_vs1_1 -volume vol1 -type user -target "" -qtree "" -threshold 45MB
+cluster1::>volume quota policy rule modify -vserver vs1 -policy quota_policy_vs1_1 -volume vol1 -type user -target jsmith -qtree "" -threshold 75MB
+----
++
+Como os tamanhos das regras existentes são alterados, você redimensiona cotas no volume para ativar as alterações. Você espera até que o processo de redimensionamento seja concluído.
+
+. Para ver o relatório de cota com limites, adicione o `-thresholds` parâmetro ao `volume quota report` comando:
++
+[listing]
+----
+cluster1::>volume quota report -thresholds
+Vserver: vs1
+                                    ----Disk----  ----Files-----
+Volume   Tree      Type    ID        Used  Limit   Used    Limit  Quota
+                                          (Thold)                 Specifier
+-------  --------  ------  -------  -----  -----  ------  ------  ---------
+vol1               user    *           0B   50MB       0       -  *
+                                           (45MB)
+vol1               user    jsmith    59MB   80MB      55       -  jsmith
+                                           (75MB)
+vol1               user    root        0B      -       1       -
+                                           ( -)
+3 entries were displayed.
+----
++
+Os limites aparecem entre parênteses na coluna limite do disco.
+
+
+
+.Exemplo 4: Cotas em qtrees
+Suponha que você precise particionar algum espaço para dois projetos. Você pode criar dois qtrees, `proj1` nomeados e `proj2`, para acomodar esses projetos dentro `vol1`do .
+
+Atualmente, os usuários podem usar tanto espaço em uma qtree quanto eles são alocados para todo o volume (desde que eles não excedessem o limite para o volume usando espaço na raiz ou em outra qtree). Além disso, cada um dos qtrees pode crescer para consumir todo o volume.
+
+. Se você quiser garantir que nenhuma qtree cresça além de 20GB, você pode criar cota de árvore padrão no volume:
++
+[listing]
+----
+cluster1:>>volume quota policy rule create -vserver vs1 -policy-name quota_policy_vs1_1 -volume vol1 -type tree -target "" -disk-limit 20GB
+----
++
+
+NOTE: O tipo correto é _tree_, não qtree.
+
+. Como essa é uma nova cota, você não pode ativá-la redimensionando. Você reinicializa cotas no volume:
++
+[listing]
+----
+cluster1:>>volume quota off -vserver vs1 -volume vol1
+cluster1:>>volume quota on -vserver vs1 -volume vol1 -foreground
+----
+
+
+[NOTE]
+====
+Você deve garantir que você aguarde cerca de cinco minutos antes de reativar as cotas em cada volume afetado, pois tentar ativá-las quase imediatamente após a execução do `volume quota off` comando pode resultar em erros. Como alternativa, você pode executar os comandos para reinicializar as cotas de um volume do nó que contém o volume específico.
+
+====
+As cotas não são aplicadas durante o processo de reinicialização, o que leva mais tempo do que o processo de redimensionamento.
+
+Quando você exibe um relatório de cota, ele tem várias linhas novas. Algumas linhas são para cotas de árvore e algumas linhas são para cotas de usuário derivadas.
+
+As seguintes novas linhas são para as cotas de árvore:
+
+[listing]
+----
+
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+...
+vol1               tree    *           0B   20GB       0       -   *
+vol1     proj1     tree    1           0B   20GB       1       -   proj1
+vol1     proj2     tree    2           0B   20GB       1       -   proj2
+...
+----
+A cota de árvore padrão que você criou aparece na primeira nova linha, que tem um asterisco (*) na coluna ID. Em resposta à cota de árvore padrão em um volume, o ONTAP cria automaticamente cotas de árvore derivadas para cada qtree no volume. Estes são mostrados nas linhas onde `proj1` e `proj2` aparecem na `Tree` coluna.
+
+As novas linhas a seguir são para cotas de usuários derivadas:
+
+[listing]
+----
+
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+...
+vol1     proj1     user    *           0B   50MB       0       -
+vol1     proj1     user    root        0B      -       1       -
+vol1     proj2     user    *           0B   50MB       0       -
+vol1     proj2     user    root        0B      -       1       -
+...
+----
+As cotas de usuário padrão em um volume são herdadas automaticamente para todos os qtrees contidos nesse volume, se as cotas estiverem habilitadas para qtrees. Quando você adicionou a primeira cota de qtree, ativou cotas no qtrees. Portanto, cotas de usuário padrão derivadas foram criadas para cada qtree. Estes são mostrados nas linhas em que ID é asterisco (*).
+
+Como o usuário root é o proprietário de um arquivo, quando as cotas de usuário padrão foram criadas para cada qtrees, cotas especiais de rastreamento também foram criadas para o usuário root em cada qtrees. Estes são mostrados nas linhas em que ID é root.
+
+.Exemplo 5: Cota de usuário em uma qtree
+. Você decide limitar os usuários a menos espaço `proj1` na qtree do que no volume como um todo. Você deseja evitar que eles usem mais de 10MB na `proj1` qtree. Portanto, você cria uma cota de usuário padrão para a qtree:
++
+[listing]
+----
+cluster1::>volume quota policy rule create -vserver vs1 -policy-name quota_policy_vs1_1 -volume vol1 -type user -target "" -disk-limit 10MB -qtree proj1
+----
++
+Esta é uma alteração para uma cota existente, porque altera a cota de usuário padrão para a qtree proj1 que foi derivada da cota de usuário padrão no volume. Portanto, você ativa a alteração reredimensionando cotas. Quando o processo de redimensionamento estiver concluído, você poderá exibir o relatório de cota.
+
++
+A nova linha a seguir aparece no relatório de cota mostrando a nova cota de usuário explícita para a qtree:
+
++
+[listing]
+----
+
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol1     proj1     user    *           0B   10MB       0       -   *
+----
++
+No entanto, o usuário `jsmith` está sendo impedido de gravar mais dados na qtree proj1 porque a cota que você criou para substituir a cota de usuário padrão (para fornecer mais espaço) estava no volume. À medida que você adicionou uma cota de usuário padrão na `proj1` qtree, essa cota está sendo aplicada e limitando todo o espaço dos usuários nessa qtree, `jsmith` incluindo .
+
+. Para fornecer mais espaço ao usuário `jsmith`, você adiciona uma regra de cota de usuário explícita para a qtree com limite de disco 80MB para substituir a regra de cota de usuário padrão para a qtree:
++
+[listing]
+----
+cluster1::>volume quota policy rule create -vserver vs1 -policy-name quota_policy_vs1_1 -volume vol1 -type user -target jsmith -disk-limit 80MB -qtree proj1
+----
++
+Como essa é uma cota explícita para a qual já existia uma cota padrão, você ativa a alteração reredimensionando cotas. Quando o processo de redimensionamento estiver concluído, você exibirá um relatório de cota.
+
+
+
+A nova linha a seguir aparece no relatório de cota:
+
+[listing]
+----
+
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol1     proj1     user    jsmith    61MB   80MB      57       -   jsmith
+----
+O relatório de quota final é semelhante ao seguinte relatório:
+
+[listing]
+----
+cluster1::>volume quota report
+Vserver: vs1
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol1               tree    *           0B   20GB       0       -   *
+vol1               user    *           0B   50MB       0       -   *
+vol1               user    jsmith    70MB   80MB      65       -   jsmith
+vol1     proj1     tree    1           0B   20GB       1       -   proj1
+vol1     proj1     user    *           0B   10MB       0       -   *
+vol1     proj1     user    root        0B      -       1       -
+vol1     proj2     tree    2           0B   20GB       1       -   proj2
+vol1     proj2     user    *           0B   50MB       0       -
+vol1     proj2     user    root        0B      -       1       -
+vol1               user    root        0B      -       3       -
+vol1     proj1     user    jsmith    61MB   80MB      57       -   jsmith
+11 entries were displayed.
+----
+O usuário `jsmith` deve atender aos seguintes limites de cota para gravar em um arquivo no `proj1`:
+
+. A cota de árvore para a `proj1` qtree.
+. A cota de usuário na `proj1` qtree.
+. A quota de utilizador no volume.
+

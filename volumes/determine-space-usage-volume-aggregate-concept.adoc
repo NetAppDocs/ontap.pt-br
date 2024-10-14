@@ -1,0 +1,85 @@
+---
+permalink: volumes/determine-space-usage-volume-aggregate-concept.html 
+sidebar: sidebar 
+keywords: determine, space usage, volume, aggregate 
+summary: O ONTAP ajuda a determinar o consumo de espaço com base no volume, no espaço físico de um volume dentro do agregado e no agregado. 
+---
+= Determinar o uso de espaço em um volume ou agregado
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Em alguns casos, ativar um recurso no ONTAP pode consumir mais espaço do que o esperado. O ONTAP ajuda você a determinar como o espaço está sendo consumido fornecendo três perspetivas para visualizar o espaço: O volume, a pegada de um volume dentro do agregado e o agregado.
+
+
+
+== Ver alocação de espaço
+
+Um volume pode ficar sem espaço devido ao consumo de espaço ou espaço insuficiente dentro do volume, agregado ou uma combinação de ambos. Ao ver uma divisão orientada a recursos do uso do espaço de diferentes perspetivas, você pode avaliar quais recursos você pode querer ajustar ou desativar, ou se você deve tomar outra ação (como aumentar o tamanho do agregado ou do volume).
+
+Você pode visualizar detalhes de uso do espaço a partir de qualquer uma dessas perspetivas:
+
+* A utilização do espaço do volume
++
+Essa perspetiva fornece detalhes sobre o uso de espaço dentro do volume, incluindo o uso de cópias Snapshot.
+
++
+Use o `volume show-space` comando para ver o uso de espaço de um volume.
+
++
+A partir do ONTAP 9.14,1, em volumes com xref:enable-temperature-sensitive-efficiency-concept.html[Eficiência de armazenamento sensível à temperatura (TSSE)] habilitado, a quantidade de espaço usado no volume relatado pelo `volume show-space -physical used` comando inclui a economia de espaço obtida como resultado do TSSE.
+
+* A pegada do volume dentro do agregado
++
+Essa perspetiva fornece detalhes sobre a quantidade de espaço que cada volume está usando no agregado contendo, incluindo os metadados do volume.
+
++
+Use o `volume show-footprint` comando para ver a pegada de um volume com o agregado.
+
+* O uso de espaço do agregado
++
+Essa perspectiva inclui totais de pegadas de volume de todos os volumes contidos no agregado, espaço reservado para cópias Snapshot agregadas e outros metadados agregados.
+
++
+O WAFL reserva 10% do espaço total em disco para metadados de nível agregado e performance. O espaço usado para manter os volumes no agregado sai da reserva WAFL e não pode ser alterado.
+
++
+A partir do ONTAP 9.12,1, a reserva WAFL para agregados maiores que 30TB é reduzida de 10% para 5% para plataformas AFF e para plataformas FAS500f. A partir do ONTAP 9.14,1, essa mesma redução se aplica a agregados em todas as plataformas FAS, resultando em 5% mais espaço utilizável nos agregados.
+
++
+Use o `storage aggregate show-space` comando para ver o uso do espaço do agregado.
+
+
+
+Certos recursos, como backup em fita e deduplicação, usam espaço para metadados do volume e diretamente do agregado. Esses recursos mostram o uso de espaço diferente entre as perspetivas de volume e volume.
+
+.Informações relacionadas
+* link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/Space_Usage["artigo da base de conhecimento: Uso do espaço"^]
+* link:https://www.netapp.com/blog/free-up-storage-capacity-upgrade-ontap/["Libere até 5% da sua capacidade de armazenamento atualizando para o ONTAP 9.12,1"^]
+
+
+
+
+== Relatórios de metadados de volume e métricas de dados
+
+Historicamente, várias das métricas de espaço de volume relataram o total de dados consumidos como uma combinação de duas métricas: Metadados e dados do usuário. A partir do ONTAP 9.15,1, os metadados e as métricas de dados do usuário são relatados separadamente. Dois novos contadores de metadados foram introduzidos para dar suporte a isso:
+
+* metadados totais
++
+Este contador fornece o tamanho total dos metadados dentro do volume. Ele não inclui os metadados de volume residente agregado. Relatá-lo separadamente ajuda a determinar os dados lógicos alocados pelo usuário.
+
+* espaço físico total dos metadados
++
+Este contador é a soma dos metadados residentes em volume e dos metadados de volume residente agregados. Ele fornece o espaço total dos metadados do volume dentro do agregado. Relatá-lo separadamente ajuda a determinar os dados físicos alocados pelo usuário.
+
+
+
+Além disso, vários contadores existentes foram atualizados para remover o componente de metadados e apresentar apenas os dados do usuário:
+
+* Dados do utilizador
+* Espaço físico dos dados do volume
+
+
+Essas alterações fornecem uma visão mais precisa dos dados consumidos pelo usuário. Isso tem vários benefícios, incluindo a capacidade de tomar decisões de chargeback mais precisas.

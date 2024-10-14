@@ -1,0 +1,148 @@
+---
+sidebar: sidebar 
+permalink: task_admin_add_luns.html 
+keywords: system manager, volume, storage, add, increase storage, create, add lun, create lun, lun format, group related luns, add to storage VM, manual placement, Ansible Playbook, initiator, initiator group, protection, QoS policy, performance service level policy, rename 
+summary: É possível criar LUNs e adicioná-los a uma VM de storage existente configurada com o protocolo SAN. Você também pode agrupar LUNs ou renomeá-los. 
+---
+= Gerenciar LUNs
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+É possível criar LUNs e adicioná-los a uma VM de storage existente configurada com o protocolo SAN. Você também pode agrupar LUNs ou renomeá-los.
+
+
+
+== Adicionar LUNs
+
+image:workflow_admin_add_LUNs.gif["Etapas para adicionar a tarefa LUNs"]
+
+.Antes de começar
+Uma VM de storage configurada para serviço SAN deve existir no cluster.
+
+.Passos
+. Aceda a *armazenamento > LUNs*.
+. Clique image:icon_add.gif["Adicionar ícone"]em .
+. Especifique um prefixo que será usado no início de cada nome de LUN. (Se você estiver criando apenas um LUN, digite o nome do LUN.)
+. Selecione uma VM de armazenamento na lista suspensa.
++
+Apenas as VMs de armazenamento configuradas para o protocolo SAN são listadas. Se apenas uma VM de armazenamento configurada para o protocolo SAN estiver disponível, o campo *Storage VM* não será exibido.
+
+. Indique quantos LUNs pretende criar e o tamanho de cada LUN.
+. Selecione o sistema operacional host e o formato LUN nas listas suspensas.
+. Insira os iniciadores do host e separe-os com vírgulas.
+. Execute uma das seguintes ações:
++
+[cols="30,70"]
+|===
+
+
+| Clique neste botão... | Para executar esta ação... 
+
+
+| *Guardar* | Os LUNs são criados com as especificações introduzidas. Os padrões do sistema são usados para outras especificações. Não são necessários passos adicionais. 
+
+
+| *Mais opções* | Avance para para para <<step9-define-add-specs>>definir especificações adicionais para os LUNs. 
+|===
+. [[step9-define-add-specs,Step 9]] o prefixo LUN já é mostrado se você o inseriu anteriormente, mas você pode modificá-lo. Caso contrário, insira o prefixo.
+. Selecione uma VM de armazenamento na lista suspensa.
++
+Apenas as VMs de armazenamento configuradas para o protocolo SAN são listadas. Se apenas uma VM de armazenamento configurada para o protocolo SAN estiver disponível, o campo *Storage VM* não será exibido.
+
+. Determine como deseja que os LUNs sejam agrupados:
++
+[cols="40,60"]
+|===
+
+
+| Quando você faz esta escolha... | Isso ocorre... 
+
+
+| *Agrupar com LUNs relacionados* | Os LUNs serão agrupados com LUNs relacionados em um volume existente na VM de storage. 
+
+
+| Sem seleção | Os LUNs serão agrupados em um volume chamado "container". 
+|===
+. Na seção *armazenamento e Otimização*, especifique os seguintes valores:
++
+.. O número e a capacidade dos LUNs já são apresentados se os introduziu anteriormente, mas pode modificá-los. Caso contrário, introduza os valores.
+.. No campo *nível de serviço de desempenho*, selecione um nível de serviço:
++
+[cols="55,45"]
+|===
+
+
+| Ao selecionar este nível de serviço... | Isso ocorre... 
+
+
+ a| 
+Um nível de serviço existente, como "Extreme", "Performance" ou "Value".
+
+Somente os níveis de serviço válidos para a plataforma do sistema (AFF, FAS ou outros) são exibidos.
+| Um nível local é escolhido automaticamente. Prossiga para <<step13>>. 
+
+
+| Personalizado | Avance para para para <<step12c>>definir um novo nível de serviço. 
+|===
+.. [[step12c, passo 12c]] começando com o ONTAP 9.9,1, você pode usar o Gerenciador do sistema para selecionar manualmente o nível local no qual deseja colocar os LUNs que está criando (se você selecionou o nível de serviço "Personalizado").
++
+[cols="55,45"]
+|===
+
+
+| Quando você faz esta escolha... | Você executa estes passos... 
+
+
+| *Colocação manual* | A colocação manual está ativada. Prossiga para <<step12d>>concluir o processo. 
+
+
+| Sem seleção | A seleção manual não está ativada. O nível local é selecionado automaticamente. Prossiga para <<step13>>. 
+|===
+.. [[step12d, Step 12d]]Selecione um nível local no menu suspenso.
+.. Selecione uma política de QoS.
++
+Selecione "existente" para escolher a partir de uma lista de políticas existentes ou selecione "novo" para introduzir as especificações de uma nova política.
+
+
+
+. [[step13,Etapa 13]] na seção *informações do host*, o sistema operacional do host e o formato LUN já são exibidos, mas você pode modificá-los.
+. Em *Host Mapping*, selecione o tipo de iniciadores para os LUNs:
++
+** *Grupo de iniciadores existente*: Selecione um grupo de iniciadores para a lista exibida.
+** *Novo grupo de iniciadores usando grupos de iniciadores existentes*: Especifique o nome do novo grupo e selecione o grupo ou grupos que deseja usar para criar o novo grupo.
+** *Iniciadores de host*: Especifique um nome do novo grupo de iniciadores e clique em * Adicionar iniciador* para adicionar iniciadores ao grupo.
+
+
+. Na seção *proteção*, especifique as proteções para os LUNs.
++
+Se você selecionar *Enable SnapMirror (local ou remoto)*, especifique a política de proteção e as configurações para o cluster de destino nas listas suspensas.
+
+. Clique em *Salvar*.
++
+Os LUNs são criados e adicionados ao cluster e à VM de storage.
+
++
+
+NOTE: Você também pode salvar as especificações desses LUNs em um Playbook do Ansible. Para obter mais detalhes, link:https://docs.netapp.com/us-en/ontap/task_use_ansible_playbooks_add_edit_volumes_luns.html["Use os Playbooks do Ansible para adicionar ou editar volumes ou LUNs"]visite .
+
+
+
+
+
+== Renomeie um LUN
+
+Pode mudar o nome de um LUN a partir da página de descrição geral.
+
+.Passos
+. No System Manager, clique em *LUNs*.
+. Clique image:icon-edit-pencil-blue-outline.png["Ícone de edição"] ao lado do nome do LUN que você deseja renomear e, em seguida, modifique o nome do LUN.
+. Clique em *Salvar*.
+

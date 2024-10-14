@@ -1,0 +1,468 @@
+---
+sidebar: sidebar 
+permalink: upgrade/automated-pre-checks.html 
+keywords: netapp, ontap, automate, automatic, automated, upgrade, nondisruptive, nondisruptively, non-disruptive update, nondisruptive upgrade, upgrade a cluster, update ONTAP, update software, ndu, pre-upgrade checks, pre-checks, prechecks, before upgrading 
+summary: Execute verificações de pré-atualização antes da atualização para ver quais verificações são executadas no cluster e obter uma lista de erros ou avisos que precisam ser corrigidos antes da atualização. 
+---
+= Execute verificações de pré-atualização automatizadas do ONTAP antes de uma atualização planejada
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você não precisa estar no processo de atualização do seu software ONTAP para executar as pré-verificações de atualização automatizada ONTAP. Executar as verificações de pré-atualização independentemente do processo de atualização automatizada do ONTAP permite que você veja quais verificações são executadas em seu cluster e fornece uma lista de quaisquer erros ou avisos que devem ser corrigidos antes de iniciar a atualização real. Por exemplo, suponha que você espera atualizar seu software ONTAP durante uma janela de manutenção programada para ocorrer em duas semanas. Enquanto aguarda a data agendada, pode executar as pré-verificações automáticas de atualização e efetuar quaisquer ações corretivas necessárias antes da janela de manutenção. Isso irá mitigar os riscos de erros de configuração inesperados depois de iniciar a atualização.
+
+Se estiver pronto para iniciar a atualização do software ONTAP, não é necessário executar este procedimento. Você deve seguir o link:automated-upgrade-task.html["processo de atualização automatizado"], que inclui a execução das pré-verificações de atualização automatizada.
+
+
+NOTE: Para configurações do MetroCluster, você deve primeiro executar estas etapas no cluster A e, em seguida, executar as mesmas etapas no cluster B.
+
+.Antes de começar
+Você deve link:download-software-image.html["Transfira a imagem do software ONTAP de destino"].
+
+Para executar as pré-verificações de atualização automatizada para um link:../upgrade/concept_upgrade_paths.html#types-of-upgrade-paths["atualização direta de multi-hop"], você só precisa fazer o download do pacote de software para a versão ONTAP de destino. Você não precisará carregar a versão intermediária do ONTAP até começar a atualização real. Por exemplo, se você estiver executando verificações automatizadas de pré-atualização para uma atualização de 9,7 para 9.11.1, você precisará baixar o pacote de software para o ONTAP 9.11,1. Você não precisa baixar o pacote de software para ONTAP 9.8,1.
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Valide a imagem de destino ONTAP:
++
+
+NOTE: Se você estiver atualizando uma configuração do MetroCluster, valide o cluster A e repita o processo de validação no cluster B.
+
++
+.. Dependendo da versão do ONTAP que você está executando, execute uma das seguintes etapas:
++
+|===
+
+
+| Se você está correndo... | Faça isso... 
+
+
+| ONTAP 9 .8 ou posterior  a| 
+Clique em *Cluster > Overview*.
+
+
+
+| ONTAP 9.5, 9,6 e 9,7  a| 
+Clique em *Configuração* > *Cluster* > *Atualizar*.
+
+
+
+| ONTAP 9 .4 ou anterior  a| 
+Clique em *Configuração* > *Atualização de cluster*.
+
+|===
+.. No canto direito do painel *Visão geral*, clique image:icon_kabob.gif["Ícone de opções do menu"]em .
+.. Clique em *Atualização do ONTAP*.
+.. Na guia *Atualização de cluster*, adicione uma nova imagem ou selecione uma imagem disponível.
++
+|===
+
+
+| Se você quiser... | Então... 
+
+
+ a| 
+Adicione uma nova imagem de software a partir de uma pasta local
+
+Você já deve ter link:download-software-image.html["transferir a imagem"]para o cliente local.
+ a| 
+... Em *imagens de software disponíveis*, clique em *Adicionar do local*.
+... Navegue até o local onde você salvou a imagem do software, selecione a imagem e clique em *Open*.
+
+
+
+
+ a| 
+Adicione uma nova imagem de software a partir de um servidor HTTP ou FTP
+ a| 
+... Clique em *Adicionar do servidor*.
+... Na caixa de diálogo *Adicionar uma nova imagem de software*, insira o URL do servidor HTTP ou FTP para o qual você baixou a imagem do software ONTAP do site de suporte da NetApp.
++
+Para FTP anônimo, você deve especificar a URL no ftp://anonymous@ftpserver[] formato.
+
+... Clique em *Add*.
+
+
+
+
+ a| 
+Selecione uma imagem disponível
+ a| 
+Escolha uma das imagens listadas.
+
+|===
+.. Clique em *Validar* para executar as verificações de validação de pré-atualização.
++
+Se forem encontrados erros ou avisos durante a validação, estes são apresentados juntamente com uma lista de acões correctivas. Você deve resolver todos os erros antes de prosseguir com a atualização. É prática recomendada também resolver avisos.
+
+
+
+
+
+--
+.CLI
+--
+. Carregue a imagem de software ONTAP de destino no repositório de pacotes do cluster:
++
+[source, cli]
+----
+cluster image package get -url location
+----
++
+[listing]
+----
+cluster1::> cluster image package get -url http://www.example.com/software/9.15.1/image.tgz
+
+Package download completed.
+Package processing completed.
+----
+. Verifique se o pacote de software está disponível no repositório de pacotes de cluster:
++
+[source, cli]
+----
+cluster image package show-repository
+----
++
+[listing]
+----
+cluster1::> cluster image package show-repository
+Package Version  Package Build Time
+---------------- ------------------
+9.15.1              MM/DD/YYYY 10:32:15
+----
+. Execute as verificações automatizadas de pré-atualização:
++
+[source, cli]
+----
+cluster image validate -version <package_version_number> -show-validation-details true
+----
++
+[listing]
+----
+cluster1::> cluster image validate -version 9.15.1 -show-validation-details true
+
+It can take several minutes to complete validation...
+Validation checks started successfully.  Run the "cluster image show-update-progress" command to check validation status.
+----
+. Verificar o estado de validação:
++
+[source, cli]
+----
+cluster image show-update-progress
+----
++
+
+NOTE: Se o *Status* estiver "em andamento", aguarde e execute o comando novamente até que ele esteja concluído.
+
++
+[listing]
+----
+cluster1::*> cluster image show-update-progress
+
+Update Phase         Status                   Duration        Duration
+-------------------- ----------------- --------------- ---------------
+Pre-update checks    completed                00:10:00        00:01:03
+
+Details:
+
+Pre-update Check     Status            Error-Action
+-------------------- ----------------- --------------------------------------
+AMPQ Router and      OK                N/A
+Broker Config
+Cleanup
+Aggregate online     OK                N/A
+status and parity
+check
+Aggregate plex       OK                N/A
+resync status check
+Application          OK                N/A
+Provisioning Cleanup
+Autoboot Bootargs    OK                N/A
+Status
+Backend              OK                N/A
+...
+Volume Conversion    OK                N/A
+In Progress Check
+Volume move          OK                N/A
+progress status
+check
+Volume online        OK                N/A
+status check
+iSCSI target portal  OK                N/A
+groups status check
+Overall Status       Warning           Warning
+75 entries were displayed.
+----
++
+É apresentada uma lista de pré-verificações automáticas completas de atualização, juntamente com quaisquer erros ou avisos que devem ser resolvidos antes de iniciar o processo de atualização.
+
+
+
+--
+====
+
+
+== Exemplo de saída
+
+.Exemplo completo de saída de pré-verificações de atualização
+[%collapsible]
+====
+[listing]
+----
+cluster1::*> cluster image validate -version 9.14.1 -show-validation-details true
+It can take several minutes to complete validation...
+
+WARNING: There are additional manual upgrade validation checks that must be performed after these automated validation checks have completed successfully.
+Refer to the Upgrade Advisor Plan or the "What should I verify before I upgrade with or without Upgrade Advisor" section in the "Upgrade ONTAP" documentation for the remaining manual validation checks that need to be performed before update.
+Upgrade ONTAP documentation available at: https://docs.netapp.com/us-en/ontap/upgrade/index.html
+The list of checks are available at: https://docs.netapp.com/us-en/ontap/upgrade/task_what_to_check_before_upgrade.html
+Failing to do so can result in an update failure or an I/O disruption.
+Please use Interoperability Matrix Tool (IMT  http://mysupport.netapp.com/matrix) to verify host system supportability configuration information.
+
+Validation checks started successfully.  Run the "cluster image show-update-progress" command to check validation status.
+
+
+fas2820-2n-wic-1::*> cluster image show-update-progress
+
+                                             Estimated         Elapsed
+Update Phase         Status                   Duration        Duration
+-------------------- ----------------- --------------- ---------------
+Pre-update checks    in-progress              00:10:00        00:00:42
+
+Details:
+
+Pre-update Check     Status            Error-Action
+-------------------- ----------------- --------------------------------------
+
+fas2820-2n-wic-1::*> cluster image show-update-progress
+
+                                             Estimated         Elapsed
+Update Phase         Status                   Duration        Duration
+-------------------- ----------------- --------------- ---------------
+Pre-update checks    completed                00:10:00        00:01:03
+
+Details:
+
+Pre-update Check     Status            Error-Action
+-------------------- ----------------- --------------------------------------
+AMPQ Router and      OK                N/A
+Broker Config
+Cleanup
+Aggregate online     OK                N/A
+status and parity
+check
+Aggregate plex       OK                N/A
+resync status check
+Application          OK                N/A
+Provisioning Cleanup
+Autoboot Bootargs    OK                N/A
+Status
+Backend              OK                N/A
+Configuration Status
+Boot Menu Status     Warning           Warning: bootarg.init.bootmenu is
+                                       enabled on nodes: fas2820-wic-1a,
+                                       fas2820-wic-1b. The boot process of
+                                       the nodes will be delayed.
+                                       Action: Set the bootarg.init.bootmenu
+                                       bootarg to false before proceeding
+                                       with the upgrade.
+Broadcast Domain     OK                N/A
+availability and
+uniqueness for HA
+pair status
+CIFS compatibility   OK                N/A
+status check
+CLAM quorum online   OK                N/A
+status check
+CPU Utilization      OK                N/A
+Status
+Capacity licenses    OK                N/A
+install status check
+Check For SP/BMC     OK                N/A
+Connectivity To
+Nodes
+Check LDAP fastbind  OK                N/A
+users using
+unsecure connection.
+Check for unsecure   OK                N/A
+kex algorithm
+configurations.
+Check for unsecure   OK                N/A
+mac configurations.
+Cloud keymanager     OK                N/A
+connectivity check
+Cluster health and   OK                N/A
+eligibility status
+Cluster quorum       OK                N/A
+status check
+Cluster/management   OK                N/A
+switch check
+Compatible New       OK                N/A
+Image Check
+Current system       OK                N/A
+version check if it
+is susceptible to
+possible outage
+during NDU
+Data ONTAP Version   OK                N/A
+and Previous
+Upgrade Status
+Data aggregates HA   OK                N/A
+policy check
+Disk status check    OK                N/A
+for failed, broken
+or non-compatibility
+Duplicate Initiator  OK                N/A
+Check
+Encryption key       OK                N/A
+migration status
+check
+External             OK                N/A
+key-manager with
+legacy KMIP client
+check
+External keymanager  OK                N/A
+key server status
+check
+Fabricpool Object    OK                N/A
+Store Availability
+High Availability    OK                N/A
+configuration
+status check
+Infinite Volume      OK                N/A
+availibility check
+LIF failover         OK                N/A
+capability status
+check
+LIF health check     OK                N/A
+LIF load balancing   OK                N/A
+status check
+LIFs is on home      OK                N/A
+node status
+Logically over       OK                N/A
+allocated DP
+volumes check
+MetroCluster         OK                N/A
+configuration
+status check for
+compatibility
+Minimum number of    OK                N/A
+aggregate disks
+check
+NAE Aggregate and    OK                N/A
+NVE Volume
+Encryption Check
+NDMP sessions check  OK                N/A
+NFS mounts status    Warning           Warning: This cluster is serving NFS
+check                                  clients. If NFS soft mounts are used,
+                                       there is a possibility of frequent
+                                       NFS timeouts and race conditions that
+                                       can lead to data corruption during
+                                       the upgrade.
+                                       Action: Use NFS hard mounts, if
+                                       possible. To list Vservers running
+                                       NFS, run the following command:
+                                       vserver nfs show
+Name Service         OK                N/A
+Configuration DNS
+Check
+Name Service         OK                N/A
+Configuration LDAP
+Check
+Node to SP/BMC       OK                N/A
+connectivity check
+OKM/KMIP enabled     OK                N/A
+systems - Missing
+keys check
+ONTAP API to REST    Warning           Warning: NetApp ONTAP API has been
+transition warning                     used on this cluster for ONTAP data
+                                       storage management within the last 30
+                                       days. NetApp ONTAP API is approaching
+                                       end of availability.
+                                       Action: Transition your automation
+                                       tools from ONTAP API to ONTAP REST
+                                       API. For more details, refer to
+                                       CPC-00410 - End of availability:
+                                       ONTAPI
+                                       https://mysupport.netapp.com/info/
+                                       communications/ECMLP2880232.html
+ONTAP Image          OK                N/A
+Capability Status
+OpenSSL 3.0.x        OK                N/A
+upgrade validation
+check
+Openssh 7.2 upgrade  OK                N/A
+validation check
+Platform Health      OK                N/A
+Monitor check
+Pre-Update           OK                N/A
+Configuration
+Verification
+RDB Replica Health   OK                N/A
+Check
+Replicated database  OK                N/A
+schema consistency
+check
+Running Jobs Status  OK                N/A
+SAN LIF association  OK                N/A
+status check
+SAN compatibility    OK                N/A
+for manual
+configurability
+check
+SAN kernel agent     OK                N/A
+status check
+Secure Purge         OK                N/A
+operation Check
+Shelves and Sensors  OK                N/A
+check
+SnapLock Version     OK                N/A
+Check
+SnapMirror           OK                N/A
+Synchronous
+relationship status
+check
+SnapMirror           OK                N/A
+compatibility
+status check
+Supported platform   OK                N/A
+check
+Target ONTAP         OK                N/A
+release support for
+FiberBridge 6500N
+check
+Upgrade Version      OK                N/A
+Compatibility Status
+Verify all bgp       OK                N/A
+peer-groups are in
+the up state
+Verify if a cluster  OK                N/A
+management LIF
+exists
+Verify that e0M is   OK                N/A
+home to no LIFs
+with high speed
+services.
+Volume Conversion    OK                N/A
+In Progress Check
+Volume move          OK                N/A
+progress status
+check
+Volume online        OK                N/A
+status check
+iSCSI target portal  OK                N/A
+groups status check
+Overall Status       Warning           Warning
+75 entries were displayed.
+----
+====

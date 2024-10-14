@@ -1,0 +1,96 @@
+---
+permalink: s3-multiprotocol/enable-client-users-task.html 
+sidebar: sidebar 
+keywords: s3, nas, vserver, configuration, nas, certificate, linux, unix, installation 
+summary: Para permitir que os usuários de cliente S3 acessem dados nas, você deve mapear nomes de usuário S3 para os usuários nas correspondentes e conceder permissão para acessar os dados nas usando políticas de serviço de bucket. 
+---
+= Ative S3 usuários de cliente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para permitir que os usuários de cliente S3 acessem dados nas, você deve mapear nomes de usuário S3 para os usuários nas correspondentes e conceder permissão para acessar os dados nas usando políticas de serviço de bucket.
+
+.Antes de começar
+Os nomes de usuário para acesso ao cliente – usuários clientes LINUX/UNIX, Windows e S3 – já devem existir.
+
+Você deve estar ciente de que alguma funcionalidade do S3 é link:index.html#nas-functionality-not-currently-supported-by-s3-nas-buckets["Não compatível com buckets do nas S3"].
+
+.Sobre esta tarefa
+Mapear um nome de usuário S3 para um USUÁRIO LINUX/UNIX ou Windows correspondente permite que verificações de autorização nos arquivos nas sejam honradas quando esses arquivos são acessados por clientes S3. Os mapeamentos S3 para nas são especificados fornecendo um nome de usuário S3 _pattern_, que pode ser expresso como um único nome ou uma expressão regular POSIX, e um nome de usuário LINUX/UNIX ou Windows _Replacement_.
+
+Caso não haja nenhum mapeamento de nomes presente, será usado o mapeamento de nomes padrão, onde o próprio nome de usuário S3 será usado como o nome de usuário UNIX e o nome de usuário do Windows. Você pode modificar os mapeamentos de nome de usuário padrão UNIX e Windows com o `vserver object-store-server modify` comando.
+
+Apenas a configuração de mapeamento de nomes local é suportada; o LDAP não é suportado.
+
+Depois que os usuários do S3 são mapeados para usuários nas, você pode conceder permissões aos usuários especificando os recursos (diretórios e arquivos) aos quais eles têm acesso e as ações que eles têm permissão ou não podem executar lá.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Crie mapeamentos de nomes locais para clientes UNIX ou Windows (ou ambos).
++
+.. Clique em *Storage > Buckets* (armazenamento > baldes*) e selecione a VM de armazenamento habilitada para S3/nas.
+.. Selecione *Configurações* e clique image:../media/icon_arrow.gif["Ícone de seta"] em *Mapeamento de nomes* (em *usuários e grupos de hosts*).
+.. Nos blocos *S3 para Windows* ou *S3 para UNIX* (ou ambos), clique em *Add* e, em seguida, insira os nomes de usuário *Pattern* (S3) e *Replacement* (nas) desejados.
+
+
+. Crie uma política de bucket para fornecer acesso ao cliente.
++
+.. Clique em *armazenamento > baldes*, clique image:../media/icon_kabob.gif["Ícone de opções do menu"] em junto ao balde S3 pretendido e, em seguida, clique em *Editar*.
+.. Clique em *Add* e forneça os valores desejados.
++
+*** *Principal* - forneça S3 nomes de usuário ou use o padrão (todos os usuários).
+*** *Efeito* - Selecione *permitir* ou *Negar*.
+*** *Ações* - Digite as ações para esses usuários e recursos. O conjunto de operações de recursos que o servidor de armazenamento de objetos suporta atualmente para buckets do nas S3 são: GetObject, PutObject, DeletObject, ListBucketAcl, GetObjectTagging, PutObjectTagging, DeletObjectTagging, GetBucketLocation, GetBucketVerketversioning, PutBucketVerketverversions e ListBucketsions. Wildcards são aceitos para este parâmetro.
+*** *Resources* - Insira caminhos de pasta ou arquivo nos quais as ações são permitidas ou negadas, ou use os padrões (diretório raiz do bucket).
+
+
+
+
+
+
+--
+.CLI
+--
+. Crie mapeamentos de nomes locais para clientes UNIX ou Windows (ou ambos). E
+`vserver name-mapping create -vserver svm_name> -direction {s3-win|s3-unix} -position _integer_ -pattern _s3_user_name_ -replacement _nas_user_name_`
++
+** `-position` - número de prioridade para a avaliação do mapeamento; introduza 1 ou 2.
+** `-pattern` - Um nome de usuário S3 ou uma expressão regular
+** `-replacement` - um nome de usuário do windows ou unix
+
+
+
+
+Exemplos
+`vserver name-mapping create -direction s3-win -position 1 -pattern s3_user_1 -replacement win_user_1
+vserver name-mapping create -direction s3-unix -position 2 -pattern s3_user_1 -replacement unix_user_1`
+
+. Crie uma política de bucket para fornecer acesso ao cliente. E
+`vserver object-store-server bucket policy add-statement -vserver svm_name -bucket bucket_name -effect {deny|allow}  -action list_of_actions -principal list_of_users_or_groups -resource [-sid alphanumeric_text]`
++
+** `-effect {deny|allow}` - especifica se o acesso é permitido ou negado quando um usuário solicita uma ação.
+** `-action <Action>, ...` - especifica operações de recursos que são permitidas ou negadas. O conjunto de operações de recursos que o servidor de armazenamento de objetos suporta atualmente para buckets do nas S3 são: GetObject, PutObject, DeleteObject, ListBucket, GetBucketAcl, GetObjectAcl e GetBucketLocation. Wildcards são aceitos para este parâmetro.
+** `-principal <Objectstore Principal>, ...` - valida o usuário que solicita acesso aos usuários ou grupos de servidores de armazenamento de objetos especificados neste parâmetro.
++
+*** Um grupo de servidores de armazenamento de objetos é especificado adicionando um grupo de prefixo/ ao nome do grupo.
+*** `-principal` - (o caractere hífen) concede acesso a todos os usuários.
+
+
+** `-resource <text>, ...` - especifica o bucket, pasta ou objeto para o qual permissões de permissão/negação são definidas. Wildcards são aceitos para este parâmetro.
+** `[-sid <SID>]` - especifica um comentário de texto opcional para a declaração de política de bucket do servidor de armazenamento de objetos.
+
+
+
+
+Exemplos
+`cluster1::> vserver object-store-server bucket policy add-statement -bucket testbucket -effect allow -action  GetObject,PutObject,DeleteObject,ListBucket,GetBucketAcl,GetObjectAcl, GetBucketLocation,GetBucketPolicy,PutBucketPolicy,DeleteBucketPolicy -principal user1 -resource testbucket,testbucket/* sid "FullAccessForUser1"`
+
+`cluster1::> vserver object-store-server bucket policy statement create -vserver vs1 -bucket bucket1 -effect allow -action GetObject -principal - -resource bucket1/readme/* -sid "ReadAccessToReadmeForAllUsers"`
+
+--
+====

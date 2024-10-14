@@ -1,0 +1,48 @@
+---
+permalink: smb-admin/disallow-users-groups-bypass-directory-traverse-task.html 
+sidebar: sidebar 
+keywords: user, traverse, directories, directory, path, file, permission, sechangenotifyprivilege, privilege, local, smb, group, storage, virtual, machine, svm, disallow users or groups from bypassing directory traverse checking 
+summary: 'Se você não quiser que um usuário percorra todos os diretórios no caminho para um arquivo porque o usuário não tem permissões no diretório atravessado, você pode remover o privilégio SeChangeNotifyPrivilege de usuários SMB locais ou grupos em máquinas virtuais de armazenamento (SVMs).' 
+---
+= Não permitir que usuários ou grupos ignorem a verificação da rotação do diretório
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você não quiser que um usuário percorra todos os diretórios no caminho para um arquivo porque o usuário não tem permissões no diretório atravessado, você pode remover o `SeChangeNotifyPrivilege` privilégio de usuários SMB locais ou grupos em máquinas virtuais de armazenamento (SVMs).
+
+.Antes de começar
+O usuário ou grupo local ou domínio do qual o Privileges será removido já deve existir.
+
+.Sobre esta tarefa
+Ao remover o Privileges de um usuário ou grupo de domínio, o ONTAP pode validar o usuário ou grupo de domínio entrando em Contato com o controlador de domínio. O comando pode falhar se o ONTAP não puder entrar em Contato com o controlador de domínio.
+
+.Passos
+. Não permitir a verificação da travessa de derivação: `vserver cifs users-and-groups privilege remove-privilege -vserver _vserver_name_ -user-or-group-name _name_ -privileges SeChangeNotifyPrivilege`
++
+O comando remove o `SeChangeNotifyPrivilege` privilégio do usuário ou grupo local ou domínio que você especificar com o valor do `-user-or-group-name _name_` parâmetro.
+
+. Verifique se o usuário ou grupo especificado tem verificação de desvio de rotação desativada: `vserver cifs users-and-groups privilege show -vserver _vserver_name_ ‑user-or-group-name _name_`
+
+
+.Exemplo
+O comando a seguir despermite que os usuários que pertencem ao grupo "'EXAMPLE'" ignorem a verificação da rotação do diretório:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups privilege show -vserver vs1
+Vserver   User or Group Name    Privileges
+--------- --------------------- -----------------------
+vs1       EXAMPLE\eng           SeChangeNotifyPrivilege
+
+cluster1::> vserver cifs users-and-groups privilege remove-privilege -vserver vs1 -user-or-group-name EXAMPLE\eng -privileges SeChangeNotifyPrivilege
+
+cluster1::> vserver cifs users-and-groups privilege show -vserver vs1
+Vserver   User or Group Name    Privileges
+--------- --------------------- -----------------------
+vs1       EXAMPLE\eng           -
+----
+.Informações relacionadas
+xref:allow-users-groups-bypass-directory-traverse-task.adoc[Permitir que usuários ou grupos ignorem a verificação de rotação do diretório]

@@ -1,0 +1,51 @@
+---
+permalink: volumes/delete-snapshot-copies-automatic-task.html 
+sidebar: sidebar 
+keywords: delete, snapshot, copies, automatically, flexclone luns, automatic, lun, luns 
+summary: É possível definir uma política para excluir automaticamente cópias snapshot e LUNs FlexClone para ajudar a gerenciar a utilização de espaço. 
+---
+= Excluir cópias Snapshot automaticamente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode definir e ativar uma política para excluir automaticamente cópias Snapshot e LUNs FlexClone. A exclusão automática de cópias Snapshot e LUNs do FlexClone ajuda você a gerenciar a utilização de espaço.
+
+.Sobre esta tarefa
+É possível excluir automaticamente cópias Snapshot de volumes de leitura-gravação e LUNs FlexClone de volumes pai de leitura-gravação. Não é possível configurar a exclusão automática de cópias Snapshot de volumes somente leitura, por exemplo, volumes de destino do SnapMirror.
+
+.Passo
+. Defina e ative uma política para excluir automaticamente cópias Snapshot usando o `volume snapshot autodelete modify` comando.
++
+Consulte a `volume snapshot autodelete modify` página de manual para obter informações sobre os parâmetros que você pode usar com este comando para definir uma política que atenda às suas necessidades.
+
++
+O comando a seguir habilita a exclusão automática de cópias Snapshot e define o gatilho para `snap_reserve` o volume vol3, que faz parte da máquina virtual de storage vs0.example.com (SVM):
+
++
+[listing]
+----
+cluster1::> volume snapshot autodelete modify -vserver vs0.example.com
+-volume vol3 -enabled true -trigger snap_reserve
+----
++
+O comando a seguir permite a exclusão automática de cópias Snapshot e de LUNs FlexClone marcadas para exclusão automática do volume vol3, que faz parte da máquina virtual de storage (SVM) vs0.example.com:
+
++
+[listing]
+----
+cluster1::> volume snapshot autodelete modify -vserver vs0.example.com
+-volume vol3 -enabled true -trigger volume -commitment try -delete-order
+oldest_first -destroy-list lun_clone,file_clone
+----
++
+[NOTE]
+====
+As cópias Snapshot no nível de agregado funcionam de forma diferente das cópias Snapshot no nível de volume e são gerenciadas automaticamente pelo ONTAP. A opção de excluir cópias Snapshot agregadas está sempre ativada e ajuda a gerenciar a utilização de espaço.
+
+Se o parâmetro de gatilho for definido como `snap_reserve` para um agregado, as cópias Snapshot serão mantidas até que o espaço reservado cruze a capacidade do limite. Portanto, mesmo que o parâmetro trigger não esteja definido como `snap_reserve`, o espaço usado pela cópia Snapshot no comando será listado como `0` porque essas cópias snapshot serão excluídas automaticamente. Além disso, o espaço usado pelas cópias Snapshot em um agregado é considerado gratuito e está incluído no parâmetro espaço disponível do comando.
+
+====
+

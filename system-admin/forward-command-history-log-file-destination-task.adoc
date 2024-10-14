@@ -1,0 +1,80 @@
+---
+permalink: system-admin/forward-command-history-log-file-destination-task.html 
+sidebar: sidebar 
+keywords: forward, audit, log, destination, cluster, forwarding, splunk, RFC-3164, RFC-5424 
+summary: Você pode encaminhar o log de auditoria para um máximo de 10 destinos. Por exemplo, você pode encaminhar o log para um servidor Splunk ou syslog para fins de monitoramento, análise ou backup. 
+---
+= Gerenciar destinos de log de auditoria
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode encaminhar o log de auditoria para um máximo de 10 destinos. Por exemplo, você pode encaminhar o log para um servidor Splunk ou syslog para fins de monitoramento, análise ou backup.
+
+.Sobre esta tarefa
+Para configurar o encaminhamento, você deve fornecer o endereço IP do host syslog ou Splunk, seu número de porta, um protocolo de transmissão e a facilidade syslog para usar nos logs encaminhados. https://datatracker.ietf.org/doc/html/rfc5424["Saiba mais sobre as instalações do syslog"^].
+
+Pode selecionar um dos seguintes valores de transmissão utilizando o `-protocol` parâmetro:
+
+UDP não encriptado:: Protocolo de datagrama de usuário sem segurança (padrão)
+TCP não criptografado:: Protocolo de controlo da transmissão sem segurança
+TCP criptografado:: Protocolo de controle de transmissão com TLS (Transport Layer Security) e opção *Verify Server* está disponível quando o protocolo criptografado TCP é selecionado.
+
+
+A porta padrão é 514 para UDP e 6514 para TCP, mas você pode designar qualquer porta que atenda às necessidades de sua rede.
+
+Você pode selecionar um dos seguintes formatos de mensagem usando o `-message-format` comando:
+
+legacy-NetApp:: Uma variação do formato RFC-3164 Syslog (formato: <PRIVAL>
+rfc-5424:: Formato syslog de acordo com RFC-5424 (formato: <PRIVAL>
+
+
+Você pode encaminhar logs de auditoria da CLI do ONTAP e, a partir do ONTAP 9.11,1, do Gerenciador de sistemas.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+* Para exibir destinos de log de auditoria, selecione *Cluster >Settings*. Uma contagem de destinos de log é mostrada no bloco *Notification Management*. Clique image:../media/icon_kabob.gif["Ícone de opções do menu"] para mostrar detalhes.
+* Para adicionar, modificar ou eliminar destinos de registo de auditoria, selecione *Eventos e trabalhos > Registos de auditoria* e, em seguida, clique em *gerir destinos de auditoria* no canto superior direito do ecrã. Clique image:icon_add.gif["Adicionar ícone"]em ou clique image:../media/icon_kabob.gif["Ícone de opções do menu"]na coluna *Endereço do host* para editar ou excluir entradas.
+
+
+--
+.CLI
+--
+. Para cada destino para o qual você deseja encaminhar o log de auditoria, especifique o endereço IP de destino ou o nome do host e quaisquer opções de segurança.
++
+[listing]
+----
+cluster1::> cluster log-forwarding create -destination 192.168.123.96
+-port 514 -facility user
+
+cluster1::> cluster log-forwarding create -destination 192.168.123.98
+-port 6514 -protocol tcp-encrypted -facility user
+----
++
+** Se o `cluster log-forwarding create` comando não puder fazer ping no host de destino para verificar a conetividade, o comando falhará com um erro. Embora não seja recomendado, usar o `-force` parâmetro com o comando ignora a verificação de conetividade.
+** Quando você define o `-verify-server` parâmetro como `true`, a identidade do destino de encaminhamento de log é verificada validando seu certificado. Pode definir o valor `true` apenas quando selecionar o `tcp-encrypted` valor no `-protocol` campo.
+
+
+. Verifique se os Registros de destino estão corretos usando o `cluster log-forwarding show` comando.
++
+[listing]
+----
+cluster1::> cluster log-forwarding show
+
+                                                 Verify Syslog
+Destination Host          Port   Protocol        Server Facility
+------------------------- ------ --------        ------ --------
+192.168.123.96            514    udp-unencrypted false  user
+192.168.123.98            6514   tcp-encrypted   true   user
+2 entries were displayed.
+----
+
+
+Consulte a `cluster log-forwarding create` página de manual para obter detalhes.
+
+--
+====

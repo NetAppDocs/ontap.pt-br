@@ -1,0 +1,72 @@
+---
+permalink: disks-aggregates/remove-ownership-disk-task.html 
+sidebar: sidebar 
+keywords: remove, ownership, disk 
+summary: O ONTAP grava informações de propriedade do disco no disco. Antes de remover um disco sobressalente ou seu compartimento de um nó, remova as informações de propriedade para que ele possa ser devidamente integrado a outro nó. 
+---
+= Remova a propriedade de um disco
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP grava informações de propriedade do disco no disco. Antes de remover um disco sobressalente ou seu compartimento de um nó, remova as informações de propriedade para que ele possa ser devidamente integrado a outro nó.
+
+
+NOTE: Se o disco estiver particionado para o particionamento de dados raiz e estiver a executar o ONTAP 9.10,1 ou posterior, contacte o suporte técnico da NetApp para obter assistência na remoção de propriedade. Para obter mais informações, consulte link:https://kb.netapp.com/onprem/ontap/hardware/Error%3A_command_failed%3A_Failed_to_remove_the_owner_of_disk["artigo da base de dados de conhecimento: Falha ao remover o proprietário do disco"^].
+
+.O que você vai precisar
+O disco do qual você deseja remover a propriedade deve atender aos seguintes requisitos:
+
+* Deve ser um disco sobressalente.
++
+Não é possível remover a propriedade de um disco que está sendo usado em um nível local (agregado).
+
+* Não pode estar no centro de manutenção.
+* Não pode estar em processo de sanitização.
+* Não pode ter falhado.
++
+Não é necessário remover a propriedade de um disco com falha.
+
+
+
+.Sobre esta tarefa
+Se a atribuição automática de disco estiver ativada, o ONTAP poderá reatribuir automaticamente a propriedade antes de remover o disco do nó. Por esse motivo, desative a atribuição automática de propriedade até que o disco seja removido e, em seguida, reative-o.
+
+.Passos
+. Se a atribuição automática de propriedade de disco estiver ativada, use a CLI para desativá-la:
++
+`storage disk option modify -node _node_name_ -autoassign off`
+
+. Se necessário, repita a etapa anterior para o parceiro de HA do nó.
+. Remova as informações de propriedade do software do disco:
++
+`storage disk removeowner _disk_name_`
+
++
+Para remover informações de propriedade de vários discos, use uma lista separada por vírgulas.
+
++
+Exemplo:
+
++
+....
+storage disk removeowner sys1:0a.23,sys1:0a.24,sys1:0a.25
+....
+. Se o disco estiver particionado para o particionamento de dados raiz e você estiver executando o ONTAP 9.9,1 ou anterior, remova a propriedade das partições:
++
+--
+`storage disk removeowner -disk _disk_name_ -root true`
+
+`storage disk removeowner -disk _disk_name_ -data true`
+
+Ambas as partições não são mais propriedade de nenhum nó.
+
+--
+. Se você desativou anteriormente a atribuição automática da propriedade do disco, ative-o depois que o disco tiver sido removido ou reatribuído:
++
+`storage disk option modify -node _node_name_ -autoassign on`
+
+. Se necessário, repita a etapa anterior para o parceiro de HA do nó.
+

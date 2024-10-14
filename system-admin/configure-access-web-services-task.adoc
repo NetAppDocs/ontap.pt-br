@@ -1,0 +1,55 @@
+---
+permalink: system-admin/configure-access-web-services-task.html 
+sidebar: sidebar 
+keywords: configure, access, web, services, http, https, svm 
+summary: 'A configuração do acesso a serviços da Web permite que usuários autorizados usem HTTP ou HTTPS para acessar o conteúdo do serviço no cluster ou em uma máquina virtual de armazenamento (SVM).' 
+---
+= Configurar o acesso aos serviços da Web
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A configuração do acesso a serviços da Web permite que usuários autorizados usem HTTP ou HTTPS para acessar o conteúdo do serviço no cluster ou em uma máquina virtual de armazenamento (SVM).
+
+.Passos
+. Se um firewall estiver ativado, verifique se o acesso HTTP ou HTTPS está configurado na política de firewall para o LIF que será usado para serviços da Web:
++
+[NOTE]
+====
+Você pode verificar se um firewall está habilitado usando o `system services firewall show` comando.
+
+====
++
+.. Para verificar se HTTP ou HTTPS está configurado na política de firewall, use o `system services firewall policy show` comando.
++
+Você define o `-service` parâmetro `system services firewall policy create` do comando para `http` ou `https` para ativar a diretiva para oferecer suporte ao acesso à Web.
+
+.. Para verificar se a política de firewall que suporta HTTP ou HTTPS está associada ao LIF que fornece serviços da Web, use o `network interface show` comando com o `-firewall-policy` parâmetro.
++
+Você usa o `network interface modify` comando com o `-firewall-policy` parâmetro para colocar a política de firewall em vigor para um LIF.
+
+
+
+. Para configurar o mecanismo de protocolo da Web em nível de cluster e tornar o conteúdo do serviço da Web acessível, use o `system services web modify` comando.
+. Se você planeja usar serviços da Web seguros (HTTPS), ative o SSL e forneça informações de certificado digital para o cluster ou SVM usando o `security ssl modify` comando.
+. Para ativar um serviço da Web para o cluster ou SVM, use o `vserver services web modify` comando.
++
+Repita essa etapa para cada serviço que você deseja habilitar para o cluster ou SVM.
+
+. Para autorizar uma função a acessar serviços da Web no cluster ou SVM, use o `vserver services web access create` comando.
++
+A função que você concede acesso já deve existir. Você pode exibir funções existentes usando o `security login role show` comando ou criar novas funções usando o `security login role create` comando.
+
+. Para uma função que tenha sido autorizada a acessar um serviço da Web, verifique se seus usuários também estão configurados com o método de acesso correto, verificando a saída do `security login show` comando.
++
+Para acessar o serviço Web da API ONTAP  `ontapi`), um usuário deve ser configurado com o `ontapi` método de acesso. Para acessar todos os outros serviços da Web, um usuário deve ser configurado com o `http` método de acesso.
+
++
+[NOTE]
+====
+Use o `security login create` comando para adicionar um método de acesso a um usuário.
+
+====
+

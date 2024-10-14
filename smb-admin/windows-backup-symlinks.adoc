@@ -1,0 +1,89 @@
+---
+sidebar: sidebar 
+permalink: smb-admin/windows-backup-symlinks.html 
+keywords: windows, windows server, backup, backup application, symbolic link, symlink, unix, unix-style 
+summary: 'Quando um aplicativo de backup executado no Windows encontra um link simbólico (link simbólico) estilo Unix, o link é seguido e os dados são copiados. Começando com ONTAP 9.15,1, você tem a opção de fazer backup dos links simbólicos em vez dos dados. Esse recurso é totalmente compatível com FlexGroups e FlexVols da ONTAP.' 
+---
+= Aplicativos de backup do Windows e links simbólicos em estilo Unix
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando um aplicativo de backup executado no Windows encontra um link simbólico (link simbólico) estilo Unix, o link é seguido e os dados são copiados. Começando com ONTAP 9.15,1, você tem a opção de fazer backup dos links simbólicos em vez dos dados. Esse recurso é totalmente compatível com FlexGroups e FlexVols da ONTAP.
+
+
+
+== Visão geral
+
+Antes de alterar a forma como o ONTAP lida com links simbólicos durante uma operação de backup do Windows, você deve estar familiarizado com os benefícios, os principais conceitos e as opções de configuração.
+
+
+
+=== Benefícios
+
+Quando esse recurso está desativado ou indisponível, cada link simbólico é percorrido e os dados aos quais ele se vincula são copiados. Por causa disso, dados desnecessários podem às vezes ser copiados e, em certas situações, o aplicativo pode acabar em um loop. Ao invés disso, fazer backup dos links simbólicos evita esses problemas. E como os arquivos de link simbólico são muito pequenos em comparação com os dados na maioria dos casos, os backups levam menos tempo para serem concluídos. O desempenho geral do cluster também pode melhorar devido à redução das operações de e/S.
+
+
+
+=== Ambiente de servidor Windows
+
+Este recurso é compatível com aplicativos de backup executados no Windows. Você deve entender os aspetos técnicos relevantes do ambiente antes de usá-lo.
+
+.Atributos estendidos
+O Windows suporta atributos estendidos (EA) que formam coletivamente metadados adicionais associados opcionalmente aos arquivos. Esses atributos são usados por vários aplicativos, como o subsistema do Windows para Linux, conforme descrito em https://learn.microsoft.com/en-us/windows/wsl/file-permissions["Permissões de arquivo para WSL"^]. Os aplicativos podem solicitar atributos estendidos para cada arquivo ao ler dados do ONTAP.
+
+Os links simbólicos são retornados nos atributos estendidos quando o recurso é ativado. Portanto, um aplicativo de backup deve fornecer suporte padrão EA, que é usado para armazenar os metadados. Alguns utilitários do Windows suportam e preservam os atributos estendidos. No entanto, se o software de backup não suportar backup e restauração dos atributos estendidos, ele não preservará os metadados associados a cada arquivo e não processará os links simbólicos corretamente.
+
+.Configuração do Windows
+Os aplicativos de backup executados em um servidor Microsoft Windows podem receber um privilégio especial, permitindo que eles ignorem a segurança normal de arquivos. Isso geralmente é feito adicionando os aplicativos ao grupo operadores de backup. Os aplicativos podem então fazer backup e restaurar arquivos conforme necessário, bem como executar outras operações relacionadas ao sistema. Há alterações sutis no protocolo SMB usado pelos aplicativos de backup que podem ser detetadas pelo ONTAP à medida que os dados são lidos e gravados.
+
+
+
+=== Requisitos
+
+O recurso de backup de link simbólico tem vários requisitos, incluindo:
+
+* O cluster está executando o ONTAP 9.15,1 ou posterior.
+* Um aplicativo de backup do Windows que recebeu Privileges de backup especial.
+* O aplicativo de backup também deve dar suporte a atributos estendidos e solicitá-los durante as operações de backup.
+* O recurso de backup de link simbólico do ONTAP está habilitado para o SVM de dados aplicável.
+
+
+
+
+=== Opções de configuração
+
+Além da CLI do ONTAP, você também pode gerenciar esse recurso usando a API REST. Consulte https://docs.netapp.com/us-en/ontap-automation/whats-new.html["Novidades com a API REST e a automação do ONTAP"^] para obter mais informações. A configuração que determina como o ONTAP processa os links simbólicos em estilo Unix deve ser executada separadamente para cada SVM.
+
+
+
+== Ative o recurso de backup de link simbólico no ONTAP
+
+Uma opção de configuração foi introduzida a um comando CLI existente com ONTAP 9.15,1. Você pode usar essa opção para ativar ou desativar o processamento de link simbólico estilo Unix.
+
+.Antes de começar
+Reveja o básico <<Requisitos>>. Além disso:
+
+* Ser capaz de elevar seu privilégio CLI para o nível avançado.
+* Determine os dados SVM que você deseja modificar. O SVM `vs1` é usado no comando exemplo.
+
+
+.Passos
+. Defina o nível de privilégio avançado.
++
+[source, cli]
+----
+set privilege advanced
+----
+. Habilite o backup de arquivos de link simbólico.
++
+[source, cli]
+----
+vserver cifs options modify -vserver vs1 -is-backup-symlink-enabled true
+----
+

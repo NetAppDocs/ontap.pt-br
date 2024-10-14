@@ -1,0 +1,65 @@
+---
+permalink: s3-multiprotocol/create-nas-bucket-task.html 
+sidebar: sidebar 
+keywords: s3, svm, bucket, object, server, versioning, protocol, filesystems, nas, directories 
+summary: Um buckets do nas S3 é um mapeamento entre um nome de bucket do S3 e um caminho nas. 
+---
+= Crie um bucket do nas S3
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um buckets do nas S3 é um mapeamento entre um nome de bucket do S3 e um caminho nas. Os buckets nas do S3 permitem que você forneça acesso S3 a qualquer parte do namespace SVM com volumes e estrutura de diretórios existentes.
+
+.Antes de começar
+* Um servidor de objetos S3 é configurado em uma SVM que contém dados nas.
+* Os dados nas estão em conformidade com a link:nas-data-requirements-client-access-reference.html["Requisitos para acesso ao cliente S3"].
+
+
+.Sobre esta tarefa
+Você pode configurar buckets do S3 nas para especificar qualquer conjunto de arquivos e diretórios no diretório raiz do SVM.
+
+Você também pode definir políticas de bucket que permitem ou não permitem o acesso aos dados do nas com base em qualquer combinação desses parâmetros:
+
+* Arquivos e diretórios
+* Permissões de usuário e grupo
+* S3 operações
+
+
+Por exemplo, você pode querer políticas de bucket separadas que concedem acesso somente leitura a um grande grupo de usuários e outra que permita que um grupo limitado execute operações em um subconjunto desses dados.
+
+Como os "buckets" do nas S3 são mapeamentos e não buckets do S3, as seguintes propriedades dos buckets do S3 padrão não se aplicam aos buckets do nas S3.
+
+* * aggr-list-multiplicador / storage-Service-level / volume / exclude-aggr-list / qos-policy-group * não são criados volumes ou qtree ao configurar buckets do S3 nas.
+* *A função é -protegida/está -protegida/está -protegida-na-ONTAP* mais de S3 buckets nas não são protegidos ou espelhados usando o SnapMirror S3, mas em vez disso estarão usando a proteção SnapMirror regular disponível na granularidade do volume.
+* *Os volumes nas de estado de versionamento* geralmente têm a tecnologia Snapshot disponível para salvar versões diferentes. No entanto, o controle de versão não está disponível atualmente em buckets do nas S3.
+* *As estatísticas equivalentes usadas em lógica estão disponíveis para volumes nas através dos comandos de volume.
+
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+Adicione um novo bucket do S3 nas em uma VM de storage habilitada para nas.
+
+. Clique em *armazenamento > baldes* e, em seguida, clique em *Adicionar*.
+. Insira um nome para o bucket do nas S3 e selecione a VM de armazenamento, não insira um tamanho e clique em *mais Opções*.
+. Introduza um nome de caminho válido ou clique em Procurar para selecionar a partir de uma lista de nomes de caminho válidos. Quando você insere um pathname válido, as opções que não são relevantes para a configuração do nas S3 são ocultadas.
+. Se você já mapeou usuários do S3 para usuários do nas e grupos criados, você pode configurar suas permissões e clique em *Salvar*. Você já deve ter mapeado S3 usuários para usuários nas antes de configurar permissões nesta etapa.
+
+
+Caso contrário, clique em *Save* para concluir a configuração do bucket do nas do S3.
+
+--
+.CLI
+--
+Crie um bucket do nas S3 em um SVM que contenha sistemas de arquivos nas. E
+`vserver object-store-server bucket create -vserver _svm_name_ -bucket _bucket_name_ -type nas -nas-path _junction_path_ [-comment _text_]`
+
+Exemplo
+`cluster1::> vserver object-store-server bucket create -bucket testbucket -type nas -path /vol1`
+
+--
+====

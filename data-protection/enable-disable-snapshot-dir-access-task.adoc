@@ -1,0 +1,89 @@
+---
+permalink: data-protection/enable-disable-snapshot-dir-access-task.html 
+sidebar: sidebar 
+keywords: enable, disable, access, snapshot copy 
+summary: Você pode ativar e desativar o acesso ao diretório cópia Snapshot para torná-lo visível para os sistemas clientes e para fornecer a eles acesso a um diretório cópia Snapshot em um volume. 
+---
+= Ative e desative o acesso de clientes NFS e SMB ao diretório de cópia Snapshot
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode ativar e desativar o acesso ao diretório cópia Snapshot usando a opção `volume modify` CLI do comando ONTAP `-snapdir-access` e, começando com ONTAP 9.10,1, você pode usar o Gerenciador do sistema para habilitar ou desabilitar sistemas cliente para acessar um diretório cópia Snapshot em um volume. A ativação do acesso torna o diretório de cópia Snapshot visível para os clientes e permite que os clientes Windows mapeem uma unidade para o diretório de cópia Snapshot para visualizar e acessar seu conteúdo. Os clientes NFS e SMB podem restaurar um arquivo ou LUN a partir de um snapshot.
+
+Você pode ativar ou desativar o acesso ao diretório de cópia Snapshot de um volume editando as configurações de volume ou editando as configurações de compartilhamento do volume.
+
+
+
+== Ative ou desative o acesso do cliente ao diretório de cópia Snapshot editando um volume
+
+.Passos
+Você pode ativar e desativar o acesso ao diretório de cópia Snapshot do cliente usando o Gerenciador de sistema do ONTAP ou a CLI do ONTAP. Por padrão, o diretório cópia Snapshot em um volume está acessível aos clientes.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Clique em *armazenamento > volumes*.
+. Selecione o volume que contém o diretório cópias Snapshot que deseja exibir ou ocultar.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"] e selecione *Editar*.
+. Na seção *Configurações de cópias instantâneas (locais)*, marque ou desmarque *Mostrar o diretório cópias instantâneas para clientes*.
+. Clique em *Salvar*.
+
+
+--
+.CLI
+--
+. Verifique o status de acesso ao diretório Snapshot:
++
+[source, cli]
+----
+volume show -vserver <SVM_name> -volume <vol_name> -fields snapdir-access
+----
++
+Exemplo:
+
++
+[listing]
+----
+
+clus1::> volume show -vserver vs0 -volume vol1 -fields snapdir-access
+vserver volume snapdir-access
+------- ------ --------------
+vs0     vol1   false
+----
+. Ative ou desative o acesso ao diretório cópia Instantânea:
++
+[source, cli]
+----
+volume modify -vserver <SVM_name> -volume <vol_name> -snapdir-access <true|false>
+----
++
+O exemplo a seguir habilita o acesso ao diretório de cópia Snapshot no vol1:
+
++
+[listing]
+----
+
+clus1::> volume modify -vserver vs0 -volume vol1 -snapdir-access true
+Volume modify successful on volume vol1 of Vserver vs0.
+----
+
+
+--
+====
+
+
+== Ative ou desative o acesso do cliente ao diretório de cópia Snapshot editando um compartilhamento
+
+Por padrão, o diretório cópia Snapshot em um volume está acessível aos clientes.
+
+.Passos
+. Clique em *armazenamento > compartilhamentos*.
+. Selecione o volume que contém o diretório cópias Snapshot que deseja exibir ou ocultar.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"] e selecione *Editar*.
+. Na seção *Propriedades de compartilhamento*, marque ou desmarque *permitir que os clientes acessem o diretório cópias Snapshot*.
+. Clique em *Salvar*.
+

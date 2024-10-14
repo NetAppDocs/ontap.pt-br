@@ -1,0 +1,104 @@
+---
+permalink: fabricpool/enable-disable-volume-cloud-write-task.html 
+sidebar: sidebar 
+keywords: creating, volume, fabricpool, cloud write, enable, disable 
+summary: A partir do ONTAP 9.14,1, você pode ativar e desativar o modo de gravação na nuvem em um volume novo ou existente em um FabricPool para permitir que os clientes NFS gravem dados diretamente na nuvem. 
+---
+= Ative e desative volumes para gravação diretamente na nuvem
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.14,1, você pode ativar e desativar a gravação diretamente na nuvem em um volume novo ou existente em um FabricPool para permitir que os clientes NFS gravem dados diretamente na nuvem sem esperar pela disposição em camadas de varreduras. Os clientes SMB ainda gravam no nível de performance em um volume habilitado para gravação na nuvem. O modo de gravação em nuvem está desativado por padrão.
+
+Ter a capacidade de gravar diretamente na nuvem é útil para casos como migrações, por exemplo, em que grandes quantidades de dados são transferidos para um cluster do que o cluster pode dar suporte na camada local. Sem o modo de gravação na nuvem, durante a migração, quantidades menores de dados são transferidas, depois categorizadas, transferidas e categorizadas novamente, até que a migração seja concluída. Com o modo de gravação em nuvem, esse tipo de gerenciamento não é mais necessário porque os dados nunca são transferidos para a camada local.
+
+.Antes de começar
+* Você deve ser um administrador de cluster ou SVM.
+* Você deve estar no nível de privilégio avançado.
+* O volume deve ser um volume do tipo leitura-gravação.
+* O volume precisa ter a política de disposição em categorias.
+
+
+
+
+== Habilite a gravação diretamente na nuvem durante a criação de volume
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Crie um volume e ative o modo de gravação em nuvem:
++
+[source, cli]
+----
+volume create -volume <volume name> -is-cloud-write-enabled <true|false> -aggregate <local tier name>
+----
++
+O exemplo a seguir cria um volume chamado vol1 com gravação em nuvem habilitada no nível local do FabricPool (aggr1):
+
++
+[listing]
+----
+volume create -volume vol1 -is-cloud-write-enabled true -aggregate aggr1
+----
+
+
+
+
+== Habilite a gravação diretamente na nuvem em um volume existente
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Modificar um volume para ativar o modo de gravação em nuvem:
++
+[source, cli]
+----
+volume modify -volume <volume name> -is-cloud-write-enabled <true|false> -aggregate <local tier name>
+----
++
+O exemplo a seguir modifica um volume chamado vol1 com gravação em nuvem habilitada no nível local do FabricPool (aggr1):
+
++
+[listing]
+----
+volume modify -volume vol1 -is-cloud-write-enabled true -aggregate aggr1
+----
+
+
+
+
+== Desative a gravação diretamente na nuvem em um volume
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Desativar o modo de gravação em nuvem:
++
+[source, cli]
+----
+volume modify -volume <volume name> -is-cloud-write-enabled <true|false> -aggregate <aggregate name>
+----
++
+O exemplo a seguir cria um volume chamado vol1 com gravação na nuvem ativada:
+
++
+[listing]
+----
+volume modify -volume vol1 -is-cloud-write-enabled false -aggregate aggr1
+----
+

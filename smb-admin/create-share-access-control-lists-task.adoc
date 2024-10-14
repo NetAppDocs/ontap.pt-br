@@ -1,0 +1,103 @@
+---
+permalink: smb-admin/create-share-access-control-lists-task.html 
+sidebar: sidebar 
+keywords: configuring, configure, permission, share, creating, create, control, list, acl, smb, enable, level, access, user, group, create smb share access control lists 
+summary: 'Configurar permissões de compartilhamento criando listas de controle de acesso (ACLs) para compartilhamentos SMB permite controlar o nível de acesso a um compartilhamento para usuários e grupos.' 
+---
+= Criar listas de controle de acesso de compartilhamento SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A configuração de permissões de compartilhamento criando listas de controle de acesso (ACLs) para compartilhamentos SMB permite controlar o nível de acesso a um compartilhamento para usuários e grupos.
+
+.Sobre esta tarefa
+Você pode configurar ACLs de nível de compartilhamento usando nomes de usuário ou grupo do Windows locais ou de domínio ou nomes de usuário ou grupo UNIX.
+
+Antes de criar uma nova ACL, você deve excluir a ACL de compartilhamento padrão `Everyone / Full Control` , que representa um risco de segurança.
+
+No modo de grupo de trabalho, o nome de domínio local é o nome do servidor SMB.
+
+.Passos
+. Exclua a ACL de compartilhamento padrão: 'Vserver cifs share access-control delete -vserver <vserver_name> -share <share_name> -user-or-group everyone'
+. Configure a nova ACL:
++
+|===
+| Se você quiser configurar ACLs usando um... | Digite o comando... 
+
+
+ a| 
+Usuário do Windows
+ a| 
+`vserver cifs share access-control create -vserver <vserver_name> -share <share_name> -user-group-type windows -user-or-group <Windows_domain_name\user_name> -permission <access_right>`
+
+
+
+ a| 
+Grupo Windows
+ a| 
+`vserver cifs share access-control create -vserver <vserver_name> -share <share_name> -user-group-type windows -user-or-group <Windows_domain_name\group_name> -permission <access_right>`
+
+
+
+ a| 
+Utilizador UNIX
+ a| 
+`vserver cifs share access-control create -vserver <vserver_name> -share <share_name> -user-group-type <unix-user> -user-or-group <UNIX_user_name> -permission <access_right>`
+
+
+
+ a| 
+Grupo UNIX
+ a| 
+`vserver cifs share access-control create -vserver <vserver_name> -share <share_name> -user-group-type <unix-group> -user-or-group <UNIX_group_name> -permission <access_right>`
+
+|===
+. Verifique se a ACL aplicada ao compartilhamento está correta usando o `vserver cifs share access-control show` comando.
+
+
+.Exemplo
+O comando a seguir `Change` concede permissões ao grupo Windows "'equipe de vendas'" para o compartilhamento "vendas" no vs1.example.com.º SVM:
+
+[listing]
+----
+cluster1::> vserver cifs share access-control create -vserver vs1.example.com -share sales -user-or-group "DOMAIN\Sales Team" -permission Change
+
+cluster1::> vserver cifs share access-control show -vserver vs1.example.com
+                 Share       User/Group              User/Group  Access
+Vserver          Name        Name                    Type        Permission
+---------------- ----------- --------------------    ---------   -----------
+vs1.example.com  c$          BUILTIN\Administrators  windows     Full_Control
+vs1.example.com  sales       DOMAIN\Sales Team     windows     Change
+----
+O comando a seguir `Read` dá permissão ao grupo UNIX "Engineering" para o compartilhamento "eng" no SVM "vs2.example.com":
+
+[listing]
+----
+cluster1::> vserver cifs share access-control create -vserver vs2.example.com -share eng -user-group-type unix-group -user-or-group  engineering -permission Read
+
+cluster1::> vserver cifs share access-control show -vserver vs2.example.com
+                 Share       User/Group               User/Group  Access
+Vserver          Name        Name                     Type        Permission
+---------------- ----------- -------------------      ----------- -----------
+vs2.example.com  c$          BUILTIN\Administrators   windows     Full_Control
+vs2.example.com  eng         engineering              unix-group  Read
+----
+Os comandos a seguir `Change` dão permissão ao grupo local do Windows chamado "Tiger Team" e `Full_Control` permissão ao usuário local do Windows chamado "Sue Chang" para o compartilhamento "datavol5" no SVM "VS1":
+
+[listing]
+----
+cluster1::> vserver cifs share access-control create -vserver vs1 -share datavol5 -user-group-type windows -user-or-group "Tiger Team" -permission Change
+
+cluster1::> vserver cifs share access-control create -vserver vs1 -share datavol5 -user-group-type windows -user-or-group "Sue Chang" -permission Full_Control
+
+cluster1::> vserver cifs share access-control show -vserver vs1
+               Share       User/Group                  User/Group  Access
+Vserver        Name        Name                        Type        Permission
+-------------- ----------- --------------------------- ----------- -----------
+vs1            c$          BUILTIN\Administrators      windows     Full_Control
+vs1            datavol5    Tiger Team         windows     Change
+vs1            datavol5    Sue Chang          windows     Full_Control
+----

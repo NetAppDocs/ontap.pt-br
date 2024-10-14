@@ -1,0 +1,76 @@
+---
+permalink: smb-admin/enable-disable-required-signing-incoming-traffic-task.html 
+sidebar: sidebar 
+keywords: enforce, requirement, client, smb, message, enabling, enable, require, sign, disable, enable or disable require smb signing for incoming smb traffic 
+summary: Você pode impor o requisito para que os clientes assinem mensagens SMB habilitando a assinatura SMB necessária. Se ativado, o ONTAP aceita mensagens SMB somente se elas tiverem assinaturas válidas. Se você quiser permitir a assinatura SMB, mas não a exigir, você pode desativar a assinatura SMB necessária. 
+---
+= Ative ou desative a assinatura SMB necessária para o tráfego SMB de entrada
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode impor o requisito para que os clientes assinem mensagens SMB habilitando a assinatura SMB necessária. Se ativado, o ONTAP aceita mensagens SMB somente se elas tiverem assinaturas válidas. Se você quiser permitir a assinatura SMB, mas não a exigir, você pode desativar a assinatura SMB necessária.
+
+.Sobre esta tarefa
+Por padrão, a assinatura SMB necessária está desativada. Você pode ativar ou desativar a assinatura SMB necessária a qualquer momento.
+
+[NOTE]
+====
+A assinatura SMB não está desativada por padrão nas seguintes circunstâncias:
+
+. A assinatura SMB necessária está ativada e o cluster é revertido para uma versão do ONTAP que não suporta assinatura SMB.
+. O cluster é posteriormente atualizado para uma versão do ONTAP que suporte a assinatura SMB.
++
+Nestas circunstâncias, a configuração de assinatura SMB que foi originalmente configurada em uma versão suportada do ONTAP é mantida por meio de reversão e atualização subsequente.
+
+
+
+====
+Quando você configura uma relação de recuperação de desastres de máquina virtual de storage (SVM), o valor selecionado para a `-identity-preserve` opção `snapmirror create` do comando determina os detalhes de configuração replicados no SVM de destino.
+
+Se você definir `-identity-preserve` a opção como `true` (ID-Preserve), a configuração de segurança de assinatura SMB será replicada para o destino.
+
+Se você definir `-identity-preserve` a opção como `false` (non-ID-Preserve), a configuração de segurança de assinatura SMB não será replicada para o destino. Nesse caso, as configurações de segurança do servidor CIFS no destino são definidas com os valores padrão. Se você ativou a assinatura SMB necessária na SVM de origem, habilite manualmente a assinatura SMB necessária no SVM de destino.
+
+.Passos
+. Execute uma das seguintes ações:
++
+|===
+| Se você quiser que a assinatura SMB seja necessária... | Digite o comando... 
+
+
+ a| 
+Ativado
+ a| 
+`vserver cifs security modify -vserver _vserver_name_ -is-signing-required true`
+
+
+
+ a| 
+Desativado
+ a| 
+`vserver cifs security modify -vserver _vserver_name_ -is-signing-required false`
+
+|===
+. Verifique se a assinatura SMB necessária está ativada ou desativada determinando se o valor no `Is Signing Required` campo na saída do comando a seguir está definido para o valor desejado: `vserver cifs security show -vserver _vserver_name_ -fields is-signing-required`
+
+
+.Exemplo
+O exemplo a seguir habilita a assinatura SMB necessária para o SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs security modify -vserver vs1 -is-signing-required true
+
+cluster1::> vserver cifs security show -vserver vs1 -fields is-signing-required
+vserver  is-signing-required
+-------- -------------------
+vs1      true
+----
+[NOTE]
+====
+As alterações nas definições de encriptação entram em vigor para novas ligações. As ligações existentes não são afetadas.
+
+====

@@ -1,0 +1,49 @@
+---
+sidebar: sidebar 
+permalink: networking/recover_from_an_incorrectly_configured_cluster_lif.html 
+keywords: misconfigured, misconfigurations, incorrect, incorrectly, switch, switches, switched, cable, physical, wiring, wired, reachability, port, cluster, ontap 9.8 and later, recover from an incorrectly configured cluster lif, how to identify and correct a cluster that has been misconfigured, cluster create, network port, reachability show -detail, reset the home port 
+summary: Como identificar e corrigir um cluster que foi mal configurado 
+---
+= ONTAP 9.8 e posterior: Recupere de um cluster LIF configurado incorretamente
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Um cluster não pode ser criado quando a rede do cluster é cabeada para um switch, mas nem todas as portas configuradas no Cluster IPspace podem alcançar as outras portas configuradas no Cluster IPspace.
+
+.Sobre esta tarefa
+Em um cluster comutado, se uma interface de rede de cluster (LIF) estiver configurada na porta errada ou se uma porta de cluster estiver conetada à rede errada, o `cluster create` comando poderá falhar com o seguinte erro:
+
+....
+Not all local cluster ports have reachability to one another.
+Use the "network port reachability show -detail" command for more details.
+....
+Os resultados do `network port show` comando podem mostrar que várias portas são adicionadas ao Cluster IPspace porque estão conetadas a uma porta configurada com um cluster LIF. No entanto, os resultados do `network port` `reachability show -detail` comando revelam quais portas não têm conetividade entre si.
+
+Para recuperar de um cluster LIF configurado em uma porta que não é acessível às outras portas configuradas com cluster LIFs, execute as seguintes etapas:
+
+.Passos
+. Redefina a porta inicial do LIF do cluster para a porta correta:
++
+....
+network port modify -home-port
+....
+. Remova as portas que não têm LIFs de cluster configuradas a partir do domínio de broadcast do cluster:
++
+....
+network port broadcast-domain remove-ports
+....
+. Crie o cluster:
++
+....
+cluster create
+....
+
+
+.Resultado
+Ao concluir a criação do cluster, o sistema deteta a configuração correta e coloca as portas nos domínios de broadcast corretos.

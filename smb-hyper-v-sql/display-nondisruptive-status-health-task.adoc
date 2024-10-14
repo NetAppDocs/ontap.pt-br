@@ -1,0 +1,121 @@
+---
+permalink: smb-hyper-v-sql/display-nondisruptive-status-health-task.html 
+sidebar: sidebar 
+keywords: display, nondisruptive, operation, status, system, health, monitor, cifs, ndo, alert 
+summary: Você pode usar os comandos de integridade do sistema para exibir informações sobre a integridade geral do sistema do cluster e a integridade do subsistema CIFS-NDO, responder a alertas, configurar alertas futuros e exibir informações sobre como o monitoramento de integridade está configurado. 
+---
+= Exibir o status de operação sem interrupções usando o monitoramento de integridade do sistema
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar os `system health` comandos para exibir informações sobre a integridade geral do sistema do cluster e a integridade do subsistema CIFS-NDO, responder a alertas, configurar alertas futuros e exibir informações sobre como o monitoramento de integridade está configurado.
+
+.Passos
+. Monitore o status de integridade executando a ação apropriada:
++
+|===
+| Se você quiser exibir... | Digite o comando... 
+
+
+ a| 
+O estado de saúde do sistema, que reflete o estado geral dos monitores de saúde individuais
+ a| 
+`*system health status show*`
+
+
+
+ a| 
+Informações sobre o estado de funcionamento do subsistema CIFS-NDO
+ a| 
+`*system health subsystem show -subsystem CIFS-NDO -instance*`
+
+|===
+. Exiba informações sobre como o monitoramento de alerta CIFS-NDO é configurado executando as ações apropriadas:
++
+|===
+| Se você quiser exibir informações sobre... | Digite o comando... 
+
+
+ a| 
+A configuração e o status do monitor de integridade do subsistema CIFS-NDO, como nós monitorados, estado de inicialização e status
+ a| 
+`*system health config show -subsystem CIFS-NDO*`
+
+
+
+ a| 
+O CIFS-NDO alerta que um monitor de integridade pode gerar
+ a| 
+`*system health alert definition show -subsystem CIFS-NDO*`
+
+
+
+ a| 
+Políticas do monitor de integridade CIFS-NDO, que determinam quando os alertas são gerados
+ a| 
+`*system health policy definition show -monitor node-connect*`
+
+|===
++
+[NOTE]
+====
+Use o `-instance` parâmetro para exibir informações detalhadas.
+
+====
+
+
+.Exemplos
+A saída a seguir mostra informações sobre o status geral de integridade do cluster e do subsistema CIFS-NDO:
+
+[listing]
+----
+cluster1::> system health status show
+Status
+---------------
+ok
+
+cluster1::> system health subsystem show -instance -subsystem CIFS-NDO
+
+                   Subsystem: CIFS-NDO
+                      Health: ok
+        Initialization State: initialized
+Number of Outstanding Alerts: 0
+ Number of Suppressed Alerts: 0
+                        Node: node2
+  Subsystem Refresh Interval: 5m
+----
+A saída a seguir mostra informações detalhadas sobre a configuração e o status do monitor de integridade do subsistema CIFS-NDO:
+
+[listing]
+----
+cluster1::> system health config show -subsystem CIFS-NDO -instance
+
+                           Node: node1
+                        Monitor: node-connect
+                      Subsystem: SAS-connect, HA-health, CIFS-NDO
+                         Health: ok
+                Monitor Version: 2.0
+            Policy File Version: 1.0
+                        Context: node_context
+                     Aggregator: system-connect
+                       Resource: SasAdapter, SasDisk, SasShelf, HaNodePair,
+                                 HaICMailbox, CifsNdoNode, CifsNdoNodeVserver
+Subsystem Initialization Status: initialized
+    Subordinate Policy Versions: 1.0 SAS, 1.0 SAS multiple adapters, 1.0, 1.0
+
+                           Node: node2
+                        Monitor: node-connect
+                      Subsystem: SAS-connect, HA-health, CIFS-NDO
+                         Health: ok
+                Monitor Version: 2.0
+            Policy File Version: 1.0
+                        Context: node_context
+                     Aggregator: system-connect
+                       Resource: SasAdapter, SasDisk, SasShelf, HaNodePair,
+                                 HaICMailbox, CifsNdoNode, CifsNdoNodeVserver
+Subsystem Initialization Status: initialized
+    Subordinate Policy Versions: 1.0 SAS, 1.0 SAS multiple adapters, 1.0, 1.0
+----

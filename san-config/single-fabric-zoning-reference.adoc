@@ -1,0 +1,47 @@
+---
+permalink: san-config/single-fabric-zoning-reference.html 
+sidebar: sidebar 
+keywords: single-fabric, zoning 
+summary: Em uma configuração de estrutura única, você ainda pode conectar cada iniciador de host a cada nó de storage. O software multipathing é necessário no host para gerenciar vários caminhos. Cada host deve ter dois iniciadores para multipathing para fornecer resiliência na solução. 
+---
+= Zoneamento de tecido único
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Em uma configuração de estrutura única, você ainda pode conectar cada iniciador de host a cada nó de storage. O software multipathing é necessário no host para gerenciar vários caminhos. Cada host deve ter dois iniciadores para multipathing para fornecer resiliência na solução.
+
+Cada iniciador deve ter um mínimo de um LIF de cada nó que o iniciador possa acessar. O zoneamento deve permitir pelo menos um caminho do iniciador do host para o par de nós de HA no cluster para fornecer um caminho para a conetividade LUN. Isso significa que cada iniciador no host pode ter apenas um LIF de destino por nó em sua configuração de zona. Se houver um requisito de multipathing para o mesmo nó ou vários nós no cluster, cada nó terá várias LIFs por nó em sua configuração de zona. Isso permite que o host ainda acesse seus LUNs se um nó falhar ou se um volume contendo o LUN for movido para um nó diferente. Isso também requer que os nós de relatório sejam definidos adequadamente.
+
+Configurações de estrutura única são compatíveis, mas não são consideradas altamente disponíveis. A falha de um único componente pode causar perda de acesso aos dados.
+
+Na figura a seguir, o host tem dois iniciadores e está executando software multipathing. Existem duas zonas:
+
+[NOTE]
+====
+A convenção de nomenclatura usada nesta figura é apenas uma recomendação de uma possível convenção de nomenclatura que você pode escolher usar para sua solução ONTAP.
+
+====
+* Zona 1: HBA 0, LIF_1 e LIF_3
+* Zona 2: HBA 1, LIF_2 e LIF_4
+
+
+Se a configuração incluísse mais nós, as LIFs para os nós adicionais seriam incluídas nessas zonas.
+
+image:scm-en-drw-single-fabric-zoning.png["Único tecido Zoning"]
+
+Neste exemplo, você também pode ter todos os quatro LIFs em cada zona. Nesse caso, as zonas seriam as seguintes:
+
+* Zona 1: HBA 0, LIF_1, LIF_2, LIF_3 e LIF_4
+* Zona 2: HBA 1, LIF_1, LIF_2, LIF_3 e LIF_4
+
+
+[NOTE]
+====
+O sistema operacional host e o software de multipathing precisam dar suporte ao número de caminhos compatíveis que estão sendo usados para acessar os LUNs nos nós. Para determinar o número de caminhos usados para acessar os LUNs nos nós, consulte a seção limites de configuração da SAN.
+
+====
+.Informações relacionadas
+https://hwu.netapp.com["NetApp Hardware Universe"^]

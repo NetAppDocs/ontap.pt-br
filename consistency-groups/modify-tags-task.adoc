@@ -1,0 +1,64 @@
+---
+permalink: consistency-groups/modify-tags-task.html 
+sidebar: sidebar 
+keywords: consistency groups, application tag, sql, oracle, component tag 
+summary: Tags de aplicativo e componente são uma ferramenta de gerenciamento, permitindo filtrar e identificar diferentes cargas de trabalho em seus grupos de consistência. 
+---
+= Modificar tags de aplicativo e componente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.12,1, os grupos de consistência suportam a marcação de componentes e aplicativos. Tags de aplicativo e componente são uma ferramenta de gerenciamento, permitindo filtrar e identificar diferentes cargas de trabalho em seus grupos de consistência.
+
+.Sobre esta tarefa
+Grupos de consistência oferecem dois tipos de tags:
+
+* **Etiquetas de aplicação**: Aplicam-se a grupos de consistência individuais e pai. As tags de aplicação fornecem rotulagem para workloads como MongoDB, Oracle ou SQL Server. A tag padrão do aplicativo para grupos de consistência é outra.
+* **Tags de componente**: Crianças em grupos de consistência hierárquica têm tags de componente em vez de tags de aplicativo. As opções para tags de componentes são "dados", "logs" ou "outros". O valor padrão é outro.
+
+
+Você pode aplicar tags ao criar grupos de consistência ou após os grupos de consistência terem sido criados.
+
+
+IMPORTANT: Se o grupo de consistência tiver uma relação de sincronização ativa do SnapMirror, você deve usar *Other* como a tag de aplicativo ou componente.
+
+.Passos
+A partir do ONTAP 9.12,1, você pode modificar tags de aplicativos e componentes usando o Gerenciador de sistema. A partir do ONTAP 9.14,1, você pode modificar as tags de aplicativo e componente usando a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência cuja tag você deseja modificar. Selecione o image:icon_kabob.gif["Ícone de opções do menu"] ao lado do nome do grupo de consistência e depois *Editar*.
+. No menu suspenso, escolha a aplicação ou a etiqueta de componente apropriada.
+. Selecione *Guardar*.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode modificar a tag de aplicativo ou componente de um grupo de consistência existente usando a CLI do ONTAP.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Modifique a etiqueta da aplicação
+. As etiquetas de aplicação aceitam um número limitado de strings predefinidas. Para ver a lista aceita de strings, execute o seguinte comando:
+`consistency-group modify -vserver _svm_name_ -consistency-group _consistency_group_ -application-type ?`
+. Escolha a cadeia de carateres apropriada da saída, o grupo modificar a consistência:
+`consistency-group modify -vserver _svm_name_ -consistency-group _consistency_group_ -application-type application_type`
+
+
+.Modifique a etiqueta do componente
+. Modificar o tipo de componente. O tipo de componente pode ser dados, logs ou outro. Se você estiver usando a sincronização ativa do SnapMirror, ela deve ser "outra".
+`consistency-group modify -vserver _svm_ -consistency-group _child_consistency_group_ -parent-consistency-group _parent_consistency_group_ -application-component-type [data|logs|other]`
+
+
+--
+====

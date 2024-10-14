@@ -1,0 +1,46 @@
+---
+permalink: system-admin/autosupport-creates-sends-event-messages-concept.html 
+sidebar: sidebar 
+keywords: autosupport, event, triggered, messages, ems, data, example 
+summary: O AutoSupport cria mensagens AutoSupport acionadas por eventos quando o EMS processa um evento de acionamento. Uma mensagem do AutoSupport acionada por evento alerta os destinatários para problemas que exigem ação corretiva e contém apenas informações relevantes para o problema. Você pode personalizar o conteúdo a incluir e quem recebe as mensagens. 
+---
+= Como o AutoSupport cria e envia mensagens acionadas por eventos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O AutoSupport cria mensagens AutoSupport acionadas por eventos quando o EMS processa um evento de acionamento. Uma mensagem do AutoSupport acionada por evento alerta os destinatários para problemas que exigem ação corretiva e contém apenas informações relevantes para o problema. Você pode personalizar o conteúdo a incluir e quem recebe as mensagens.
+
+O AutoSupport usa o seguinte processo para criar e enviar mensagens AutoSupport acionadas por eventos:
+
+. Quando o EMS processa um evento de ativação, o EMS envia um pedido ao AutoSupport.
++
+Um evento de gatilho é um evento EMS com um destino AutoSupport e um nome que começa com um `callhome.` prefixo.
+
+. O AutoSupport cria uma mensagem AutoSupport acionada por evento.
++
+O AutoSupport coleta informações básicas e de solução de problemas de subsistemas associados ao gatilho para criar uma mensagem que inclua apenas informações relevantes para o evento de acionamento.
+
++
+Um conjunto padrão de subsistemas é associado a cada gatilho. No entanto, você pode optar por associar subsistemas adicionais a um gatilho usando o `system node autosupport trigger modify` comando.
+
+. O AutoSupport envia a mensagem AutoSupport acionada por evento aos destinatários definidos pelo `system node autosupport modify` comando com os `-to` parâmetros , `-noteto`, `-partner-address` e . `-support`
++
+Você pode ativar e desativar a entrega de mensagens do AutoSupport para gatilhos específicos usando o `system node autosupport trigger modify` comando com os `-to` parâmetros e. `-noteto`
+
+
+
+.Exemplo de dados enviados para um evento específico
+O `storage shelf PSU failed` evento EMS aciona uma mensagem que contém dados básicos dos subsistemas obrigatório, arquivos de log, armazenamento, RAID, HA, Plataforma e rede e dados de solução de problemas dos subsistemas obrigatório, arquivos de log e armazenamento.
+
+Você decide que deseja incluir dados sobre NFS em qualquer mensagem do AutoSupport enviada em resposta a um evento futuro `storage shelf PSU failed`. Digite o seguinte comando para habilitar dados em nível de solução de problemas para NFS para `callhome.shlf.ps.fault` o evento:
+
+[listing]
+----
+
+        cluster1::\>
+        system node autosupport trigger modify -node node1 -autosupport-message shlf.ps.fault -troubleshooting-additional nfs
+----
+Observe que o `callhome.` prefixo é descartado do `callhome.shlf.ps.fault` evento quando você usa os `system node autosupport trigger` comandos, ou quando referenciado por eventos AutoSupport e EMS na CLI.

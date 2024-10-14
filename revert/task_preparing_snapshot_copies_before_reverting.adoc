@@ -1,0 +1,82 @@
+---
+permalink: revert/task_preparing_snapshot_copies_before_reverting.html 
+sidebar: sidebar 
+keywords: ontap, revert, reverting, reversion, snapshot, copies, prepare, preparing, disable, delete 
+summary: Antes de reverter para uma versão anterior do ONTAP, você deve desativar todas as políticas de cópia Snapshot e excluir todas as cópias Snapshot criadas após a atualização para a versão atual. 
+---
+= Prepare cópias Snapshot antes de reverter
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de reverter para uma versão anterior do ONTAP, você deve desativar todas as políticas de cópia Snapshot e excluir todas as cópias Snapshot criadas após a atualização para a versão atual.
+
+Se você estiver revertendo em um ambiente SnapMirror, primeiro você deve excluir as seguintes relações de espelhamento:
+
+* Todas as relações de espelhamento de compartilhamento de carga
+* Todas as relações espelhadas de proteção de dados que foram criadas no ONTAP 8,3.x
+* Todas as relações espelhadas de proteção de dados se o cluster foi recriado no ONTAP 8,3.x
++
+.. Desative as políticas de cópia Snapshot para todos os SVMs de dados: `volume snapshot policy modify -vserver * -enabled false`
+.. Desative as políticas de cópia Snapshot para os agregados de cada nó:
++
+... Identifique os agregados do nó usando o comando run-nodenameaggr status.
+... Desative a política de cópia Snapshot para cada agregado: `run -node nodename aggr options aggr_name nosnap on`
+... Repita esta etapa para cada nó restante.
+
+
+.. Desative as políticas de cópia Snapshot para o volume raiz de cada nó:
++
+... Identifique o volume raiz do nó usando o comando run-nodenodenamevol status.
++
+Você identifica o volume raiz pela palavra root na coluna Opções da saída do comando vol status.
+
++
+[listing]
+----
+vs1::> run -node node1 vol status
+
+         Volume State           Status            Options
+           vol0 online          raid_dp, flex     root, nvfail=on
+                                64-bit
+----
+... Desative a política de cópia Snapshot no volume raiz: `run -node nodename vol options root_volume_name nosnap on`
+... Repita esta etapa para cada nó restante.
+
+
+.. Exclua todas as cópias Snapshot criadas após a atualização para a versão atual:
++
+... Defina o nível de privilégio como avançado: `set -privilege advanced`
+... Desativar os instantâneos:``snapshot policy modify -vserver * -enabled false``
+... Exclua as cópias Snapshot da versão mais recente do nó: `volume snapshot prepare-for-revert -node nodename`
++
+Esse comando exclui as cópias Snapshot da versão mais recente em cada volume de dados, agregado de raiz e volume raiz.
+
++
+Se nenhuma cópia Snapshot não puder ser excluída, o comando falhará e notificará você de todas as ações necessárias que você deve tomar antes que as cópias snapshot possam ser excluídas. Você deve concluir as ações necessárias e executar novamente o comando preparar para reversão de instantâneo de volume antes de prosseguir para a próxima etapa.
+
++
+[listing]
+----
+cluster1::*> volume snapshot prepare-for-revert -node node1
+
+Warning: This command will delete all Snapshot copies that have the format used by the current version of ONTAP. It will fail if any Snapshot copy polices are enabled, or
+         if any Snapshot copies have an owner. Continue? {y|n}: y
+----
+... Verifique se as cópias Snapshot foram excluídas: `volume snapshot show -node nodename`
++
+Se houver cópias Snapshot da versão mais recente, force-as a serem excluídas: `volume snapshot delete {-fs-version 9.0 -node nodename -is-constituent true} -ignore-owners -force`
+
+... Repita esta etapa c para cada nó restante.
+... Voltar ao nível de privilégio de administrador: `set -privilege admin`
+
+
+
+
++
+
+NOTE: Siga estas etapas nos dois clusters na configuração do MetroCluster.
+
+

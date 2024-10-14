@@ -1,0 +1,82 @@
+---
+permalink: revert/task_enabling_and_reverting_lifs_to_home_ports_completing_post_reversion_tasks.html 
+sidebar: sidebar 
+keywords: ontap, revert, reverting, reversion, downgrade, downgrading, enable, enabling, lifs, home, ports 
+summary: Durante uma reinicialização, alguns LIFs podem ter sido migrados para suas portas de failover atribuídas. Depois de reverter um cluster, você deve habilitar e reverter quaisquer LIFs que não estejam em suas portas iniciais. 
+---
+= Ative e reverta LIFs para portas iniciais após uma reversão
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Durante uma reinicialização, alguns LIFs podem ter sido migrados para suas portas de failover atribuídas. Depois de reverter um cluster, você deve habilitar e reverter quaisquer LIFs que não estejam em suas portas iniciais.
+
+O comando de reversão da interface de rede reverte um LIF que não está atualmente em sua porta inicial de volta para sua porta inicial, desde que a porta inicial esteja operacional. A porta inicial de um LIF é especificada quando o LIF é criado; você pode determinar a porta inicial de um LIF usando o comando show de interface de rede.
+
+. Apresentar o estado de todas as LIFs: `network interface show`
++
+Este exemplo exibe o status de todas as LIFs de uma máquina virtual de storage (SVM).
+
++
+[listing]
+----
+cluster1::> network interface show -vserver vs0
+            Logical    Status     Network            Current       Current Is
+Vserver     Interface  Admin/Oper Address/Mask       Node          Port    Home
+----------- ---------- ---------- ------------------ ------------- ------- ----
+vs0
+            data001    down/down  192.0.2.120/24     node0         e0e     true
+            data002    down/down  192.0.2.121/24     node0         e0f     true
+            data003    down/down  192.0.2.122/24     node0         e2a     true
+            data004    down/down  192.0.2.123/24     node0         e2b     true
+            data005    down/down  192.0.2.124/24     node0         e0e     false
+            data006    down/down  192.0.2.125/24     node0         e0f     false
+            data007    down/down  192.0.2.126/24     node0         e2a     false
+            data008    down/down  192.0.2.127/24     node0         e2b     false
+8 entries were displayed.
+----
++
+Se algum LIFs for exibido com um status Admin de Status de Down ou com um status home de false, continue com a próxima etapa.
+
+. Ativar os LIFs de dados: `network interface modify {-role data} -status-admin up`
++
+[listing]
+----
+cluster1::> network interface modify {-role data} -status-admin up
+8 entries were modified.
+----
+. Reverter LIFs para suas portas domésticas: `network interface revert *`
++
+Este comando reverte todos os LIFs de volta para suas portas residenciais.
+
++
+[listing]
+----
+cluster1::> network interface revert *
+8 entries were acted on.
+----
+. Verifique se todos os LIFs estão em suas portas residenciais: `network interface show`
++
+Este exemplo mostra que todos os LIFs para SVM vs0 estão em suas portas domésticas.
+
++
+[listing]
+----
+cluster1::> network interface show -vserver vs0
+            Logical    Status     Network            Current       Current Is
+Vserver     Interface  Admin/Oper Address/Mask       Node          Port    Home
+----------- ---------- ---------- ------------------ ------------- ------- ----
+vs0
+            data001      up/up    192.0.2.120/24     node0         e0e     true
+            data002      up/up    192.0.2.121/24     node0         e0f     true
+            data003      up/up    192.0.2.122/24     node0         e2a     true
+            data004      up/up    192.0.2.123/24     node0         e2b     true
+            data005      up/up    192.0.2.124/24     node1         e0e     true
+            data006      up/up    192.0.2.125/24     node1         e0f     true
+            data007      up/up    192.0.2.126/24     node1         e2a     true
+            data008      up/up    192.0.2.127/24     node1         e2b     true
+8 entries were displayed.
+----
+

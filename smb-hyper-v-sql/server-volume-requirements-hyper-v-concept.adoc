@@ -1,0 +1,58 @@
+---
+permalink: smb-hyper-v-sql/server-volume-requirements-hyper-v-concept.html 
+sidebar: sidebar 
+keywords: smb, cifs, server, volume, requirements, hyper, v, configuration, nondisruptive, operation 
+summary: Você precisa estar ciente de certos requisitos de volume e servidor SMB ao criar configurações Hyper-V em SMB para operações ininterruptas. 
+---
+= Requisitos de volume e servidor SMB para Hyper-V em SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa estar ciente de certos requisitos de volume e servidor SMB ao criar configurações Hyper-V em SMB para operações ininterruptas.
+
+
+
+== Requisitos de servidor SMB
+
+* O SMB 3,0 deve estar ativado.
++
+Esta opção está ativada por predefinição.
+
+* A opção de servidor CIFS de usuário UNIX padrão deve ser configurada com uma conta de usuário UNIX válida.
++
+Os servidores de aplicativos usam a conta de máquina ao criar uma conexão SMB. Como todo o acesso SMB requer que o usuário do Windows mapeie com êxito para uma conta de usuário UNIX ou para a conta de usuário UNIX padrão, o ONTAP deve ser capaz de mapear a conta de máquina do servidor de aplicativos para a conta de usuário UNIX padrão.
+
+* As referências de nó automáticas devem ser desativadas (esta funcionalidade está desativada por predefinição).
++
+Se você quiser usar referências de nó automáticas para acesso a dados que não sejam arquivos de máquina do Hyper-V, crie um SVM separado para esses dados.
+
+* A autenticação Kerberos e NTLM devem ser permitidas no domínio ao qual o servidor SMB pertence.
++
+O ONTAP não anuncia o serviço Kerberos para VSS remoto; portanto, o domínio deve ser definido para permitir NTLM.
+
+* A funcionalidade de cópia sombra deve estar ativada.
++
+Esta funcionalidade está ativada por predefinição.
+
+* A conta de domínio do Windows que o serviço de cópia de sombra usa ao criar cópias de sombra deve ser membro do grupo de administradores locais do servidor SMB ou operadores de backup.
+
+
+
+
+== Requisitos de volume
+
+* Os volumes usados para armazenar arquivos de máquina virtual devem ser criados como volumes de estilo de segurança NTFS.
++
+Para fornecer NDOs para servidores de aplicativos usando conexões SMB continuamente disponíveis, o volume que contém o compartilhamento deve ser um volume NTFS. Além disso, deve sempre ter sido um volume NTFS. Não é possível alterar um volume de estilo de segurança misto ou um volume de estilo de segurança UNIX para um volume de estilo de segurança NTFS e usá-lo diretamente para NDOs em compartilhamentos SMB. Se você alterar um volume de estilo de segurança misto para um volume de estilo de segurança NTFS e pretender usá-lo para NDOs em compartilhamentos SMB, você deverá colocar manualmente uma ACL na parte superior do volume e propagar essa ACL para todos os arquivos e pastas contidos. Caso contrário, migrações de máquinas virtuais ou exportações e importações de arquivos de banco de dados onde os arquivos são movidos para outro volume podem falhar se os volumes de origem ou de destino foram criados inicialmente como volumes mistos ou de estilo de segurança UNIX e posteriormente alterados para o estilo de segurança NTFS.
+
+* Para que as operações de cópia de sombra sejam bem-sucedidas, você precisa ter espaço disponível suficiente no volume.
++
+O espaço disponível deve ser pelo menos tão grande quanto o espaço combinado usado por todos os arquivos, diretórios e subdiretórios contidos nos compartilhamentos incluídos no conjunto de backup de cópia sombra. Esse requisito só se aplica a cópias sombra com recuperação automática.
+
+
+
+.Informações relacionadas
+http://technet.microsoft.com/en-us/library/["Microsoft TechNet Library: technet.microsoft.com/en-us/library/"]

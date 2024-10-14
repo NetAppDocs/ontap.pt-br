@@ -1,0 +1,38 @@
+---
+permalink: nas-audit/audit-symlinks-hard-links-concept.html 
+sidebar: sidebar 
+keywords: considerations, audit, symlinks, hard links 
+summary: Há certas considerações que você deve ter em mente ao auditar links simbólicos e links duros. 
+---
+= Considerações ao auditar links simbólicos e links duros
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Há certas considerações que você deve ter em mente ao auditar links simbólicos e links duros.
+
+Um Registro de auditoria contém informações sobre o objeto que está sendo auditado, incluindo o caminho para o objeto auditado, que é identificado na `ObjectName` tag. Você deve estar ciente de como caminhos para links simbólicos e links rígidos são gravados na `ObjectName` tag.
+
+
+
+== Links simbólicos
+
+Um link simbólico é um arquivo com um inode separado que contém um ponteiro para a localização de um objeto de destino, conhecido como alvo. Ao acessar um objeto por meio de um link simbólico, o ONTAP interpreta automaticamente o link simbólico e segue o caminho agnóstico do protocolo canônico real para o objeto de destino no volume.
+
+Na saída de exemplo a seguir, há dois links simbólicos, ambos apontando para um arquivo `target.txt` chamado . Um dos links simbólicos é um link simbólico relativo e um é um link simbólico absoluto. Se qualquer um dos links simbólicos for auditado, a `ObjectName` tag no evento de auditoria conterá o caminho para o arquivo `target.txt`:
+
+[listing]
+----
+[root@host1 audit]# ls -l
+total 0
+lrwxrwxrwx 1 user1 group1 37 Apr  2 10:09 softlink_fullpath.txt -> /data/audit/target.txt
+lrwxrwxrwx 1 user1 group1 10 Apr  2 09:54 softlink.txt -> target.txt
+-rwxrwxrwx 1 user1 group1 16 Apr  2 10:05 target.txt
+----
+
+
+== Links físicos
+
+Um link físico é uma entrada de diretório que associa um nome a um arquivo existente em um sistema de arquivos. O link físico aponta para a localização do inode do arquivo original. Semelhante a como o ONTAP interpreta links simbólicos, o ONTAP interpreta o link físico e segue o caminho canônico real para o objeto alvo no volume. Quando o acesso a um objeto de link físico é auditado, o evento de auditoria Registra esse caminho canônico absoluto na `ObjectName` tag em vez do caminho do link físico.

@@ -1,0 +1,79 @@
+---
+permalink: nfs-admin/ldaps-concept.html 
+sidebar: sidebar 
+keywords: ldaps, concept 
+summary: Você deve entender certos termos e conceitos sobre como o ONTAP protege a comunicação LDAP. O ONTAP pode usar TLS ou LDAPS para configurar sessões autenticadas entre servidores LDAP integrados ao ative Directory ou servidores LDAP baseados em UNIX. 
+---
+= Conceitos LDAPS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve entender certos termos e conceitos sobre como o ONTAP protege a comunicação LDAP. O ONTAP pode usar TLS ou LDAPS para configurar sessões autenticadas entre servidores LDAP integrados ao ative Directory ou servidores LDAP baseados em UNIX.
+
+
+
+== Terminologia
+
+Existem certos termos que você deve entender sobre como o ONTAP usa o LDAPS para proteger a comunicação LDAP.
+
+* *LDAP*
++
+(Lightweight Directory Access Protocol) Um protocolo para acessar e gerenciar diretórios de informações. O LDAP é usado como um diretório de informações para armazenar objetos como usuários, grupos e grupos de rede. O LDAP também fornece serviços de diretório que gerenciam esses objetos e atendem solicitações LDAP de clientes LDAP.
+
+* *SSL*
++
+(Secure Sockets Layer) Um protocolo desenvolvido para enviar informações de forma segura pela Internet. O SSL é suportado pelo ONTAP 9 e posterior, mas foi obsoleto em favor do TLS.
+
+* *TLS*
++
+(Transport Layer Security) um protocolo de rastreamento de padrões IETF que é baseado nas especificações SSL anteriores. É o sucessor do SSL. O TLS é compatível com o ONTAP 9.5 e posterior.
+
+* *LDAPS (LDAP sobre SSL ou TLS)*
++
+Um protocolo que usa TLS ou SSL para proteger a comunicação entre clientes LDAP e servidores LDAP. Os termos _LDAP sobre SSL_ e _LDAP sobre TLS_ às vezes são usados de forma intercambiável. O LDAPS é suportado pelo ONTAP 9.5 e posterior.
+
++
+** No ONTAP 9.5-9,8, o LDAPS só pode ser ativado na porta 636. Para fazer isso, use o `-use-ldaps-for-ad-ldap` parâmetro com o `vserver cifs security modify` comando.
+** A partir do ONTAP 9.9,1, o LDAPS pode ser ativado em qualquer porta, embora a porta 636 permaneça a predefinição. Para fazer isso, defina o `-ldaps-enabled` parâmetro `true` e especifique o parâmetro desejado `-port`. Para obter mais informações, consulte a `vserver services name-service ldap client create` página de manual
+
+
++
+[NOTE]
+====
+É uma prática recomendada do NetApp usar Iniciar TLS em vez de LDAPS.
+
+====
+* * Iniciar TLS*
++
+(Também conhecido como _start_tls_, _STARTTLS_ e _STARTTLS_) Um mecanismo para fornecer comunicação segura usando os protocolos TLS.
+
++
+O ONTAP usa o STARTTLS para proteger a comunicação LDAP e usa a porta LDAP padrão (389) para se comunicar com o servidor LDAP. O servidor LDAP deve ser configurado para permitir conexões pela porta LDAP 389; caso contrário, as conexões LDAP TLS do SVM ao servidor LDAP falharão.
+
+
+
+
+
+== Como o ONTAP usa o LDAPS
+
+O ONTAP oferece suporte à autenticação de servidor TLS, o que permite que o cliente LDAP SVM confirme a identidade do servidor LDAP durante a operação de vinculação. Os clientes LDAP habilitados para TLS podem usar técnicas padrão de criptografia de chave pública para verificar se o certificado e a ID pública de um servidor são válidos e foram emitidos por uma autoridade de certificação (CA) listada na lista de CAs confiáveis do cliente.
+
+O LDAP suporta STARTTLS para criptografar comunicações usando TLS. O STARTTLS começa como uma conexão de texto simples sobre a porta LDAP padrão (389), e essa conexão é então atualizada para TLS.
+
+O ONTAP oferece suporte ao seguinte:
+
+* LDAPS para tráfego relacionado a SMB entre os servidores LDAP integrados ao ative Directory e o SVM
+* LDAPS para tráfego LDAP para mapeamento de nomes e outras informações do UNIX
++
+Servidores LDAP integrados ao ative Directory ou servidores LDAP baseados em UNIX podem ser usados para armazenar informações para mapeamento de nomes LDAP e outras informações do UNIX, como usuários, grupos e netgroups.
+
+* Certificados CA raiz autoassinados
++
+Ao usar um LDAP integrado do ative-Directory, o certificado raiz autoassinado é gerado quando o Serviço de certificados do Windows Server é instalado no domínio. Ao usar um servidor LDAP baseado em UNIX para mapeamento de nomes LDAP, o certificado raiz autoassinado é gerado e salvo usando meios apropriados para esse aplicativo LDAP.
+
+
+
+Por predefinição, o LDAPS está desativado.

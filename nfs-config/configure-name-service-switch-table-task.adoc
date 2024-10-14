@@ -1,0 +1,51 @@
+---
+permalink: nfs-config/configure-name-service-switch-table-task.html 
+sidebar: sidebar 
+keywords: configue, name, service, switch, table 
+summary: Você deve configurar a tabela de switch de serviço de nomes corretamente para permitir que o ONTAP consulte serviços de nome locais ou externos para recuperar informações de mapeamento de host, usuário, grupo, netgroup ou nome. 
+---
+= Configure a tabela do switch do serviço de nomes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve configurar a tabela de switch de serviço de nomes corretamente para permitir que o ONTAP consulte serviços de nome locais ou externos para recuperar informações de mapeamento de host, usuário, grupo, netgroup ou nome.
+
+.O que você vai precisar
+Você deve ter decidido quais serviços de nome deseja usar para o mapeamento de host, usuário, grupo, grupo de rede ou nome, conforme aplicável ao seu ambiente.
+
+Se você planeja usar netgroups, todos os endereços IPv6 especificados em netgroups devem ser encurtados e compatados conforme especificado no RFC 5952.
+
+.Sobre esta tarefa
+Não inclua fontes de informação que não estejam a ser utilizadas. Por exemplo, se o NIS não estiver sendo usado em seu ambiente, não especifique a `-sources nis` opção.
+
+.Passos
+. Adicione as entradas necessárias à tabela do switch de serviço de nomes:
++
+`vserver services name-service ns-switch create -vserver _vserver_name_ -database _database_name_ -sources _source_names_`
+
+. Verifique se a tabela do switch de serviço de nomes contém as entradas esperadas na ordem desejada:
++
+`vserver services name-service ns-switch show -vserver _vserver_name_`
+
++
+Se pretender efetuar quaisquer correções, tem de utilizar os `vserver services name-service ns-switch modify` comandos ou `vserver services name-service ns-switch delete`.
+
+
+
+.Exemplo
+O exemplo a seguir cria uma nova entrada na tabela de opções de serviço de nomes para o SVM VS1 usar o arquivo netgroup local e um servidor NIS externo para procurar informações de netgroup nessa ordem:
+
+[listing]
+----
+cluster::> vserver services name-service ns-switch create -vserver vs1 -database netgroup -sources files,nis
+----
+.Depois de terminar
+* Você precisa configurar os serviços de nome especificados para o SVM para fornecer acesso aos dados.
+* Se você excluir qualquer serviço de nomes para o SVM, também será necessário removê-lo da tabela de opções de serviços de nomes.
++
+O acesso do cliente ao sistema de armazenamento pode não funcionar como esperado, se você não conseguir excluir o serviço de nomes da tabela de opções do serviço de nomes.
+
+

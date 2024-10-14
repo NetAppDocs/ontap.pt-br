@@ -1,0 +1,80 @@
+= 
+:allow-uri-read: 
+
+
+.Sobre esta tarefa
+O ONTAP configura a conectividade do servidor KMIP para todos os nós no cluster.
+
+.Antes de começar
+* Os certificados de cliente e servidor KMIP SSL devem ter sido instalados.
+* Você deve ser um administrador de cluster para executar esta tarefa.
+* Você deve configurar o ambiente MetroCluster antes de configurar um gerenciador de chaves externo.
+* Em um ambiente MetroCluster, é necessário instalar o mesmo certificado KMIP SSL em ambos os clusters.
+
+
+.Passos
+. Configurar a conectividade do gerenciador de chaves para nós de cluster:
++
+`security key-manager setup`
+
++
+A configuração do gerenciador de chaves é iniciada.
+
++
+
+NOTE: Em um ambiente MetroCluster, você deve executar esse comando nos dois clusters.
+
+. Insira a resposta apropriada em cada prompt.
+. Adicionar um servidor KMIP:
++
+`security key-manager add -address key_management_server_ipaddress`
+
++
+[listing]
+----
+clusterl::> security key-manager add -address 20.1.1.1
+----
++
+
+NOTE: Em um ambiente MetroCluster, você deve executar esse comando nos dois clusters.
+
+. Adicione um servidor KMIP adicional para redundância:
++
+`security key-manager add -address key_management_server_ipaddress`
+
++
+[listing]
+----
+clusterl::> security key-manager add -address 20.1.1.2
+----
++
+
+NOTE: Em um ambiente MetroCluster, você deve executar esse comando nos dois clusters.
+
+. Verifique se todos os servidores KMIP configurados estão conetados:
++
+`security key-manager show -status`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[listing]
+----
+cluster1::> security key-manager show -status
+
+Node            Port      Registered Key Manager  Status
+--------------  ----      ----------------------  ---------------
+cluster1-01     5696      20.1.1.1                available
+cluster1-01     5696      20.1.1.2                available
+cluster1-02     5696      20.1.1.1                available
+cluster1-02     5696      20.1.1.2                available
+----
+. Opcionalmente, converta volumes de texto simples em volumes criptografados.
++
+`volume encryption conversion start`
+
++
+Um gerenciador de chaves externo deve estar totalmente configurado antes de converter os volumes. Em um ambiente MetroCluster, um gerenciador de chaves externo deve ser configurado em ambos os locais.
+
+

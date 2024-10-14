@@ -1,0 +1,298 @@
+---
+sidebar: sidebar 
+permalink: networking/worksheet_for_nas_path_failover_configuration_auto.html 
+keywords: ipspace configuration, broadcast domain configuration, subnet configuration, SVM configuration, LIF configuration, DNS configuration, dynamic DNS configuration, worksheet for nas path failover configuration for ontap 9.8 and later, complete all sections of the worksheet before configuring nas path failover for ontap 9.8 and later, ipspace configuration, broadcast domain configuration, mtu, maximum transmission unit, mtu is 1500 mtu is 9000, subnet configuration, storage virtual machine configuration, svm configuration, lif configuration, dynamic dns configuration, dns configuration 
+summary: Conclua todas as seções da Planilha antes de configurar o failover de caminho nas para o ONTAP 9.8 e posterior 
+---
+= Planilha para configuração de failover de caminho nas (ONTAP 9.8 e posterior)
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você deve concluir todas as seções da Planilha antes de configurar o failover de caminho nas.
+
+
+
+== Configuração IPspace
+
+Você pode usar um espaço de IPspace para criar um espaço de endereço IP distinto para cada SVM em um cluster. Isso permite que os clientes em domínios de rede separados administrativamente acessem os dados do cluster ao usar endereços IP sobrepostos do mesmo intervalo de sub-rede de endereços IP.
+
+[cols="45,20,35"]
+|===
+
+
+| Informações | Obrigatório? | Seus valores 
+
+
+| IPspace name o identificador exclusivo do IPspace. | Sim |  
+|===
+
+
+== Configuração do domínio de difusão
+
+Um domínio de broadcast agrupa portas que pertencem à mesma rede de camada 2 e define a MTU para as portas do domínio de broadcast.
+
+Os domínios de broadcast são atribuídos a um IPspace. Um IPspace pode conter um ou mais domínios de broadcast.
+
+
+NOTE: A porta para a qual um LIF falha deve ser membro do grupo de failover para o LIF. Para cada domínio de broadcast criado pelo ONTAP, também é criado um grupo de failover com o mesmo nome que contém todas as portas no domínio de broadcast.
+
+[cols="45,20,35"]
+|===
+
+
+| Informações | Obrigatório? | Seus valores 
+
+
+ a| 
+IPspace name o IPspace ao qual o domínio de broadcast é atribuído.
+
+Este espaço IPspace tem de existir.
+ a| 
+Sim
+ a| 
+
+
+
+ a| 
+Nome de domínio de broadcast o nome do domínio de broadcast.
+
+Esse nome deve ser único no IPspace.
+ a| 
+Sim
+ a| 
+
+
+
+ a| 
+MTU o valor máximo da unidade de transmissão para o domínio de transmissão, normalmente definido como *1500* ou *9000*.
+
+O valor MTU é aplicado a todas as portas no domínio de broadcast e a todas as portas que forem adicionadas posteriormente ao domínio de broadcast.
+
+O valor MTU deve corresponder a todos os dispositivos ligados a essa rede. Observe que o gerenciamento de gerenciamento de portas e0M e o tráfego do processador de serviços devem ter o MTU definido para não mais de 1500 bytes.
+ a| 
+Sim
+ a| 
+
+
+
+ a| 
+As portas são atribuídas a domínios de broadcast com base na acessibilidade. Depois que a atribuição de porta estiver concluída, verifique a acessibilidade executando o `network port reachability show` comando.
+
+Essas portas podem ser portas físicas, VLANs ou grupos de interface.
+ a| 
+Sim
+ a| 
+
+|===
+
+
+== Configuração de sub-rede
+
+Uma sub-rede contém pools de endereços IP e um gateway padrão que pode ser atribuído a LIFs usados por SVMs residentes no IPspace.
+
+* Ao criar um LIF em uma SVM, você pode especificar o nome da sub-rede em vez de fornecer um endereço IP e uma sub-rede.
+* Como uma sub-rede pode ser configurada com um gateway padrão, você não precisa criar o gateway padrão em uma etapa separada ao criar um SVM.
+* Um domínio de broadcast pode conter uma ou mais sub-redes.
+* Você pode configurar LIFs SVM que estão em sub-redes diferentes associando mais de uma sub-rede ao domínio de broadcast do IPspace.
+* Cada sub-rede deve conter endereços IP que não se sobreponham aos endereços IP atribuídos a outras sub-redes no mesmo espaço IPspace.
+* Você pode atribuir endereços IP específicos a LIFs de dados do SVM e criar um gateway padrão para o SVM em vez de usar uma sub-rede.
+
+
+[cols="45,20,35"]
+|===
+
+
+| Informações | Obrigatório? | Seus valores 
+
+
+ a| 
+IPspace name o IPspace ao qual a sub-rede será atribuída.
+
+Este espaço IPspace tem de existir.
+ a| 
+Sim
+ a| 
+
+
+
+ a| 
+Nome da sub-rede o nome da sub-rede.
+
+Esse nome deve ser único no IPspace.
+ a| 
+Sim
+ a| 
+
+
+
+ a| 
+Nome de domínio de broadcast o domínio de broadcast ao qual a sub-rede será atribuída.
+
+Esse domínio de broadcast deve residir no espaço IPspace especificado.
+ a| 
+Sim
+ a| 
+
+
+
+ a| 
+Nome da sub-rede e mascarar a sub-rede e a máscara em que residem os endereços IP.
+ a| 
+Sim
+ a| 
+
+
+
+ a| 
+Gateway você pode especificar um gateway padrão para a sub-rede.
+
+Se você não atribuir um gateway ao criar a sub-rede, poderá atribuir um mais tarde.
+ a| 
+Não
+ a| 
+
+
+
+ a| 
+Intervalos de endereços IP você pode especificar um intervalo de endereços IP ou endereços IP específicos.
+
+Por exemplo, você pode especificar um intervalo como:
+
+`192.168.1.1-192.168.1.100, 192.168.1.112, 192.168.1.145`
+
+Se você não especificar um intervalo de endereços IP, todo o intervalo de endereços IP na sub-rede especificada estará disponível para atribuir a LIFs.
+ a| 
+Não
+ a| 
+
+
+
+ a| 
+Force update of LIF associations especifica se deve forçar a atualização das associações de LIF existentes.
+
+Por padrão, a criação de sub-rede falhará se qualquer interface de processador de serviço ou interfaces de rede estiver usando os endereços IP nos intervalos fornecidos.
+
+O uso deste parâmetro associa quaisquer interfaces endereçadas manualmente à sub-rede e permite que o comando seja bem-sucedido.
+ a| 
+Não
+ a| 
+
+|===
+
+
+== Configuração SVM
+
+Você usa SVMs para fornecer dados a clientes e hosts.
+
+Os valores que você Registra são para criar um SVM de dados padrão. Se você estiver criando uma SVM de origem MetroCluster, consulte link:https://docs.netapp.com/us-en/ontap-metrocluster/install-fc/concept_considerations_differences.html["Guia de instalação e configuração do MetroCluster conectado à malha"^]ou link:https://docs.netapp.com/us-en/ontap-metrocluster/install-stretch/concept_choosing_the_correct_installation_procedure_for_your_configuration_mcc_install.html["Guia de instalação e configuração do Stretch MetroCluster"^].
+
+[cols="45,20,35"]
+|===
+
+
+| Informações | Obrigatório? | Seus valores 
+
+
+| SVM nomeie o nome de domínio totalmente qualificado (FQDN) do SVM. Esse nome deve ser único em ligas de cluster. | Sim |  
+
+
+| Nome do volume raiz o nome do volume raiz do SVM. | Sim |  
+
+
+| Agregar nome o nome do agregado que contém o volume raiz da SVM. Este agregado deve existir. | Sim |  
+
+
+| Estilo de segurança o estilo de segurança do volume raiz da SVM. Os valores possíveis são *NTFS*, *unix* e *Mixed*. | Sim |  
+
+
+| IPspace nomeie o IPspace ao qual o SVM é atribuído. Este espaço IPspace tem de existir. | Não |  
+
+
+| Linguagem SVM que define o idioma padrão a ser usado para o SVM e seus volumes. Se você não especificar um idioma padrão, o idioma SVM padrão será definido como *C.UTF-8*. A configuração de idioma SVM determina o conjunto de carateres usado para exibir nomes e dados de arquivos para todos os volumes nas no SVM. Você pode modificar o idioma após a criação do SVM. | Não |  
+|===
+
+
+== Configuração LIF
+
+Um SVM fornece dados a clientes e hosts por meio de uma ou mais interfaces lógicas de rede (LIFs).
+
+[cols="45,20,35"]
+|===
+
+
+| Informações | Obrigatório? | Seus valores 
+
+
+| SVM nomeie o nome do SVM para o LIF. | Sim |  
+
+
+| LIF nome o nome do LIF. Você pode atribuir várias LIFs de dados por nó e pode atribuir LIFs a qualquer nó no cluster, desde que o nó tenha portas de dados disponíveis. Para fornecer redundância, você deve criar pelo menos duas LIFs de dados para cada sub-rede de dados e as LIFs atribuídas a uma sub-rede específica devem ser atribuídas portas residenciais em diferentes nós. *Importante:* se você estiver configurando um servidor SMB para hospedar Hyper-V ou SQL Server em SMB para soluções de operação sem interrupções, o SVM deve ter pelo menos um LIF de dados em cada nó no cluster. | Sim |  
+
+
+| Política de serviço Política de serviço para o LIF. A política de serviço define quais serviços de rede podem usar o LIF. Serviços incorporados e políticas de serviço estão disponíveis para gerenciar dados e tráfego de gerenciamento em SVMs de dados e do sistema. | Sim |  
+
+
+| Os LIFs baseados em IP não exigem protocolos permitidos, use a linha de diretiva de serviço. Especifique protocolos permitidos para SAN LIFs em portas Fibre Channel. Estes são os protocolos que podem usar esse LIF. Os protocolos que usam o LIF não podem ser modificados após a criação do LIF. Você deve especificar todos os protocolos ao configurar o LIF. | Não |  
+
+
+| Nó inicial o nó para o qual o LIF retorna quando o LIF é revertido para sua porta inicial. Você deve gravar um nó inicial para cada LIF de dados. | Sim |  
+
+
+| A porta inicial ou domínio de broadcast escolheu um dos seguintes: *Port*: Especifique a porta para a qual a interface lógica retorna quando o LIF é revertido para sua porta inicial. Isso só é feito para o primeiro LIF na sub-rede de um espaço IPspace, caso contrário, não é necessário. *Domínio de transmissão*: Especifique o domínio de transmissão e o sistema selecionará a porta apropriada para a qual a interface lógica retorna quando o LIF é revertido para sua porta inicial. | Sim |  
+
+
+| Subrede nomeie a sub-rede a ser atribuída ao SVM. Todas as LIFs de dados usadas para criar conexões SMB continuamente disponíveis para servidores de aplicativos devem estar na mesma sub-rede. | Sim (se estiver usando uma sub-rede) |  
+|===
+
+
+== Configuração DNS
+
+Você deve configurar o DNS na SVM antes de criar um servidor NFS ou SMB.
+
+[cols="45,20,35"]
+|===
+
+
+| Informações | Obrigatório? | Seus valores 
+
+
+| SVM nomeie o nome do SVM no qual você deseja criar um servidor NFS ou SMB. | Sim |  
+
+
+| Nome de domínio DNS Uma lista de nomes de domínio a anexar a um nome de host ao executar a resolução de nome de host para IP. Liste primeiro o domínio local, seguido pelos nomes de domínio para os quais as consultas DNS são mais frequentemente feitas. | Sim |  
+
+
+| Endereços IP dos servidores DNS Lista de endereços IP para os servidores DNS que fornecem resolução de nomes para o servidor NFS ou SMB. Os servidores DNS listados devem conter os Registros de localização de serviço (SRV) necessários para localizar os servidores LDAP do ative Directory e os controladores de domínio para o domínio em que o servidor SMB irá ingressar. O Registro SRV é usado para mapear o nome de um serviço para o nome de computador DNS de um servidor que oferece esse serviço. A criação do servidor SMB falhará se o ONTAP não conseguir obter os Registros de localização do serviço por meio de consultas DNS locais. A maneira mais simples de garantir que o ONTAP possa localizar os Registros SRV do ative Directory é configurar servidores DNS integrados ao ative Directory como servidores DNS SVM. Você pode usar servidores DNS não integrados ao ative Directory desde que o administrador DNS tenha adicionado manualmente os Registros SRV à zona DNS que contém informações sobre os controladores de domínio do ative Directory. Para obter informações sobre os Registros SRV integrados ao ative Directory, consulte o link:http://technet.microsoft.com/library/cc759550(WS.10).aspx["Como o suporte DNS para ative Directory funciona no Microsoft TechNet"^]tópico . | Sim |  
+|===
+
+
+== Configuração de DNS dinâmico
+
+Antes de poder utilizar o DNS dinâmico para adicionar automaticamente entradas de DNS aos servidores DNS integrados do ative Directory, tem de configurar o DNS dinâmico (DDNS) no SVM.
+
+Registros DNS são criados para cada LIF de dados na SVM. Ao criar vários dados LIFS no SVM, você pode equilibrar as conexões de clientes com os endereços IP de dados atribuídos. A carga de DNS equilibra as conexões que são feitas usando o nome do host para os endereços IP atribuídos de forma redonda.
+
+[cols="45,20,35"]
+|===
+
+
+| Informações | Obrigatório? | Seus valores 
+
+
+| SVM nomeie o SVM no qual você deseja criar um servidor NFS ou SMB. | Sim |  
+
+
+| Se usar o DDNS especifica se deve-se usar o DDNS. Os servidores DNS configurados no SVM devem oferecer suporte a DDNS. Por padrão, o DDNS está desativado. | Sim |  
+
+
+| Se usar DDNS seguro o DDNS seguro é suportado apenas com DNS integrado ao ative Directory. Se o DNS integrado ao ative Directory permitir apenas atualizações seguras de DDNS, o valor deste parâmetro deve ser verdadeiro. Por padrão, o DDNS seguro está desativado. O DDNS seguro só pode ser ativado depois de um servidor SMB ou uma conta do ative Directory ter sido criada para o SVM. | Não |  
+
+
+| FQDN do domínio DNS o FQDN do domínio DNS. Você deve usar o mesmo nome de domínio configurado para serviços de nome DNS na SVM. | Não |  
+|===

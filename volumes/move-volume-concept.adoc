@@ -1,0 +1,35 @@
+---
+permalink: volumes/move-volume-concept.html 
+sidebar: sidebar 
+keywords: how, move, flexvol, volume, works 
+summary: Compreender as fases de um movimento FlexVol volume e acesso ao cliente durante o processo. 
+---
+= Mover uma visão geral do FlexVol volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode mover ou copiar volumes para utilização de capacidade, performance aprimorada e atender a contratos de nível de serviço. Saber como funciona a movimentação de um FlexVol volume ajuda você a determinar se a movimentação de volume atende a contratos de nível de serviço e a entender onde uma movimentação de volume está no processo de movimentação de volume.
+
+Os volumes do FlexVol são movidos de um agregado ou nó para outro na mesma máquina virtual de storage (SVM). Uma movimentação de volume não interrompe o acesso do cliente durante a movimentação.
+
+
+NOTE: Durante a fase de transição de uma operação de movimentação de volume, não é possível criar arquivos FlexClone ou LUNs FlexClone de um FlexVol volume.
+
+Mover um volume ocorre em várias fases:
+
+* Um novo volume é feito no agregado de destino.
+* Os dados do volume original são copiados para o novo volume.
++
+Durante esse tempo, o volume original está intacto e disponível para os clientes acessarem.
+
+* No final do processo de mudança, o acesso ao cliente é bloqueado temporariamente.
++
+Durante esse tempo, o sistema executa uma replicação final do volume de origem para o volume de destino, troca as identidades dos volumes de origem e destino e altera o volume de destino para o volume de origem.
+
+* Depois de concluir a mudança, o sistema encaminha o tráfego do cliente para o novo volume de origem e retoma o acesso do cliente.
+
+
+A mudança não causa interrupções no acesso do cliente porque o tempo em que o acesso do cliente é bloqueado termina antes que os clientes notem uma interrupção e um tempo limite. O acesso do cliente está bloqueado por 35 segundos por padrão. Se a operação de movimentação de volume não puder terminar no momento em que o acesso é negado, o sistema aborta essa fase final da operação de movimentação de volume e permite o acesso do cliente. O sistema tenta a fase final três vezes por padrão. Após a terceira tentativa, o sistema aguarda uma hora antes de tentar novamente a sequência de fase final. O sistema executa a fase final da operação de movimentação de volume até que a movimentação de volume esteja concluída.

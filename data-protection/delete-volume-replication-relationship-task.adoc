@@ -1,0 +1,80 @@
+---
+permalink: data-protection/delete-volume-replication-relationship-task.html 
+sidebar: sidebar 
+keywords: delete, volume, replication, relationship, replicate, synchronous, snapmirror, quiese, pause 
+summary: Você pode usar os comandos SnapMirror DELETE e SnapMirror release para excluir uma relação de replicação de volume. Em seguida, pode eliminar manualmente volumes de destino desnecessários. 
+---
+= Excluir uma relação de replicação de volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar os `snapmirror delete` comandos e `snapmirror release` para excluir uma relação de replicação de volume. Em seguida, pode eliminar manualmente volumes de destino desnecessários.
+
+.Sobre esta tarefa
+ `snapmirror release`O comando exclui todas as cópias Snapshot criadas pelo SnapMirror da origem. Você pode usar a `-relationship-info-only` opção para preservar as cópias Snapshot.
+
+.Passos
+. Quiesce a relação de replicação:
++
+`snapmirror quiesce -destination-path <SVM:volume>|<cluster://SVM/volume>`
+
++
+[listing]
+----
+cluster_dst::> snapmirror quiesce -destination-path svm_backup:volA_dst
+----
+. (Opcional) quebre a relação de replicação se você precisar que o volume de destino seja um volume de leitura/gravação. Pode ignorar esta etapa se pretender eliminar o volume de destino ou se não necessitar de ler/escrever o volume:
++
+`snapmirror break -source-path <SVM:volume>|<cluster://SVM/volume>, …​ -destination-path <SVM:volume>|<cluster://SVM/volume>, …​`
+
++
+[listing]
+----
+cluster_dst::> snapmirror break -source-path svm1:volA -destination-path svm_backup:volA_dst
+----
+. Eliminar a relação de replicação:
++
+`snapmirror delete -source-path <SVM:volume>|<cluster://SVM/volume>, ... -destination-path <SVM:volume>|<cluster://SVM/volume>, ...`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[NOTE]
+====
+Você deve executar esse comando a partir do cluster de destino ou SVM de destino.
+
+====
++
+O exemplo a seguir exclui a relação entre o volume de origem `volA` ligado `svm1` e o volume de destino `volA_dst` ligado `svm_backup`:
+
++
+[listing]
+----
+cluster_dst::> snapmirror delete -source-path svm1:volA -destination-path svm_backup:volA_dst
+----
+. Liberar informações de relação de replicação da fonte SVM:
++
+`snapmirror release -source-path <SVM:volume>|<cluster://SVM/volume>, ... -destination-path <SVM:volume>|<cluster://SVM/volume>, ...`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[NOTE]
+====
+Você deve executar esse comando a partir do cluster de origem ou da SVM de origem.
+
+====
++
+O exemplo a seguir libera informações para a relação de replicação especificada da SVM de origem `svm1` :
+
++
+[listing]
+----
+cluster_src::> snapmirror release -source-path svm1:volA -destination-path svm_backup:volA_dst
+----
+

@@ -1,0 +1,66 @@
+---
+permalink: data-protection/supported-deployment-config-concept.html 
+sidebar: sidebar 
+keywords: fan-out, fanout, fan out, cascade, data, protection, deployments, snapmirror, snap mirror, snapvault, synchronous, asynchronous, unified, replication, replicate, vault-mirror, vault-vault 
+summary: Você pode usar uma implantação fan-out para estender a proteção de dados a vários sistemas secundários. Você pode usar uma implantação em cascata para estender a proteção de dados para sistemas terciários. 
+---
+= Implantações de proteção de dados em cascata e fan-out
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar uma implantação _fan-out_ para estender a proteção de dados a vários sistemas secundários. Você pode usar uma implantação _Cascade_ para estender a proteção de dados para sistemas terciários.
+
+As implantações em fan-out e em cascata são compatíveis com qualquer combinação de recuperação de desastres, SnapVault ou replicação unificada da SnapMirror. A partir do ONTAP 9.5, as relações síncronas do SnapMirror são compatíveis com implantações fan-out com uma ou mais relações assíncronas do SnapMirror. Apenas uma relação na configuração de fan-out pode ser uma relação síncrona SnapMirror, todas as outras relações do volume de origem devem ser relações assíncronas do SnapMirror. As relações síncronas do SnapMirror também são compatíveis com implantações em cascata (a partir de ONTAP 9.6). No entanto, a relação do volume de destino da relação síncrona do SnapMirror deve ser uma relação assíncrona do SnapMirror. xref:../snapmirror-active-sync/recover-unplanned-failover-task.html[Sincronização ativa do SnapMirror] (Suportado a partir do ONTAP 9.3,1) também suporta configurações de fan-out.
+
+
+NOTE: Você pode usar uma implantação _fan-in_ para criar relações de proteção de dados entre vários sistemas primários e um único sistema secundário. Cada relação deve usar um volume diferente no sistema secundário.
+
+
+NOTE: Você deve estar ciente de que os volumes que fazem parte de uma configuração de fan-out ou cascata podem levar mais tempo para ressincronizar. Não é incomum ver a relação do SnapMirror informando o status "preparando" por um período de tempo prolongado.
+
+
+
+== Como as implantações de fan-out funcionam
+
+O SnapMirror suporta implantações de fan-out _multiple-mirrors_ e _mirror-Vault_.
+
+Uma implantação de fan-out de vários espelhos consiste em um volume de origem que tem uma relação espelhada com vários volumes secundários.
+
+image:sm-mirror-mirror-fanout.png["Implantação de proteção de dados: Espelhos múltiplos fanout"]
+
+Uma implantação de fan-out do mirror-Vault consiste em um volume de origem que tem uma relação de espelhamento com um volume secundário e uma relação de SnapVault com um volume secundário diferente.
+
+image:sm-mirror-vault-fanout.png["Implantação de proteção de dados: Mirror-Vault fanout"]
+
+A partir do ONTAP 9.5, você pode ter implantações de fan-out com relacionamentos síncronos do SnapMirror; no entanto, apenas uma relação na configuração de fan-out pode ser uma relação síncrona do SnapMirror, todas as outras relações do volume de origem devem ser relações assíncronas do SnapMirror.
+
+image:ssm-fanout.gif["Implantação de proteção de dados: Implantações fan-out com relacionamentos síncronos da SnapMirror"]
+
+
+
+== Como as implantações em cascata funcionam
+
+O SnapMirror suporta implantações em cascata _mirror-mirror_, _mirror-Vault_, _Vault-mirror_ e _Vault-Vault_.
+
+Uma implantação em cascata espelhada consiste em uma cadeia de relacionamentos em que um volume de origem é espelhado em um volume secundário e o volume secundário é espelhado em um volume terciário. Se o volume secundário ficar indisponível, é possível sincronizar a relação entre os volumes primário e terciário sem efetuar uma nova transferência de linha de base.
+
+A partir do ONTAP 9.6, as relações síncronas do SnapMirror são suportadas em uma implantação em cascata espelhada. Somente os volumes primário e secundário podem estar em uma relação síncrona do SnapMirror. A relação entre os volumes secundários e os volumes terciários deve ser assíncrona.
+
+image:sm-mirror-mirror-cascade.png["Implantação do SnapMirror: Fonte para a cadeia em cascata espelhada"]
+
+Uma implantação em cascata de cofre-espelho consiste em uma cadeia de relacionamentos em que um volume de origem é espelhado em um volume secundário, e o volume secundário é abobadado a um volume terciário.
+
+image:sm-mirror-vault-cascade.png["Implantação do SnapMirror: Fonte para a cadeia em cascata do mirror-Vault"]
+
+Vault-mirror e, a partir do ONTAP 9.2, as implantações em cascata Vault-Vault também são suportadas:
+
+* Uma implantação em cascata de espelho de cofre consiste em uma cadeia de relacionamentos em que um volume de origem é abobadado para um volume secundário, e o volume secundário é espelhado para um volume terciário.
+* (Começando com ONTAP 9.2) Uma implantação em cascata de Vault-Vault consiste em uma cadeia de relacionamentos em que um volume de origem é abobadado para um volume secundário e o volume secundário é abobadado para um volume terciário.
+
+
+.Leitura adicional
+* xref:../snapmirror-active-sync/recover-unplanned-failover-task.html[Retome a proteção em uma configuração de fan-out com a sincronização ativa do SnapMirror]
+

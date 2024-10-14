@@ -1,0 +1,101 @@
+---
+permalink: san-admin/igroups-concept.html 
+sidebar: sidebar 
+keywords: understand, igroups 
+summary: 'Grupos de iniciadores (grupos de iniciadores) são tabelas de WWPNs de host de protocolo FC ou nomes de nós de host iSCSI. Você pode definir grupos e mapeá-los para LUNs para controlar quais iniciadores têm acesso a LUNs.' 
+---
+= Sobre os grupos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Grupos de iniciadores (grupos de iniciadores) são tabelas de WWPNs de host de protocolo FC ou nomes de nós de host iSCSI. Você pode definir grupos e mapeá-los para LUNs para controlar quais iniciadores têm acesso a LUNs.
+
+Normalmente, você deseja que todas as portas de iniciador do host ou iniciadores de software tenham acesso a um LUN. Se você estiver usando software multipathing ou tiver hosts em cluster, cada porta iniciador ou iniciador de software de cada host em cluster precisa de caminhos redundantes para o mesmo LUN.
+
+Você pode criar grupos que especificam quais iniciadores têm acesso aos LUNs antes ou depois de criar LUNs, mas você deve criar grupos antes de poder mapear um LUN para um grupo.
+
+Os grupos de iniciadores podem ter vários iniciadores, e vários grupos podem ter o mesmo iniciador. No entanto, não é possível mapear um LUN para vários grupos que tenham o mesmo iniciador. Um iniciador não pode ser um membro de grupos de diferentes ostypes.
+
+
+
+== Exemplo de como os grupos dão acesso LUN
+
+Você pode criar vários grupos para definir quais LUNs estão disponíveis para seus hosts. Por exemplo, se você tiver um cluster de host, pode usar igroups para garantir que LUNs específicos sejam visíveis para apenas um host no cluster ou para todos os hosts no cluster.
+
+A tabela a seguir ilustra como quatro grupos dão acesso aos LUNs para quatro hosts diferentes que estão acessando o sistema de armazenamento. Os hosts em cluster (Host3 e Host4) são membros do mesmo grupo (Group3) e podem acessar os LUNs mapeados para esse grupo. O grupo chamado Group4 contém as WWPNs de Host4 para armazenar informações locais que não se destinam a ser vistas por seu parceiro.
+
+[cols="4*"]
+|===
+| Hosts com WWPNs HBA, IQNs ou EUIs | grupos | WWPNs, IQNs, EUIs adicionados aos grupos | LUNs mapeados para grupos 
+
+
+ a| 
+Host1, caminho único (iniciador de software iSCSI)
+
+iqn.1991-05.com.microsoft:host1
+ a| 
+group1
+ a| 
+iqn.1991-05.com.microsoft:host1
+ a| 
+`/vol/vol2/lun1`
+
+
+
+ a| 
+Host2, multipath (dois HBAs)
+
+10:00:00:00:c9:2b:6b:3c
+
+10:00:00:00:c9:2b:02:3c
+ a| 
+group2
+ a| 
+10:00:00:00:c9:2b:6b:3c
+
+10:00:00:00:c9:2b:02:3c
+ a| 
+`/vol/vol2/lun2`
+
+
+
+ a| 
+Host3, multipath, em cluster com host 4
+
+10:00:00:00:c9:2b:32:1b
+
+10:00:00:00:c9:2b:41:02
+ a| 
+group3
+ a| 
+10:00:00:00:c9:2b:32:1b
+
+10:00:00:00:c9:2b:41:02
+
+10:00:00:00:c9:2b:51:2c
+
+10:00:00:00:c9:2b:47:a2
+ a| 
+`/vol/vol2/qtree1/lun3`
+
+
+
+ a| 
+Host4, multipath, agrupado (não visível para Host3)
+
+10:00:00:00:c9:2b:51:2c
+
+10:00:00:00:c9:2b:47:a2
+ a| 
+group4
+ a| 
+10:00:00:00:c9:2b:51:2c
+
+10:00:00:00:c9:2b:47:a2
+ a| 
+`/vol/vol2/qtree2/lun4` `/vol/vol2/qtree1/lun5`
+
+|===

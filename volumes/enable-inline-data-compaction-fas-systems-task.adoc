@@ -1,0 +1,50 @@
+---
+permalink: volumes/enable-inline-data-compaction-fas-systems-task.html 
+sidebar: sidebar 
+keywords: enable, inline, data compaction, fas systems, hdd aggregate, volume efficiency 
+summary: 'Permitir a compactação de dados in-line em sistemas FAS com agregados Flash Pool (híbridos) ou agregados HDD no nível de volume ou agregado.' 
+---
+= Permitir a compactação de dados in-line em sistemas FAS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode ativar a compactação de dados in-line em sistemas FAS com agregados Flash Pool (híbridos) ou agregados HDD no nível de volume ou agregado, usando o `volume efficiency` comando cluster shell. A compactação de dados é desativada por padrão para sistemas FAS.
+
+.Sobre esta tarefa
+Se você ativar a compactação de dados no nível agregado, a compactação de dados será ativada em qualquer novo volume criado com uma garantia de espaço de volume `none` de no agregado. Habilitar a compactação de dados em um volume em um agregado de HDD usa recursos adicionais de CPU.
+
+.Passos
+. Mude para o nível de privilégio avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Verifique o estado de compactação de dados dos volumes e agregados para o nó desejado:
++
+[source, cli]
+----
+volume efficiency show -volume <volume_name>
+----
+. Permitir a compactação de dados no volume:
++
+[source, cli]
+----
+volume efficiency modify -volume <volume_name> -data-compaction true
+----
++
+[NOTE]
+====
+Se a compactação de dados estiver definida como `false` para um agregado ou um volume, a compactação falhará. Ativar a compactação não compacta os dados existentes; apenas novas gravações no sistema são compactadas. O `volume efficiency start` comando contém mais informações sobre como compactar dados existentes (no ONTAP 9.1 e posterior). Para obter mais informações, consulte https://docs.netapp.com/us-en/ontap-cli["Referência do comando ONTAP"^] .
+
+====
+. Veja as estatísticas de compactação:
++
+[source, cli]
+----
+volume efficiency show -volume <volume_name>
+----
+

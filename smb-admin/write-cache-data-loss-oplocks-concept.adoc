@@ -1,0 +1,31 @@
+---
+permalink: smb-admin/write-cache-data-loss-oplocks-concept.html 
+sidebar: sidebar 
+keywords: circumstance, process, exclusive, oplock, file, flush, cache, data, write, lock, relinquish, network, failure, write cache data-loss considerations when using oplocks 
+summary: Em algumas circunstâncias, se um processo tem um oplock exclusivo em um arquivo e um segundo processo tenta abrir o arquivo, o primeiro processo deve invalidar dados em cache e flush escreve e bloqueia. O cliente deve então abandonar o oplock e o acesso ao arquivo. Se houver uma falha de rede durante esse flush, os dados de gravação em cache podem ser perdidos. 
+---
+= Escreva considerações sobre perda de dados de cache ao usar os oplocks
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Em algumas circunstâncias, se um processo tem um oplock exclusivo em um arquivo e um segundo processo tenta abrir o arquivo, o primeiro processo deve invalidar dados em cache e flush escreve e bloqueia. O cliente deve então abandonar o oplock e o acesso ao arquivo. Se houver uma falha de rede durante esse flush, os dados de gravação em cache podem ser perdidos.
+
+* Possibilidades de perda de dados
++
+Qualquer aplicativo que tenha dados gravados em cache pode perder esses dados sob o seguinte conjunto de circunstâncias:
+
++
+** A conexão é feita usando SMB 1,0.
+** Tem um oplock exclusivo no arquivo.
+** É dito para interromper esse oplock ou fechar o arquivo.
+** Durante o processo de limpeza do cache de gravação, a rede ou o sistema de destino gera um erro.
+
+
+* Erro de manipulação e conclusão de gravação
++
+O cache em si não tem nenhum tratamento de erros - os aplicativos fazem.quando o aplicativo faz uma gravação no cache, a gravação é sempre concluída. Se o cache, por sua vez, faz uma gravação no sistema de destino em uma rede, ele deve assumir que a gravação é concluída porque, se não fizer, os dados são perdidos.
+
+

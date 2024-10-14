@@ -1,0 +1,40 @@
+---
+permalink: disks-aggregates/sanitization-overview-concept.html 
+sidebar: sidebar 
+keywords: disks, disk sanitization, overwriting disks, disk sanitization process, formatting phase, pattern overwrite phase, data recovery 
+summary: A sanitização de disco é o processo de obliteração física de dados, substituindo discos ou SSDs com padrões de bytes especificados ou dados aleatórios para que a recuperação dos dados originais se torne impossível. O uso do processo de sanitização garante que ninguém possa recuperar os dados nos discos. 
+---
+= Visão geral da sanitização de disco
+:allow-uri-read: 
+
+
+[role="lead"]
+A sanitização de disco é o processo de obliteração física de dados, substituindo discos ou SSDs com padrões de bytes especificados ou dados aleatórios para que a recuperação dos dados originais se torne impossível. O uso do processo de sanitização garante que ninguém possa recuperar os dados nos discos.
+
+Esta funcionalidade está disponível através do nodeshell em todas as versões do ONTAP 9, e começando com o ONTAP 9.6 no modo de manutenção.
+
+O processo de sanitização de disco usa três padrões sucessivos de substituição de bytes padrão ou especificados pelo usuário para até sete ciclos por operação. O padrão de substituição aleatória é repetido para cada ciclo.
+
+Dependendo da capacidade do disco, dos padrões e do número de ciclos, o processo pode levar várias horas. A sanitização é executada em segundo plano. Pode iniciar, parar e apresentar o estado do processo de sanitização. O processo de sanitização contém duas fases: A "fase de formatação" e a "fase de substituição do padrão".
+
+.Fase de formatação
+A operação realizada para a fase de formatação depende da classe de disco sendo higienizado, como mostrado na tabela a seguir:
+
+|===
+
+
+| Classe de disco | Operação de fase de formatação 
+
+
+| HDDs de capacidade | Ignorado 
+
+
+| HDDs de performance | Operação de formato SCSI 
+
+
+| SSDs | Operação de limpeza SCSI 
+|===
+.Fase de substituição do padrão
+Os padrões de substituição especificados são repetidos para o número especificado de ciclos.
+
+Quando o processo de sanitização estiver concluído, os discos especificados estão em um estado higienizado. Eles não são devolvidos ao status de reposição automaticamente. Você deve devolver os discos higienizados ao pool de reserva antes que os discos recém-higienizados estejam disponíveis para serem adicionados a outro agregado.

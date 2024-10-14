@@ -1,0 +1,271 @@
+---
+sidebar: sidebar 
+permalink: consistency-groups/modify-geometry-task.html 
+keywords: consistency group geometry, promote consistency group, demote, add consistency group 
+summary: A partir do ONTAP 9.13,1, você pode modificar a geometria do seu grupo de consistência com interrupção das operações de e/S. 
+---
+= Modifique a geometria do grupo de consistência
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.13,1, você pode modificar a geometria de um grupo de consistência. Modificar a geometria de um grupo de consistência permite alterar a configuração de grupos de consistência pai ou filho sem interromper as operações de e/S em andamento.
+
+A modificação da geometria do grupo de consistência tem impacto nas cópias Snapshot existentes do grupo de consistência. Para obter detalhes, consulte a modificação específica da geometria que deseja executar.
+
+
+NOTE: Não é possível modificar a geometria de um grupo de consistência configurado com uma política de proteção remota. Você deve primeiro quebrar a relação de proteção, modificar a geometria e restaurar a proteção remota.
+
+
+
+== Adicione um novo grupo de consistência filho
+
+A partir do ONTAP 9.13,1, você pode adicionar um novo grupo de consistência filho a um grupo de consistência pai existente.
+
+.Sobre esta tarefa
+* Um grupo de consistência pai pode conter no máximo cinco grupos filhos. xref:limits.html[limites do grupo de consistência]Consulte para obter outros limites.
+* Não é possível adicionar um grupo de consistência filho a um único grupo de consistência. Você deve primeiro <<promover>> o grupo de consistência, então você pode adicionar um grupo de consistência filho.
+* Cópias Snapshot existentes do grupo de consistência capturado antes da operação de expansão serão consideradas parciais. Qualquer operação de restauração baseada nessa cópia Snapshot refletirá o grupo de consistência no momento da cópia Snapshot.
+
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.13,1, você pode executar esta operação com o Gerenciador do sistema.
+
+.Adicione um novo grupo de consistência filho
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência pai ao qual deseja adicionar um grupo de consistência filho.
+. Ao lado do nome do grupo de consistência pai, selecione **More** (mais) e depois **Add new child consistency group (Adicionar novo grupo de consistência filho)**.
+. Introduza um nome para o seu grupo de consistência.
+. Escolha se deseja adicionar volumes novos ou existentes.
++
+.. Se você estiver adicionando volumes existentes, selecione **volumes existentes** e escolha os volumes no menu suspenso.
+.. Se você estiver adicionando novos volumes, selecione **novos volumes** e designe o número de volumes e seu tamanho.
+
+
+. Selecione **Adicionar**.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode adicionar um grupo de consistência filho usando a CLI do ONTAP.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Adicione um grupo de consistência filho com novos volumes
+. Crie o novo grupo de consistência. Forneça valores para o nome do grupo de consistência, prefixo de volume, número de volumes, tamanho do volume, serviço de storage e nome da política de exportação:
++
+`consistency-group create -vserver _SVM_name_ -consistency-group _consistency_group_ -parent-consistency-group _parent_consistency_group_ -volume-prefix _prefix_ -volume-count _number_ -size _size_ -storage-service _service_ -export-policy _policy_name_`
+
+
+
+.Adicione um grupo de consistência filho com volumes existentes
+. Crie o novo grupo de consistência. O `volumes` parâmetro aceita uma lista separada por vírgulas de nomes de volume.
++
+`consistency-group create -vserver _SVM_name_ -consistency-group _new_consistency_group_ -parent-consistency-group _parent_consistency_group_ -volumes _volume_`
+
+
+
+--
+====
+
+
+== Separe um grupo de consistência infantil
+
+A partir do ONTAP 9.13,1, você pode remover um grupo de consistência filho de seu pai, convertendo-o em um grupo de consistência individual.
+
+.Sobre esta tarefa
+* Separar um grupo de consistência filho faz com que as cópias Snapshot do grupo de consistência pai se tornem inválidas e inacessíveis. As cópias Snapshot granular de volume permanecem válidas.
+* As cópias Snapshot existentes do grupo de consistência individual permanecem válidas.
+* Esta operação falhará se houver um único grupo de consistência existente que tenha o mesmo nome do grupo de consistência filho que você pretende separar. Se você encontrar este cenário, você deve renomear o grupo de consistência quando você o desanexar.
+
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.13,1, você pode executar esta operação com o Gerenciador do sistema.
+
+.Separe um grupo de consistência infantil
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência pai que contém o filho que você deseja desanexar.
+. Ao lado do grupo de consistência filho que você deseja desanexar, selecione **More** (mais) e depois **Detach from parent** (Desanexar do pai).
+. Opcionalmente, renomeie o grupo de consistência e selecione um tipo de aplicativo.
+. Selecione **Desanexar**.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode desanexar um grupo de consistência filho usando a CLI do ONTAP.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Separe um grupo de consistência infantil
+. Separe o grupo de consistência. Opcionalmente, renomeie o grupo de consistência destacada com o `-new-name` parâmetro.
++
+`consistency-group detach -vserver _SVM_name_ -consistency-group _child_consistency_group_ -parent-consistency-group _parent_consistency_group_ [-new-name _new_name_]`
+
+
+
+--
+====
+
+
+== Mover um único grupo de consistência existente em um grupo de consistência pai
+
+A partir do ONTAP 9.13,1, você pode converter um único grupo de consistência existente para um grupo de consistência filho. Você pode mover o grupo de consistência em um grupo de consistência pai existente ou criar um novo grupo de consistência pai durante a operação mover.
+
+.Sobre esta tarefa
+* O grupo de consistência pai deve ter quatro ou menos filhos. Um grupo de consistência pai pode conter no máximo cinco grupos filhos. xref:limits.html[limites do grupo de consistência]Consulte para obter outros limites.
+* Cópias Snapshot existentes do grupo de consistência _pai_ capturadas antes dessa operação são consideradas parciais. Qualquer operação de restauração baseada em uma dessas cópias Snapshot reflete o grupo de consistência no momento da cópia Snapshot.
+* As cópias Snapshot do grupo de consistência único permanecem válidas.
+
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.13,1, você pode executar esta operação com o Gerenciador do sistema.
+
+.Mover um único grupo de consistência existente em um grupo de consistência pai
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência que deseja converter.
+. Selecione **More** (mais) e, em seguida, **mover para o grupo de consistência diferente**.
+. Opcionalmente, insira um novo nome para o grupo de consistência e selecione um tipo de componente. Por padrão, o tipo de componente será outro.
+. Escolha se deseja migrar para um grupo de consistência pai existente ou criar um novo grupo de consistência pai:
++
+.. Para migrar para um grupo de consistência pai existente, selecione **grupo de consistência existente** e escolha o grupo de consistência no menu suspenso.
+.. Para criar um novo grupo de consistência pai, selecione **novo grupo de consistência** e, em seguida, forneça um nome para o novo grupo de consistência.
+
+
+. Selecione **mover**.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode mover um único grupo de consistência em um grupo de consistência pai usando a CLI do ONTAP.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Mover um grupo de consistência em um novo grupo de consistência pai
+. Crie o novo grupo de consistência pai. O `-consistency-groups` parâmetro migrará qualquer grupo de consistência existente para o novo pai.
++
+`consistency-group attach -vserver _svm_name_ -consistency-group _parent_consistency_group_ -consistency-groups _child_consistency_group_`
+
+
+
+.Mover um grupo de consistência em um grupo de consistência existente
+. Mover o grupo de consistência:
++
+`consistency-group add -vserver _SVM_name_ -consistency-group _consistency_group_ -parent-consistency-group _parent_consistency_group_`
+
+
+
+--
+====
+
+
+== Promover um grupo de consistência infantil
+
+A partir do ONTAP 9.13,1, você pode promover um único grupo de consistência para um grupo de consistência pai. Quando você promove o grupo de consistência único para um pai, você também cria um novo grupo de consistência filho que herda todos os volumes no grupo de consistência original e único.
+
+.Sobre esta tarefa
+* Se você quiser converter um grupo de consistência filho para um grupo de consistência pai, primeiro <<detach>> o grupo de consistência filho, siga este procedimento.
+* As cópias Snapshot existentes do grupo de consistência permanecem válidas depois que você promover o grupo de consistência.
+
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.13,1, você pode executar esta operação com o Gerenciador do sistema.
+
+.Promover um grupo de consistência infantil
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência que deseja promover.
+. Selecione ** mais** e depois **promover para o grupo de consistência pai**.
+. Digite um ** Nome** e selecione um **tipo de componente** para o grupo de consistência filho.
+. Selecione **promover**.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode mover um único grupo de consistência em um grupo de consistência pai usando a CLI do ONTAP.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Promover um grupo de consistência infantil
+. Promover o grupo de consistência. Este comando criará um grupo de consistência pai e um filho.
++
+`consistency-group promote -vserver _SVM_name_ -consistency-group _existing_consistency_group_ -new-name _new_child_consistency_group_`
+
+
+
+--
+====
+
+
+== Demote um pai para um único grupo de consistência
+
+A partir do ONTAP 9.13,1, você pode rebaixar um grupo de consistência pai para um único grupo de consistência. A rebaixamento do pai achata a hierarquia do grupo de consistência, removendo todos os grupos de consistência filho associados. Todos os volumes no grupo consistência permanecerão sob o novo grupo de consistência única.
+
+.Sobre esta tarefa
+* As cópias Snapshot existentes do grupo de consistência _pai_ permanecem válidas depois de rebaixá-lo para uma única consistência. Cópias Snapshot existentes de qualquer um dos grupos de consistência _filho_ associados desse pai se tornam inválidas ao serem rebaixadas. As cópias Snapshot de volume individual dentro do grupo de consistência filho continuam acessíveis como cópias Snapshot granular de volume.
+
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.13,1, você pode executar esta operação com o Gerenciador do sistema.
+
+.Demote um grupo de consistência
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência pai que deseja rebaixar.
+. Selecione ** mais** e depois **demote para um único grupo de consistência**.
+. Um aviso irá informá-lo de que todos os grupos de consistência filho associados serão eliminados e os seus volumes serão movidos para o novo grupo de consistência único. Selecione **demote** para confirmar que compreende o impactos.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode rebaixar um grupo de consistência usando a CLI do ONTAP.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Demote um grupo de consistência
+. Demote o grupo de consistência. Use o parâmetro opcional `-new-name` para renomear o grupo de consistência.
++
+`consistency-group demote -vserver _SVM_name_ -consistency-group _parent_consistency_group_ [-new-name _new_consistency_group_name_]`
+
+
+
+--
+====

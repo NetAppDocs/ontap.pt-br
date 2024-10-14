@@ -1,0 +1,28 @@
+---
+permalink: volumes/space-display-quota-report-unix-client-concept.html 
+sidebar: sidebar 
+keywords: difference, space usage, displayed, quota report, unix client 
+summary: O valor do espaço em disco usado exibido em um relatório de cota para um FlexVol volume ou qtree pode ser diferente do valor exibido por um cliente UNIX para o mesmo volume ou qtree. 
+---
+= Visão geral da diferença no uso de espaço exibida por um relatório de cota e um cliente UNIX
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O valor do espaço em disco usado exibido em um relatório de cota para um FlexVol volume ou qtree pode ser diferente do valor exibido por um cliente UNIX para o mesmo volume ou qtree. A diferença nesses valores é devido aos diferentes métodos seguidos pelo relatório de cota e pelos comandos UNIX para calcular os blocos de dados no volume ou qtree.
+
+Por exemplo, se um volume contiver um arquivo que tenha blocos de dados vazios (para os quais os dados não são gravados), o relatório de cota para o volume não contará os blocos de dados vazios enquanto relata o uso do espaço. No entanto, quando o volume é montado em um cliente UNIX e o arquivo é mostrado como a saída `ls` do comando, os blocos de dados vazios também são incluídos no uso do espaço. Portanto, o `ls` comando exibe um tamanho de arquivo maior quando comparado ao uso de espaço exibido pelo relatório de cota.
+
+Da mesma forma, os valores de uso de espaço mostrados em um relatório de cota também podem diferir dos valores mostrados como resultado de comandos UNIX `df` como e `du`.
+
+
+
+== Como um relatório de quota é responsável pelo espaço em disco e pelo uso de arquivos
+
+O número de arquivos usados e a quantidade de espaço em disco especificada em um relatório de cota para um FlexVol volume ou uma qtree dependem da contagem dos blocos de dados usados correspondentes a cada inode no volume ou na qtree.
+
+A contagem de blocos inclui blocos diretos e indiretos usados para arquivos regulares e de fluxo. Os blocos usados para diretórios, listas de controle de acesso (ACLs), diretórios de fluxo e metafiles não são contabilizados no relatório de cota. No caso de arquivos esparsos UNIX, blocos de dados vazios não são incluídos no relatório de cota.
+
+O subsistema quota foi projetado para considerar e incluir apenas aspetos controláveis pelo usuário do sistema de arquivos. Diretórios, ACLs e espaço de snapshot são todos exemplos de espaço excluído dos cálculos de cotas. As cotas são usadas para impor limites, não garantias, e elas só operam no sistema de arquivos ativo. A contagem de cotas não conta certas construções de sistema de arquivos, nem conta para eficiência de storage (como compactação ou deduplicação).

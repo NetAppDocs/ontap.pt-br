@@ -1,0 +1,42 @@
+---
+permalink: smb-admin/local-user-authentication-concept.html 
+sidebar: sidebar 
+keywords: local, user, access, data, cifs, server, create, authenticate, session, how local user authentication works 
+summary: Antes que um usuário local possa acessar dados em um servidor CIFS, o usuário deve criar uma sessão autenticada. 
+---
+= Como funciona a autenticação de usuário local
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes que um usuário local possa acessar dados em um servidor CIFS, o usuário deve criar uma sessão autenticada.
+
+Como o SMB é baseado em sessão, a identidade do usuário pode ser determinada apenas uma vez, quando a sessão é configurada pela primeira vez. O servidor CIFS usa autenticação baseada em NTLM ao autenticar usuários locais. Tanto o NTLMv1 como o NTLMv2 são suportados.
+
+O ONTAP usa autenticação local em três casos de uso. Cada caso de uso depende se a parte do domínio do nome de usuário (com o formato DOMÍNIO/usuário) corresponde ao nome de domínio local do servidor CIFS (o nome do servidor CIFS):
+
+* A parte do domínio corresponde
++
+Os usuários que fornecem credenciais de usuário local ao solicitar acesso aos dados são autenticados localmente no servidor CIFS.
+
+* A parte do domínio não corresponde
++
+O ONTAP tenta usar a autenticação NTLM com um controlador de domínio no domínio ao qual o servidor CIFS pertence. Se a autenticação for bem-sucedida, o login será concluído. Se não for bem-sucedido, o que acontece a seguir depende do motivo pelo qual a autenticação não foi bem-sucedida.
+
++
+Por exemplo, se o usuário existir no ative Directory mas a senha for inválida ou expirada, o ONTAP não tentará usar a conta de usuário local correspondente no servidor CIFS. Em vez disso, a autenticação falha. Existem outros casos em que o ONTAP usa a conta local correspondente no servidor CIFS, se existir, para autenticação - mesmo que os nomes de domínio NetBIOS não correspondam. Por exemplo, se existir uma conta de domínio correspondente mas estiver desativada, o ONTAP utiliza a conta local correspondente no servidor CIFS para autenticação.
+
+* A parte do domínio não é especificada
++
+O ONTAP tenta pela primeira vez a autenticação como um usuário local. Se a autenticação como um usuário local falhar, o ONTAP autenticará o usuário com um controlador de domínio no domínio ao qual o servidor CIFS pertence.
+
+
+
+Depois que a autenticação de usuário local ou de domínio for concluída com sucesso, o ONTAP constrói um token de acesso completo de usuário, que leva em conta a associação de grupo local e o Privileges.
+
+Para obter mais informações sobre autenticação NTLM para usuários locais, consulte a documentação do Microsoft Windows.
+
+.Informações relacionadas
+xref:enable-disable-local-user-authentication-task.adoc[Ativar ou desativar a autenticação de utilizador local]

@@ -1,0 +1,77 @@
+---
+permalink: smb-admin/add-home-directory-share-task.html 
+sidebar: sidebar 
+keywords: smb, home, directory, feature, add, property, share, properties, property, add a home directory share 
+summary: Se você quiser usar o recurso diretório base SMB, você deve adicionar pelo menos um compartilhamento com a propriedade diretório base incluída nas propriedades de compartilhamento. 
+---
+= Adicione um compartilhamento de diretório base
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você quiser usar o recurso diretório base SMB, você deve adicionar pelo menos um compartilhamento com a propriedade diretório base incluída nas propriedades de compartilhamento.
+
+.Sobre esta tarefa
+Você pode criar um compartilhamento de diretório inicial no momento em que você cria o compartilhamento usando o `vserver cifs share create` comando, ou você pode alterar um compartilhamento existente em um compartilhamento de diretório inicial a qualquer momento usando o `vserver cifs share modify` comando.
+
+Para criar um compartilhamento de diretório inicial, você deve incluir o `homedirectory` valor na `-share-properties` opção quando criar ou modificar um compartilhamento. Você pode especificar o nome do compartilhamento e o caminho do compartilhamento usando variáveis que são expandidas dinamicamente quando os usuários se conetam a seus diretórios base. As variáveis disponíveis que você pode usar no caminho são `%w`, `%d` e `%u`, correspondentes ao nome de usuário, domínio e nome de usuário UNIX mapeado do Windows, respetivamente.
+
+.Passos
+. Adicionar um diretório de casa compartilhar
+`vserver cifs share create -vserver _vserver_name_ -share-name _share_name_ -path _path_ -share-properties homedirectory[,...]`
++
+`-vserver` `vserver` Especifica a máquina virtual de storage (SVM) habilitada para CIFS na qual adicionar o caminho de pesquisa.
+
++
+`-share-name _share-name_` especifica o nome de compartilhamento do diretório base.
+
++
+Além de conter uma das variáveis necessárias, se o nome do compartilhamento contiver uma das strings literais `%w` , `%u`, ou `%d`, você deve preceder a string literal com um caractere % (percentual) para impedir que o ONTAP trate a string literal como uma variável (por exemplo, `%%w`).
+
++
+** O nome do compartilhamento deve conter a `%w` variável ou `%u`.
+** O nome do compartilhamento também pode conter a `%d` variável (por exemplo, `%d`/`%w` ) ou uma parte estática no nome do compartilhamento (por exemplo, home1_/`%w`).
+** Se o compartilhamento for usado pelos administradores para se conetar aos diretórios home de outros usuários ou para permitir que os usuários se conetem aos diretórios home de outros usuários, o padrão de nome de compartilhamento dinâmico deve ser precedido por um til (.).
++
+ `vserver cifs home-directory modify`O é utilizado para ativar este acesso definindo `-is-home-dirs-access-for-admin-enabled` a opção como `true`) ou definindo a opção avançada `-is-home-dirs-access-for-public-enabled` como `true`.
+
+
+
++
+`-path` `path` especifica o caminho relativo para o diretório home.
+
+
+
+`-share-properties homedirectory[,...]` especifica as propriedades de compartilhamento para esse compartilhamento. Você deve especificar o `homedirectory` valor. Você pode especificar propriedades de compartilhamento adicionais usando uma lista delimitada por vírgulas.
+
+. Verifique se você adicionou com êxito o compartilhamento do diretório home usando o `vserver cifs share show` comando.
+
+
+.Exemplo
+O comando a seguir cria um compartilhamento de diretório base `%w` chamado . As `oplocks` propriedades , `browsable`, e `changenotify` compartilhar são definidas além de definir a `homedirectory` propriedade compartilhar.
+
+[NOTE]
+====
+Este exemplo não exibe a saída de todos os compartilhamentos no SVM. A saída é truncada.
+
+====
+[listing]
+----
+cluster1::> vserver cifs share create -vserver vs1 -share-name %w -path %w -share-properties oplocks,browsable,changenotify,homedirectory
+
+vs1::> vserver cifs share show -vserver vs1
+Vserver    Share    Path         Properties     Comment  ACL
+---------- -------- ------------ -------------- -------- -----------
+vs1        %w       %w           oplocks        -        Everyone / Full Control
+                                 browsable
+                                 changenotify
+                                 homedirectory
+----
+.Informações relacionadas
+xref:add-home-directory-search-path-task.adoc[Adicionando um caminho de pesquisa de diretório base]
+
+xref:requirements-automatic-node-referrals-concept.adoc[Requisitos e diretrizes para o uso de referências automáticas de nós]
+
+xref:manage-accessibility-users-home-directories-task.adoc[Gerenciando a acessibilidade aos diretórios home dos usuários]

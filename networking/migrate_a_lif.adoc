@@ -1,0 +1,118 @@
+---
+sidebar: sidebar 
+permalink: networking/migrate_a_lif.html 
+keywords: move the lif, change lif port, migrate a lif, migrate a LIF to a different port on the same node or a different node within the cluster 
+summary: Migre um LIF para uma porta diferente no mesmo nó ou em um nó diferente dentro do cluster 
+---
+= Migração de um LIF
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode ter que migrar um LIF para uma porta diferente no mesmo nó ou em um nó diferente dentro do cluster, se a porta estiver com defeito ou precisar de manutenção. A migração de um LIF é semelhante ao failover de LIF, mas a migração de LIF é uma operação manual, enquanto o failover de LIF é a migração automática de um LIF em resposta a uma falha de link na porta de rede atual do LIF.
+
+.Antes de começar
+* Um grupo de failover deve ter sido configurado para os LIFs.
+* O nó de destino e as portas devem estar operacionais e ter acesso à mesma rede que a porta de origem.
+
+
+.Sobre esta tarefa
+* Os LIFs BGP residem na porta inicial e não podem ser migrados para nenhum outro nó ou porta.
+* Você deve migrar LIFs hospedadas nas portas pertencentes a uma NIC para outras portas no cluster, antes de remover a NIC do nó.
+* Você deve executar o comando para migração de um cluster LIF do nó onde o cluster LIF está hospedado.
+* Um LIF com escopo de nó, como um LIF de gerenciamento com escopo de nó, LIF de cluster e LIF entre clusters, não pode ser migrado para um nó remoto.
+* Quando um NFSv4 LIF é migrado entre nós, um atraso de até 45 segundos resulta antes que o LIF esteja disponível em uma nova porta.
++
+Para contornar esse problema, use NFSv4,1 onde nenhum atraso é encontrado.
+
+* É possível migrar iSCSI LIFs em plataformas de array SAN all-flash (ASA) executando o ONTAP 9.11,1 ou posterior.
++
+A migração de iSCSI LIFs está limitada a portas no nó inicial ou no parceiro de HA.
+
+* Se a sua plataforma não for uma plataforma ASA (All-Flash SAN Array) executando o ONTAP versão 9.11.1 ou posterior, não será possível migrar LIFs iSCSI de um nó para outro.
++
+Para contornar essa restrição, você deve criar um iSCSI LIF no nó de destino. Saiba mais link:../networking/create_a_lif.html["A criar iSCSI LIFs"]sobre .
+
+* Se você quiser migrar um LIF (interface de rede) para NFS por RDMA, você deve garantir que a porta de destino seja compatível com RoCE. Você deve estar executando o ONTAP 9.10,1 ou posterior para migrar um LIF com a CLI ou o ONTAP 9.12,1 para migrar usando o Gerenciador de sistema. No System Manager, depois de selecionar sua porta de destino compatível com RoCE, marque a caixa ao lado de *usar portas RoCE* para concluir a migração com êxito. Saiba mais link:../nfs-rdma/configure-lifs-task.html["Configurando LIFs para NFS em RDMA"]sobre o .
+* As operações de descarga de cópia do VMware VAAI falham ao migrar a LIF de origem ou de destino. Saiba mais sobre a cópia off-load:
++
+** link:../nfs-admin/support-vmware-vstorage-over-nfs-concept.html["Ambientes NFS"]
+** link:../san-admin/storage-virtualization-vmware-copy-offload-concept.html["AMBIENTES SAN"]
+
+
+
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Use o System Manager para migrar uma interface de rede*
+
+.Passos
+. Selecione *rede > Visão geral > interfaces de rede*.
+. Selecione image:icon_kabob.gif["Ícone de opções do menu"] *> migrar* ao lado da interface de rede que deseja alterar.
++
+
+NOTE: Para um iSCSI LIF, na caixa de diálogo *Migrate Interface*, selecione o nó de destino e a porta do parceiro de HA.
+
++
+Se pretender migrar o iSCSI LIF permanentemente, selecione a caixa de verificação. O iSCSI LIF deve estar offline antes de ser migrado permanentemente. Além disso, uma vez que um iSCSI LIF é migrado permanentemente, ele não pode ser desfeito. Não há opção de reversão.
+
+. Clique em *Migrate*.
+. Salve suas alterações.
+
+
+--
+.CLI
+--
+*Use a CLI para migrar um LIF*
+
+.Passo
+Dependendo se você deseja migrar um LIF específico ou todos os LIFs, execute a ação apropriada:
+
+[cols="30,70"]
+|===
+
+
+| Se você quiser migrar... | Digite o seguinte comando... 
+
+
+ a| 
+Um LIF específico
+ a| 
+`network interface migrate`
+
+
+
+ a| 
+Todas as LIFs de gerenciamento de cluster e dados em um nó
+ a| 
+`network interface migrate-all`
+
+
+
+ a| 
+Todos os LIFs fora de um porto
+ a| 
+`network interface migrate-all -node <node> -port <port>`
+
+|===
+O exemplo a seguir mostra como migrar um LIF `datalif1` nomeado no SVM `vs0` para a porta `e0d` no `node0b`:
+
+....
+network interface migrate -vserver vs0 -lif datalif1 -dest-node node0b -dest-port e0d
+....
+O exemplo a seguir mostra como migrar todos os LIFs de gerenciamento de cluster e dados do nó atual (local):
+
+....
+network interface migrate-all -node local
+....
+--
+====

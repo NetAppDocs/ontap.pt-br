@@ -1,0 +1,162 @@
+---
+sidebar: sidebar 
+permalink: networking/configure_vlans_over_physical_ports.html 
+keywords: configure, configuration, configuring, setup, setting, set, up, vlans, virtual local area network, physical, port, logical, segmentation, configure vlans over physical ports, vlans provide logical segmentation of networks, create a vlan, network port vlan create, delete a vlan, network port vlan delete 
+summary: Você pode usar VLANs no ONTAP para fornecer segmentação lógica de redes, criando domínios de broadcast separados que são definidos em uma base de porta de switch, em vez dos domínios de broadcast tradicionais, definidos em limites físicos. 
+---
+= Configurar VLANs em portas físicas
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode usar VLANs no ONTAP para fornecer segmentação lógica de redes, criando domínios de broadcast separados que são definidos em uma base de porta de switch, em vez dos domínios de broadcast tradicionais, definidos em limites físicos.
+
+Uma VLAN pode abranger vários segmentos físicos de rede. As estações finais pertencentes a uma VLAN estão relacionadas por função ou aplicação.
+
+Por exemplo, as estações finais em uma VLAN podem ser agrupadas por departamentos, como engenharia e contabilidade, ou por projetos, como release1 e release2. Como a proximidade física das estações finais não é essencial em uma VLAN, você pode dispersar as estações finais geograficamente e ainda conter o domínio de broadcast em uma rede comutada.
+
+No ONTAP 9.13,1 e no 9.14.1, as portas não marcadas que não são utilizadas por quaisquer interfaces lógicas (LIFs) e não têm conetividade VLAN nativa no switch conetado são marcadas como degradadas. Isso ajuda a identificar portas não utilizadas e não indica uma interrupção. As VLANs nativas permitem tráfego não marcado na porta base ifgrp, como transmissões ONTAP CFM. Configure VLANs nativas no switch para evitar o bloqueio de tráfego não marcado.
+
+Você pode gerenciar VLANs criando, excluindo ou exibindo informações sobre elas.
+
+
+NOTE: Você não deve criar uma VLAN em uma interface de rede com o mesmo identificador que a VLAN nativa do switch. Por exemplo, se a interface de rede e0b estiver na VLAN 10 nativa, você não deverá criar uma VLAN e0b-10 nessa interface.
+
+
+
+== Crie uma VLAN
+
+Você pode criar uma VLAN para manter domínios de broadcast separados dentro do mesmo domínio de rede usando o System Manager ou o `network port vlan create` comando.
+
+.Antes de começar
+Confirme se os seguintes requisitos foram cumpridos:
+
+* Os switches implantados na rede devem estar em conformidade com os padrões IEEE 802,1Q.1X ou ter uma implementação de VLANs específica do fornecedor.
+* Para suportar várias VLANs, uma estação final deve ser estaticamente configurada para pertencer a uma ou mais VLANs.
+* A VLAN não está conetada a uma porta que hospeda um LIF de cluster.
+* A VLAN não está conetada às portas atribuídas ao IPspace do cluster.
+* A VLAN não é criada em uma porta de grupo de interfaces que não contém portas membro.
+
+
+.Sobre esta tarefa
+A criação de uma VLAN coneta a VLAN à porta de rede em um nó especificado em um cluster.
+
+Quando você configura uma VLAN por uma porta pela primeira vez, a porta pode cair, resultando em uma desconexão temporária da rede. As adições subsequentes de VLAN à mesma porta não afetam o estado da porta.
+
+
+NOTE: Você não deve criar uma VLAN em uma interface de rede com o mesmo identificador que a VLAN nativa do switch. Por exemplo, se a interface de rede e0b estiver na VLAN 10 nativa, você não deverá criar uma VLAN e0b-10 nessa interface.
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Use o System Manager para criar uma VLAN*
+
+A partir do ONTAP 9.12,0, pode selecionar automaticamente o domínio de difusão ou selecionar manualmente ligado na lista. Anteriormente, os domínios de broadcast eram sempre selecionados automaticamente com base na conetividade da camada 2. Se você selecionar manualmente um domínio de broadcast, um aviso será exibido indicando que selecionar manualmente um domínio de broadcast pode resultar em perda de conetividade.
+
+.Passos
+. Selecione *rede > porta Ethernet > VLAN*.
+. Selecione o nó na lista suspensa.
+. Escolha uma das seguintes opções:
++
+.. ONTAP para *selecionar automaticamente o domínio de transmissão (recomendado)*.
+.. Para selecionar manualmente um domínio de broadcast na lista.
+
+
+. Selecione as portas para formar a VLAN.
+. Especifique o ID da VLAN.
+. Salve suas alterações.
+
+
+--
+.CLI
+--
+*Use a CLI para criar uma VLAN*
+
+Em certas circunstâncias, se você quiser criar a porta VLAN em uma porta degradada sem corrigir o problema de hardware ou qualquer configuração incorreta de software, então você pode definir o `-ignore-health-status` parâmetro `network port modify` do comando como `true`.
+
+.Passos
+. Use o `network port vlan create` comando para criar uma VLAN.
+. Você deve especificar `vlan-name` as opções ou `port` e `vlan-id` ao criar uma VLAN. O nome da VLAN é uma combinação do nome da porta (ou grupo de interfaces) e do identificador VLAN do switch de rede, com um hífen entre. Por exemplo, `e0c-24` e `e1c-80` são nomes de VLAN válidos.
+
+
+O exemplo a seguir mostra como criar uma VLAN `e1c-80` conetada à porta de rede `e1c` no nó `cluster-1-01`:
+
+....
+network port vlan create -node cluster-1-01 -vlan-name e1c-80
+....
+A partir do ONTAP 9.8, as VLANs são automaticamente colocadas em domínios de broadcast apropriados cerca de um minuto após sua criação. Se você não quiser que o ONTAP faça isso e preferir colocar manualmente a VLAN em um domínio de broadcast, especifique o `-skip-broadcast-domain-placement` parâmetro como parte do `vlan create` comando.
+
+Para obter mais informações sobre esse comando, consulte https://docs.netapp.com/us-en/ontap-cli["Referência do comando ONTAP"^] .
+
+--
+====
+
+
+== Editar uma VLAN
+
+Você pode alterar o domínio de broadcast ou desativar uma VLAN.
+
+.Use o System Manager para editar uma VLAN
+A partir do ONTAP 9.12,0, pode selecionar automaticamente o domínio de difusão ou selecionar manualmente ligado na lista. Os domínios de broadcast anteriormente eram sempre selecionados automaticamente com base na conetividade da camada 2. Se você selecionar manualmente um domínio de broadcast, um aviso será exibido indicando que selecionar manualmente um domínio de broadcast pode resultar em perda de conetividade.
+
+.Passos
+. Selecione *rede > porta Ethernet > VLAN*.
+. Selecione o ícone de edição.
+. Execute um dos seguintes procedimentos:
++
+** Altere o domínio de broadcast selecionando um outro da lista.
+** Desmarque a caixa de seleção *Enabled* (habilitado).
+
+
+. Salve suas alterações.
+
+
+
+
+== Eliminar um VLAN
+
+Talvez seja necessário excluir uma VLAN antes de remover uma NIC do slot. Quando você exclui uma VLAN, ela é automaticamente removida de todas as regras de failover e grupos que a usam.
+
+.Antes de começar
+Certifique-se de que não existem LIFs associados à VLAN.
+
+.Sobre esta tarefa
+A exclusão da última VLAN de uma porta pode causar uma desconexão temporária da rede da porta.
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Use o System Manager para excluir uma VLAN*
+
+.Passos
+. Selecione *rede > porta Ethernet > VLAN*.
+. Selecione a VLAN que deseja remover.
+. Clique em *Excluir*.
+
+
+--
+.CLI
+--
+*Use a CLI para excluir uma VLAN*
+
+.Passo
+Use o `network port vlan delete` comando para excluir uma VLAN.
+
+O exemplo a seguir mostra como excluir VLAN `e1c-80` da porta de rede `e1c` no nó `cluster-1-01`:
+
+....
+network port vlan delete -node cluster-1-01 -vlan-name e1c-80
+....
+--
+====

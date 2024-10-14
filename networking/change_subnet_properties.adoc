@@ -1,0 +1,70 @@
+---
+sidebar: sidebar 
+permalink: networking/change_subnet_properties.html 
+keywords: change, changing, modify, modifying, gateway, ip, address, internet, protocol, mask, value, subnet, address, range, property, properties, change subnet properties, network subnet modify, subnet-name, -ipspace, -subnet, -gateway, -ip-ranges, -force-update-lif-associations 
+summary: Altere o endereço de sub-rede, o valor da máscara, o endereço de gateway ou o intervalo de endereços IP 
+---
+= Altere as propriedades da sub-rede
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode alterar o endereço de sub-rede e o valor da máscara, o endereço de gateway ou o intervalo de endereços IP em uma sub-rede existente.
+
+.Sobre esta tarefa
+* Ao modificar endereços IP, você deve garantir que não haja endereços IP sobrepostos na rede para que diferentes sub-redes ou hosts não tentem usar o mesmo endereço IP.
+* Se você adicionar ou alterar o endereço IP do gateway, o gateway modificado será aplicado a novos SVMs quando um LIF é criado neles usando a sub-rede. Uma rota padrão para o gateway é criada para o SVM se a rota ainda não existir. Talvez seja necessário adicionar manualmente uma nova rota ao SVM ao alterar o endereço IP do gateway.
+
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Começando com ONTAP 9.12,0, você pode usar o Gerenciador do sistema para alterar as propriedades da sub-rede*
+
+.Passos
+. Selecione *rede > Visão geral > sub-redes*.
+. Selecione image:icon_kabob.gif["Ícone de opções do menu"]*> Editar* ao lado da sub-rede que deseja alterar.
+. Faça alterações.
+. Salve suas alterações.
++
+.. Se o endereço IP ou intervalo introduzido já for utilizado por uma interface, é apresentada a seguinte mensagem:
+`An IP address in this range is already in use by a LIF. Associate the LIF with this subnet?`
+.. Quando você clica em *OK*, o LIF existente será associado à sub-rede.
+
+
+
+
+--
+.CLI
+--
+*Use a CLI para alterar as propriedades da sub-rede*
+
+.Passo
+Modificar propriedades de sub-rede:
+
+....
+network subnet modify -subnet-name <subnet_name> [-ipspace <ipspace_name>] [-subnet <subnet_address>] [-gateway <gateway_address>] [-ip-ranges <ip_address_list>] [-force-update-lif-associations <true>]
+....
+* `subnet_name` é o nome da sub-rede que você deseja modificar.
+* `ipspace` É o nome do espaço IPspace onde reside a sub-rede.
+* `subnet` é o novo endereço e máscara da sub-rede, se aplicável; por exemplo, 192,0.2,0/24.
+* `gateway` é o novo gateway da sub-rede, se aplicável; por exemplo, 192,0.2,1. A introdução de *"* remove a entrada do gateway.
+* `ip_ranges` É a nova lista, ou intervalo, de endereços IP que serão alocados à sub-rede, se aplicável. Os endereços IP podem ser endereços individuais, um intervalo ou endereços IP ou uma combinação em uma lista separada por vírgulas. O intervalo especificado aqui substitui os endereços IP existentes.
+* `force-update-lif-associations` É necessário quando você altera o intervalo de endereços IP. Você pode definir o valor para *true* para essa opção ao modificar o intervalo de endereços IP. Este comando falhará se algum processador de serviço ou interfaces de rede estiver usando os endereços IP no intervalo especificado. Definir este valor como *True* associa quaisquer interfaces endereçadas manualmente à sub-rede atual e permite que o comando seja bem-sucedido.
+
+
+O seguinte comando modifica o endereço IP do gateway da sub-rede sub3:
+
+....
+network subnet modify -subnet-name <sub3> -gateway <192.0.3.1>
+....
+--
+====

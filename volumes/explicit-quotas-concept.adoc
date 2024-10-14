@@ -1,0 +1,86 @@
+---
+permalink: volumes/explicit-quotas-concept.html 
+sidebar: sidebar 
+keywords: how to, use, explicit, quotas 
+summary: Você pode usar cotas explícitas para especificar uma cota para um destino de cota específico ou para substituir uma cota padrão para um destino específico. 
+---
+= Como você usa cotas explícitas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar cotas explícitas para especificar uma cota para um destino de cota específico ou para substituir uma cota padrão para um destino específico.
+
+Uma cota explícita especifica um limite para um determinado usuário, grupo ou qtree. Uma cota explícita substitui qualquer cota padrão que esteja em vigor para o mesmo destino.
+
+Quando você adiciona uma cota de usuário explícita para um usuário que tem uma cota de usuário derivada, você deve usar a mesma configuração de mapeamento de usuário que a cota de usuário padrão. Caso contrário, quando você redimensiona cotas, a cota de usuário explícita é rejeitada porque é considerada uma nova cota.
+
+As cotas explícitas afetam somente as cotas padrão no mesmo nível (volume ou qtree). Por exemplo, uma cota de usuário explícita para uma qtree não afeta a cota de usuário padrão para o volume que contém essa qtree. No entanto, a cota de usuário explícita para a qtree substitui (substitui os limites definidos por) a cota de usuário padrão para essa qtree.
+
+.Exemplos de cotas explícitas
+As regras de cota a seguir definem uma cota de usuário padrão que limita todos os usuários em vol1 a 50MBMB de espaço. No entanto, um usuário, jsmith, é permitido 80MBMB de espaço, por causa da cota explícita (mostrada em negrito):
+
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -volume vol1 -policy-name default -type user -target "" -qtree "" -disk-limit 50m
+
+cluster1::> volume quota policy rule create -vserver vs0 -volume vol1 -policy-name default -type user -target "jsmith" -qtree "" -disk-limit 80m
+
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol1
+
+Vserver: vs0               Policy: default           Volume: vol1
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   ""        ""      off          50MB        -       -        -          -
+user   jsmith    ""      off          80MB        -       -        -          -
+----
+A regra de cota a seguir restringe o usuário especificado, representado por quatro IDs, a 550MB GB de espaço em disco e 10.000 arquivos no volume vol1:
+
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -volume vol1 -policy-name default -type user -target " jsmith,corp\jsmith,engineering\john smith,S-1-5-32-544" -qtree "" -disk-limit 550m -file-limit 10000
+
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol1
+
+Vserver: vs0               Policy: default           Volume: vol1
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   "jsmith,corp\jsmith,engineering\john smith,S-1-5-32-544"
+                 ""      off         550MB        -   10000        -          -
+----
+A regra de cota a seguir restringe o grupo eng1 a 150MB GB de espaço em disco e um número ilimitado de arquivos na qtree proj1:
+
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -volume vol2 -policy-name default -type group -target "eng1" -qtree "proj1" -disk-limit 150m
+
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol2
+
+Vserver: vs0               Policy: default           Volume: vol2
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+group  eng1      proj1   off         150MB        -       -        -          -
+----
+A regra de cota a seguir restringe a qtree proj1 no volume vol2 a 750MB GB de espaço em disco e arquivos 75.000:
+
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -volume vol2 -policy-name default -type tree -target "proj1" -disk-limit 750m -file-limit 75000
+
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol2
+
+Vserver: vs0               Policy: default           Volume: vol2
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+tree   proj1     ""      -           750MB        -   75000        -          -
+----

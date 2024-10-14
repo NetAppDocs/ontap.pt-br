@@ -1,0 +1,69 @@
+---
+permalink: nfs-admin/optimize-access-cache-performance-task.html 
+sidebar: sidebar 
+keywords: optimize, access, cache, performance 
+summary: Você pode configurar vários parâmetros para otimizar o cache de acesso e encontrar o equilíbrio certo entre o desempenho e a corrente das informações armazenadas no cache de acesso. 
+---
+= Otimizar o desempenho do cache de acesso
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar vários parâmetros para otimizar o cache de acesso e encontrar o equilíbrio certo entre o desempenho e a corrente das informações armazenadas no cache de acesso.
+
+.Sobre esta tarefa
+Quando configurar os períodos de atualização do cache de acesso, tenha em mente o seguinte:
+
+* Valores mais altos significam que as entradas permanecem mais longas no cache de acesso.
++
+A vantagem é o melhor desempenho porque o ONTAP gasta menos recursos na atualização de entradas de cache de acesso. A desvantagem é que se as regras de política de exportação mudarem e as entradas de cache de acesso ficarem obsoletas como resultado, leva mais tempo para atualizá-las. Como resultado, os clientes que devem obter acesso podem ser negados e os clientes que devem ser negados podem obter acesso.
+
+* Valores mais baixos significam que o ONTAP atualiza as entradas do cache de acesso com mais frequência.
++
+A vantagem é que as entradas são mais atuais e os clientes são mais propensos a ter acesso correto ou negado. A desvantagem é uma diminuição no desempenho porque o ONTAP gasta mais recursos atualizando entradas de cache de acesso.
+
+
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+`set -privilege advanced`
+
+. Execute a ação desejada:
++
+[cols="2*"]
+|===
+| Para modificar o... | Digite... 
+
+
+ a| 
+Período de atualização para entradas positivas
+ a| 
+`vserver export-policy access-cache config modify-all-vservers -refresh-period-positive timeout_value`
+
+
+
+ a| 
+Período de atualização para entradas negativas
+ a| 
+`vserver export-policy access-cache config modify-all-vservers -refresh-period-negative timeout_value`
+
+
+
+ a| 
+Período de tempo limite para entradas antigas
+ a| 
+`vserver export-policy access-cache config modify-all-vservers -harvest-timeout timeout_value`
+
+|===
+. Verifique as novas configurações de parâmetros:
++
+`vserver export-policy access-cache config show-all-vservers`
+
+. Voltar ao nível de privilégio de administrador:
++
+`set -privilege admin`
+
+

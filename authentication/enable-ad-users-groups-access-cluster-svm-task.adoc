@@ -1,0 +1,126 @@
+---
+permalink: authentication/enable-ad-users-groups-access-cluster-svm-task.html 
+sidebar: sidebar 
+keywords: configure, active directory, domain, controller access, authentication tunnel, SMB server, create, svm, computer, account, domain, cifs server 
+summary: Você deve configurar o acesso do controlador de domínio do AD ao cluster ou SVM antes que uma conta do AD possa acessar o SVM. Se você já tiver configurado um servidor SMB para um SVM de dados, poderá configurar o SVM como um gateway ou túnel para acesso AD ao cluster. Se você não tiver configurado um servidor SMB, poderá criar uma conta de computador para o SVM no domínio AD. 
+---
+= Configure a visão geral do acesso do controlador de domínio do ative Directory
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve configurar o acesso do controlador de domínio do AD ao cluster ou SVM antes que uma conta do AD possa acessar o SVM. Se você já tiver configurado um servidor SMB para um SVM de dados, poderá configurar o SVM como um gateway, ou _tunnel_, para acesso AD ao cluster. Se você não tiver configurado um servidor SMB, poderá criar uma conta de computador para o SVM no domínio AD.
+
+O ONTAP oferece suporte aos seguintes serviços de autenticação de controlador de domínio:
+
+* Kerberos
+* LDAP
+* NETLOGON
+* Autoridade de Segurança local (LSA)
+
+
+O ONTAP suporta os seguintes algoritmos de chave de sessão para conexões seguras de Netlogon:
+
+|===
+
+
+| Algoritmo da chave de sessão | Disponível a partir de... 
+
+
+| HMAC-SHA256, com base no padrão de criptografia avançada (AES) se o cluster estiver executando o ONTAP 9.9,1 ou anterior e o controlador de domínio forçar o AES para serviços de Netlogon seguros, a conexão falhará. Nesse caso, você precisa reconfigurar seu controlador de domínio para aceitar conexões de chave forte com o ONTAP. | ONTAP 9.10,1 
+
+
+| DES e HMAC-MD5 (quando a chave forte está definida) | Todos os lançamentos do ONTAP 9 
+|===
+Se você quiser usar chaves de sessão AES durante o estabelecimento de canal seguro Netlogon, você precisa verificar se o AES está habilitado no SVM.
+
+* A partir do ONTAP 9.14,1, o AES é ativado por padrão quando você cria um SVM e não precisa modificar as configurações de segurança do seu SVM para usar chaves de sessão AES durante o estabelecimento de canal seguro Netlogon.
+* No ONTAP 9.10,1 a 9.13.1, o AES é desativado por padrão quando você cria um SVM. Você precisa ativar o AES usando o seguinte comando:
++
+[listing]
+----
+cifs security modify -vserver vs1 -aes-enabled-for-netlogon-channel true
+----
+
+
+
+NOTE: Quando você atualiza para o ONTAP 9.14,1 ou posterior, a configuração AES para SVMs existentes que foram criadas com versões mais antigas do ONTAP não será alterada automaticamente. Você ainda precisa atualizar o valor dessa configuração para ativar o AES nesses SVMs.
+
+
+
+== Configurar um túnel de autenticação
+
+Se você já tiver configurado um servidor SMB para um SVM de dados, poderá usar o `security login domain-tunnel create` comando para configurar o SVM como um gateway, ou _tunnel_, para acesso AD ao cluster.
+
+.Antes de começar
+* Você precisa ter configurado um servidor SMB para um data SVM.
+* Você deve ter habilitado uma conta de usuário de domínio do AD para acessar o SVM do administrador do cluster.
+* Você deve ser um administrador de cluster para executar esta tarefa.
+
+
+A partir do ONTAP 9.10,1, se você tiver um gateway SVM (túnel de domínio) para acesso AD, você poderá usar o Kerberos para autenticação de administrador se tiver desabilitado o NTLM no domínio do AD. Em versões anteriores, o Kerberos não era compatível com autenticação de administrador para gateways SVM. Esta funcionalidade está disponível por padrão; nenhuma configuração é necessária.
+
+
+NOTE: A autenticação Kerberos é sempre tentada primeiro. Em caso de falha, a autenticação NTLM é então tentada.
+
+.Passo
+. Configure um SVM de dados habilitado para SMB como um túnel de autenticação para acesso do controlador de domínio do AD ao cluster:
++
+`security login domain-tunnel create -vserver _svm_name_`
+
++
+Para obter a sintaxe de comando completa, consulte link:config-worksheets-reference.html["folha de trabalho"].
+
++
+[NOTE]
+====
+O SVM deve estar em execução para que o usuário seja autenticado.
+
+====
++
+O comando a seguir configura o SVM de dados habilitado para SMB "'engData" como um túnel de autenticação.
+
++
+[listing]
+----
+cluster1::>security login domain-tunnel create -vserver engData
+----
+
+
+
+
+== Crie uma conta de computador SVM no domínio
+
+Se você não tiver configurado um servidor SMB para um SVM de dados, poderá usar o `vserver active-directory create` comando para criar uma conta de computador para o SVM no domínio.
+
+.Sobre esta tarefa
+Depois de inserir o `vserver active-directory create` comando, você será solicitado a fornecer as credenciais para uma conta de usuário do AD com Privileges suficiente para adicionar computadores à unidade organizacional especificada no domínio. A senha da conta não pode estar vazia.
+
+.Antes de começar
+Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
+
+.Passo
+. Crie uma conta de computador para um SVM no domínio AD:
++
+`vserver active-directory create -vserver _SVM_name_ -account-name _NetBIOS_account_name_ -domain _domain_ -ou _organizational_unit_`
+
++
+Para obter a sintaxe de comando completa, consulte link:config-worksheets-reference.html["folha de trabalho"].
+
++
+O comando a seguir cria uma conta de computador chamada "'ADSERVER1"" no domínio "'example.com`" para SVM "'engData". Você será solicitado a inserir as credenciais da conta de usuário do AD depois de inserir o comando.
+
++
+[listing]
+----
+cluster1::>vserver active-directory create -vserver engData -account-name ADSERVER1 -domain example.com
+
+In order to create an Active Directory machine account, you must supply the name and password of a Windows account with sufficient privileges to add computers to the "CN=Computers" container within the "example.com" domain.
+
+Enter the user name: Administrator
+
+Enter the password:
+----
+

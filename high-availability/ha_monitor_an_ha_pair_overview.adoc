@@ -1,0 +1,291 @@
+---
+sidebar: sidebar 
+permalink: high-availability/ha_monitor_an_ha_pair_overview.html 
+keywords: ontap, high availability, ha, pair, monitor, hwassist 
+summary: Você pode usar comandos ONTAP para monitorar o status do par de HA. 
+---
+= Comandos para monitorar um par de HA
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode usar comandos ONTAP para monitorar o status do par de HA. Se ocorrer uma aquisição, você também poderá determinar o que causou a aquisição.
+
+|===
+
+
+| Se você quiser verificar | Use este comando 
+
+
+| Se o failover está ativado ou ocorreu, ou motivos pelos quais o failover não é possível atualmente | `storage failover show` 
+
+
+| Exibir os nós nos quais a configuração de modo de HA de failover de storage está habilitada, você deve definir o valor como HA para o nó participar de uma configuração de failover de storage (par de HA). | `storage failover show -fields mode` 
+
+
+| Se a aquisição assistida por hardware está ativada | `storage failover hwassist show` 
+
+
+| O histórico de eventos de aquisição assistida por hardware que ocorreram | `storage failover hwassist stats show` 
+
+
+| O progresso de uma operação de takeover conforme os agregados do parceiro são movidos para o nó fazendo o takeover | `storage failover show‑takeover` 
+
+
+| O progresso de uma operação de giveback na devolução de agregados ao nó de parceiro | `storage failover show‑giveback` 
+
+
+| Se um agregado está em casa durante as operações de aquisição ou de giveback | `aggregate show ‑fields home‑id,owner‑id,home‑name,owner‑name,is‑home` 
+
+
+| Se a HA do cluster está ativada (aplica-se apenas a dois clusters de nós) | `cluster ha show` 
+
+
+| O estado de HA dos componentes de um par de HA (em sistemas que usam o estado de HA) | `ha‑config show` Este é um comando do modo de manutenção. 
+|===
+
+
+== estados de nó exibidos pelos comandos show-type de failover de armazenamento
+
+A lista a seguir descreve os estados do nó que o `storage failover show` comando exibe.
+
+|===
+
+
+| Estado do nó | Descrição 
+
+
+ a| 
+Ligado a Partner_NAME, aquisição automática desativada.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. O takeover automático do parceiro está desativado.
+
+
+
+ a| 
+Aguardando pelo Partner_NAME, Giveback dos discos sobressalentes do parceiro pendentes.
+ a| 
+O nó local não pode trocar informações com o nó do parceiro pela interconexão HA. O reembolso de agregados SFO para o parceiro é feito, mas os discos sobressalentes de parceiros ainda são de propriedade do nó local.
+
+* Execute o `storage failover show-giveback` comando para obter mais informações.
+
+
+
+
+ a| 
+A aguardar Partner_NAME. A aguardar a sincronização do bloqueio do parceiro.
+ a| 
+O nó local não pode trocar informações com o nó do parceiro pela interconexão HA e está aguardando a sincronização do bloqueio do parceiro.
+
+
+
+ a| 
+A aguardar Partner_NAME. A aguardar que as aplicações de cluster fiquem online no nó local.
+ a| 
+O nó local não pode trocar informações com o nó do parceiro pela interconexão HA e está aguardando que os aplicativos de cluster fiquem online.
+
+
+
+ a| 
+Takeover agendado. Nó de destino relocando seus agregados SFO na preparação da Takeover.
+ a| 
+O processamento de aquisição foi iniciado. O nó de destino está relocando a propriedade de seus agregados SFO em preparação para a aquisição.
+
+
+
+ a| 
+O nó de destino realocou seus agregados SFO em preparação para a aquisição.
+ a| 
+O processamento de aquisição foi iniciado. O nó de destino relocou a propriedade de seus agregados SFO em preparação para a aquisição.
+
+
+
+ a| 
+Takeover agendado. A aguardar para desativar as atualizações de firmware do disco em segundo plano no nó local. Uma atualização de firmware está em andamento no nó.
+ a| 
+O processamento de aquisição foi iniciado. O sistema está aguardando a conclusão das operações de atualização de firmware de disco em segundo plano no nó local.
+
+
+
+ a| 
+Realocação de agregados SFO para assumir o nó em preparação para a tomada de controle.
+ a| 
+O nó local está relocando a propriedade de seus agregados SFO para o nó de aquisição em preparação para o takeover.
+
+
+
+ a| 
+Realocaram agregados SFO para o nó de tomada a cargo. Aguardando pela aquisição do nó para o takeover.
+ a| 
+A realocação da propriedade de agregados SFO do nó local para o nó de tomada a cargo foi concluída. O sistema está aguardando a aquisição pelo nó de tomada a cargo.
+
+
+
+ a| 
+Realocando agregados SFO para Partner_NAME. A aguardar para desativar as atualizações de firmware do disco em segundo plano no nó local. Uma atualização de firmware está em andamento no nó.
+ a| 
+A realocação da propriedade de agregados SFO do nó local para o nó de aquisição está em andamento. O sistema está aguardando a conclusão das operações de atualização de firmware de disco em segundo plano no nó local.
+
+
+
+ a| 
+Realocando agregados SFO para Partner_NAME. A aguardar para desativar as atualizações de firmware do disco em segundo plano no Partner_NAME. Uma atualização de firmware está em andamento no nó.
+ a| 
+A realocação da propriedade de agregados SFO do nó local para o nó de aquisição está em andamento. O sistema está aguardando a conclusão das operações de atualização de firmware de disco em segundo plano no nó do parceiro.
+
+
+
+ a| 
+Ligado a Partner_NAME. A tentativa de aquisição anterior foi abortada porque motivo. O nó local possui alguns dos agregados SFO do parceiro. Reemitir uma takeover do parceiro com o `‑bypass-optimization` parâmetro definido como true para a aquisição de agregados restantes ou emitir um giveback do parceiro para devolver os agregados transferidos.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. A tentativa de aquisição anterior foi abortada devido ao motivo apresentado em motivo. O nó local possui alguns dos agregados SFO de seu parceiro.
+
+* Reemitir um takeover do nó do parceiro, definindo o parâmetro de otimização por desvio como true para takeover dos agregados SFO restantes ou executar um giveback do parceiro para retornar agregados relocados.
+
+
+
+
+ a| 
+Ligado a Partner_NAME. A tentativa de aquisição anterior foi cancelada. O nó local possui alguns dos agregados SFO do parceiro. Reemitir uma takeover do parceiro com o `‑bypass-optimization` parâmetro definido como true para a aquisição de agregados restantes ou emitir um giveback do parceiro para devolver os agregados transferidos.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. A tentativa de aquisição anterior foi cancelada. O nó local possui alguns dos agregados SFO de seu parceiro.
+
+* Reemitir um takeover do nó do parceiro, definindo o parâmetro de otimização por desvio como true para takeover dos agregados SFO restantes ou executar um giveback do parceiro para retornar agregados relocados.
+
+
+
+
+ a| 
+A aguardar Partner_NAME. A tentativa de aquisição anterior foi abortada porque motivo. O nó local possui alguns dos agregados SFO do parceiro. Reemitir uma takeover do parceiro com o parâmetro "-bypass-optimization" definido como true para a aquisição de agregados restantes, ou emitir um giveback do parceiro para devolver os agregados transferidos.
+ a| 
+O nó local não pode trocar informações com o nó do parceiro pela interconexão HA. A tentativa de aquisição anterior foi abortada devido ao motivo apresentado em motivo. O nó local possui alguns dos agregados SFO de seu parceiro.
+
+* Reemitir um takeover do nó do parceiro, definindo o parâmetro de otimização por desvio como true para takeover dos agregados SFO restantes ou executar um giveback do parceiro para retornar agregados relocados.
+
+
+
+
+ a| 
+A aguardar Partner_NAME. A tentativa de aquisição anterior foi cancelada. O nó local possui alguns dos agregados SFO do parceiro. Reemitir uma takeover do parceiro com o parâmetro "-bypass-optimization" definido como true para a aquisição de agregados restantes, ou emitir um giveback do parceiro para devolver os agregados transferidos.
+ a| 
+O nó local não pode trocar informações com o nó do parceiro pela interconexão HA. A tentativa de aquisição anterior foi cancelada. O nó local possui alguns dos agregados SFO de seu parceiro.
+
+* Reemitir um takeover do nó do parceiro, definindo o parâmetro de otimização por desvio como true para takeover dos agregados SFO restantes ou executar um giveback do parceiro para retornar agregados relocados.
+
+
+
+
+ a| 
+Ligado a Partner_NAME. A tentativa de aquisição anterior foi abortada porque não conseguiu desativar a atualização de firmware do disco em segundo plano (BDFU) no nó local.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. A tentativa de aquisição anterior foi abortada porque a atualização de firmware do disco em segundo plano no nó local não foi desativada.
+
+
+
+ a| 
+Ligado a Partner_NAME. A tentativa de aquisição anterior foi abortada porque motivo.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. A tentativa de aquisição anterior foi abortada devido ao motivo apresentado em motivo.
+
+
+
+ a| 
+A aguardar Partner_NAME. A tentativa de aquisição anterior foi abortada porque motivo.
+ a| 
+O nó local não pode trocar informações com o nó do parceiro pela interconexão HA. A tentativa de aquisição anterior foi abortada devido ao motivo apresentado em motivo.
+
+
+
+ a| 
+Ligado a Partner_NAME. A tentativa de aquisição anterior por Partner_NAME foi abortada porque motivo.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. A tentativa de aquisição anterior pelo nó do parceiro foi abortada devido ao motivo exibido sob motivo.
+
+
+
+ a| 
+Ligado a Partner_NAME. A tentativa de aquisição anterior por Partner_NAME foi abortada.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. A tentativa de aquisição anterior pelo nó do parceiro foi abortada.
+
+
+
+ a| 
+A aguardar Partner_NAME. A tentativa de aquisição anterior por Partner_NAME foi abortada porque motivo.
+ a| 
+O nó local não pode trocar informações com o nó do parceiro pela interconexão HA. A tentativa de aquisição anterior pelo nó do parceiro foi abortada devido ao motivo exibido sob motivo.
+
+
+
+ a| 
+Falha na giveback anterior no módulo: Nome do módulo. Auto giveback será iniciado em segundos.
+ a| 
+A tentativa anterior de giveback falhou no módulo module_name. Auto giveback será iniciado em segundos.
+
+* Execute o `storage failover show-giveback` comando para obter mais informações.
+
+
+
+
+ a| 
+O nó é proprietário dos agregados do parceiro como parte do procedimento de atualização da controladora sem interrupções.
+ a| 
+O nó é proprietário dos agregados de seu parceiro devido ao procedimento de atualização da controladora sem interrupções atualmente em andamento.
+
+
+
+ a| 
+Ligado a Partner_NAME. O nó possui agregados pertencentes a outro nó no cluster.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. O nó possui agregados pertencentes a outro nó no cluster.
+
+
+
+ a| 
+Ligado a Partner_NAME. A aguardar a sincronização do bloqueio do parceiro.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. O sistema está aguardando a conclusão da sincronização do bloqueio do parceiro.
+
+
+
+ a| 
+Ligado a Partner_NAME. A aguardar que as aplicações de cluster fiquem online no nó local.
+ a| 
+A interconexão de HA está ativa e pode transmitir dados para o nó do parceiro. O sistema está aguardando que os aplicativos de cluster fiquem online no nó local.
+
+
+
+ a| 
+Modo não HA, reinicie para usar o NVRAM completo.
+ a| 
+O failover de storage não é possível. A opção de modo HA é configurada como non_ha.
+
+* Você deve reinicializar o nó para usar todos os seus NVRAM.
+
+
+
+
+ a| 
+Modo não HA. Reinicie o nó para ativar o HA.
+ a| 
+O failover de storage não é possível.
+
+* O nó deve ser reinicializado para habilitar a capacidade de HA.
+
+
+
+
+ a| 
+Modo não HA.
+ a| 
+O failover de storage não é possível. A opção de modo HA é configurada como non_ha.
+
+* Você precisa executar o `storage failover modify ‑mode ha ‑node nodename` comando em ambos os nós do par de HA e reinicializar os nós para habilitar a funcionalidade de HA.
+
+
+|===

@@ -1,0 +1,72 @@
+---
+permalink: nfs-admin/ontap-support-nfsv42-concept.html 
+sidebar: sidebar 
+keywords: ontap, support, nfsv4.2, MAC-labelled NFS, extended attributes, xattrs 
+summary: A partir do ONTAP 9.8, o protocolo NFSv4,2 é suportado para permitir acesso a clientes habilitados para NFSv4,2. 
+---
+= Suporte ONTAP para NFSv4,2
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.8, o ONTAP suporta o protocolo NFSv4,2 para permitir acesso a clientes habilitados para NFSv4,2.
+
+NFSv4,2 é ativado por padrão no ONTAP 9.9,1 e posterior. No ONTAP 9.8, é necessário habilitar manualmente o v4,2 especificando a `-v4.1` opção e definindo-a para `enabled` quando criar um servidor NFS na máquina virtual de armazenamento (SVM). Ativar o NFSv4,1 também permite que os clientes usem os recursos do NFSv4,1 enquanto montados como v4,2.
+
+Versões sucessivas do ONTAP expandem o suporte para NFSv4,2 recursos opcionais.
+
+[cols="2*"]
+|===
+| Começando com... | NFSv4,2 recursos opcionais incluem ... 
+
+
+| ONTAP 9.12,1  a| 
+* Atributos estendidos do NFS
+* Ficheiros esparsos
+* Reservas de espaço
+
+
+
+
+| ONTAP 9.9,1 | Controlo de Acesso obrigatório (MAC) identificado como NFS 
+|===
+
+
+== Etiquetas de segurança NFS v4,2
+
+A partir do ONTAP 9.9,1, os rótulos de segurança NFS podem ser ativados. Eles são desativados por padrão.
+
+Com os rótulos de segurança NFS v4,2, os servidores ONTAP NFS são cientes do Controle de Acesso obrigatório (MAC), armazenando e recuperando atributos SEC_label enviados pelos clientes.
+
+Para obter mais informações, link:https://tools.ietf.org/html/rfc7204["RFC 7240"^]consulte .
+
+A partir do ONTAP 9.12,1, as etiquetas de segurança NFS v4,2 são compatíveis com operações de despejo NDMP. Se rótulos de segurança forem encontrados em arquivos ou diretórios em versões anteriores, o despejo falhará.
+
+.Passos
+. Altere a configuração de privilégios para avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Ativar etiquetas de segurança:
++
+[source, cli]
+----
+vserver nfs modify -vserver <svm_name> -v4.2-seclabel enabled
+----
+
+
+
+
+== Atributos estendidos do NFS
+
+A partir do ONTAP 9.12,1, os atributos estendidos NFS (xattrs) são ativados por padrão.
+
+Atributos estendidos são atributos NFS padrão definidos https://tools.ietf.org/html/rfc8276["RFC 8276"^] e habilitados em clientes NFS modernos. Eles podem ser usados para anexar metadados definidos pelo usuário a objetos do sistema de arquivos, e são de interesse em implantações de segurança avançadas.
+
+Atributos estendidos NFS não são atualmente suportados para operações de despejo NDMP. Se atributos estendidos forem encontrados em arquivos ou diretórios, o despejo prossegue, mas não faz backup dos atributos estendidos nesses arquivos ou diretórios.
+
+Se você precisar desativar atributos estendidos, use o `vserver nfs modify -v4.2-xattrs disabled` comando.

@@ -1,0 +1,149 @@
+---
+sidebar: sidebar 
+permalink: authentication/overview-oauth2.html 
+keywords: oauth 2.0, oauth2, access token, bearer token, authentication, authorization, mutual tls, mtls, adfs, auth0, oidc 
+summary: 'A partir do ONTAP 9.14, você tem a opção de controlar o acesso aos clusters do ONTAP usando a estrutura autorização aberta (OAuth 2,0). Você pode configurar esse recurso usando qualquer uma das interfaces administrativas do ONTAP, incluindo a CLI do ONTAP, o Gerenciador do sistema e a API REST. No entanto, as decisões de autorização e controle de acesso do OAuth 2,0 só podem ser aplicadas quando um cliente acessa o ONTAP usando a API REST.' 
+---
+= Visão geral da implementação do ONTAP OAuth 2,0
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+A partir do ONTAP 9.14, você tem a opção de controlar o acesso aos clusters do ONTAP usando a estrutura autorização aberta (OAuth 2,0). Você pode configurar esse recurso usando qualquer uma das interfaces administrativas do ONTAP, incluindo a CLI do ONTAP, o Gerenciador do sistema e a API REST. No entanto, as decisões de autorização e controle de acesso do OAuth 2,0 só podem ser aplicadas quando um cliente acessa o ONTAP usando a API REST.
+
+
+NOTE: O suporte do OAuth 2,0 foi introduzido pela primeira vez com o ONTAP 9.14,0 e, portanto, sua disponibilidade depende da versão do ONTAP que você está usando. Consulte https://library.netapp.com/ecm/ecm_download_file/ECMLP2492508["Notas de versão do ONTAP"^] para obter mais informações.
+
+
+
+== Caraterísticas e benefícios
+
+Os principais recursos e benefícios do uso do OAuth 2,0 com ONTAP são descritos abaixo.
+
+.Suporte para o padrão OAuth 2,0
+OAuth 2,0 é o quadro de autorização padrão da indústria. Ele é usado para restringir e controlar o acesso a recursos protegidos usando tokens de acesso assinados. Existem vários benefícios para usar o OAuth 2,0:
+
+* Muitas opções para a configuração de autorização
+* Nunca revele as credenciais do cliente, incluindo senhas
+* Os tokens podem ser definidos para expirar com base na sua configuração
+* Ideal para uso com APIS REST
+
+
+.Testado com vários servidores de autorização populares
+A implementação do ONTAP foi projetada para ser compatível com qualquer servidor de autorização compatível com OAuth 2,0. Ele foi testado com os seguintes servidores ou serviços populares, incluindo:
+
+* Auth0
+* Serviço de Federação do ative Directory (ADFS)
+* Capa da chave
+
+
+.Suporte para vários servidores de autorização simultâneos
+Você pode definir até oito servidores de autorização para um único cluster ONTAP. Isso oferece a flexibilidade para atender às necessidades de seu ambiente de segurança diversificado.
+
+.Integração com as funções REST
+As decisões de autorização do ONTAP baseiam-se, em última análise, nas funções REST atribuídas a usuários ou grupos. Essas funções são realizadas no token de acesso como escopos autônomos ou baseadas em definições locais do ONTAP junto com grupos do ative Directory ou LDAP.
+
+.Opção para usar tokens de acesso com restrição de remetente
+Você pode configurar o ONTAP e os servidores de autorização para usar a segurança de camada de transporte mútuo (MTLS), o que fortalece a autenticação do cliente. Ele garante que os tokens de acesso OAuth 2,0 são usados apenas pelos clientes para os quais foram emitidos originalmente. Esse recurso suporta e se alinha com várias recomendações de segurança populares, incluindo aquelas estabelecidas pela FAPI e MITER.
+
+
+
+== Implementação e configuração
+
+Em um alto nível, há vários aspetos de uma implementação e configuração do OAuth 2,0 que você deve considerar ao começar.
+
+.OAuth 2,0 entidades dentro do ONTAP
+A estrutura de autorização do OAuth 2,0 define várias entidades que podem ser mapeadas para elementos reais ou virtuais em seu data center ou rede. As entidades OAuth 2,0 e sua adaptação ao ONTAP são apresentadas na tabela abaixo.
+
+[cols="30,70"]
+|===
+| Entidade OAuth 2,0 | Descrição 
+
+
+| Recurso | Os pontos de extremidade da API REST que fornecem acesso aos recursos do ONTAP por meio de comandos internos do ONTAP. 
+
+
+| Proprietário do recurso | O usuário do cluster do ONTAP que criou o recurso protegido ou o possui por padrão. 
+
+
+| Servidor de recursos | O host dos recursos protegidos que é o cluster do ONTAP. 
+
+
+| Cliente | Um aplicativo solicitando acesso a um endpoint de API REST em nome ou com permissão do proprietário do recurso. 
+
+
+| Servidor de autorização | Normalmente, um servidor dedicado responsável pela emissão de tokens de acesso e pela aplicação da política administrativa. 
+|===
+.Configuração do Core ONTAP
+Você precisa configurar o cluster ONTAP para ativar e usar o OAuth 2,0. Isso inclui estabelecer uma conexão com o servidor de autorização e definir a configuração de autorização ONTAP necessária. Você pode executar essa configuração usando qualquer uma das interfaces administrativas, incluindo:
+
+* Interface de linha de comando ONTAP
+* System Manager
+* API REST do ONTAP
+
+
+.Ambiente e serviços de apoio
+Além das definições do ONTAP, você também precisa configurar os servidores de autorização. Se você estiver usando o mapeamento grupo para função, também será necessário configurar os grupos do ative Directory ou o equivalente LDAP.
+
+.Clientes ONTAP suportados
+A partir do ONTAP 9.14, um cliente API REST pode acessar o ONTAP usando o OAuth 2,0. Antes de emitir uma chamada de API REST, você precisa obter um token de acesso do servidor de autorização. Em seguida, o cliente passa esse token para o cluster ONTAP como um token _portador_ usando o cabeçalho de solicitação de autorização HTTP. Dependendo do nível de segurança necessário, você também pode criar e instalar um certificado no cliente para usar tokens com restrição de remetente baseados no MTLS.
+
+
+
+== Terminologia selecionada
+
+À medida que você começa a explorar uma implantação do OAuth 2,0 com o ONTAP, é útil se familiarizar com alguma terminologia. link:../authentication/overview-oauth2.html#additional-resources["Recursos adicionais"]Consulte para obter links para mais informações sobre o OAuth 2,0.
+
+Token de acesso:: Um token emitido por um servidor de autorização e usado por um aplicativo cliente OAuth 2,0 para fazer solicitações para acessar os recursos protegidos.
+JSON Web Token:: O padrão usado para formatar os tokens de acesso. JSON é usado para representar as reivindicações OAuth 2,0 em um formato compacto com as reivindicações organizadas em três seções principais.
+Token de acesso restrito ao remetente:: Um recurso opcional baseado no protocolo MTLS (Mutual Transport Layer Security). Ao usar uma reivindicação de confirmação adicional no token, isso garante que o token de acesso seja usado apenas pelo cliente para o qual foi emitido originalmente.
+Conjunto de chaves Web JSON:: Um JWKS é uma coleção de chaves públicas usadas pelo ONTAP para verificar os tokens JWT apresentados pelos clientes. Os conjuntos de chaves estão normalmente disponíveis no servidor de autorização através de um URI dedicado.
+Âmbito de aplicação:: Os escopos fornecem uma maneira de limitar ou controlar o acesso de um aplicativo a recursos protegidos, como a API REST do ONTAP. Eles são representados como strings no token de acesso.
+Função REST do ONTAP:: As funções REST foram introduzidas com o ONTAP 9.6 e são uma parte essencial da estrutura RBAC do ONTAP. Essas funções são diferentes das funções tradicionais anteriores que ainda são suportadas pelo ONTAP. A implementação do OAuth 2,0 no ONTAP suporta apenas funções REST.
+Cabeçalho de autorização HTTP:: Um cabeçalho incluído na solicitação HTTP para identificar o cliente e as permissões associadas como parte de fazer uma chamada de API REST. Existem vários tipos ou implementações disponíveis dependendo de como a autenticação e a autorização são executadas. Ao apresentar um token de acesso OAuth 2,0 ao ONTAP, o token é identificado como um _token de portador_.
+Autenticação básica HTTP:: Uma técnica de autenticação HTTP inicial ainda suportada pelo ONTAP. As credenciais de texto simples (nome de usuário e senha) são concatenadas com dois pontos e codificadas em base64. A cadeia de carateres é colocada no cabeçalho da solicitação de autorização e enviada para o servidor.
+FAPI:: Um grupo de trabalho da OpenID Foundation que fornece protocolos, esquemas de dados e recomendações de segurança para o setor financeiro. A API era originalmente conhecida como API Financial Grade.
+MITRE:: Uma empresa privada sem fins lucrativos que fornece orientação técnica e de segurança à força Aérea dos Estados Unidos e ao governo dos EUA.
+
+
+
+
+== Recursos adicionais
+
+Vários recursos adicionais são fornecidos abaixo. Você deve revisar esses sites para obter mais informações sobre o OAuth 2,0 e os padrões relacionados.
+
+.Protocolos e padrões
+* https://www.rfc-editor.org/info/rfc6749["RFC 6749: O OAuth 2,0 Authorization Framework"^]
+* https://www.rfc-editor.org/info/rfc7519["RFC 7519: JSON Web tokens (JWT)"^]
+* https://www.rfc-editor.org/info/rfc7523["RFC 7523: Perfil JSON Web Token (JWT) para permissões e autenticação de clientes OAuth 2,0"^]
+* https://www.rfc-editor.org/info/rfc7662["RFC 7662: Introspeção de tokens OAuth 2,0"^]
+* https://www.rfc-editor.org/info/rfc7800["RFC 7800: Chave de prova de posse para JWTs"^]
+* https://www.rfc-editor.org/info/rfc8705["RFC 8705: Autenticação de cliente TLS mútuo OAuth 2,0 e tokens de acesso com certificado"^]
+
+
+.Organizações
+* https://openid.net["Fundação OpenID"^]
+* https://openid.net/wg/fapi["Grupo de trabalho FAPI"^]
+* https://www.mitre.org["MITRE"^]
+* https://www.iana.org/assignments/jwt/jwt.xhtml["IANA - JWT"^]
+
+
+.Produtos e serviços
+* https://auth0.com["Auth0"^]
+* https://learn.microsoft.com/en-us/windows-server/identity/ad-fs/ad-fs-overview["Visão geral da ADFS"^]
+* https://www.keycloak.org["Capa da chave"^]
+
+
+.Ferramentas e utilitários adicionais
+* https://jwt.io["JWT por Auth0"^]
+* https://www.openssl.org["OpenSSL"^]
+
+
+.Documentação e recursos do NetApp
+* https://docs.netapp.com/us-en/ontap-automation["Automação da ONTAP"^] documentação
+

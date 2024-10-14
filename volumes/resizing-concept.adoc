@@ -1,0 +1,71 @@
+---
+permalink: volumes/resizing-concept.html 
+sidebar: sidebar 
+keywords: when to, use, resizing 
+summary: O redimensionamento da cota é mais rápido do que a inicialização da cota, mas tem restrições. 
+---
+= Entenda quando usar o redimensionamento
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O redimensionamento de cotas é um recurso útil do ONTAP. E como o redimensionamento é mais rápido do que a inicialização da cota, você deve usar o redimensionamento sempre que possível. No entanto, existem algumas restrições que você precisa estar ciente.
+
+O redimensionamento só funciona para certos tipos de alterações de cota. Você pode redimensionar cotas ao fazer os seguintes tipos de alterações nas regras de cota:
+
+* Alterar uma cota existente.
++
+Por exemplo, alterando os limites de uma cota existente.
+
+* Adicionar uma cota para um destino de cota para o qual existe uma cota padrão ou uma cota de rastreamento padrão.
+* Exclusão de uma cota para a qual uma cota padrão ou entrada de cota de rastreamento padrão é especificada.
+* Combinando cotas de usuário separadas em uma cota de multiusuário.
+
+
+[NOTE]
+====
+Depois de fazer alterações extensas de cotas, você deve executar uma reinicialização completa para garantir que todas as alterações entrem em vigor.
+
+====
+[NOTE]
+====
+Se você tentar redimensionar e nem todas as alterações de cota podem ser incorporadas usando uma operação de redimensionamento, o ONTAP emite um aviso. Você pode determinar no relatório de cota se o sistema de storage está rastreando o uso do disco para um determinado usuário, grupo ou qtree. Se você vir uma cota no relatório de cota, isso significa que o sistema de armazenamento está rastreando o espaço em disco e o número de arquivos de propriedade do destino de cota.
+
+====
+.Exemplo de alterações de cotas que podem ser efetivadas pelo redimensionamento
+Algumas alterações de regra de cota podem ser efetivadas pelo redimensionamento. Considere as seguintes cotas:
+
+[listing]
+----
+
+#Quota Target type             disk  files thold sdisk sfile
+#------------ ----             ----  ----- ----- ----- -----
+*             user@/vol/vol2    50M   15K
+*             group@/vol/vol2  750M   85K
+*             tree@/vol/vol2      -     -
+jdoe          user@/vol/vol2/  100M   75K
+kbuck         user@/vol/vol2/  100M   75K
+----
+Suponha que você faça as seguintes alterações:
+
+* Aumente o número de arquivos para o destino de usuário padrão.
+* Adicione uma nova cota de usuário para um novo usuário, o boris, que precisa de mais limite de disco do que a cota de usuário padrão.
+* Exclua a entrada de cota explícita do usuário kbuck; o novo usuário agora precisa apenas dos limites de cota padrão.
+
+
+Estas alterações resultam nas seguintes quotas:
+
+[listing]
+----
+
+#Quota Target type             disk  files thold sdisk sfile
+#------------ ----             ----  ----- ----- ----- -----
+*             user@/vol/vol2    50M   25K
+*             group@/vol/vol2  750M   85K
+*             tree@/vol/vol2      -     -
+jdoe          user@/vol/vol2/  100M   75K
+boris         user@/vol/vol2/  100M   75K
+----
+O redimensionamento ativa todas essas alterações; uma reinicialização total da cota não é necessária.

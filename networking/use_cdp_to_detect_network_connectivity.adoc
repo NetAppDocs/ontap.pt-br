@@ -1,0 +1,391 @@
+---
+sidebar: sidebar 
+permalink: networking/use_cdp_to_detect_network_connectivity.html 
+keywords: display, view, show, network, connectivity, neighbor, discovery, protocol, cdp, use cdp to detect network connectivity, considerations for using cdp, enable or disable cdp, view cdp neighbor information, example of showing and clearing statistics, cisco 
+summary: 'Em um data center, você pode usar protocolos de descoberta de vizinhos para visualizar a conetividade de rede entre um par de sistemas físicos ou virtuais e suas interfaces de rede. O ONTAP oferece suporte a dois protocolos de descoberta de vizinhos, o Protocolo de descoberta de Cisco (CDP) e o Protocolo de descoberta de camada de enlace (LLDP).' 
+---
+= Use o CDP para detetar conetividade de rede
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+O uso do CDP para detetar a conetividade de rede consiste em revisar considerações de implantação, habilitá-lo em portas de dados, visualizar dispositivos vizinhos e ajustar os valores de configuração do CDP conforme necessário. O CDP é ativado por padrão nas portas do cluster.
+
+O CDP também deve ser ativado em todos os switches e roteadores antes que as informações sobre dispositivos vizinhos possam ser exibidas.
+
+[cols="30,70"]
+|===
+
+
+| Lançamento do ONTAP | Descrição 
+
+
+ a| 
+9.10.1 e anteriores
+ a| 
+O CDP também é usado pelo monitor de integridade do switch de cluster para descobrir automaticamente seus switches de rede de gerenciamento e cluster.
+
+
+
+ a| 
+9.11.1 e mais tarde
+ a| 
+O CDP também é usado pelo monitor de integridade do switch de cluster para descobrir automaticamente o cluster, o armazenamento e os switches de rede de gerenciamento.
+
+|===
+.Informações relacionadas
+link:../system-admin/index.html["Administração do sistema"^]
+
+
+
+== Considerações para usar CDP
+
+Por padrão, os dispositivos compatíveis com CDP enviam CDPv2 anúncios. Os dispositivos compatíveis com CDP enviam CDPv1 anúncios apenas quando recebem CDPv1 anúncios. O ONTAP suporta apenas CDPv1. Portanto, quando um nó ONTAP envia anúncios CDPv1, os dispositivos vizinhos compatíveis com CDP enviam CDPv1 anúncios.
+
+Você deve considerar as seguintes informações antes de ativar o CDP em um nó:
+
+* O CDP é suportado para todas as portas.
+* Os anúncios CDP são enviados e recebidos por portas que estão no estado up.
+* O CDP deve estar ativado nos dispositivos de transmissão e receção para enviar e receber anúncios CDP.
+* Os anúncios CDP são enviados em intervalos regulares e você pode configurar o intervalo de tempo.
+* Quando os endereços IP são alterados para um LIF, o nó envia as informações atualizadas no próximo anúncio do CDP.
+* ONTAP 9.10,1 e anteriores:
++
+** O CDP está sempre ativado nas portas do cluster.
+** O CDP está desativado, por padrão, em todas as portas que não sejam de cluster.
+
+
+* ONTAP 9.11,1 e posterior:
++
+** O CDP está sempre ativado em portas de cluster e armazenamento.
+** O CDP está desativado, por padrão, em todas as portas que não sejam de cluster e não de armazenamento.
+
+
+
+
+
+NOTE: Às vezes, quando os LIFs são alterados no nó, as informações do CDP não são atualizadas no lado do dispositivo recetor (por exemplo, um switch). Se você encontrar esse problema, você deve configurar a interface de rede do nó para o status de baixo e, em seguida, para o status de cima.
+
+* Apenas endereços IPv4 são anunciados em anúncios CDP.
+* Para portas de rede físicas com VLANs, todas as LIFs configuradas nas VLANs nessa porta são anunciadas.
+* Para portas físicas que fazem parte de um grupo de interfaces, todos os endereços IP configurados nesse grupo de interfaces são anunciados em cada porta física.
+* Para um grupo de interfaces que hospeda VLANs, todas as LIFs configuradas no grupo de interfaces e as VLANs são anunciadas em cada uma das portas de rede.
+* Devido aos pacotes CDP serem restritos a não mais de 1500 bytes, em portas configuradas com um grande número de LIFs, apenas um subconjunto desses endereços IP pode ser relatado no switch adjacente.
+
+
+
+
+== Ativar ou desativar o CDP
+
+Para descobrir e enviar anúncios para dispositivos vizinhos compatíveis com CDP, o CDP deve estar ativado em cada nó do cluster.
+
+Por padrão no ONTAP 9.10,1 e versões anteriores, o CDP é ativado em todas as portas de cluster de um nó e desativado em todas as portas que não sejam de cluster de um nó.
+
+Por padrão no ONTAP 9.11,1 e posterior, o CDP é ativado em todos os clusters e portas de armazenamento de um nó e desativado em todas as portas que não sejam de cluster e não de armazenamento de um nó.
+
+.Sobre esta tarefa
+A `cdpd.enable` opção controla se o CDP está ativado ou desativado nas portas de um nó:
+
+* Para o ONTAP 9.10,1 e anterior, o ON ativa o CDP em portas que não sejam de cluster.
+* Para o ONTAP 9.11,1 e posterior, o ON ativa o CDP em portas que não sejam de cluster e que não sejam de armazenamento.
+* Para ONTAP 9.10,1 e anteriores, Desativar desativa o CDP em portas que não sejam de cluster; não é possível desativar o CDP em portas de cluster.
+* Para o ONTAP 9.11,1 e posterior, Desativar desativa o CDP em portas que não sejam de cluster e que não sejam de armazenamento; não é possível desativar o CDP em portas de cluster.
+
+
+Quando o CDP está desativado em uma porta que está conetada a um dispositivo compatível com CDP, o tráfego de rede pode não ser otimizado.
+
+.Passos
+. Exibir a configuração atual de CDP para um nó ou para todos os nós em um cluster:
++
+[cols="30,70"]
+|===
+
+
+| Para ver a definição CDP de... | Digite... 
+
+
+ a| 
+Um nó
+ a| 
+`run - node <node_name> options cdpd.enable`
+
+
+
+ a| 
+Todos os nós em um cluster
+ a| 
+`options cdpd.enable`
+
+|===
+. Ative ou desative o CDP em todas as portas de um nó ou em todas as portas de todos os nós de um cluster:
++
+[cols="30,70"]
+|===
+
+
+| Para ativar ou desativar o CDP em... | Digite... 
+
+
+ a| 
+Um nó
+ a| 
+`run -node node_name options cdpd.enable {on or off}`
+
+
+
+ a| 
+Todos os nós em um cluster
+ a| 
+`options cdpd.enable {on or off}`
+
+|===
+
+
+
+
+== Exibir informações sobre o vizinho CDP
+
+Você pode exibir informações sobre os dispositivos vizinhos que estão conetados a cada porta dos nós do cluster, desde que a porta esteja conetada a um dispositivo compatível com CDP. Você pode usar o `network device-discovery show -protocol cdp` comando para exibir informações de vizinhos.
+
+.Sobre esta tarefa
+No ONTAP 9.10,1 e anterior, como o CDP está sempre ativado para portas de cluster, as informações de vizinhos do CDP são sempre exibidas para essas portas. O CDP deve estar habilitado em portas que não sejam de cluster para que as informações de vizinhos apareçam para essas portas.
+
+No ONTAP 9.11,1 e posterior, uma vez que o CDP está sempre ativado para portas de cluster e armazenamento, as informações do vizinho CDP são sempre exibidas para essas portas. O CDP deve estar habilitado em portas que não sejam de cluster e não de armazenamento para que as informações de vizinhos apareçam para essas portas.
+
+.Passo
+Exiba informações sobre todos os dispositivos compatíveis com CDP conetados às portas em um nó no cluster:
+
+....
+network device-discovery show -node node -protocol cdp
+....
+O comando a seguir mostra os vizinhos que estão conetados às portas no nó sti2650-212:
+
+....
+network device-discovery show -node sti2650-212 -protocol cdp
+Node/       Local  Discovered
+Protocol    Port   Device (LLDP: ChassisID)  Interface         Platform
+----------- ------ ------------------------- ----------------  ----------------
+sti2650-212/cdp
+            e0M    RTP-LF810-510K37.gdl.eng.netapp.com(SAL1942R8JS)
+                                             Ethernet1/14      N9K-C93120TX
+            e0a    CS:RTP-CS01-510K35        0/8               CN1610
+            e0b    CS:RTP-CS01-510K36        0/8               CN1610
+            e0c    RTP-LF350-510K34.gdl.eng.netapp.com(FDO21521S76)
+                                             Ethernet1/21      N9K-C93180YC-FX
+            e0d    RTP-LF349-510K33.gdl.eng.netapp.com(FDO21521S4T)
+                                             Ethernet1/22      N9K-C93180YC-FX
+            e0e    RTP-LF349-510K33.gdl.eng.netapp.com(FDO21521S4T)
+                                             Ethernet1/23      N9K-C93180YC-FX
+            e0f    RTP-LF349-510K33.gdl.eng.netapp.com(FDO21521S4T)
+                                             Ethernet1/24      N9K-C93180YC-FX
+....
+A saída lista os dispositivos Cisco que estão conetados a cada porta do nó especificado.
+
+
+
+== Configure o tempo de espera para mensagens CDP
+
+Tempo de espera é o período de tempo durante o qual os anúncios CDP são armazenados em cache em dispositivos compatíveis com CDP vizinhos. O tempo de espera é anunciado em cada pacote CDPv1 e é atualizado sempre que um pacote CDPv1 é recebido por um nó.
+
+* O valor `cdpd.holdtime` da opção deve ser definido com o mesmo valor em ambos os nós de um par de HA.
+* O valor de tempo de retenção padrão é de 180 segundos, mas você pode inserir valores que variam de 10 segundos a 255 segundos.
+* Se um endereço IP for removido antes que o tempo de espera expire, as informações do CDP serão armazenadas em cache até que o tempo de espera expire.
+
+
+.Passos
+. Exibir o tempo atual de retenção do CDP para um nó ou para todos os nós em um cluster:
++
+[cols="30,70"]
+|===
+
+
+| Para ver o tempo de espera de... | Digite... 
+
+
+ a| 
+Um nó
+ a| 
+`run -node node_name options cdpd.holdtime`
+
+
+
+ a| 
+Todos os nós em um cluster
+ a| 
+`options cdpd.holdtime`
+
+|===
+. Configure o tempo de retenção do CDP em todas as portas de um nó ou em todas as portas de todos os nós em um cluster:
++
+[cols="30,70"]
+|===
+
+
+| Para definir o tempo de espera em... | Digite... 
+
+
+ a| 
+Um nó
+ a| 
+`run -node node_name options cdpd.holdtime holdtime`
+
+
+
+ a| 
+Todos os nós em um cluster
+ a| 
+`options cdpd.holdtime holdtime`
+
+|===
+
+
+
+
+== Defina o intervalo para enviar anúncios CDP
+
+Os anúncios do CDP são enviados para vizinhos do CDP em intervalos periódicos. Você pode aumentar ou diminuir o intervalo para enviar anúncios CDP dependendo do tráfego de rede e alterações na topologia da rede.
+
+* O valor `cdpd.interval` da opção deve ser definido com o mesmo valor em ambos os nós de um par de HA.
+* O intervalo padrão é de 60 segundos, mas você pode inserir um valor de 5 segundos a 900 segundos.
+
+
+.Passos
+. Exibir o intervalo de tempo atual do anúncio do CDP para um nó ou para todos os nós em um cluster:
++
+[cols="30,70"]
+|===
+
+
+| Para ver o intervalo para... | Digite... 
+
+
+ a| 
+Um nó
+ a| 
+`run -node node_name options cdpd.interval`
+
+
+
+ a| 
+Todos os nós em um cluster
+ a| 
+`options cdpd.interval`
+
+|===
+. Configure o intervalo para enviar anúncios CDP para todas as portas de um nó ou para todas as portas de todos os nós em um cluster:
++
+[cols="30,70"]
+|===
+
+
+| Para definir o intervalo para... | Digite... 
+
+
+ a| 
+Um nó
+ a| 
+`run -node node_name options cdpd.interval interval`
+
+
+
+ a| 
+Todos os nós em um cluster
+ a| 
+`options cdpd.interval interval`
+
+|===
+
+
+
+
+== Exibir ou limpar estatísticas CDP
+
+Você pode exibir as estatísticas do CDP para as portas de cluster e não cluster em cada nó para detetar possíveis problemas de conetividade de rede. As estatísticas de CDP são cumulativas a partir do momento em que foram eliminadas pela última vez.
+
+.Sobre esta tarefa
+No ONTAP 9.10,1 e anterior, como o CDP está sempre ativado para portas, as estatísticas CDP são sempre exibidas para o tráfego nessas portas. O CDP deve estar ativado nas portas para que as estatísticas apareçam para essas portas.
+
+No ONTAP 9.11,1 e posterior, como o CDP está sempre ativado para portas de cluster e armazenamento, as estatísticas CDP são sempre exibidas para o tráfego nessas portas. O CDP deve estar habilitado em portas que não sejam de cluster ou não de armazenamento para que as estatísticas apareçam para essas portas.
+
+.Passo
+Exibir ou limpar as estatísticas CDP atuais para todas as portas em um nó:
+
+[cols="30,70"]
+|===
+
+
+| Se você quiser... | Digite... 
+
+
+ a| 
+Veja as estatísticas do CDP
+ a| 
+`run -node node_name cdpd show-stats`
+
+
+
+ a| 
+Limpe as estatísticas do CDP
+ a| 
+`run -node node_name cdpd zero-stats`
+
+|===
+
+
+=== Exemplo de estatísticas de exibição e limpeza
+
+O comando a seguir mostra as estatísticas do CDP antes de serem apagadas. A saída exibe o número total de pacotes que foram enviados e recebidos desde a última vez que as estatísticas foram apagadas.
+
+....
+run -node node1 cdpd show-stats
+
+RECEIVE
+ Packets:         9116  | Csum Errors:       0  | Unsupported Vers:  4561
+ Invalid length:     0  | Malformed:         0  | Mem alloc fails:      0
+ Missing TLVs:       0  | Cache overflow:    0  | Other errors:         0
+
+TRANSMIT
+ Packets:         4557  | Xmit fails:        0  | No hostname:          0
+ Packet truncated:   0  | Mem alloc fails:   0  | Other errors:         0
+
+OTHER
+ Init failures:      0
+....
+O seguinte comando limpa as estatísticas CDP:
+
+....
+run -node node1 cdpd zero-stats
+....
+....
+run -node node1 cdpd show-stats
+
+RECEIVE
+ Packets:            0  | Csum Errors:       0  | Unsupported Vers:     0
+ Invalid length:     0  | Malformed:         0  | Mem alloc fails:      0
+ Missing TLVs:       0  | Cache overflow:    0  | Other errors:         0
+
+TRANSMIT
+ Packets:            0  | Xmit fails:        0  | No hostname:          0
+ Packet truncated:   0  | Mem alloc fails:   0  | Other errors:         0
+
+OTHER
+ Init failures:      0
+....
+Depois que as estatísticas são apagadas, elas começam a se acumular após o próximo anúncio do CDP ser enviado ou recebido.
+
+
+
+== Conexão a switches Ethernet que não suportam CDP
+
+Vários switches de fornecedores não suportam CDP. Consulte o artigo da base de dados de Conhecimento https://kb.netapp.com/onprem/ontap/da/NAS/ONTAP_device_discovery_shows_nodes_instead_of_the_switch["A deteção de dispositivo ONTAP mostra nós em vez do switch"^] para obter mais detalhes.
+
+Existem duas opções para resolver este problema:
+
+* Desative o CDP e ative o LLDP, se suportado. link:use_lldp_to_detect_network_connectivity.html["Use o LLDP para detetar conetividade de rede"]Consulte para obter mais detalhes.
+* Configure um filtro de pacote de endereços MAC nos switches para soltar anúncios CDP.
+

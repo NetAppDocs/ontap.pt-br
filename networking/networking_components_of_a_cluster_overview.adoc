@@ -1,0 +1,67 @@
+---
+sidebar: sidebar 
+permalink: networking/networking_components_of_a_cluster_overview.html 
+keywords: routing, DNS zones, physical ports, logical ports, IPspaces, broadcast domains, subnets, logical interfaces, familiarize yourself with the networking components of a cluster before setting up the cluster, networking components of a cluster overview, network components of a cluster, four-node cluster diagram, 4 node cluster diagram, four node cluster diagram 
+summary: Familiarize-se com os componentes de rede de um cluster antes de configurar o cluster 
+---
+= Componentes de rede de uma visão geral de cluster
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve se familiarizar com os componentes de rede de um cluster antes de configurar o cluster. A configuração dos componentes físicos de rede de um cluster em componentes lógicos fornece a funcionalidade de flexibilidade e alocação a vários clientes no ONTAP.
+
+Os vários componentes de rede em um cluster são os seguintes:
+
+* Portas físicas
++
+Placas de interface de rede (NICs) e adaptadores de barramento de host (HBAs) fornecem conexões físicas (Ethernet e Fibre Channel) de cada nó para as redes físicas (redes de gerenciamento e dados).
+
++
+Para obter informações sobre os requisitos do local, informações sobre o switch, informações sobre o cabeamento da porta integrada da controladora e o cabeamento da porta integrada, consulte o Hardware Universe em https://hwu.netapp.com/["hwu.NetApp.com"^].
+
+* Portas lógicas
++
+As redes de área local virtual (VLANs) e os grupos de interface constituem as portas lógicas. Os grupos de interface tratam várias portas físicas como uma única porta, enquanto as VLANs subdividem uma porta física em várias portas separadas.
+
+* IPspaces
++
+Você pode usar um espaço de IPspace para criar um espaço de endereço IP distinto para cada SVM em um cluster. Isso permite que os clientes em domínios de rede separados administrativamente acessem os dados do cluster ao usar endereços IP sobrepostos do mesmo intervalo de sub-rede de endereços IP.
+
+* Domínios de broadcast
++
+Um domínio de broadcast reside em um IPspace e contém um grupo de portas de rede, potencialmente de muitos nós no cluster, que pertencem à mesma rede de camada 2. As portas do grupo são usadas em uma SVM para tráfego de dados.
+
+* Sub-redes
++
+Uma sub-rede é criada dentro de um domínio de broadcast e contém um conjunto de endereços IP que pertencem à mesma sub-rede da camada 3. Esse conjunto de endereços IP simplifica a alocação de endereços IP durante a criação de LIF.
+
+* Interfaces lógicas
++
+Uma interface lógica (LIF) é um endereço IP ou um nome de porta mundial (WWPN) associado a uma porta. Ela está associada a atributos como grupos de failover, regras de failover e regras de firewall. Um LIF se comunica através da rede através da porta (física ou lógica) à qual está atualmente vinculado.
+
++
+Os diferentes tipos de LIFs em um cluster são LIFs de dados, LIFs de gerenciamento com escopo de cluster, LIFs de gerenciamento com escopo de nó, LIFs entre clusters e LIFs de cluster. A propriedade dos LIFs depende do SVM onde o LIF reside. Os data LIFs são propriedade de Data SVMs, LIFs de gerenciamento com escopo de nó, gerenciamento com escopo de cluster e LIFs entre clusters são de propriedade das SVMs de administrador e os LIFs de cluster são de propriedade do cluster SVM.
+
+* Zonas DNS
++
+A zona DNS pode ser especificada durante a criação do LIF, fornecendo um nome para o LIF ser exportado através do servidor DNS do cluster. Vários LIFs podem compartilhar o mesmo nome, permitindo que o recurso de balanceamento de carga DNS distribua endereços IP para o nome de acordo com a carga.
+
++
+Os SVMs podem ter várias zonas DNS.
+
+* Roteamento
++
+Cada SVM é autossuficiente em relação à rede. Um SVM possui LIFs e rotas que podem alcançar cada um dos servidores externos configurados.
+
++
+A figura a seguir ilustra como os diferentes componentes de rede estão associados em um cluster de quatro nós:
+
+
+
+image:ontap_nm_image2.jpeg["Diferentes componentes de rede associados ao cluster de quatro nós"]

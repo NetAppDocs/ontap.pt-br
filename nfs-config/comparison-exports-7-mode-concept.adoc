@@ -1,0 +1,65 @@
+---
+permalink: nfs-config/comparison-exports-7-mode-concept.html 
+sidebar: sidebar 
+keywords: comparison, exports, 7-mode ontap 
+summary: As exportações no ONTAP são definidas e usadas de forma diferente do que em ambientes de 7 modos. 
+---
+= Comparação de exportações em modo 7D e ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+As exportações no ONTAP são definidas e usadas de forma diferente do que em ambientes de 7 modos.
+
+|===
+
+
+| Áreas de diferença | Modo 7D. | ONTAP 
+
+
+ a| 
+Como as exportações são definidas
+ a| 
+As exportações são definidas `/etc/exports` no arquivo.
+ a| 
+As exportações são definidas criando uma política de exportação em um SVM. O SVM pode incluir mais de uma política de exportação.
+
+
+
+ a| 
+Âmbito de exportação
+ a| 
+* As exportações se aplicam a um caminho ou qtree de arquivo especificado.
+* Você deve criar uma entrada separada em `/etc/exports` para cada caminho ou qtree de arquivo.
+* As exportações são persistentes somente se forem definidas no `/etc/exports` arquivo.
+
+ a| 
+* As políticas de exportação se aplicam a um volume inteiro, incluindo todos os caminhos de arquivo e qtrees contidos no volume.
+* As políticas de exportação podem ser aplicadas a mais de um volume, se desejar.
+* Todas as políticas de exportação são persistentes nas reinicializações do sistema.
+
+
+
+
+ a| 
+Esgrima (especificando acesso diferente para clientes específicos aos mesmos recursos)
+ a| 
+Para fornecer a clientes específicos acesso diferente a um único recurso exportado, você tem que listar cada cliente e seu acesso permitido no `/etc/exports` arquivo.
+ a| 
+As políticas de exportação são compostas por várias regras de exportação individuais. Cada regra de exportação define permissões de acesso específicas para um recurso e lista os clientes que têm essas permissões. Para especificar um acesso diferente para clientes específicos, você precisa criar uma regra de exportação para cada conjunto específico de permissões de acesso, listar os clientes que têm essas permissões e, em seguida, adicionar as regras à política de exportação.
+
+
+
+ a| 
+Alias de nome
+ a| 
+Ao definir uma exportação, pode optar por tornar o nome da exportação diferente do nome do caminho do ficheiro. Você deve usar o `-actual` parâmetro ao definir tal exportação no `/etc/exports` arquivo.
+ a| 
+Pode optar por tornar o nome do volume exportado diferente do nome do volume real. Para fazer isso, é necessário montar o volume com um nome de caminho de junção personalizado no namespace SVM.
+
+
+NOTE: Por padrão, os volumes são montados com seu nome de volume. Para personalizar o nome do caminho de junção de um volume, você precisa desmontá-lo, renomeá-lo e remontá-lo.
+
+|===

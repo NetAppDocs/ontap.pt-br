@@ -1,0 +1,110 @@
+---
+permalink: concepts/encryption-concept.html 
+sidebar: sidebar 
+keywords: encryption 
+summary: A ONTAP oferece tecnologias de criptografia baseadas em software e hardware para garantir que os dados em repouso não possam ser lidos se o meio de storage for reutilizado, devolvido, extraviado ou roubado. 
+---
+= Criptografia
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A ONTAP oferece tecnologias de criptografia baseadas em software e hardware para garantir que os dados em repouso não possam ser lidos se o meio de storage for reutilizado, devolvido, extraviado ou roubado.
+
+O ONTAP é compatível com os padrões federais de processamento de informações (FIPS) 140-2 para todas as conexões SSL. Você pode usar as seguintes soluções de criptografia:
+
+* Soluções de hardware:
++
+** Criptografia de storage do NetApp (NSE)
++
+O NSE é uma solução de hardware que usa unidades de autocriptografia (SEDs).
+
+** SEDs NVMe
++
+O ONTAP fornece criptografia completa de disco para SEDs NVMe que não têm a certificação FIPS 140-2-2.
+
+
+
+* Soluções de software:
++
+** Criptografia de agregados NetApp (NAE)
++
+NAE é uma solução de software que permite a criptografia de qualquer volume de dados em qualquer tipo de unidade onde ele é habilitado com chaves exclusivas para cada agregado.
+
+** Criptografia de volume NetApp (NVE)
++
+O NVE é uma solução de software que permite a criptografia de qualquer volume de dados em qualquer tipo de unidade em que ele esteja habilitado com uma chave exclusiva para cada volume.
+
+
+
+
+
+Use as soluções de criptografia de software (NAE ou NVE) e hardware (NSE ou NVMe SED) para obter criptografia dupla em repouso. A eficiência de storage não é afetada pela criptografia NVE ou NAE.
+
+
+
+== Criptografia de storage do NetApp
+
+O NetApp Storage Encryption (NSE) é compatível com SEDs que criptografam dados à medida que são gravados. Os dados não podem ser lidos sem uma chave de criptografia armazenada no disco. A chave de criptografia, por sua vez, é acessível apenas para um nó autenticado.
+
+Em uma solicitação de e/S, um nó se autentica em uma SED usando uma chave de autenticação recuperada de um servidor de gerenciamento de chaves externo ou Gerenciador de chaves integrado:
+
+* O servidor de gerenciamento de chaves externo é um sistema de terceiros em seu ambiente de storage que fornece chaves de autenticação para nós que usam o Key Management Interoperability Protocol (KMIP).
+* O Gerenciador de chaves integrado é uma ferramenta integrada que serve chaves de autenticação para nós do mesmo sistema de storage que seus dados.
+
+
+O NSE é compatível com HDDs e SSDs com autocriptografia. Você pode usar a criptografia de volume NetApp com NSE para criptografar dados duas vezes em unidades NSE.
+
+
+NOTE: Se você estiver usando o NSE em um sistema com um módulo Flash Cache, também deverá ativar o NVE ou NAE. O NSE não criptografa dados que residem no módulo Flash Cache.
+
+
+
+== Unidades com autocriptografia NVMe
+
+No entanto, esses discos usam a criptografia de disco transparente AES de 256 bits para proteger os dados em repouso 140-2.
+
+As operações de criptografia de dados, como a geração de uma chave de autenticação, são realizadas internamente. A chave de autenticação é gerada na primeira vez que o disco é acessado pelo sistema de armazenamento. Depois disso, os discos protegem os dados em repouso exigindo autenticação do sistema de storage sempre que as operações de dados forem solicitadas.
+
+
+
+== Criptografia de agregados NetApp
+
+O NetApp Aggregate Encryption (NAE) é uma tecnologia baseada em software para criptografar todos os dados em um agregado. Um benefício do NAE é que os volumes estão incluídos na deduplicação de nível agregado, enquanto os volumes NVE são excluídos.
+
+Com o NAE ativado, os volumes dentro do agregado podem ser criptografados com chaves agregadas.
+
+A partir do ONTAP 9.7, agregados e volumes recém-criados são criptografados por padrão quando você tem o link:../system-admin/manage-license-task.html#view-details-about-a-license["Licença NVE"] e gerenciamento de chaves externas ou integradas.
+
+
+
+== Criptografia de volume do NetApp
+
+O NetApp volume Encryption (NVE) é uma tecnologia baseada em software para criptografar dados em repouso, um volume de cada vez. Uma chave de criptografia acessível apenas para o sistema de armazenamento garante que os dados de volume não possam ser lidos se o dispositivo subjacente for separado do sistema.
+
+Os dados, incluindo cópias Snapshot, e metadados, são criptografados. O acesso aos dados é dado por uma chave exclusiva XTS-AES-256, uma por volume. Um Gerenciador de chaves integrado protege as chaves no mesmo sistema com seus dados.
+
+Você pode usar o NVE em qualquer tipo de agregado (HDD, SSD, híbrido, LUN de array), com qualquer tipo de RAID e em qualquer implementação de ONTAP com suporte, incluindo ONTAP Select. Você também pode usar o NVE com criptografia de storage NetApp (NSE) para criptografar dados duas vezes em unidades NSE.
+
+|===
+
+
+ a| 
+*_quando usar servidores KMIP_* embora seja menos caro e normalmente mais conveniente usar o Gerenciador de chaves integrado, você deve configurar servidores KMIP se qualquer uma das seguintes situações for verdadeira:
+
+* Sua solução de gerenciamento de chaves de criptografia precisa estar em conformidade com Federal Information Processing Standards (FIPS) 140-2 ou com o padrão OASIS KMIP.
+* Você precisa de uma solução de vários clusters. Os servidores KMIP são compatíveis com vários clusters com gerenciamento centralizado de chaves de criptografia.
++
+Os servidores KMIP são compatíveis com vários clusters com gerenciamento centralizado de chaves de criptografia.
+
+* Sua empresa requer a segurança adicional de armazenar chaves de autenticação em um sistema ou em um local diferente dos dados.
++
+Os servidores KMIP armazenam as chaves de autenticação separadamente dos dados.
+
+
+
+|===
+.Informações relacionadas
+link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/FAQ%3A_NetApp_Volume_Encryption_and_NetApp_Aggregate_Encryption["Perguntas frequentes - encriptação de volume NetApp e encriptação agregada NetApp"^]

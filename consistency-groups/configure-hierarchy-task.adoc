@@ -1,0 +1,129 @@
+---
+permalink: consistency-groups/configure-hierarchy-task.html 
+sidebar: sidebar 
+keywords: consistency groups, application protection, parent, child, hierarchy 
+summary: Crie um grupo de consistência hierárquica para gerenciamento de workloads de aplicações grandes e proteção de dados. 
+---
+= Configurar um grupo hierárquico de consistência
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os grupos hierárquicos de consistência permitem gerenciar grandes cargas de trabalho que abrangem vários volumes, criando um grupo de consistência pai que serve como um guarda-chuva para grupos de consistência filhos.
+
+Os grupos hierárquicos de consistência têm um pai que pode incluir até cinco grupos de consistência individuais. Os grupos hierárquicos de consistência podem oferecer suporte a diferentes políticas de Snapshot locais em grupos de consistência ou volumes individuais. Se você usar uma política de proteção remota, isso se aplicará a todo o grupo hierárquico de consistência (pai e filhos).
+
+Começando com ONTAP 9.13,1, você pode xref:modify-geometry-task.html[modifique a geometria de seus grupos de consistência] e xref:modify-task.html[mover volumes entre grupos de consistência filho].
+
+Para obter os limites de objetos em grupos de consistência, xref:limits.html[Limites de objetos para grupos de consistência]consulte .
+
+
+
+== Crie um grupo hierárquico de consistência com novos LUNs ou volumes
+
+Ao criar um grupo de consistência hierárquica, você pode preenchê-lo com novos LUNs. A partir do ONTAP 9.13,1, você também pode usar novos namespaces NVMe e volumes nas.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione * Adicionar * e, em seguida, selecione o protocolo para o seu objeto de armazenamento.
++
+No ONTAP 9.10,1 até 9.12.1, a única opção para um novo objeto de armazenamento é **usando novos LUNs**. A partir do ONTAP 9.13,1, o System Manager dá suporte à criação de grupos de consistência com novos namespaces NVMe e novos volumes nas.
+
+. Nomeie o grupo de consistência. Designar o número de volumes ou LUNs e a capacidade por volume ou LUN.
++
+.. **Tipo de aplicativo**: Se você estiver usando o ONTAP 9.12,1 ou posterior, selecione um tipo de aplicativo. Se nenhum valor for selecionado, o grupo de consistência será atribuído o tipo de ** outro ** por padrão. Saiba mais sobre a consistência da marcação no xref:modify-tags-task.html[Tags de aplicativos e componentes]. Se você pretende usar uma política de proteção remota, você deve escolher *outro*.
+
+
+. Selecione o sistema operacional host e o formato LUN. Insira as informações do iniciador do host.
++
+.. Para **novos LUNs**: Selecione o sistema operacional host e o formato LUN. Insira as informações do iniciador do host.
+.. Para **novos volumes nas**: Escolha a opção de exportação apropriada (NFS ou SMB/CIFS) com base na configuração nas do SVM.
+.. Para **novos namespaces NVMe**: Selecione o sistema operacional do host e o subsistema NVMe.
+
+
+. Para adicionar um grupo de consistência filho, selecione *mais opções* e depois * Adicionar grupo de consistência filho*.
+. Selecione o nível de performance, o número de LUNs ou volumes e a capacidade por LUN ou volume. Designe as configurações de exportação apropriadas ou as informações do sistema operacional com base no protocolo que você está usando.
+. Opcionalmente, selecione uma política de snapshot local e defina as permissões de acesso.
+. Repita para até cinco grupos de consistência infantil.
+. Selecione *Guardar*.
+. Confirme que o seu grupo de consistência foi criado retornando ao menu principal do grupo de consistência, onde ele aparecerá quando a tarefa ONTAP for concluída. Se você definir uma política de proteção, observe a política apropriada, remota ou local, que deve exibir um escudo verde com uma marca de seleção nela.
+
+
+--
+.CLI
+--
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Passo
+. Crie o novo grupo de consistência usando o `consistency-group create` comando.
++
+O `volume-count` parâmetro define o número de volumes em cada grupo de consistência filho. Você pode criar um grupo de consistência pai com um máximo de cinco grupos filhos.
+
++
+`consistency-group create -vserver _SVM_name_ -consistency-group _consistency_group_name_ -parent-consistency-group _parent_consistency_group_name_ -cg-count _number_of_child_consistency_groups_ -volume _volume_prefix_ -volume-count _number_ -size _size_ -export-policy _policy_name_ -storage-service extreme`
+
+
+
+--
+====
+
+
+== Crie um grupo de consistência hierárquica com volumes existentes
+
+Você pode organizar volumes existentes em um grupo hierárquico de consistência.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione * Adicionar* e depois *usando volumes existentes*.
+. Selecione a VM de armazenamento.
+. Selecione os volumes existentes a incluir. Apenas os volumes que ainda não fazem parte de um grupo de consistência estarão disponíveis para seleção.
+. Para adicionar um grupo de consistência filho, selecione * Adicionar grupo de consistência filho*. Crie os grupos de consistência necessários, que serão nomeados automaticamente.
++
+.. **Tipo de componente**: Se você estiver usando o ONTAP 9.12,1 ou posterior, selecione um tipo de componente de "dados", "logs" ou "Other". Se nenhum valor for selecionado, o grupo de consistência será atribuído o tipo de ** outro ** por padrão. Saiba mais sobre a consistência da marcação no xref:modify-tags-task.html[Tags de aplicativos e componentes]. Se você pretende usar uma política de proteção remota, você deve usar *outro*.
+
+
+. Atribua volumes existentes a cada grupo de consistência.
+. Opcionalmente, selecione uma política de instantâneo local.
+. Repita para até cinco grupos de consistência infantil.
+. Selecione *Guardar*.
+. Confirme que o seu grupo de consistência foi criado retornando ao menu principal do grupo de consistência, onde ele aparecerá quando a tarefa ONTAP for concluída. Se você escolheu uma política de proteção, confirme que ela foi corretamente definida selecionando seu grupo de consistência no menu; no tipo de política apropriado, você verá um escudo verde com uma marca de seleção dentro dela.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode criar um grupo hierárquico de consistência usando a CLI.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Passos
+. Provisione um novo grupo de consistência pai e atribua volumes a um novo grupo de consistência filho:
++
+`consistency-group create -vserver _svm_name_ -consistency-group _child_consistency_group_name_ -parent-consistency-group _parent_consistency_group_name_ -volumes _volume_names_`
+
+. Digite `y` para confirmar que deseja criar um novo grupo de consistência pai e filho.
+
+
+--
+====
+.Próximas etapas
+* xref:xref:modify-geometry-task.html[Modifique a geometria de um grupo de consistência]
+* xref:modify-task.html[Modifique um grupo de consistência]
+* xref:protect-task.html[Proteja um grupo de consistência]
+

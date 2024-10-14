@@ -1,0 +1,88 @@
+---
+permalink: smb-admin/enable-disable-access-based-enumeration-task.html 
+sidebar: sidebar 
+keywords: enable, disable, access-based, enumeration, abe, smb, allow, prevent, user, permission, access, enable or disable access-based enumeration on smb shares 
+summary: 'Você pode ativar ou desativar a enumeração baseada em acesso (ABE) em compartilhamentos SMB para permitir ou impedir que os usuários vejam recursos compartilhados que eles não têm permissão para acessar.' 
+---
+= Ative ou desative a enumeração baseada em acesso em compartilhamentos SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode ativar ou desativar a enumeração baseada em acesso (ABE) em compartilhamentos SMB para permitir ou impedir que os usuários vejam recursos compartilhados que eles não têm permissão para acessar.
+
+.Sobre esta tarefa
+Por padrão, o ABE está desativado.
+
+.Passos
+. Execute uma das seguintes ações:
++
+|===
+| Se você quiser... | Digite o comando... 
+
+
+ a| 
+Ative o ABE em um novo compartilhamento
+ a| 
+`vserver cifs share create -vserver vserver_name -share-name share_name -path path -share-properties access-based-enumeration` Você pode especificar configurações de compartilhamento opcionais adicionais e propriedades de compartilhamento adicionais ao criar um compartilhamento SMB. Para obter mais informações, consulte a página man para o `vserver cifs share create` comando.
+
+
+
+ a| 
+Ative o ABE em um compartilhamento existente
+ a| 
+`vserver cifs share properties add -vserver vserver_name -share-name share_name -share-properties access-based-enumeration` As propriedades de compartilhamento existentes são preservadas. A propriedade ABE Share é adicionada à lista existente de propriedades de ações.
+
+
+
+ a| 
+Desative o ABE em um compartilhamento existente
+ a| 
+`vserver cifs share properties remove -vserver vserver_name -share-name share_name -share-properties access-based-enumeration` Outras propriedades de compartilhamento são preservadas. Somente a propriedade ABE Share é removida da lista de propriedades de compartilhamento.
+
+|===
+. Verifique se a configuração de compartilhamento está correta usando o `vserver cifs share show` comando.
+
+
+.Exemplos
+O exemplo a seguir cria um compartilhamento ABE SMB chamado "vendas" com um caminho de `/sales` no SVM VS1. A ação é criada com `access-based-enumeration` como uma propriedade de ação:
+
+[listing]
+----
+cluster1::> vserver cifs share create -vserver vs1 -share-name sales -path /sales  -share-properties access-based-enumeration,oplocks,browsable,changenotify
+
+cluster1::> vserver cifs share show -vserver vs1 -share-name sales
+
+                      Vserver: vs1
+                        Share: sales
+     CIFS Server NetBIOS Name: VS1
+                         Path: /sales
+             Share Properties: access-based-enumeration
+                               oplocks
+                               browsable
+                               changenotify
+           Symlink Properties: enable
+      File Mode Creation Mask: -
+ Directory Mode Creation Mask: -
+                Share Comment: -
+                    Share ACL: Everyone / Full Control
+File Attribute Cache Lifetime: -
+                  Volume Name: -
+                Offline Files: manual
+Vscan File-Operations Profile: standard
+----
+O exemplo a seguir adiciona a `access-based-enumeration` propriedade share a um compartilhamento SMB chamado "ata2":
+
+[listing]
+----
+cluster1::> vserver cifs share properties add -vserver vs1 -share-name data2 -share-properties access-based-enumeration
+
+cluster1::> vserver cifs share show -vserver vs1 -share-name data2 -fields share-name,share-properties
+server  share-name share-properties
+------- ---------- -------------------------------------------------------
+vs1     data2      oplocks,browsable,changenotify,access-based-enumeration
+----
+.Informações relacionadas
+xref:add-remove-share-properties-existing-share-task.adoc[Adicionar ou remover propriedades de compartilhamento em um compartilhamento SMB existente]

@@ -1,0 +1,55 @@
+---
+permalink: smb-config/verify-protocol-enabled-task.html 
+sidebar: sidebar 
+keywords: configure, smb, svm, verify, protocol, enable, verify that the smb protocol is enabled on the svm 
+summary: Antes de poder configurar e utilizar SMB em SVMs, tem de verificar se o protocolo está ativado. 
+---
+= Verifique se o protocolo SMB está ativado na SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de poder configurar e utilizar SMB em SVMs, tem de verificar se o protocolo está ativado.
+
+.Sobre esta tarefa
+Isso geralmente é feito durante a configuração do SVM, mas se você não ativou o protocolo durante a configuração, poderá ativá-lo mais tarde usando o `vserver add-protocols` comando.
+
+[NOTE]
+====
+Não é possível adicionar ou remover um protocolo de um LIF depois de criado.
+
+====
+Você também pode desativar protocolos em SVMs usando o `vserver remove-protocols` comando.
+
+.Passos
+. Verifique quais protocolos estão atualmente ativados e desativados para o SVM: `vserver show -vserver vserver_name -protocols`
++
+Você também pode usar o `vserver show-protocols` comando para exibir os protocolos atualmente habilitados em todos os SVMs no cluster.
+
+. Se necessário, ative ou desative um protocolo:
++
+** Para ativar o protocolo SMB: `vserver add-protocols -vserver vserver_name -protocols cifs`
+** Para desativar um protocolo: `+vserver remove-protocols -vserver vserver_name -protocols protocol_name[,protocol_name,...]+`
+
+
+. Confirme se os protocolos ativados e desativados foram atualizados corretamente: `vserver show -vserver vserver_name -protocols`
+
+
+.Exemplo
+O comando a seguir exibe quais protocolos estão atualmente ativados e desativados (permitidos e não permitidos) no SVM chamado VS1:
+
+[listing]
+----
+vs1::> vserver show -vserver vs1.example.com -protocols
+Vserver           Allowed Protocols         Disallowed Protocols
+-----------       ----------------------    -----------------------
+vs1.example.com   cifs                       nfs, fcp, iscsi, ndmp
+----
+O comando a seguir permite o acesso por SMB adicionando `cifs` à lista de protocolos habilitados no SVM chamado VS1:
+
+[listing]
+----
+vs1::> vserver add-protocols -vserver vs1.example.com -protocols cifs
+----

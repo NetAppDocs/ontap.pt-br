@@ -1,0 +1,99 @@
+---
+permalink: volumes/flexvol-fullness-overallocation-alerts-concept.html 
+sidebar: sidebar 
+keywords: how, address, flexvol, volume, fullness, overallocation, alerts 
+summary: O ONTAP emite mensagens do EMS quando os volumes do FlexVol estão ficando sem espaço para que você possa tomar medidas corretivas fornecendo mais espaço para o volume total. 
+---
+= Address FlexVol volume fullness e alertas de sobrealocação
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP emite mensagens do EMS quando os volumes do FlexVol estão ficando sem espaço para que você possa tomar medidas corretivas fornecendo mais espaço para o volume total. Conhecer os tipos de alertas e como abordá-los ajuda a garantir a disponibilidade dos dados.
+
+Quando um volume é descrito como _full_, significa que a porcentagem do espaço no volume disponível para uso pelo sistema de arquivos ativo (dados do usuário) caiu abaixo de um limite (configurável). Quando um volume se torna _superalocado_, o espaço usado pelo ONTAP para metadados e para suportar o acesso básico a dados foi esgotado. Às vezes, o espaço normalmente reservado para outros fins pode ser usado para manter o volume funcionando, mas a reserva de espaço ou a disponibilidade de dados podem estar em risco.
+
+A sobrealocação pode ser lógica ou física. _Sobrealocação lógica_ significa que o espaço reservado para honrar compromissos futuros de espaço, como reserva de espaço, foi usado para outro propósito. _Superalocação física_ significa que o volume está ficando sem blocos físicos para usar. Os volumes nesse estado correm o risco de recusar gravações, ficar offline ou potencialmente causar uma interrupção do controlador.
+
+Um volume pode estar mais de 100% cheio devido ao espaço usado ou reservado pelos metadados. No entanto, um volume que seja superior a 100% completo pode ou não ser superalocado. Se houver compartilhamentos no nível de qtree e no nível de volume no mesmo pool FlexVol ou SCVMM, os qtrees aparecerão como diretórios no compartilhamento FlexVol. Portanto, você precisa ter cuidado para não excluí-los acidentalmente.
+
+A tabela a seguir descreve os alertas de volume e sobrealocação, as ações que você pode tomar para resolver o problema e os riscos de não tomar medidas:
+
+[cols="6*"]
+|===
+| Tipo de alerta | Nível EMS | Configurável? | Definição | Formas de abordar | Risco se nenhuma ação for tomada 
+
+
+ a| 
+Quase cheio
+ a| 
+Depurar
+ a| 
+Y
+ a| 
+O sistema de arquivos excedeu o limite definido para esse alerta (o padrão é 95%). A porcentagem é o `Used` total menos o tamanho da reserva Snapshot.
+ a| 
+* Aumentar o tamanho do volume
+* Redução dos dados do usuário
+
+ a| 
+Não há risco de gravar operações ou disponibilidade de dados ainda.
+
+
+
+ a| 
+Cheio
+ a| 
+Depurar
+ a| 
+Y
+ a| 
+O sistema de arquivos excedeu o limite definido para esse alerta (o padrão é 98%). A porcentagem é o `Used` total menos o tamanho da reserva Snapshot.
+ a| 
+* Aumentar o tamanho do volume
+* Redução dos dados do usuário
+
+ a| 
+Não há risco de gravar operações ou disponibilidade de dados ainda, mas o volume está se aproximando do estágio em que as operações de gravação podem estar em risco.
+
+
+
+ a| 
+Logicamente sobralocada
+ a| 
+Erro SVC
+ a| 
+N
+ a| 
+Além de o sistema de arquivos estar cheio, o espaço no volume usado para metadados foi esgotado.
+ a| 
+* Aumentar o tamanho do volume
+* Exclusão de cópias Snapshot
+* Redução dos dados do usuário
+* Desativar reserva de espaço para ficheiros ou LUNs
+
+ a| 
+As operações de gravação em arquivos não reservados podem falhar.
+
+
+
+ a| 
+Fisicamente sobrealocado
+ a| 
+Erro nó
+ a| 
+N
+ a| 
+O volume está ficando sem blocos físicos nos quais pode escrever.
+ a| 
+* Aumentar o tamanho do volume
+* Exclusão de cópias Snapshot
+* Redução dos dados do usuário
+
+ a| 
+As operações de gravação estão em risco, bem como a disponibilidade de dados; o volume pode ficar offline.
+
+|===
+Sempre que um limite é cruzado para um volume, quer a percentagem de plenitude esteja a aumentar ou a cair, é gerada uma mensagem EMS. Quando o nível de plenitude do volume cai abaixo de um limite, uma `volume ok` mensagem EMS é gerada.

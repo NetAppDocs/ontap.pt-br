@@ -1,0 +1,88 @@
+---
+permalink: data-protection/create-load-sharing-mirror-task.html 
+sidebar: sidebar 
+keywords: create, initialize, load-sharing, mirror, relationship 
+summary: 'Você deve criar um espelho de compartilhamento de carga (LSM) para cada volume raiz no cluster. Você pode criar o LSM em qualquer nó que não seja aquele que contém o volume raiz, como o nó do parceiro em um par de HA, ou de preferência em um par de HA diferente. Para um cluster de dois nós, você deve criar o LSM no parceiro do nó com o volume raiz.' 
+---
+= Criar e inicializar relações de espelhamento de compartilhamento de carga
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve criar um espelhamento de compartilhamento de carga (LSM) para cada volume raiz da SVM que forneça dados nas no cluster. Para clusters que consistam em dois ou mais pares de HA, considere espelhos de compartilhamento de carga dos volumes raiz do SVM para garantir que o namespace permaneça acessível aos clientes caso ambos os nós de um par de HA falhem. Os espelhos de compartilhamento de carga não são adequados para clusters que consistam em um único par de HA.
+
+.Sobre esta tarefa
+Se você criar um LSM no mesmo nó e o nó não estiver disponível, você terá um único ponto de falha e não terá uma segunda cópia para garantir que os dados permaneçam acessíveis aos clientes. Mas quando você cria o LSM em um nó diferente daquele que contém o volume raiz ou em um par de HA diferente, seus dados ainda estarão acessíveis no caso de uma interrupção.
+
+Por exemplo, em um cluster de quatro nós com um volume raiz em três nós:
+
+* Para o volume raiz no nó 1 do HA 1, crie o LSM no nó HA 2 do HA 1 ou no nó HA 2 do HA 2.
+* Para o volume raiz no nó 2 do HA 1, crie o LSM no nó HA 2 do HA 1 ou no nó HA 2 do HA 2.
+* Para o volume raiz no nó 1 do HA 2, crie o LSM no nó HA 1 do HA 1 ou no nó HA 1 do HA 2.
+
+
+.Passos
+. Criar um volume de destino para o LSM:
++
+[source, cli]
+----
+volume create -vserver <SVM> -volume <volume> -aggregate <aggregate> -type DP -size <size>
+----
++
+O volume de destino deve ser igual ou maior em tamanho do que o volume raiz.
+
++
+É uma prática recomendada nomear o volume de raiz e destino com sufixos, como `_root` e `_m1`.
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir cria um volume de espelhamento de compartilhamento de carga para o volume raiz `svm1_root` no `cluster_src`:
+
++
+[listing]
+----
+cluster_src:> volume create -vserver svm1 -volume svm1_m1 -aggregate aggr_1 -size 1gb -state online -type DP
+----
+. link:create-replication-job-schedule-task.html["Crie um cronograma de trabalho de replicações"].
+. Crie uma relação de espelhamento de compartilhamento de carga entre o volume raiz da SVM e o volume de destino do LSM:
++
+[source, cli]
+----
+snapmirror create -source-path <SVM:volume> -destination-path <SVM:volume> -type LS -schedule <schedule>
+----
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir cria uma relação de espelhamento de compartilhamento de carga entre o volume raiz `svm1_root` e o volume de espelhamento de compartilhamento de carga `svm1_m1` :
+
++
+[listing]
+----
+cluster_src::> snapmirror create -source-path svm1:svm1_root -destination-path svm1:svm1_m1 -type LS -schedule hourly
+----
++
+O atributo de tipo do espelho de compartilhamento de carga muda de `DP` para `LS`.
+
+. Inicialize o espelho de partilha de carga:
++
+[source, cli]
+----
+snapmirror initialize-ls-set -source-path <SVM:volume>
+----
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir inicializa o espelho de compartilhamento de carga para o volume raiz `svm1_root` :
+
++
+[listing]
+----
+cluster_src::> snapmirror initialize-ls-set -source-path svm1:svm1_root
+----
+

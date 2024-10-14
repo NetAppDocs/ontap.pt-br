@@ -1,0 +1,89 @@
+---
+permalink: nas-audit/create-auditing-config-task.html 
+sidebar: sidebar 
+keywords: create, audit, configuration 
+summary: 'Antes de iniciar a auditoria de eventos de arquivo e diretório, crie uma configuração de auditoria na máquina virtual de storage (SVM).' 
+---
+= Crie a configuração de auditoria
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A criação de uma configuração de auditoria de arquivos e diretórios na máquina virtual de storage (SVM) inclui compreender as opções de configuração disponíveis, Planejar a configuração e, em seguida, configurar e ativar a configuração. Em seguida, você pode exibir informações sobre a configuração de auditoria para confirmar se a configuração resultante é a configuração desejada.
+
+Antes de iniciar a auditoria de eventos de arquivo e diretório, crie uma configuração de auditoria na máquina virtual de storage (SVM).
+
+.Antes de começar
+Se você planeja criar uma configuração de auditoria para o preparo de políticas de acesso central, um servidor SMB deve existir no SVM.
+
+[NOTE]
+====
+* Embora você possa ativar o estadiamento da diretiva de acesso central na configuração de auditoria sem ativar o Controle de Acesso Dinâmico no servidor SMB, os eventos de estadiamento da política de acesso central são gerados somente se o Controle de Acesso Dinâmico estiver ativado.
++
+O Dynamic Access Control é ativado através de uma opção de servidor SMB. Ele não está habilitado por padrão.
+
+* Se os argumentos de um campo em um comando forem inválidos, por exemplo, entradas inválidas para campos, entradas duplicadas e entradas inexistentes, o comando falhará antes da fase de auditoria.
++
+Tais falhas não geram um Registro de auditoria.
+
+
+
+====
+.Sobre esta tarefa
+Se o SVM for uma fonte de recuperação de desastres do SVM, o caminho de destino não poderá estar no volume raiz.
+
+.Passo
+. Usando as informações na Planilha de Planejamento, crie a configuração de auditoria para girar os logs de auditoria com base no tamanho do log ou em uma programação:
++
+[cols="30,70"]
+|===
+
+
+| Se você quiser girar logs de auditoria... | Digite... 
+
+
+ a| 
+Tamanho do registo
+ a| 
+`vserver audit create -vserver vserver_name -destination path -events [{file-ops|cifs-logon-logoff|cap-staging|file-share|authorization-policy-change|user-account|security-group|authorization-policy-change}] [-format {xml|evtx}] [-rotate-limit integer] [-rotate-size {integer[KB|MB|GB|TB|PB]}]`
+
+
+
+ a| 
+Uma programação
+ a| 
+`vserver audit create -vserver vserver_name -destination path -events [{file-ops|cifs-logon-logoff|cap-staging}] [-format {xml|evtx}] [-rotate-limit integer] [-rotate-schedule-month chron_month] [-rotate-schedule-dayofweek chron_dayofweek] [-rotate-schedule-day chron_dayofmonth] [-rotate-schedule-hour chron_hour] -rotate-schedule-minute chron_minute`
+
+[NOTE]
+====
+O `-rotate-schedule-minute` parâmetro é necessário se você estiver configurando a rotação de log de auditoria baseada em tempo.
+
+====
+|===
+
+
+.Exemplos
+O exemplo a seguir cria uma configuração de auditoria que audita operações de arquivo e eventos de logon e logoff SMB (o padrão) usando rotação baseada em tamanho. O formato de log é `EVTX` (o padrão). Os logs são armazenados no `/audit_log` diretório. O limite de tamanho do ficheiro de registo é `200 MB`. Os logs são girados quando atingem 200 MB de tamanho:
+
+[listing]
+----
+cluster1::> vserver audit create -vserver vs1 -destination /audit_log -rotate-size 200MB
+----
+O exemplo a seguir cria uma configuração de auditoria que audita operações de arquivo e eventos de logon e logoff SMB (o padrão) usando rotação baseada em tamanho. O formato de log é `EVTX` (o padrão). Os logs são armazenados no `/cifs_event_logs` diretório. O limite de tamanho do arquivo de log é `100 MB` (o padrão) e o limite de rotação do log é `5`:
+
+[listing]
+----
+cluster1::> vserver audit create -vserver vs1 -destination /cifs_event_logs -rotate-limit 5
+----
+O exemplo a seguir cria uma configuração de auditoria que audita operações de arquivo, eventos de logon e logoff CIFS e eventos de preparação de políticas de acesso central usando rotação baseada em tempo. O formato de log é `EVTX` (o padrão). Os logs de auditoria são girados mensalmente, às 12:30 horas em todos os dias da semana. O limite de rotação do registo é `5`de :
+
+[listing]
+----
+cluster1::> vserver audit create -vserver vs1 -destination /audit_log -events file-ops,cifs-logon-logoff,file-share,audit-policy-change,user-account,security-group,authorization-policy-change,cap-staging -rotate-schedule-month all -rotate-schedule-dayofweek all -rotate-schedule-hour 12 -rotate-schedule-minute 30 -rotate-limit 5
+----
+.Informações relacionadas
+* link:enable-audit-svm-task.html["Habilite a auditoria no SVM"]
+* link:verify-auditing-config-task.html["Verifique a configuração de auditoria"]
+

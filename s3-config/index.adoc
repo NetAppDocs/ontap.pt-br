@@ -1,0 +1,46 @@
+---
+permalink: s3-config/index.html 
+sidebar: sidebar 
+keywords: tr-4814, decide, s3, configuration, client, access, configure, object, bucket, svm 
+summary: 'A partir do ONTAP 9.8, é possível habilitar um servidor de armazenamento de objetos do Serviço de armazenamento simples (S3) do ONTAP em um cluster do ONTAP.' 
+---
+= Visão geral da configuração do S3
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.8, é possível habilitar um servidor de storage de objetos do ONTAP Simple Storage Service (S3) em um cluster ONTAP, usando ferramentas conhecidas de gerenciabilidade, como o Gerenciador de sistemas ONTAP, para provisionar rapidamente o storage de objetos de alta performance para desenvolvimento e operações no ONTAP, aproveitando as eficiências de storage e a segurança do ONTAP.
+
+
+
+== Configuração do S3 com o Gerenciador de sistemas e a CLI do ONTAP
+
+Você pode configurar e gerenciar o ONTAP S3 com o Gerenciador de sistema e a CLI do ONTAP. Quando você ativa o S3 e cria buckets usando o Gerenciador do sistema, o ONTAP seleciona padrões de práticas recomendadas para configuração simplificada. Se você precisar especificar parâmetros de configuração, talvez queira usar a CLI do ONTAP. Se você configurar o servidor S3 e os buckets da CLI, ainda poderá gerenciá-los com o System Manager, se desejado, ou vice-versa.
+
+Quando você cria um bucket do S3 usando o Gerenciador do sistema, o ONTAP configura um nível de serviço de desempenho padrão que é o mais alto disponível no sistema. Por exemplo, em um sistema AFF, a configuração padrão seria *Extreme*. Os níveis de serviço de performance são grupos de políticas de qualidade do serviço (QoS) adaptáveis predefinidos. Em vez de um dos níveis de serviço padrão, você pode especificar um grupo de políticas de QoS personalizado ou nenhum grupo de políticas.
+
+Os grupos de políticas de QoS adaptáveis predefinidos são:
+
+* *Extreme*: Usado para aplicativos que esperam a menor latência e o mais alto desempenho.
+* *Desempenho*: Usado para aplicativos com necessidades de desempenho modestas e latência.
+* *Valor*: Usado para aplicativos para os quais a taxa de transferência e a capacidade são mais importantes do que a latência.
+* *Custom*: Especifique uma política de QoS personalizada ou nenhuma política de QoS.
+
+
+Se você selecionar *Use for Tiering*, nenhum nível de serviço de desempenho será selecionado e o sistema tentará selecionar Mídia de baixo custo com desempenho ideal para os dados em camadas.
+
+Veja tambémlink:../performance-admin/adaptive-qos-policy-groups-task.html["Use grupos de políticas de QoS adaptáveis"]: .
+
+A ONTAP tenta provisionar esse bucket em camadas locais que tenham os discos mais apropriados, atendendo ao nível de serviço escolhido. No entanto, se você precisar especificar quais discos incluir no bucket, considere configurar o armazenamento de objetos S3 a partir da CLI especificando os níveis locais (agregado). Se você configurar o servidor S3 a partir da CLI, ainda poderá gerenciá-lo com o System Manager, se desejado.
+
+Se você quiser a capacidade de especificar quais agregados são usados para buckets, você só pode fazer isso usando a CLI.
+
+
+
+== Configurando buckets do S3 no Cloud Volumes ONTAP
+
+Se você quiser atender buckets do Cloud Volumes ONTAP, é altamente recomendável que você selecione manualmente os agregados subjacentes para garantir que eles estejam usando apenas um nó. O uso de agregados de ambos os nós pode afetar o desempenho, porque os nós estarão em zonas de disponibilidade geograficamente separadas e, portanto, suscetíveis a problemas de latência. Portanto, em ambientes Cloud Volumes ONTAP, você deve xref:create-bucket-task.html[Configurar buckets do S3 a partir da CLI].
+
+Caso contrário, os servidores S3 no Cloud Volumes ONTAP são configurados e mantidos da mesma forma no Cloud Volumes ONTAP que em ambientes locais.

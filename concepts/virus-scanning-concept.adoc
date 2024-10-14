@@ -1,0 +1,39 @@
+---
+permalink: concepts/virus-scanning-concept.html 
+sidebar: sidebar 
+keywords: virus scan 
+summary: Você pode usar a funcionalidade de antivírus integrada no sistema de armazenamento para proteger os dados contra o comprometimento por vírus ou outros códigos maliciosos. A verificação de vírus ONTAP, chamada Vscan, combina o melhor software antivírus de terceiros com recursos do ONTAP que oferecem a flexibilidade necessária para controlar quais arquivos são verificados e quando. 
+---
+= Verificação de vírus
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar a funcionalidade de antivírus integrada no sistema de armazenamento para proteger os dados contra o comprometimento por vírus ou outros códigos maliciosos. A verificação de vírus do ONTAP, chamada _Vscan_, combina o melhor software antivírus de terceiros com recursos do ONTAP que oferecem a flexibilidade necessária para controlar quais arquivos são verificados e quando.
+
+Os sistemas de storage descarregam as operações de verificação para servidores externos que hospedam softwares antivírus de terceiros. O _ONTAP Antivirus Connector_, fornecido pelo NetApp e instalado no servidor externo, lida com as comunicações entre o sistema de armazenamento e o software antivírus.
+
+* Você pode usar _verificação no acesso_ para verificar se há vírus quando os clientes abrem, leem, renomeam ou fecham arquivos pelo SMB. A operação do arquivo é suspensa até que o servidor externo comunique o status da digitalização do arquivo. Se o ficheiro já tiver sido lido, o ONTAP permite a operação do ficheiro. Caso contrário, ele solicita uma verificação do servidor.
++
+A verificação no acesso não é suportada para NFS.
+
+* Você pode usar _On-demand scanning_ para verificar arquivos para vírus imediatamente ou em uma programação. Por exemplo, você pode querer executar digitalizações apenas em horas fora de pico. O servidor externo atualiza o status de verificação dos arquivos verificados, de modo que a latência de acesso ao arquivo desses arquivos (supondo que eles não tenham sido modificados) seja normalmente reduzida quando forem acessados pela próxima vez por SMB.
++
+Você pode usar a verificação sob demanda para qualquer caminho no namespace SVM, até mesmo para volumes exportados somente por NFS.
+
+
+
+Normalmente, você ativa ambos os modos de digitalização em um SVM. Em ambos os modos, o software antivírus toma medidas corretivas em arquivos infetados com base em suas configurações no software.
+
+|===
+
+
+ a| 
+*_Verificação de vírus na recuperação de desastres e configurações do MetroCluster_*
+
+Para a recuperação de desastres e configurações do MetroCluster, é necessário configurar servidores Vscan separados para os clusters locais e parceiros.
+
+|===
+image:../media/virus-scanning.gif["Diagrama de um servidor Vscan em um SVM."]

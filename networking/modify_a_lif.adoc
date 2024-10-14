@@ -1,0 +1,106 @@
+---
+sidebar: sidebar 
+permalink: networking/modify_a_lif.html 
+keywords: lif attributes, fc lifs, ip lifs, change lifs, change, changing, logical, interface, lif, modify a lif, modify a lif by changing its attributes 
+summary: Modifique um LIF alterando seus atributos 
+---
+= Modificar um LIF
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode modificar um LIF alterando os atributos, como nó inicial ou nó atual, status administrativo, endereço IP, máscara de rede, política de failover, política de firewall e política de serviço. Você também pode alterar a família de endereços de um LIF de IPv4 para IPv6.
+
+.Sobre esta tarefa
+* Ao modificar o status administrativo de um LIF para baixo, todos os bloqueios NFSv4 pendentes são mantidos até que o status administrativo do LIF seja retornado para cima.
++
+Para evitar conflitos de bloqueio que podem ocorrer quando outros LIFs tentam acessar os arquivos bloqueados, você deve mover os clientes NFSv4 para um LIF diferente antes de definir o status administrativo para baixo.
+
+* Não é possível modificar os protocolos de dados usados por um LIF FC. No entanto, você pode modificar os serviços atribuídos a uma política de serviço ou alterar a política de serviço atribuída a um IP LIF.
++
+Para modificar os protocolos de dados usados por um LIF FC, você deve excluir e recriar o LIF. Para fazer alterações de política de serviço em um IP LIF, há uma breve interrupção enquanto as atualizações ocorrem.
+
+* Não é possível modificar o nó inicial ou o nó atual de um LIF de gerenciamento com escopo de nó.
+* Ao usar uma sub-rede para alterar o endereço IP e o valor da máscara de rede para um LIF, um endereço IP é alocado da sub-rede especificada; se o endereço IP anterior do LIF for de uma sub-rede diferente, o endereço IP será retornado a essa sub-rede.
+* Para modificar a família de endereços de um LIF de IPv4 a IPv6, você deve usar a notação de dois pontos para o endereço IPv6 e adicionar um novo valor para o `-netmask-length` parâmetro.
+* Não é possível modificar os endereços IPv6 locais de link auto-configurados.
+* A modificação de um LIF que faz com que o LIF não tenha um destino de failover válido resulta em uma mensagem de aviso.
++
+Se um LIF que não tem um destino de failover válido tentar fazer failover, pode ocorrer uma interrupção.
+
+* A partir do ONTAP 9.5, você pode modificar a política de serviço associada a um LIF.
++
+No ONTAP 9.5, as políticas de serviço são suportadas apenas para serviços de pares entre clusters e BGP. No ONTAP 9.6, você pode criar políticas de serviço para vários serviços de dados e gerenciamento.
+
+* A partir do ONTAP 9.11,1, o failover automático de LIF iSCSI está disponível em plataformas de array all-flash SAN (ASA).
++
+Para LIFs iSCSI pré-existentes, ou seja, LIFs criadas antes da atualização para o 9.11.1 ou posterior, você pode modificar a política de failover para link:../san-admin/asa-iscsi-lif-fo-task.html["Ativar failover automático de LIF iSCSI"]o .
+
+
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Começando com ONTAP 9.12,0, você pode usar o Gerenciador de sistema para editar uma interface de rede*
+
+.Passos
+. Selecione *rede > Visão geral > interfaces de rede*.
+. Selecione image:icon_kabob.gif["Ícone de opções do menu"]*> Editar* ao lado da interface de rede que deseja alterar.
+. Altere uma ou mais definições da interface de rede. Para obter detalhes, link:create_a_lif.html["Crie um LIF"]consulte .
+. Salve suas alterações.
+
+
+--
+.CLI
+--
+*Use a CLI para modificar um LIF*
+
+.Passos
+. Modifique os atributos de um LIF usando o `network interface modify` comando.
++
+O exemplo a seguir mostra como modificar o endereço IP e a máscara de rede do LIF datalif2 usando um endereço IP e o valor da máscara de rede da sub-rede client1_sub:
+
++
+....
+network interface modify -vserver vs1 -lif datalif2 -subnet-name client1_sub
+....
++
+O exemplo a seguir mostra como modificar a política de serviço de um LIF.
+
++
+....
+network interface modify -vserver siteA -lif node1_inter1 -service-policy example
+....
+. Verifique se os endereços IP estão acessíveis.
++
+|===
+
+
+| Se você estiver usando... | Então use... 
+
+
+ a| 
+Endereços IPv4
+ a| 
+`network ping`
+
+
+
+ a| 
+Endereços IPv6
+ a| 
+`network ping6`
+
+|===
+
+
+--
+====

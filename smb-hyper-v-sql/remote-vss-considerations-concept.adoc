@@ -1,0 +1,62 @@
+---
+permalink: smb-hyper-v-sql/remote-vss-considerations-concept.html 
+sidebar: sidebar 
+keywords: remote, vss, consideration, hyper, v, smb, configuration, backup, solution, automatic, recovery, shadow, copy 
+summary: Você precisa estar ciente de certas considerações ao usar soluções de backup habilitadas para VSS remotas para configurações Hyper-V sobre SMB. 
+---
+= Considerações sobre VSS remoto para configurações Hyper-V em SMB
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa estar ciente de certas considerações ao usar soluções de backup habilitadas para VSS remotas para configurações Hyper-V sobre SMB.
+
+
+
+== Considerações gerais sobre o VSS remoto
+
+* Um máximo de 64 compartilhamentos pode ser configurado por servidor de aplicativos da Microsoft.
++
+A operação de cópia de sombra falha se houver mais de 64 compartilhamentos em um conjunto de cópias de sombra. Este é um requisito da Microsoft.
+
+* Apenas é permitido um conjunto de cópias de sombra ativo por servidor CIFS.
++
+Uma operação de cópia sombra falhará se houver uma operação de cópia sombra contínua no mesmo servidor CIFS. Este é um requisito da Microsoft.
+
+* Nenhuma junção é permitida dentro da estrutura de diretórios na qual o VSS remoto cria uma cópia de sombra.
++
+** No caso de recuperação automática, a criação de cópia de sombra falhará se uma junção for encontrada ao atravessar o compartilhamento.
+** No caso de recuperação não automática, a criação de cópia sombra não falha, mas a junção não aponta para nada.
+
+
+
+
+
+
+== Considerações do VSS remoto que se aplicam somente a cópias de sombra com recuperação automática
+
+Certos limites se aplicam apenas a cópias sombra com recuperação automática.
+
+* Uma profundidade máxima de diretório de cinco subdiretórios é permitida para a criação de cópias de sombra.
++
+Esta é a profundidade do diretório sobre a qual o serviço de cópia sombra cria um conjunto de backup de cópia sombra. A criação de cópia de sombra falhará se os diretórios que contêm arquivo de máquina virtual estiverem aninhados mais profundamente do que cinco níveis. Isto destina-se a limitar a travessia de diretório ao clonar o compartilhamento. A profundidade máxima do diretório pode ser alterada usando uma opção de servidor CIFS.
+
+* A quantidade de espaço disponível no volume deve ser adequada.
++
+O espaço disponível deve ser pelo menos tão grande quanto o espaço combinado usado por todos os arquivos, diretórios e subdiretórios contidos nos compartilhamentos incluídos no conjunto de backup de cópia sombra.
+
+* Não são permitidos links ou arquivos não regulares dentro da estrutura de diretórios na qual o VSS remoto cria uma cópia de sombra.
++
+A criação de cópia sombra falha se houver links ou arquivos não regulares no compartilhamento para a cópia sombra. O processo de clone não os suporta.
+
+* Não são permitidas ACLs NFSv4 nos diretórios.
++
+Embora a criação de cópia sombra retenha NFSv4 ACLs em arquivos, as ACLs NFSv4 nos diretórios são perdidas.
+
+* Um máximo de 60 segundos é permitido criar um conjunto de cópias de sombra.
++
+As especificações da Microsoft permitem um máximo de 60 segundos para criar o conjunto de cópias de sombra. Se o cliente VSS não puder criar o conjunto de cópias de sombra dentro desse tempo, a operação de cópia de sombra falhará; portanto, isso limita o número de arquivos em um conjunto de cópias de sombra. O número real de arquivos ou máquinas virtuais que podem ser incluídos em um conjunto de backup varia; esse número depende de muitos fatores e deve ser determinado para cada ambiente de cliente.
+
+

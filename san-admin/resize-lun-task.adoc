@@ -1,0 +1,108 @@
+---
+permalink: san-admin/resize-lun-task.html 
+sidebar: sidebar 
+keywords: decrease, increase, resize, size, modify, change, lun 
+summary: Pode aumentar ou diminuir o tamanho de um LUN. 
+---
+= Redimensione um LUN
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Pode aumentar ou diminuir o tamanho de um LUN.
+
+.Sobre esta tarefa
+Este procedimento aplica-se aos sistemas FAS, AFF e ASA atuais. Se tiver um sistema ASA R2 (ASA A1K, ASA A70 ou ASA A90), siga link:https://docs.netapp.com/us-en/asa-r2/manage-data/modify-storage-units.html["estes passos"^] para aumentar o tamanho de uma unidade de armazenamento. Os sistemas ASA R2 fornecem uma experiência de ONTAP simplificada específica para clientes somente SAN.
+
+[NOTE]
+====
+Os LUNs Solaris não podem ser redimensionados.
+
+====
+
+
+== Aumente o tamanho de um LUN
+
+O tamanho para o qual você pode aumentar seu LUN varia dependendo da sua versão do ONTAP.
+
+|===
+
+
+| Versão de ONTAP | Tamanho máximo de LUN 
+
+
+| ONTAP 9.12.1P2 e posterior  a| 
+128 TB para plataformas AFF, FAS e ASA
+
+
+
+| ONTAP 9 F.8 e mais tarde  a| 
+* 128 TB para plataformas All-Flash SAN Array (ASA)
+* 16 TB para plataformas não ASA
+
+
+
+
+| ONTAP 9.5, 9,6, 9,7 | 16 TB 
+
+
+| ONTAP 9 .4 ou anterior | 10 vezes o tamanho original do LUN, mas não superior a 16TB, que é o tamanho máximo do LUN. Por exemplo, se você criar um LUN de 100 GB, só poderá aumentá-lo para 1.000 GB. O tamanho máximo real do LUN pode não ser exatamente 16TB. ONTAP arredonda o limite para ser um pouco menos. 
+|===
+Você não precisa colocar o LUN off-line para aumentar o tamanho. No entanto, depois de aumentar o tamanho, você deve redigitalizar o LUN no host para que o host reconheça a alteração de tamanho.
+
+Consulte a página Referência de comando para `lun resize` obter mais informações sobre o redimensionamento de um LUN.
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+Aumente o tamanho de um LUN com o ONTAP System Manager (9,7 e posterior).
+
+. No System Manager, clique em *Storage > LUNs*.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"] e selecione *Editar*.
+. Em *armazenamento e Otimização* aumente o tamanho do LUN e *Salvar*.
+
+
+--
+.CLI
+--
+Aumente o tamanho de um LUN com a CLI do ONTAP.
+
+. Aumente o tamanho do LUN:
++
+[source, cli]
+----
+lun resize -vserver <SVM_name> -volume <volume_name> -lun <lun_name> -size <lun_size>
+----
+. Verifique o tamanho de LUN aumentado:
++
+[source, cli]
+----
+lun show -vserver <SVM_name>
+----
++
+[NOTE]
+====
+As operações de ONTAP resumem o tamanho máximo real do LUN para que ele seja ligeiramente menor do que o valor esperado. Além disso, o tamanho real do LUN pode variar ligeiramente com base no tipo de SO do LUN. Para obter o valor exato redimensionado, execute os seguintes comandos no modo avançado:
+
+`set -unit B`
+
+`lun show -fields max-resize-size -volume _volume_name_ -lun _lun_name_`
+
+====
+. Volte a digitalizar o LUN no host.
+. Siga a documentação do host para tornar o tamanho LUN recém-criado visível para o sistema de arquivos do host.
+
+
+--
+====
+
+
+== Diminua o tamanho de um LUN
+
+Antes de diminuir o tamanho de um LUN, o host precisa migrar os blocos que contêm os dados de LUN para o limite do tamanho de LUN menor. Você deve usar uma ferramenta como o SnapCenter para garantir que o LUN seja diminuído corretamente sem truncar blocos contendo dados de LUN. Diminuir manualmente o tamanho do LUN não é recomendado.
+
+Depois de diminuir o tamanho do LUN, o ONTAP notifica automaticamente o iniciador de que o tamanho do LUN diminuiu. No entanto, podem ser necessárias etapas adicionais no seu host para que o host reconheça o novo tamanho de LUN. Verifique a documentação do host para obter informações específicas sobre como diminuir o tamanho da estrutura do arquivo host.

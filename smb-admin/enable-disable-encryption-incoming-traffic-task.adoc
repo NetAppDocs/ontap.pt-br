@@ -1,0 +1,62 @@
+---
+permalink: smb-admin/enable-disable-encryption-incoming-traffic-task.html 
+sidebar: sidebar 
+keywords: require, smb, encryption, traffic, enable, cifs, server, share, level, default, enable or disable required smb encyrption for incoming smb traffic 
+summary: Se pretender exigir encriptação SMB para o tráfego SMB de entrada, pode ativá-la no servidor CIFS ou no nível de partilha. Por padrão, a criptografia SMB não é necessária. 
+---
+= Ative ou desative a encriptação SMB necessária para o tráfego SMB de entrada
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se pretender exigir encriptação SMB para o tráfego SMB de entrada, pode ativá-la no servidor CIFS ou no nível de partilha. Por padrão, a criptografia SMB não é necessária.
+
+.Sobre esta tarefa
+Você pode ativar a criptografia SMB no servidor CIFS, que se aplica a todos os compartilhamentos no servidor CIFS. Se não pretender a encriptação SMB necessária para todos os partilhas no servidor CIFS ou se pretender ativar a encriptação SMB necessária para o tráfego SMB de entrada numa base de partilha por partilha, pode desativar a encriptação SMB necessária no servidor CIFS.
+
+Quando você configura uma relação de recuperação de desastres de máquina virtual de storage (SVM), o valor selecionado para a `-identity-preserve` opção `snapmirror create` do comando determina os detalhes de configuração replicados no SVM de destino.
+
+Se você definir `-identity-preserve` a opção como `true` (ID-Preserve), a configuração de segurança de criptografia SMB será replicada para o destino.
+
+Se você definir `-identity-preserve` a opção como `false` (não-ID-Preserve), a configuração de segurança de criptografia SMB não será replicada para o destino. Nesse caso, as configurações de segurança do servidor CIFS no destino são definidas com os valores padrão. Se tiver ativado a encriptação SMB na SVM de origem, tem de ativar manualmente a encriptação SMB do servidor CIFS no destino.
+
+.Passos
+. Execute uma das seguintes ações:
++
+|===
+| Se pretender que a encriptação SMB necessária para o tráfego SMB de entrada no servidor CIFS seja... | Digite o comando... 
+
+
+ a| 
+Ativado
+ a| 
+`vserver cifs security modify -vserver _vserver_name_ -is-smb-encryption-required true`
+
+
+
+ a| 
+Desativado
+ a| 
+`vserver cifs security modify -vserver _vserver_name_ -is-smb-encryption-required false`
+
+|===
+. Verifique se a criptografia SMB necessária no servidor CIFS está ativada ou desativada conforme desejado: `vserver cifs security show -vserver _vserver_name_ -fields is-smb-encryption-required`
++
+O `is-smb-encryption-required` campo é exibido `true` se a criptografia SMB necessária estiver ativada no servidor CIFS e `false` se estiver desativada.
+
+
+
+.Exemplo
+O exemplo a seguir habilita a criptografia SMB necessária para o tráfego SMB de entrada para o servidor CIFS no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs security modify -vserver vs1 -is-smb-encryption-required true
+
+cluster1::> vserver cifs security show -vserver vs1 -fields is-smb-encryption-required
+vserver  is-smb-encryption-required
+-------- -------------------------
+vs1      true
+----

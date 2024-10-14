@@ -1,0 +1,241 @@
+---
+permalink: system-admin/commands-manage-sp-from-ontap-reference.html 
+sidebar: sidebar 
+keywords: command, manage, sp, ontap, network, configuration, firmware, image, ssh 
+summary: O ONTAP fornece comandos para gerenciar o SP, incluindo a configuração de rede SP, a imagem de firmware do SP, o acesso SSH ao SP e a administração geral do SP. 
+---
+= Comandos para gerenciar o SP a partir do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP fornece comandos para gerenciar o SP, incluindo a configuração de rede SP, a imagem de firmware do SP, o acesso SSH ao SP e a administração geral do SP.
+
+
+
+== Comandos para gerenciar a configuração de rede SP
+
+|===
+| Se você quiser... | Execute este comando ONTAP... 
+
+
+ a| 
+Ative a configuração automática de rede SP para o SP usar a família de endereços IPv4 ou IPv6 da sub-rede especificada
+ a| 
+`system service-processor network auto-configuration enable`
+
+
+
+ a| 
+Desative a configuração automática de rede SP para a família de endereços IPv4 ou IPv6 da sub-rede especificada para o SP
+ a| 
+`system service-processor network auto-configuration disable`
+
+
+
+ a| 
+Apresentar a configuração automática da rede SP
+ a| 
+`system service-processor network auto-configuration show`
+
+
+
+ a| 
+Configure manualmente a rede SP para um nó, incluindo o seguinte:
+
+* A família de endereços IP (IPv4 ou IPv6)
+* Se a interface de rede da família de endereços IP especificada deve ser ativada
+* Se estiver a utilizar IPv4, utilize a configuração de rede a partir do servidor DHCP ou o endereço de rede especificado
+* O endereço IP público do SP
+* A máscara de rede para o SP (se utilizar IPv4)
+* O tamanho do prefixo da rede da máscara de sub-rede para o SP (se estiver usando IPv6)
+* O endereço IP do gateway para o SP
+
+ a| 
+`system service-processor network modify`
+
+
+
+ a| 
+Exiba a configuração de rede SP, incluindo o seguinte:
+
+* A família de endereços configurada (IPv4 ou IPv6) e se está ativada
+* O tipo de dispositivo de gerenciamento remoto
+* O estado atual do SP e o estado da ligação
+* Configuração de rede, como endereço IP, endereço MAC, máscara de rede, tamanho do prefixo da máscara de sub-rede, endereço IP atribuído pelo roteador, endereço IP local do link e endereço IP do gateway
+* A hora em que o SP foi atualizado pela última vez
+* O nome da sub-rede utilizada para a configuração automática do SP
+* Se o endereço IP atribuído ao router IPv6 está ativado
+* Estado da configuração da rede SP
+* Motivo da falha de configuração da rede SP
+
+ a| 
+`system service-processor network show`
+
+A exibição de detalhes completos da rede SP requer o `-instance` parâmetro.
+
+
+
+ a| 
+Modifique a configuração do serviço API do SP, incluindo o seguinte:
+
+* Alterar a porta usada pelo serviço de API do SP
+* Ativar ou desativar o serviço de API SP
+
+ a| 
+`system service-processor api-service modify`
+
+(nível de privilégio avançado)
+
+
+
+ a| 
+Exibir a configuração do serviço da API do SP
+ a| 
+`system service-processor api-service show`
+
+(nível de privilégio avançado)
+
+
+
+ a| 
+Renove os certificados SSL e SSH usados pelo serviço API SP para comunicação interna
+ a| 
+* Para o ONTAP 9.5 ou posterior: `system service-processor api-service renew-internal-certificates`
+* Para o ONTAP 9.4 ou anterior: `system service-processor api-service renew-certificates`
++
+(nível de privilégio avançado)
+
+
+
+|===
+
+
+== Comandos para gerenciar a imagem de firmware do SP
+
+|===
+| Se você quiser... | Execute este comando ONTAP... 
+
+
+ a| 
+Exiba os detalhes da imagem de firmware do SP atualmente instalada, incluindo o seguinte:
+
+* O tipo de dispositivo de gerenciamento remoto
+* A imagem (principal ou backup) da qual o SP é inicializado, seu status e versão do firmware
+* Se a atualização automática do firmware está ativada e o estado da última atualização
+
+ a| 
+`system service-processor image show`
+
+O `-is-current` parâmetro indica a imagem (primária ou de cópia de segurança) da qual o SP está atualmente inicializado, não se a versão do firmware instalada for a mais atual.
+
+
+
+ a| 
+Ative ou desative a atualização automática de firmware do SP
+ a| 
+`system service-processor image modify`
+
+Por padrão, o firmware do SP é atualizado automaticamente com a atualização do ONTAP ou quando uma nova versão do firmware do SP é baixada manualmente. Desativar a atualização automática não é recomendado porque isso pode resultar em combinações subótimas ou não qualificadas entre a imagem ONTAP e a imagem de firmware SP.
+
+
+
+ a| 
+Transfira manualmente uma imagem de firmware SP num nó
+ a| 
+`system node image get`
+
+[NOTE]
+====
+Antes de executar os `system node image` comandos, você deve definir o nível de privilégio como avançado (`set -privilege advanced`), inserindo *y* quando solicitado a continuar.
+
+====
+A imagem de firmware do SP é fornecida com o ONTAP. Não é necessário baixar o firmware do SP manualmente, a menos que você queira usar uma versão de firmware do SP diferente da fornecida com o ONTAP.
+
+
+
+ a| 
+Exiba o status da última atualização de firmware do SP acionada pelo ONTAP, incluindo as seguintes informações:
+
+* A hora de início e fim da atualização de firmware mais recente do SP
+* Se uma atualização está em andamento e a porcentagem que está concluída
+
+ a| 
+`system service-processor image update-progress show`
+
+|===
+
+
+== Comandos para gerenciar o acesso SSH ao SP
+
+|===
+| Se você quiser... | Execute este comando ONTAP... 
+
+
+ a| 
+Conceda acesso SP apenas aos endereços IP especificados
+ a| 
+`system service-processor ssh add-allowed-addresses`
+
+
+
+ a| 
+Bloquear o acesso aos endereços IP especificados ao SP
+ a| 
+`system service-processor ssh remove-allowed-addresses`
+
+
+
+ a| 
+Exiba os endereços IP que podem acessar o SP
+ a| 
+`system service-processor ssh show`
+
+|===
+
+
+== Comandos para administração geral do SP
+
+|===
+| Se você quiser... | Execute este comando ONTAP... 
+
+
+ a| 
+Exibir informações gerais do SP, incluindo o seguinte:
+
+* O tipo de dispositivo de gerenciamento remoto
+* O estado atual do SP
+* Se a rede SP está configurada
+* Informações de rede, como o endereço IP público e o endereço MAC
+* A versão do firmware do SP e a versão da interface de gestão inteligente da plataforma (IPMI)
+* Se a atualização automática do firmware do SP está ativada
+
+ a| 
+`system service-processor show` A exibição de informações completas do SP requer o `-instance` parâmetro.
+
+
+
+ a| 
+Reinicie o SP em um nó
+ a| 
+`system service-processor reboot-sp`
+
+
+
+ a| 
+Gere e envie uma mensagem do AutoSupport que inclua os arquivos de log do SP coletados de um nó especificado
+ a| 
+`system node autosupport invoke-splog`
+
+
+
+ a| 
+Exiba o mapa de alocação dos arquivos de log do SP coletados no cluster, incluindo os números de sequência dos arquivos de log do SP que residem em cada nó de coleta
+ a| 
+`system service-processor log show-allocations`
+
+|===
+.Informações relacionadas
+link:../concepts/manual-pages.html["Referência do comando ONTAP"]

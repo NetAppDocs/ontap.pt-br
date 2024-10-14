@@ -1,0 +1,108 @@
+---
+permalink: smb-hyper-v-sql/volume-config-worksheet-reference.html 
+sidebar: sidebar 
+keywords: complete, volume, configuration, worksheet, sql, server, hyper, v, smb, configuration 
+summary: A Planilha fornece uma maneira fácil de Registrar os valores de que você precisa ao criar volumes para configurações do SQL Server e do Hyper-V em SMB. 
+---
+= Conclua a Planilha de configuração de volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A Planilha fornece uma maneira fácil de Registrar os valores de que você precisa ao criar volumes para configurações do SQL Server e do Hyper-V em SMB.
+
+Para cada volume, você deve especificar as seguintes informações:
+
+* Nome da máquina virtual de storage (SVM)
++
+O nome do SVM é o mesmo para todos os volumes.
+
+* Nome do volume
+* Nome agregado
++
+É possível criar volumes em agregados localizados em qualquer nó do cluster.
+
+* Tamanho
+* Caminho de junção
+
+
+Você deve ter em mente o seguinte ao criar volumes usados para armazenar dados do servidor de aplicativos:
+
+* Se o volume raiz não tiver um estilo de segurança NTFS, deve especificar o estilo de segurança como NTFS quando criar o volume.
++
+Por padrão, os volumes herdam o estilo de segurança do volume raiz da SVM.
+
+* Os volumes devem ser configurados com a garantia de espaço de volume padrão.
+* Opcionalmente, você pode configurar a configuração de gerenciamento de espaço de dimensionamento automático.
+* Você deve definir a opção que determina a reserva de espaço de cópia Snapshot como `0`.
+* A política Snapshot aplicada ao volume deve ser desativada.
++
+Se a política SVM Snapshot estiver desativada, você não precisará especificar uma política de Snapshot para os volumes. Os volumes herdam a política Snapshot da SVM. Se a política Snapshot do SVM não estiver desativada e estiver configurada para criar cópias Snapshot, você precisará especificar uma política de Snapshot no nível de volume e essa política deverá ser desativada. Os backups habilitados para o serviço de cópia sombra e os backups do SQL Server gerenciam a criação e exclusão de cópias Snapshot.
+
+* Não é possível configurar espelhos de compartilhamento de carga para os volumes.
+
+
+Os caminhos de junção nos quais você planeja criar compartilhamentos que os servidores de aplicativos usam devem ser escolhidos para que não haja volumes juntados abaixo do ponto de entrada de compartilhamento.
+
+Por exemplo, se você quiser armazenar arquivos de máquina virtual em quatro volumes denominados "'vol1"", "'vol2", "'vol3" e "'vol4"", você pode criar o namespace mostrado no exemplo. Em seguida, é possível criar compartilhamentos para os servidores de aplicativos nos seguintes caminhos: `/data1/vol1`, `/data1/vol2`, `/data2/vol3` E `/data2/vol4`.
+
+[listing]
+----
+
+                     Junction                       Junction
+Vserver Volume       Active   Junction Path         Path Source
+------- ------------ -------- -------------------   -----------
+vs1     data1         true     /data1               RW_volume
+vs1     vol1          true     /data1/vol1          RW_volume
+vs1     vol2          true     /data1/vol2          RW_volume
+vs1     data2         true     /data2               RW_volume
+vs1     vol3          true     /data2/vol3          RW_volume
+vs1     vol4          true     /data2/vol4          RW_volume
+----
+|===
+| Tipos de informação | Valores 
+
+
+ a| 
+_Volume 1: Nome do volume, agregado, tamanho, caminho de junção_
+ a| 
+
+
+
+ a| 
+_Volume 2: Nome do volume, agregado, tamanho, caminho de junção_
+ a| 
+
+
+
+ a| 
+_Volume 3: Nome do volume, agregado, tamanho, caminho de junção_
+ a| 
+
+
+
+ a| 
+_Volume 4: Nome do volume, agregado, tamanho, caminho de junção_
+ a| 
+
+
+
+ a| 
+_Volume 5: Nome do volume, agregado, tamanho, caminho de junção_
+ a| 
+
+
+
+ a| 
+_Volume 6: Nome do volume, agregado, tamanho, caminho de junção_
+ a| 
+
+
+
+ a| 
+_Volumes adicionais: Nome do volume, agregado, tamanho, caminho de junção_
+ a| 
+
+|===

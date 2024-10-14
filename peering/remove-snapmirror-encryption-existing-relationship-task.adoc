@@ -1,0 +1,72 @@
+---
+permalink: peering/remove-snapmirror-encryption-existing-relationship-task.html 
+sidebar: sidebar 
+keywords: remove, cluster, peering, encryption, existing, peer, relationship 
+summary: Por padrão, a criptografia de peering de cluster é ativada em todos os relacionamentos de pares criados no ONTAP 9.6 ou posterior. Se você não quiser usar criptografia para comunicações de peering entre clusters, você pode desativá-la. 
+---
+= Remova a criptografia de peering de cluster de um relacionamento de pares existente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Por padrão, a criptografia de peering de cluster é ativada em todos os relacionamentos de pares criados no ONTAP 9.6 ou posterior. Se você não quiser usar criptografia para comunicações de peering entre clusters, você pode desativá-la.
+
+.Passos
+. No cluster de destino, modifique as comunicações com o cluster de origem para interromper o uso da criptografia de peering de cluster:
++
+** Para remover a criptografia, mas manter a autenticação, digite:
++
+[source, cli]
+----
+cluster peer modify <source_cluster> -auth-status-admin use-authentication -encryption-protocol-proposed none
+----
+** Para remover criptografia e autenticação:
++
+... Modifique a política de peering de cluster para permitir acesso não autenticado:
++
+[source, cli]
+----
+cluster peer policy modify -is-unauthenticated-access-permitted true
+----
+... Modificar criptografia e acesso de autenticação:
++
+[source, cli]
+----
+cluster peer modify <source_cluster> -auth-status no-authentication
+----
+
+
+
+
+. Quando solicitado, introduza a frase-passe.
+. Confirme a frase-passe reinserindo-a.
+. No cluster de origem, desative a encriptação para comunicação com o cluster de destino:
++
+** Para remover a criptografia, mas manter a autenticação, digite:
++
+[source, cli]
+----
+cluster peer modify <destination_cluster> -auth-status-admin use-authentication -encryption-protocol-proposed none
+----
+** Para remover criptografia e autenticação:
++
+... Modifique a política de peering de cluster para permitir acesso não autenticado:
++
+[source, cli]
+----
+cluster peer policy modify -is-unauthenticated-access-permitted true
+----
+... Modificar criptografia e acesso de autenticação:
++
+[source, cli]
+----
+cluster peer modify <destination_cluster> -auth-status no-authentication
+----
+
+
+
+
+. Quando solicitado, introduza e introduza novamente a mesma frase-passe utilizada no cluster de destino.
+

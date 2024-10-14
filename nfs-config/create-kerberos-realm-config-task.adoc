@@ -1,0 +1,47 @@
+---
+permalink: nfs-config/create-kerberos-realm-config-task.html 
+sidebar: sidebar 
+keywords: create, nfs, kerberos, realm, configuration 
+summary: Se você quiser que o ONTAP acesse servidores Kerberos externos em seu ambiente, primeiro configure o SVM para usar um realm Kerberos existente. Para fazer isso, você precisa reunir valores de configuração para o servidor KDC Kerberos e, em seguida, usar o comando vserver nfs Kerberos realm create para criar a configuração de realm Kerberos em uma SVM. 
+---
+= Crie uma configuração NFS Kerberos realm
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você quiser que o ONTAP acesse servidores Kerberos externos em seu ambiente, primeiro configure o SVM para usar um realm Kerberos existente. Para fazer isso, você precisa reunir valores de configuração para o servidor KDC Kerberos e, em seguida, usar o `vserver nfs kerberos realm create` comando para criar a configuração de realm Kerberos em um SVM.
+
+.O que você vai precisar
+O administrador do cluster deve ter configurado o NTP no sistema de armazenamento, cliente e servidor KDC para evitar problemas de autenticação. As diferenças de tempo entre um cliente e um servidor (desvio de relógio) são uma causa comum de falhas de autenticação.
+
+.Passos
+. Consulte o administrador do Kerberos para determinar os valores de configuração apropriados para fornecer com o `vserver nfs kerberos realm create` comando.
+. Crie uma configuração de realm Kerberos no SVM:
++
+`vserver nfs kerberos realm create -vserver _vserver_name_ -realm _realm_name_ _{AD_KDC_server_values |AD_KDC_server_values}_ -comment "_text_"`
+
+. Verifique se a configuração do realm Kerberos foi criada com sucesso:
++
+`vserver nfs kerberos realm show`
+
+
+
+.Exemplos
+O comando a seguir cria uma configuração NFS Kerberos Realm para o SVM VS1 que usa um servidor Microsoft ative Directory como servidor KDC. O Reino Kerberos é AUTH.EXAMPLE.COM. O servidor do ative Directory tem o nome ad-1 e seu endereço IP é 10.10.8.14. O desvio de relógio permitido é de 300 segundos (o padrão). O endereço IP do servidor KDC é 10.10.8.14, e seu número de porta é 88 (o padrão). "Configuração do Microsoft Kerberos" é o comentário.
+
+[listing]
+----
+vs1::> vserver nfs kerberos realm create -vserver vs1 -realm AUTH.EXAMPLE.COM -adserver-name ad-1
+-adserver-ip 10.10.8.14 -clock-skew 300 -kdc-ip 10.10.8.14 -kdc-port 88 -kdc-vendor Microsoft
+-comment "Microsoft Kerberos config"
+----
+O comando a seguir cria uma configuração NFS Kerberos realm para o SVM VS1 que usa um MIT KDC. O Reino Kerberos é SECURITY.EXAMPLE.COM. A inclinação permitida do relógio é de 300 segundos. O endereço IP do servidor KDC é 10.10.9.1, e seu número de porta é 88. O fornecedor KDC é outro para indicar um fornecedor UNIX. O endereço IP do servidor administrativo é 10.10.9.1, e seu número de porta é 749 (o padrão). O endereço IP do servidor de senhas é 10.10.9.1, e seu número de porta é 464 (o padrão). "UNIX Kerberos config" é o comentário.
+
+[listing]
+----
+vs1::> vserver nfs kerberos realm create -vserver vs1 -realm SECURITY.EXAMPLE.COM. -clock-skew 300
+-kdc-ip 10.10.9.1 -kdc-port 88 -kdc-vendor Other -adminserver-ip 10.10.9.1 -adminserver-port 749
+-passwordserver-ip 10.10.9.1 -passwordserver-port 464 -comment "UNIX Kerberos config"
+----

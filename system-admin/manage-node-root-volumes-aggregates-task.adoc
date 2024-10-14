@@ -1,0 +1,162 @@
+---
+permalink: system-admin/manage-node-root-volumes-aggregates-task.html 
+sidebar: sidebar 
+keywords: node, governing, root, volume, aggregate, files, special, directories, free, space, full, delete, file, core, dump 
+summary: O volume raiz de um nó é um FlexVol volume instalado na fábrica ou pelo software de configuração. 
+---
+= Gerenciar volumes de raiz de nós e agregados de raiz
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O volume raiz de um nó é um FlexVol volume instalado na fábrica ou pelo software de configuração. Ele é reservado para arquivos de sistema, arquivos de log e arquivos principais. O nome do diretório é `/mroot`, que é acessível somente através do systemshell pelo suporte técnico. O tamanho mínimo para o volume raiz de um nó depende do modelo da plataforma.
+
+
+
+== Regras que regem os volumes de raiz dos nós e a visão geral dos agregados de raiz
+
+O volume raiz de um nó contém diretórios e arquivos especiais para esse nó. O agregado raiz contém o volume raiz. Algumas regras governam o volume raiz e o agregado raiz de um nó.
+
+* As seguintes regras regem o volume raiz do nó:
++
+** A menos que o suporte técnico o instrua a fazê-lo, não modifique a configuração ou o conteúdo do volume raiz.
+** Não armazene dados do usuário no volume raiz.
++
+Armazenar dados de usuário no volume raiz aumenta o tempo de giveback de storage entre nós em um par de HA.
+
+** Você pode mover o volume raiz para outro agregado. <<relocate-root>>Consulte .
+
+
+* O agregado raiz é dedicado apenas ao volume raiz do nó.
++
+O ONTAP impede que você crie outros volumes no agregado raiz.
+
+
+
+https://hwu.netapp.com["NetApp Hardware Universe"^]
+
+
+
+== Libere espaço no volume raiz de um nó
+
+Uma mensagem de aviso aparece quando o volume raiz de um nó ficou cheio ou quase cheio. O nó não pode funcionar corretamente quando seu volume raiz está cheio. Você pode liberar espaço no volume raiz de um nó excluindo arquivos de despejo de núcleo, arquivos de rastreamento de pacotes e cópias Snapshot de volume raiz.
+
+.Passos
+. Exiba os arquivos de despejo de núcleo do nó e seus nomes:
++
+`system node coredump show`
+
+. Excluir arquivos indesejados de despejo de memória do nó:
++
+`system node coredump delete`
+
+. Acesse o nodeshell:
++
+`*system node run -node _nodename_*`
+
++
+`_nodename_` é o nome do nó cujo espaço de volume raiz você deseja liberar.
+
+. Mude para o nível de privilégio avançado nodeshell a partir do nodeshell:
++
+`*priv set advanced*`
+
+. Exiba e exclua os arquivos de rastreamento de pacotes do nó através do nodeshell:
++
+.. Exibir todos os arquivos no volume raiz do nó:
++
+`*ls /etc*`
+
+.. Se algum arquivo de rastreamento de pacote (`*.trc`) estiver no volume raiz do nó, exclua-os individualmente:
++
+`*rm /etc/log/packet_traces/_file_name.trc_*`
+
+
+
+. Identifique e exclua as cópias Snapshot do volume raiz do nó através do nodeshell:
++
+.. Identifique o nome do volume raiz:
++
+`*vol status*`
+
++
+O volume raiz é indicado pela palavra "root" na coluna "Opções" da `vol status` saída do comando.
+
++
+No exemplo a seguir, o volume raiz é `vol0`:
+
++
+[listing]
+----
+node1*> vol status
+
+         Volume State           Status            Options
+           vol0 online          raid_dp, flex     root, nvfail=on
+                                64-bit
+----
+.. Exibir cópias Snapshot do volume raiz:
++
+`*snap list root_vol_name*`
+
+.. Excluir cópias snapshot do volume raiz indesejadas:
++
+`*snap delete root_vol_namesnapshot_name*`
+
+
+
+. Saia do nodeshell e volte para a concha:
++
+`*exit*`
+
+
+
+
+
+== Realocar volumes raiz para novos agregados
+
+O procedimento de substituição de raiz migra o agregado de raiz atual para outro conjunto de discos sem interrupção.
+
+.Sobre esta tarefa
+O failover de armazenamento deve estar habilitado para realocar volumes raiz. Você pode usar o `storage failover modify -node _nodename_ -enable true` comando para ativar o failover.
+
+Você pode alterar o local do volume raiz para um novo agregado nos seguintes cenários:
+
+* Quando os agregados de raiz não estão no disco que preferir
+* Quando pretender reorganizar os discos ligados ao nó
+* Quando estiver a efetuar uma substituição de prateleira das prateleiras de disco EOS
+
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+`*set privilege advanced*`
+
+. Realocar o agregado raiz:
++
+`*system node migrate-root -node _nodename_ -disklist _disklist_ -raid-type _raid-type_*`
+
++
+** *-node*
++
+Especifica o nó que possui o agregado raiz que você deseja migrar.
+
+** *-disklist*
++
+Especifica a lista de discos nos quais o novo agregado raiz será criado. Todos os discos precisam ser sobressalentes e de propriedade do mesmo nó. O número mínimo de discos necessário depende do tipo RAID.
+
+** *-raid-type*
++
+Especifica o tipo RAID do agregado raiz. O valor padrão é `raid-dp`.
+
+
+
+. Monitorize o progresso do trabalho:
++
+`*job show -id _jobid_ -instance*`
+
+
+
+.Resultados
+Se todas as pré-verificações forem bem-sucedidas, o comando iniciará uma tarefa de substituição de volume raiz e será encerrado. Espere que o nó seja reiniciado.

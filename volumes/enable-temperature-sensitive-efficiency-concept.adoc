@@ -1,0 +1,47 @@
+---
+permalink: volumes/enable-temperature-sensitive-efficiency-concept.html 
+sidebar: sidebar 
+keywords: enable, temperature, sensitive, storage, efficiency, sequential packing 
+summary: Introduzida no ONTAP 9.8, a eficiência de storage sensível à temperatura é ativada automaticamente em alguns volumes do AFF ou manualmente nos volumes existentes. 
+---
+= Visão geral da eficiência de storage sensível à temperatura
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP fornece benefícios de eficiência de storage sensíveis à temperatura ao avaliar a frequência com que os dados do volume são acessados e mapear essa frequência para o nível de compressão aplicado a esses dados. Para dados inativos acessados com pouca frequência, blocos de dados maiores são compatados e, para dados ativos, acessados com frequência e substituídos com mais frequência, blocos de dados menores são compatados, tornando o processo mais eficiente.
+
+A eficiência de storage sensível à temperatura (SSE) é introduzida no ONTAP 9.8 e é ativada automaticamente em volumes AFF recém-criados com provisionamento reduzido. Você pode ativar a eficiência de storage sensível à temperatura em volumes AFF existentes e em volumes DP não AFF provisionados de forma fina.
+
+
+NOTE: A eficiência de storage sensível à temperatura não é aplicada nas plataformas AFF A70, AFF A90 e AFF A1K. A compactação não se baseia em dados ativos ou inativos nessas plataformas. Portanto, a compactação começa sem esperar que os dados fiquem inativos.
+
+.Introdução dos modos "padrão" e "eficiente"
+A partir do ONTAP 9.10,1, os modos de eficiência de storage no nível de volume _default_ e _efficient_ são introduzidos apenas para sistemas AFF. Os dois modos oferecem a opção entre compactação de arquivos (padrão), que é o modo padrão ao criar novos volumes AFF ou eficiência de storage sensível à temperatura (eficiente), que permite a eficiência de storage sensível à temperatura. Com o ONTAP 9.10,1, link:../volumes/set-efficiency-mode-task.html["a eficiência de storage sensível à temperatura deve ser definida explicitamente"] para ativar a compressão adaptável automática. No entanto, outros recursos de eficiência de storage, como compactação de dados, cronograma de deduplicação automática, deduplicação in-line entre volumes e deduplicação em segundo plano entre volumes, são habilitados por padrão nas plataformas AFF para os modos padrão e eficiente.
+
+Ambos os modos de eficiência de storage (padrão e eficiente) são compatíveis com agregados habilitados para FabricPool e com todos os tipos de política de disposição em camadas.
+
+.Eficiência de storage sensível à temperatura ativada nas plataformas C-Series
+A eficiência de storage sensível à temperatura é habilitada por padrão nas plataformas AFF C-Series e ao migrar volumes de uma plataforma que não seja TSSE para uma plataforma C-Series habilitada para TSSE usando a movimentação de volume ou SnapMirror com as seguintes versões instaladas no destino:
+
+* ONTAP 9.12.1P4 e posterior
+* ONTAP 9.13,1 e posterior
+
+
+Para obter mais informações, link:../volumes/storage-efficiency-behavior-snapmirror-reference.html["Comportamento de eficiência de storage com movimentação de volume e operações de SnapMirror"]consulte .
+
+No caso dos volumes existentes, a eficiência de storage sensível à temperatura não é ativada automaticamente. No entanto, é possível link:../volumes/change-efficiency-mode-task.html["modificar o modo de eficiência de storage"]alterar manualmente para o modo eficiente.
+
+
+NOTE: Depois de alterar o modo de eficiência de storage para eficiente, você não poderá alterá-lo novamente.
+
+.Eficiência de storage aprimorada com embalagem sequencial de blocos físicos contíguos
+A partir do ONTAP 9.13,1, a eficiência de storage sensível à temperatura adiciona empacotamento sequencial de blocos físicos contíguos para aprimorar ainda mais a eficiência de storage. Os volumes que têm a eficiência de storage sensível à temperatura ativada automaticamente têm o empacotamento sequencial habilitado quando você atualiza os sistemas para o ONTAP 9.13,1. Depois que a embalagem sequencial estiver ativada, é link:../volumes/run-efficiency-operations-manual-task.html["reembalar manualmente os dados existentes"]necessário .
+
+
+
+== Considerações sobre a atualização
+
+Ao atualizar para o ONTAP 9.10,1 e posterior, os volumes existentes recebem um modo de eficiência de storage com base no tipo de compactação atualmente habilitado nos volumes. Durante uma atualização, os volumes com compressão ativada recebem o modo padrão e os volumes com eficiência de storage sensível à temperatura ativada recebem o modo eficiente. Se a compactação não estiver ativada, o modo de eficiência de storage permanecerá em branco.

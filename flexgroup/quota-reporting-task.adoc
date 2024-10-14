@@ -1,0 +1,475 @@
+---
+permalink: flexgroup/quota-reporting-task.html 
+sidebar: sidebar 
+keywords: quota, flexgroup, volume, flex group, limit, snap mirror, snapmirror, qtree, user, group 
+summary: No ONTAP 9.4 e versões anteriores, você pode aplicar regras de cotas aos volumes do FlexGroup apenas para fins de geração de relatórios, mas não para impor limites de cota. A partir do ONTAP 9.5, é possível impor limites às regras de cota aplicadas aos volumes do FlexGroup. 
+---
+= Usar cotas para volumes FlexGroup
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+No ONTAP 9.4 e versões anteriores, você pode aplicar regras de cotas aos volumes do FlexGroup apenas para fins de geração de relatórios, mas não para impor limites de cota. A partir do ONTAP 9.5, é possível impor limites às regras de cota aplicadas aos volumes do FlexGroup.
+
+.Sobre esta tarefa
+* A partir do ONTAP 9.5, é possível especificar cotas de limite rígido, flexível e de limite de limite para volumes FlexGroup.
++
+Você pode especificar esses limites para restringir a quantidade de espaço, o número de arquivos que um usuário, grupo ou qtree específico pode criar, ou ambos. Os limites de cota geram mensagens de aviso nos seguintes cenários:
+
++
+** Quando o uso excede um limite de software configurado, o ONTAP emite uma mensagem de aviso, mas ainda é permitido tráfego adicional.
++
+Se a utilização mais tarde descer abaixo do limite de software configurado novamente, é emitida uma mensagem totalmente limpa.
+
+** Quando o uso excede um limite de limite configurado, o ONTAP emite uma segunda mensagem de aviso.
++
+Nenhuma mensagem administrativa totalmente clara é emitida quando o uso mais tarde cai abaixo de um limite de limite configurado.
+
+** Se a utilização atingir um limite rígido configurado, o ONTAP impede o consumo adicional de recursos rejeitando o tráfego.
+
+
+* No ONTAP 9.5, as regras de quota não podem ser criadas ou ativadas no volume FlexGroup de destino de uma relação SnapMirror.
+* Durante a inicialização da cota, as cotas não são aplicadas e não há notificações de cotas violadas após a inicialização da cota.
++
+Para verificar se as cotas foram violadas durante a inicialização da cota, você pode usar o `volume quota report` comando.
+
+
+
+
+
+== Cotas e tipos
+
+As cotas têm um tipo: Podem ser usuário, grupo ou árvore. Os alvos de cota especificam o usuário, grupo ou qtree para o qual os limites de cota são aplicados.
+
+A tabela a seguir lista os tipos de metas de cota, os tipos de cotas a que cada meta de cota está associada e como cada meta de cota é representada:
+
+|===
+
+
+| Destino de cota | Tipo de cota | Como o alvo é representado | Notas 
+
+
+ a| 
+utilizador
+ a| 
+quota de utilizador
+ a| 
+Nome de utilizador UNIX UID UNIX
+
+Nome de utilizador do Windows no formato pré-Windows 2000
+
+Windows SID
+ a| 
+As cotas de usuário podem ser aplicadas para um volume ou qtree específico.
+
+
+
+ a| 
+grupo
+ a| 
+cota de grupo
+ a| 
+Nome do grupo UNIX GID
+ a| 
+As cotas de grupo podem ser aplicadas para um volume ou qtree específico.
+
+
+NOTE: O ONTAP não aplica cotas de grupo com base em IDs do Windows.
+
+
+
+ a| 
+qtree
+ a| 
+cota de árvore
+ a| 
+nome de qtree
+ a| 
+As cotas de árvore são aplicadas a um volume específico e não afetam qtrees em outros volumes.
+
+
+
+ a| 
+`""`
+ a| 
+cota de usuário quotagroup
+
+cota de árvore
+ a| 
+Aspas duplas (""")
+ a| 
+Um alvo de cota de "" denota uma quota _default_. Para cotas padrão, o tipo de cota é determinado pelo valor do campo tipo.
+
+|===
+
+
+== Comportamento dos volumes FlexGroup quando os limites de cota são excedidos
+
+A partir do ONTAP 9.5, os limites de cota são suportados em volumes FlexGroup. Existem algumas diferenças na forma como os limites de cota são aplicados em um volume FlexGroup quando comparado a um FlexVol volume.
+
+Os volumes FlexGroup podem mostrar os seguintes comportamentos quando os limites de cota são excedidos:
+
+* O espaço e o uso de arquivos em um volume FlexGroup podem atingir até 5% mais alto do que o limite rígido configurado antes que o limite de cota seja imposto pela rejeição de tráfego adicional.
++
+Para fornecer o melhor desempenho, o ONTAP pode permitir que o consumo de espaço exceda o limite rígido configurado por uma pequena margem antes do início da aplicação da cota. Esse consumo de espaço adicional não excede 5% dos limites rígidos configurados, 1 GB ou 65536 arquivos, o que for menor.
+
+* Depois que o limite de cota for atingido, se um usuário ou administrador excluir alguns arquivos ou diretórios de modo que o uso de cota esteja agora abaixo do limite, a operação de arquivo que consome cota subsequente pode retomar com um atraso (pode levar até 5 segundos para ser retomada).
+* Quando o espaço total e o uso do arquivo de um volume FlexGroup excederem os limites de cota configurados, pode haver um ligeiro atraso no Registro de uma mensagem de log de eventos.
+* Você pode obter erros "sem espaço" se alguns constituintes do volume FlexGroup ficarem cheios, mas os limites de cota não forem atingidos.
+* Operações, como renomear um arquivo ou diretório ou mover arquivos entre qtrees, em alvos de cota, para os quais os limites rígidos de cota são configurados, podem levar mais tempo quando comparadas a operações semelhantes em volumes FlexVol.
+
+
+
+
+== Exemplos de aplicação de cotas para volumes FlexGroup
+
+Você pode usar os exemplos para entender como configurar cotas com limites no ONTAP 9.5 e posterior.
+
+.Exemplo 1: Aplicando uma regra de cota com limites de disco
+. Você deve criar uma regra de tipo de política de cota `user` com um limite de disco macio alcançável e um limite de disco rígido.
++
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -policy-name default -volume FG -type user -target "" -qtree "" -disk-limit 1T -soft-disk-limit 800G
+----
+. Você pode exibir a regra de política de cota:
++
+[listing]
+----
+cluster1::> volume quota policy rule show -vserver vs0 -policy-name default -volume FG
+
+Vserver: vs0               Policy: default           Volume: FG
+
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   ""        ""      off           1TB    800GB       -        -          -
+----
+. Para ativar a nova regra de cota, inicialize cotas no volume:
++
+[listing]
+----
+cluster1::> volume quota on -vserver vs0 -volume FG -foreground true
+[Job 49] Job succeeded: Successful
+----
+. Você pode exibir as informações de uso de disco e de uso de arquivos do volume FlexGroup usando o relatório de cota.
++
+[listing]
+----
+cluster1::> volume quota report -vserver vs0 -volume FG
+Vserver: vs0
+
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+FG                 user    root      50GB      -       1       -
+FG                 user    *         800GB    1TB      0       -   *
+2 entries were displayed.
+----
+
+
+Depois que o limite do disco rígido é atingido, o destino da regra de política de cota (usuário, neste caso) é impedido de gravar mais dados nos arquivos.
+
+.Exemplo 2: Aplicar uma regra de quota para vários utilizadores
+. Você deve criar uma regra de política de cota de tipo `user`, em que vários usuários sejam especificados no destino de cota (usuários UNIX, usuários SMB ou uma combinação de ambos) e em que a regra tenha tanto um limite de disco macio quanto um limite de disco rígido alcançáveis.
++
+[listing]
+----
+cluster1::> quota policy rule create -vserver vs0 -policy-name default -volume FG -type user -target "rdavis,ABCCORP\RobertDavis" -qtree "" -disk-limit 1TB -soft-disk-limit  800GB
+----
+. Você pode exibir a regra de política de cota:
++
+[listing]
+----
+cluster1::> quota policy rule show -vserver vs0 -policy-name default -volume FG
+
+Vserver: vs0               Policy: default           Volume: FG
+
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   "rdavis,ABCCORP\RobertDavis"  "" off  1TB  800GB  -  -
+----
+. Para ativar a nova regra de cota, inicialize cotas no volume:
++
+[listing]
+----
+cluster1::> volume quota on -vserver vs0 -volume FG -foreground true
+[Job 49] Job succeeded: Successful
+----
+. Você pode verificar se o estado da cota está ativo:
++
+[listing]
+----
+cluster1::> volume quota show -vserver vs0 -volume FG
+              Vserver Name: vs0
+               Volume Name: FG
+               Quota State: on
+               Scan Status: -
+          Logging Messages: on
+          Logging Interval: 1h
+          Sub Quota Status: none
+  Last Quota Error Message: -
+Collection of Quota Errors: -
+----
+. Você pode exibir as informações de uso de disco e de uso de arquivos do volume FlexGroup usando o relatório de cota.
++
+[listing]
+----
+cluster1::> quota report -vserver vs0 -volume FG
+Vserver: vs0
+
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+FG                 user    rdavis,ABCCORP\RobertDavis  0B  1TB  0  -   rdavis,ABCCORP\RobertDavis
+----
++
+O limite de cota é compartilhado entre todos os usuários listados no destino de cota.
+
+
+
+Depois que o limite do disco rígido é atingido, os usuários listados no alvo de cota são bloqueados de gravar mais dados nos arquivos.
+
+.Exemplo 3: Aplicando a cota com o mapeamento de usuários ativado
+. Você deve criar uma regra de política de cota de tipo `user`, especificar um usuário UNIX ou um usuário do Windows como o destino de cota com `user-mapping` definido como `on`e criar a regra com um limite de disco rígido e um limite de disco rígido alcançáveis.
++
+O mapeamento entre usuários UNIX e Windows deve ser configurado anteriormente usando o `vserver name-mapping create` comando.
+
++
+[listing]
+----
+cluster1::> quota policy rule create -vserver vs0 -policy-name default -volume FG -type user -target rdavis -qtree "" -disk-limit 1TB -soft-disk-limit  800GB -user-mapping on
+----
+. Você pode exibir a regra de política de cota:
++
+[listing]
+----
+cluster1::> quota policy rule show -vserver vs0 -policy-name default -volume FG
+
+Vserver: vs0               Policy: default           Volume: FG
+
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   rdavis    ""      on           1TB    800GB       -        -          -
+----
+. Para ativar a nova regra de cota, inicialize cotas no volume:
++
+[listing]
+----
+cluster1::> volume quota on -vserver vs0 -volume FG -foreground true
+[Job 49] Job succeeded: Successful
+----
+. Você pode verificar se o estado da cota está ativo:
++
+[listing]
+----
+cluster1::> volume quota show -vserver vs0 -volume FG
+              Vserver Name: vs0
+               Volume Name: FG
+               Quota State: on
+               Scan Status: -
+          Logging Messages: on
+          Logging Interval: 1h
+          Sub Quota Status: none
+  Last Quota Error Message: -
+Collection of Quota Errors: -
+----
+. Você pode exibir as informações de uso de disco e de uso de arquivos do volume FlexGroup usando o relatório de cota.
++
+[listing]
+----
+cluster1::> quota report -vserver vs0 -volume FG
+Vserver: vs0
+
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+FG                 user    rdavis,ABCCORP\RobertDavis  0B  1TB  0  -   rdavis
+----
++
+O limite de cota é compartilhado entre o usuário listado no destino de cota e o usuário correspondente do Windows ou UNIX.
+
+
+
+Depois que o limite do disco rígido é atingido, tanto o usuário listado no destino da cota quanto seu usuário correspondente do Windows ou UNIX é impedido de gravar mais dados nos arquivos.
+
+.Exemplo 4: Verificando o tamanho de qtree quando a cota está ativada
+. Você deve criar uma regra de política de cota de tipo `tree` e onde a regra tenha um limite de disco flexível alcançável e um limite de disco rígido.
++
+[listing]
+----
+cluster1::> quota policy rule create -vserver vs0 -policy-name default -volume FG -type tree -target tree_4118314302 -qtree "" -disk-limit 48GB -soft-disk-limit 30GB
+----
+. Você pode exibir a regra de política de cota:
++
+[listing]
+----
+cluster1::> quota policy rule show -vserver vs0
+
+Vserver: vs0               Policy: default           Volume: FG
+
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+tree   tree_4118314302  "" -          48GB        -      20        -
+----
+. Para ativar a nova regra de cota, inicialize cotas no volume:
++
+[listing]
+----
+cluster1::> volume quota on -vserver vs0 -volume FG -foreground true
+[Job 49] Job succeeded: Successful
+----
++
+.. Você pode exibir as informações de uso de disco e de uso de arquivos do volume FlexGroup usando o relatório de cota.
++
+....
+cluster1::> quota report -vserver vs0
+Vserver: vs0
+----Disk---- ----Files----- Quota
+Volume Tree Type ID Used Limit Used Limit Specifier
+------- -------- ------ ------- ----- ----- ------ ------ ---------
+FG tree_4118314302 tree 1 30.35GB 48GB 14 20 tree_4118314302
+....
++
+O limite de cota é compartilhado entre o usuário listado no destino de cota e o usuário correspondente do Windows ou UNIX.
+
+
+
+. A partir de um cliente NFS, use o `df` comando para visualizar o uso total do espaço, o espaço disponível e o espaço usado.
++
+[listing]
+----
+scsps0472342001# df -m /t/10.53.2.189/FG-3/tree_4118314302
+Filesystem 1M-blocks Used Available Use% Mounted on
+10.53.2.189/FG-3 49152 31078 18074 63% /t/10.53.2.189/FG-3
+----
++
+Com o limite rígido, o uso do espaço é calculado a partir de um cliente NFS da seguinte forma:
+
++
+** Uso total de espaço: Limite rígido para árvore
+** Espaço livre: Limite rígido menos o uso do espaço de qtree sem limite rígido, o uso do espaço é calculado a partir de um cliente NFS da seguinte forma:
+** Uso de espaço: Uso de cota
+** Espaço total: Soma do uso da cota e espaço físico livre no volume
+
+
+. No compartilhamento SMB, use o Windows Explorer para exibir a utilização total do espaço, o espaço disponível e o espaço usado.
++
+Em um compartilhamento SMB, você deve estar ciente das seguintes considerações para calcular o uso do espaço:
+
++
+** O limite rígido da quota de utilizador para o utilizador e o grupo é levado em consideração para calcular o espaço total disponível.
+** O valor mínimo entre o espaço livre da regra de cota de árvore, a regra de cota de usuário e a regra de cota de grupo é considerado como o espaço livre para o compartilhamento SMB.
+** O uso total de espaço é variável para SMB e depende do limite rígido que corresponde ao espaço livre mínimo entre a árvore, o usuário e o grupo.
+
+
+
+
+
+
+== Aplique regras e limites no volume FlexGroups
+
+.Passos
+. Criar regras de quota para alvos : `volume quota policy rule create -vserver vs0 -policy-name quota_policy_of_the_rule -volume flexgroup_vol -type {tree|user|group} -target target_for_rule -qtree qtree_name [-disk-limit hard_disk_limit_size] [-file-limit hard_limit_number_of_files] [-threshold threshold_disk_limit_size] [-soft-disk-limit soft_disk_limit_size] [-soft-file-limit soft_limit_number_of_files]`
++
+** No ONTAP 9.2 e no ONTAP 9.1, o tipo de destino de cota pode ser somente `user` ou `group` para volumes FlexGroup.
++
+O tipo de cota de árvore não é suportado para volumes FlexGroup no ONTAP 9.2 e no ONTAP 9.1.
+
+** No ONTAP 9.3 e posterior, o tipo de destino de cota pode ser `user`, `group` ou `tree` para volumes FlexGroup.
+** Um caminho não é suportado como destino ao criar regras de cota para volumes FlexGroup.
+** A partir do ONTAP 9.5, você pode especificar limite de disco rígido, limite de arquivo rígido, limite de disco flexível, limite de arquivo macio e cotas de limite de limite para volumes FlexGroup.
++
+No ONTAP 9.4 e anteriores, você não pode especificar o limite de disco, limite de arquivo, limite de disco, limite de disco flexível ou limite de arquivo macio quando você criar regras de cota para volumes FlexGroup.
+
+
+
+
+
+O exemplo a seguir mostra uma regra de cota padrão que está sendo criada para o tipo de destino do usuário:
+
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -policy-name quota_policy_vs0_1 -volume fg1 -type user -target "" -qtree ""
+----
+O exemplo a seguir mostra uma regra de cota de árvore que está sendo criada para a qtree chamada qtree1:
+
+[listing]
+----
+cluster1::> volume quota policy rule create -policy-name default -vserver vs0 -volume fg1 -type tree -target "qtree1"
+----
+. Ative as cotas para o volume FlexGroup especificado: `volume quota on -vserver svm_name -volume flexgroup_vol -foreground true`
+
+
+[listing]
+----
+cluster1::> volume quota on -vserver vs0 -volume fg1 -foreground true
+----
+. Monitorar o estado da inicialização da cota: `volume quota show -vserver svm_name`
+
+
+Os volumes FlexGroup podem mostrar o `mixed` estado, o que indica que todos os volumes constituintes ainda não estão no mesmo estado.
+
+[listing]
+----
+cluster1::> volume quota show -vserver vs0
+                                          Scan
+Vserver    Volume        State            Status
+---------  ------------  ---------------  ------
+vs0        fg1           initializing         95%
+vs0        vol1          off                   -
+2 entries were displayed.
+----
+. Exibir o relatório de cota para o volume FlexGroup com cotas ativas: `volume quota report -vserver svm_name -volume flexgroup_vol`
++
+Não é possível especificar um caminho com o `volume quota report` comando para volumes FlexGroup.
+
++
+O exemplo a seguir mostra a cota de usuário para o volume FlexGroup FG1:
+
++
+....
+cluster1::> volume quota report -vserver vs0 -volume fg1
+  Vserver: vs0
+                                      ----Disk----  ----Files-----   Quota
+  Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+  -------  --------  ------  -------  -----  -----  ------  ------   ---------
+  fg1                user    *           0B      -       0       -   *
+  fg1                user    root       1GB      -       1       -   *
+  2 entries were displayed.
+....
++
+O exemplo a seguir mostra a cota de árvore para o volume FlexGroup FG1:
+
++
+[listing]
+----
+cluster1::> volume quota report -vserver vs0 -volume fg1
+Vserver: vs0
+
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+fg1      qtree1  tree      1         68KB      -      18       -   qtree1
+fg1              tree      *           0B      -       0       -   *
+2 entries were displayed.
+----
+
+
+.Resultados
+As regras e limites de quota são aplicados no volume FlexGroups.
+
+O uso pode chegar até 5% mais alto do que um limite rígido configurado antes que o ONTAP força a cota rejeitando mais tráfego.
+
+.Informações relacionadas
+* https://docs.netapp.com/us-en/ontap-cli["Referência do comando ONTAP"^]
+

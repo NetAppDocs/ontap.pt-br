@@ -1,0 +1,104 @@
+---
+permalink: disks-aggregates/correct-misaligned-spare-partitions-task.html 
+sidebar: sidebar 
+keywords: correct, misaligned, partition, disk 
+summary: 'Quando você adiciona discos particionados a um nível local (agregado), você deve deixar um disco com a partição raiz e de dados disponível como um sobressalente para cada nó. Se você não tiver e seu nó sofrer uma interrupção, o ONTAP não poderá despejar o núcleo para a partição de dados sobressalente.' 
+---
+= Corrija partições sobressalentes desalinhadas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando você adiciona discos particionados a um nível local (agregado), você deve deixar um disco com a partição raiz e de dados disponível como um sobressalente para cada nó. Se você não tiver e seu nó sofrer uma interrupção, o ONTAP não poderá despejar o núcleo para a partição de dados sobressalente.
+
+.Antes de começar
+Você deve ter uma partição de dados sobressalente e uma partição raiz sobressalente no mesmo tipo de disco de propriedade do mesmo nó.
+
+.Passos
+. Usando a CLI, exiba as partições sobressalentes para o nó:
++
+`storage aggregate show-spare-disks -original-owner _node_name_`
+
++
+Observe qual disco tem uma partição de dados sobressalente (spare_data) e qual disco tem uma partição raiz sobressalente (spare_root). A partição sobressalente mostrará um valor diferente de zero na `Local Data Usable` coluna ou `Local Root Usable`.
+
+. Substitua o disco por uma partição de dados sobressalente pelo disco pela partição raiz sobressalente:
++
+`storage disk replace -disk _spare_data_ -replacement _spare_root_ -action start`
+
++
+Você pode copiar os dados em qualquer direção; no entanto, copiar a partição raiz leva menos tempo para ser concluída.
+
+. Monitorize o progresso da substituição do disco:
++
+`storage aggregate show-status -aggregate _aggr_name_`
+
+. Após a conclusão da operação de substituição, exiba as peças sobressalentes novamente para confirmar que você tem um disco sobressalente completo:
++
+`storage aggregate show-spare-disks -original-owner _node_name_`
+
++
+Você deve ver um disco sobressalente com espaço utilizável sob "'local Data usable'" e `Local Root Usable`.
+
+
+
+.Exemplo
+Você exibe suas partições sobressalentes para o nó C1-01 e vê que suas partições sobressalentes não estão alinhadas:
+
+[listing]
+----
+c1::> storage aggregate show-spare-disks -original-owner c1-01
+
+Original Owner: c1-01
+ Pool0
+  Shared HDD Spares
+                              Local    Local
+                               Data     Root  Physical
+ Disk    Type   RPM Checksum Usable   Usable      Size
+ ------- ----- ---- -------- ------- ------- --------
+ 1.0.1   BSAS  7200 block    753.8GB     0B   828.0GB
+ 1.0.10  BSAS  7200 block         0B 73.89GB  828.0GB
+----
+Inicia o trabalho de substituição do disco:
+
+[listing]
+----
+c1::> storage disk replace -disk 1.0.1 -replacement 1.0.10 -action start
+----
+Enquanto aguarda a conclusão da operação de substituição, apresenta o progresso da operação:
+
+[listing]
+----
+c1::> storage aggregate show-status -aggregate aggr0_1
+
+Owner Node: c1-01
+ Aggregate: aggr0_1 (online, raid_dp) (block checksums)
+  Plex: /aggr0_1/plex0 (online, normal, active, pool0)
+   RAID Group /aggr0_1/plex0/rg0 (normal, block checksums)
+                                    Usable Physical
+ Position Disk    Pool Type   RPM     Size     Size Status
+ -------- ------- ---- ---- ----- -------- -------- ----------
+ shared   1.0.1    0   BSAS  7200  73.89GB  828.0GB (replacing,copy in progress)
+ shared   1.0.10   0   BSAS  7200  73.89GB  828.0GB (copy 63% completed)
+ shared   1.0.0    0   BSAS  7200  73.89GB  828.0GB (normal)
+ shared   1.0.11   0   BSAS  7200  73.89GB  828.0GB (normal)
+ shared   1.0.6    0   BSAS  7200  73.89GB  828.0GB (normal)
+ shared   1.0.5    0   BSAS  7200  73.89GB  828.0GB (normal)
+----
+Após a conclusão da operação de substituição, confirme se tem um disco sobressalente completo:
+
+[listing]
+----
+ie2220::> storage aggregate show-spare-disks -original-owner c1-01
+
+Original Owner: c1-01
+ Pool0
+  Shared HDD Spares
+                             Local    Local
+                              Data     Root  Physical
+ Disk   Type   RPM Checksum Usable   Usable      Size
+ ------ ----- ---- -------- -------- ------- --------
+ 1.0.1  BSAS  7200 block    753.8GB  73.89GB  828.0GB
+----

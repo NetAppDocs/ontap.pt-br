@@ -1,0 +1,72 @@
+---
+permalink: volumes/set-fractional-reserve-concept.html 
+sidebar: sidebar 
+keywords: considerations, setting, fractional, reserve, lun overwrite reserve 
+summary: A reserva fracionária permite desativar a reserva de substituição para LUNs e arquivos reservados ao espaço em um FlexVol volume para ajudar a maximizar a utilização do storage. 
+---
+= Considerações ao definir a reserva fracionária
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A reserva fracionária, também chamada de _reserva de substituição LUN_, permite desativar a reserva de substituição para LUNs e arquivos reservados no espaço em um FlexVol volume. Isso pode ajudar você a maximizar a utilização do storage.
+
+
+CAUTION: Se o seu ambiente for afetado negativamente pelas falhas nas operações de gravação devido à falta de espaço, você precisa entender os requisitos que essa configuração pode impor.
+
+A configuração de reserva fracionária é expressa como uma porcentagem; os únicos valores válidos são `0` e `100` porcentagem. A configuração de reserva fracionária é um atributo do volume. Definir a reserva fracionária para `0` aumentar a utilização do armazenamento. No entanto, um aplicativo que acessa dados que residem no volume pode ter uma interrupção de dados se o volume estiver sem espaço livre, mesmo com a garantia de volume definida como `volume`. No entanto, com a configuração e o uso adequados de volume, você pode minimizar a chance de falhas de gravação. O ONTAP fornece uma garantia de gravação "melhor esforço" para volumes com reserva fracionária definida para `0` quando _todos_ dos seguintes requisitos são atendidos:
+
+* A deduplicação não está em uso
+* A compressão não está a ser utilizada
+* Os subficheiros FlexClone não estão a ser utilizados
+* Todos os arquivos FlexClone e LUNs FlexClone são ativados para exclusão automática
++
+Esta não é a configuração padrão. Você deve ativar explicitamente a exclusão automática, seja no momento da criação ou modificando o arquivo FlexClone ou LUN FlexClone depois que ele for criado.
+
+* A descarga de cópia ODX e FlexClone não está em uso
+* A garantia de volume está definida para `volume`
+* A reserva de espaço de arquivo ou LUN é `enabled`
+* A reserva de instantâneo de volume está definida como `0`
+* A exclusão automática da cópia Snapshot do volume é `enabled` com um nível de compromisso de `destroy`, uma lista de destruição de `lun_clone,vol_clone,cifs_share,file_clone,sfsr` e um gatilho de `volume`
++
+Essa configuração também garante que arquivos FlexClone e LUNs FlexClone sejam excluídos quando necessário.
+
+
+
+[NOTE]
+====
+* Se todos os requisitos acima forem atendidos, mas sua taxa de alteração for alta, em casos raros, a exclusão automática da cópia Snapshot pode ficar para trás, o que faz com que o volume fique sem espaço.
+* Se todos os requisitos acima forem atendidos e as cópias Snapshot não estiverem em uso, as gravações de volume não ficarão sem espaço.
+
+
+====
+Além disso, você pode, como opção, usar a funcionalidade de volume com crescimento automático para diminuir a probabilidade de as cópias do Snapshot precisarem ser excluídas automaticamente. Se você ativar a capacidade de crescimento automático, deverá monitorar o espaço livre no agregado associado. Se o agregado ficar cheio o suficiente para que o volume seja impedido de crescer, mais cópias Snapshot provavelmente serão excluídas à medida que o espaço livre no volume estiver esgotado.
+
+Se você não puder atender a todos os requisitos de configuração acima e precisar garantir que o volume não fique sem espaço, defina a configuração de reserva fracionária do volume como `100`. Isso requer mais espaço livre na frente, mas garante que as operações de modificação de dados serão bem-sucedidas mesmo quando as tecnologias listadas acima estiverem em uso.
+
+O valor padrão e os valores permitidos para a configuração de reserva fracionária dependem da garantia do volume:
+
+[cols="3*"]
+|===
+| Garantia de volume | Reserva fracionária predefinida | Valores permitidos 
+
+
+ a| 
+Volume
+ a| 
+100
+ a| 
+0, 100
+
+
+
+ a| 
+Nenhum
+ a| 
+0
+ a| 
+0, 100
+
+|===

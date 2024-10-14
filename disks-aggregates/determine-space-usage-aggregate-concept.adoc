@@ -1,0 +1,89 @@
+---
+permalink: disks-aggregates/determine-space-usage-aggregate-concept.html 
+sidebar: sidebar 
+keywords: space, usage, aggregate, local tier, volume 
+summary: 'É possível visualizar quanto espaço é usado por todos os volumes em uma ou mais camadas locais (agregados) para que você possa tomar medidas para liberar mais espaço.' 
+---
+= Determinar o uso de espaço em um nível local (agregado)
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É possível visualizar quanto espaço é usado por todos os volumes em uma ou mais camadas locais (agregados) para que você possa tomar medidas para liberar mais espaço.
+
+O WAFL reserva uma porcentagem do espaço total em disco para metadados e performance de nível agregado. O espaço usado para manter os volumes no agregado sai da reserva WAFL e não pode ser alterado.
+
+Em agregados menores que 30 TB, o WAFL reserva 10% do espaço total em disco para metadados e performance de nível agregado.
+
+A partir do ONTAP 9.12,1, em agregados com 30 TB ou mais, a quantidade de espaço em disco reservado para metadados e performance de nível agregado é reduzida, resultando em 5% mais espaço utilizável em agregados. A disponibilidade dessa economia de espaço varia de acordo com sua plataforma e versão do ONTAP.
+
+[cols="30,30,40"]
+|===
+| Espaço em disco reservado pela ONTAP em agregados 30 TB ou mais | Aplica-se a plataformas | Em versões ONTAP 
+
+
+| 5% | Todas as plataformas AFF e FAS | ONTAP 9.14,1 e posterior 
+
+
+| 5% | Plataformas AFF e plataformas FAS500f | ONTAP 9.12,1 e posterior 
+
+
+| 10% | Todas as plataformas | ONTAP 9.11,1 e posterior 
+|===
+É possível exibir o uso do espaço por todos os volumes em um ou mais agregados com o `aggregate show-space` comando. Isso ajuda você a ver quais volumes estão consumindo mais espaço em seus agregados contendo, para que você possa tomar ações para liberar mais espaço.
+
+O espaço usado em um agregado é diretamente afetado pelo espaço usado nos volumes do FlexVol que ele contém. As medidas que você toma para aumentar o espaço em um volume também afetam o espaço no agregado.
+
+
+NOTE: A partir do ONTAP 9.15,1, dois novos contadores de metadados estão disponíveis. Juntamente com as alterações em vários contadores existentes, você pode obter uma visão mais clara da quantidade de dados do usuário alocados. Consulte link:../volumes/determine-space-usage-volume-aggregate-concept.html["Determinar o uso de espaço em um volume ou agregado"] para obter mais informações.
+
+As seguintes linhas estão incluídas na `aggregate show-space` saída do comando:
+
+* *Pegadas de volume*
++
+O total de todas as pegadas de volume dentro do agregado. Ele inclui todo o espaço que é usado ou reservado por todos os dados e metadados de todos os volumes no agregado que contém.
+
+* *Agregar metadados*
++
+Os metadados totais do sistema de arquivos exigidos pelo agregado, como bitmaps de alocação e arquivos de inode.
+
+* *Reserva Snapshot*
++
+Quantidade de espaço reservado para cópias Snapshot agregadas, com base no tamanho do volume. Ele é considerado espaço usado e não está disponível para volume ou agregar dados ou metadados.
+
+* *Reserva Snapshot inutilizável*
++
+A quantidade de espaço originalmente alocada para reserva Snapshot agregada que não está disponível para cópias Snapshot agregadas porque está sendo usada por volumes associados ao agregado. Só pode ocorrer em agregados com uma reserva de Snapshot de agregado que não seja zero.
+
+* *Total utilizado*
++
+A soma de todo o espaço usado ou reservado no agregado por volumes, metadados ou cópias Snapshot.
+
+* *Total físico utilizado*
++
+A quantidade de espaço que está sendo usada para dados agora (em vez de ser reservada para uso futuro). Inclui espaço usado por cópias Snapshot agregadas.
+
+
+
+O exemplo a seguir mostra a `aggregate show-space` saída do comando para um agregado cuja reserva Snapshot é de 5%. Se a reserva de instantâneos for 0, a linha não será exibida.
+
+....
+cluster1::> storage aggregate show-space
+
+						Aggregate : wqa_gx106_aggr1
+
+      Feature                                   Used      Used%
+      --------------------------------    ----------     ------
+      Volume Footprints                      101.0MB         0%
+      Aggregate Metadata                       300KB         0%
+      Snapshot Reserve                        5.98GB         5%
+
+      Total Used                              6.07GB         5%
+      Total Physical Used                    34.82KB         0%
+....
+.Informações relacionadas
+* link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/Space_Usage["artigo da base de conhecimento: Uso do espaço"^]
+* link:https://www.netapp.com/blog/free-up-storage-capacity-upgrade-ontap/["Libere até 5% da sua capacidade de armazenamento atualizando para o ONTAP 9.12,1"^]
+

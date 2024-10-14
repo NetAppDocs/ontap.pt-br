@@ -1,0 +1,54 @@
+---
+permalink: nas-audit/auditing-limitations-size-audit-records-concept.html 
+sidebar: sidebar 
+keywords: limitations, size, audit records, stage files 
+summary: O tamanho de um Registro de auditoria em um arquivo de teste não pode ser maior que 32 KB. 
+---
+= Limitações para o tamanho dos Registros de auditoria em arquivos de teste
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O tamanho de um Registro de auditoria em um arquivo de teste não pode ser maior que 32 KB.
+
+
+
+== Quando grandes Registros de auditoria podem ocorrer
+
+Grandes Registros de auditoria podem ocorrer durante a auditoria de gerenciamento em um dos seguintes cenários:
+
+* Adicionar ou excluir usuários de ou para grupos com um grande número de usuários.
+* Adicionar ou excluir uma lista de controle de acesso de compartilhamento de arquivos (ACL) em um compartilhamento de arquivos com um grande número de usuários de compartilhamento de arquivos.
+* Outros cenários.
+
+
+Desative a auditoria de gerenciamento para evitar esse problema. Para fazer isso, modifique a configuração de auditoria e remova o seguinte da lista de tipos de eventos de auditoria:
+
+* compartilhamento de arquivos
+* conta de utilizador
+* grupo de segurança
+* autorização-política-alteração
++
+Após a remoção, eles não serão auditados pelo subsistema de auditoria de serviços de arquivo.
+
+
+
+
+
+== Os efeitos dos registos de auditoria demasiado grandes
+
+* Se o tamanho de um Registro de auditoria for muito grande (mais de 32 KB), o Registro de auditoria não será criado e o subsistema de auditoria gerará uma mensagem do sistema de gerenciamento de eventos (EMS) semelhante à seguinte:
++
+`File Services Auditing subsystem failed the operation or truncated an audit record because it was greater than max_audit_record_size value. Vserver UUID=%s, event_id=%u, size=%u`
+
++
+Se a auditoria for garantida, a operação do arquivo falhará porque seu Registro de auditoria não pode ser criado.
+
+* Se o tamanho do registo de auditoria for superior a 9.999 bytes, é apresentada a mesma mensagem EMS acima. Um Registro de auditoria parcial é criado com o valor de chave maior ausente.
+* Se o Registro de auditoria exceder 2.000 carateres, a seguinte mensagem de erro será exibida em vez do valor real:
++
+`The value of this field was too long to display.`
+
+

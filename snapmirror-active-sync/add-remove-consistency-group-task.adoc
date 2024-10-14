@@ -1,0 +1,116 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/add-remove-consistency-group-task.html 
+keywords: SM-BC, SMBC, volume, consistency group, remove volume, add volume, snapmirror active sync 
+summary: Se você quiser alterar a composição do grupo de consistência adicionando ou removendo um volume, primeiro exclua a relação original e, em seguida, crie o grupo de consistência novamente com a nova composição. 
+---
+= Adicione ou remova volumes a um grupo de consistência
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+À medida que os requisitos de workload do aplicativo mudam, você pode precisar adicionar ou remover volumes de um grupo de consistência para garantir a continuidade dos negócios. O processo de adição e remoção de volumes em uma relação de sincronização ativa do SnapMirror depende da versão do ONTAP que você está usando.
+
+Na maioria dos casos, este é um processo disruptivo que exige que você exclua a relação SnapMirror, modifique o grupo de consistência e, em seguida, retome a proteção. A partir do ONTAP 9.13,1, adicionar volumes a um grupo de consistência com uma relação SnapMirror ativa é uma operação sem interrupções.
+
+.Sobre esta tarefa
+* No ONTAP 9.9,1, você pode adicionar ou remover volumes a um grupo de consistência usando a CLI do ONTAP.
+* A partir do ONTAP 9.10,1, é recomendável que você gerencie link:../consistency-groups/index.html["grupos de consistência"] por meio do Gerenciador de sistema ou com a API REST do ONTAP.
++
+Se você quiser alterar a composição do grupo de consistência adicionando ou removendo um volume, primeiro exclua a relação original e, em seguida, crie o grupo de consistência novamente com a nova composição.
+
+* A partir do ONTAP 9.13,1, você pode adicionar volumes a um grupo de consistência sem interrupções com uma relação do SnapMirror ativa da origem ou destino.
++
+Remover volumes é uma operação disruptiva. Você deve excluir a relação do SnapMirror antes de remover volumes.
+
+
+
+[role="tabbed-block"]
+====
+.ONTAP 9.9,1-9.13.0
+--
+.Antes de começar
+* Você não pode começar a modificar o grupo de consistência enquanto ele estiver no `InSync` estado.
+* O volume de destino deve ser do tipo DP.
+* O novo volume adicionado para expandir o grupo de consistência precisa ter um par de cópias Snapshot comuns entre os volumes de origem e destino.
+
+
+.Passos
+Os exemplos mostrados em dois mapeamentos de volume: `vol_src1` `vol_dst1` `vol_src2` `vol_dst2` Em uma relação de grupo de consistência entre os pontos finais `vs1_src:/cg/cg_src` e `vs1_dst:/cg/cg_dst`.
+
+. Nos clusters de origem e destino, verifique se há um Snapshot comum entre os clusters de origem e destino com o comando `snapshot show -vserver _svm_name_ -volume _volume_name_ -snapshot _snapmirror_`
++
+`source::>snapshot show -vserver vs1_src -volume vol_src3 -snapshot snapmirror*`
+
++
+`destination::>snapshot show -vserver vs1_dst -volume vol_dst3 -snapshot snapmirror*`
+
+. Se não existir uma cópia Snapshot comum, crie e inicialize uma relação FlexVol SnapMirror:
++
+`destination::>snapmirror initialize -source-path vs1_src:vol_src3 -destination-path vs1_dst:vol_dst3`
+
+. Excluir a relação do grupo de consistência:
++
+`destination::>snapmirror delete -destination-path vs1_dst:vol_dst3`
+
+. Solte a relação de origem do SnapMirror e mantenha as cópias Snapshot comuns:
++
+`source::>snapmirror release -relationship-info-only true -destination-path vs1_dst:vol_dst3`
+
+. Desmapeie os LUNs e exclua a relação de grupo de consistência existente:
++
+`destination::>lun mapping delete -vserver vs1_dst -path <lun_path> -igroup <igroup_name>`
+
++
+
+NOTE: Os LUNs de destino não são mapeados, enquanto os LUNs na cópia primária continuam a servir a e/S do host
+
++
+`destination::>snapmirror delete -destination-path vs1_dst:/cg/cg_dst`
+
++
+`source::>snapmirror release -destination-path vs1_dst:/cg/cg_dst -relationship-info-only true`
+
+. **Se você estiver usando ONTAP 9.10,1 até 9.13.0,** delete e recrie e o grupo consistência na fonte com a composição correta. Siga os passos em xref:../consistency-groups/delete-task.html[Excluir um grupo de consistência] e, xref:../consistency-groups/configure-task.html[Configurar um único grupo de consistência]em seguida, . No ONTAP 9.10,1 e posterior, você deve executar as operações de exclusão e criação no Gerenciador de sistema ou com a API REST do ONTAP; não há procedimento de CLI.
++
+**Se você estiver usando o ONTAP 9.9,1, vá para a próxima etapa.**
+
+. Crie o novo grupo de consistência no destino com a nova composição:
++
+`destination::>snapmirror create -source-path vs1_src:/cg/cg_src -destination-path vs1_dst:/cg/cg_dst -cg-item-mappings vol_src1:@vol_dst1, vol_src2:@vol_dst2, vol_src3:@vol_dst3`
+
+. Ressincronize a relação do grupo de consistência rto zero para garantir que ela esteja sincronizada:
++
+`destination::>snapmirror resync -destination-path vs1_dst:/cg/cg_dst`
+
+. Remapear os LUNs não mapeados na Etapa 5:
++
+`destination::> lun map -vserver vs1_dst -path _lun_path_ -igroup _igroup_name_`
+
+. Pode novamente hospedar caminhos de e/S LUN para restaurar todos os caminhos para os LUNs.
+
+
+--
+.ONTAP 9.13,1 e posterior
+--
+A partir do ONTAP 9.13,1, você pode adicionar volumes a um grupo de consistência sem interrupções com uma relação de sincronização ativa do SnapMirror. O SnapMirror ative Sync suporta a adição de volumes da origem ou do destino.
+
+
+IMPORTANT: Do ONTAP 9.8 ao 9.14.1, a sincronização ativa do SnapMirror é chamada de continuidade de negócios do SnapMirror (SM-BC).
+
+Para obter detalhes sobre como adicionar volumes do grupo de consistência de origem, xref:../consistency-groups/modify-task.html[Modifique um grupo de consistência]consulte .
+
+.Adicione um volume do cluster de destino
+. No cluster de destino, selecione **proteção** > **relacionamentos**.
+. Encontre a configuração do SnapMirror à qual deseja adicionar volumes. Selecione image:icon_kabob.gif["Ícone de opções do menu"] e, em seguida, **expandir**.
+. Selecione as relações de volume cujos volumes devem ser adicionados ao grupo de consistência
+. Selecione **expandir**.
+
+
+--
+====

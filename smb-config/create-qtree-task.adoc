@@ -1,0 +1,50 @@
+---
+permalink: smb-config/create-qtree-task.html 
+sidebar: sidebar 
+keywords: create, qtree, contain, data, specify, properties, property, volume, command, create a qtree 
+summary: Você pode criar uma qtree para conter seus dados e especificar suas propriedades usando o comando volume qtree create. 
+---
+= Crie uma qtree
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar uma qtree para conter seus dados e especificar suas propriedades usando o `volume qtree create` comando.
+
+.Antes de começar
+* O SVM e o volume que conterá a nova qtree já devem existir.
+* O estilo de segurança da SVM deve ser NTFS e o SMB deve ser configurado e executado.
+
+
+.Passos
+. Crie a qtree: `volume qtree create -vserver vserver_name { -volume volume_name -qtree qtree_name | -qtree-path qtree path } -security-style ntfs`
++
+Você pode especificar o volume e a qtree como argumentos separados ou especificar o argumento de caminho de qtree no formato `/vol/volume_name/_qtree_name`.
+
+. Verifique se a qtree foi criada com o caminho de junção desejado: `volume qtree show -vserver vserver_name { -volume volume_name -qtree qtree_name | -qtree-path qtree path }`
+
+
+.Exemplo
+O exemplo a seguir cria uma qtree chamada qt01 localizada no SVM vs1.example.com que tem um caminho de junção `/vol/data1` :
+
+[listing]
+----
+cluster1::> volume qtree create -vserver vs1.example.com -qtree-path /vol/data1/qt01 -security-style ntfs
+[Job 1642] Job succeeded: Successful
+
+cluster1::> volume qtree show -vserver vs1.example.com -qtree-path /vol/data1/qt01
+
+                      Vserver Name: vs1.example.com
+                       Volume Name: data1
+                        Qtree Name: qt01
+  Actual (Non-Junction) Qtree Path: /vol/data1/qt01
+                    Security Style: ntfs
+                       Oplock Mode: enable
+                  Unix Permissions: ---rwxr-xr-x
+                          Qtree Id: 2
+                      Qtree Status: normal
+                     Export Policy: default
+        Is Export Policy Inherited: true
+----

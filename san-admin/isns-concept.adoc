@@ -1,0 +1,119 @@
+---
+permalink: san-admin/isns-concept.html 
+sidebar: sidebar 
+keywords: isns, isns server, internet storage name service, iscsi, iqn 
+summary: 'O iSNS (Internet Storage Name Service) é um protocolo que permite a deteção e o gerenciamento automatizados de dispositivos iSCSI em uma rede de armazenamento TCP/IP. Um servidor iSNS mantém informações sobre dispositivos iSCSI ativos na rede, incluindo seus endereços IP, nomes de nós iSCSI IQN e grupos de portais.' 
+---
+= Serviço de nomes de armazenamento de Internet (iSNS)
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O iSNS (Internet Storage Name Service) é um protocolo que permite a deteção e o gerenciamento automatizados de dispositivos iSCSI em uma rede de armazenamento TCP/IP. Um servidor iSNS mantém informações sobre dispositivos iSCSI ativos na rede, incluindo seus endereços IP, nomes de nós iSCSI IQN e grupos de portais.
+
+Você pode obter um servidor iSNS de um fornecedor terceirizado. Se você tiver um servidor iSNS na rede configurado e habilitado para uso pelo iniciador e destino, poderá usar o LIF de gerenciamento de uma máquina virtual de armazenamento (SVM) para Registrar todos os LIFs iSCSI para esse SVM no servidor iSNS. Depois que o Registro estiver concluído, o iniciador iSCSI pode consultar o servidor iSNS para descobrir todos os LIFs para esse SVM específico.
+
+Se você decidir usar um serviço iSNS, deve garantir que suas máquinas virtuais de armazenamento (SVMs) estejam registradas corretamente em um servidor iSNS (Internet Storage Name Service).
+
+Se você não tiver um servidor iSNS na rede, você deverá configurar manualmente cada destino para ser visível para o host.
+
+
+
+== O que um servidor iSNS faz
+
+Um servidor iSNS usa o protocolo iSNS (Internet Storage Name Service) para manter informações sobre dispositivos iSCSI ativos na rede, incluindo seus endereços IP, nomes de nós iSCSI (IQNs) e grupos de portais.
+
+O protocolo iSNS permite a deteção e o gerenciamento automatizados de dispositivos iSCSI em uma rede de armazenamento IP. Um iniciador iSCSI pode consultar o servidor iSNS para descobrir dispositivos de destino iSCSI.
+
+A NetApp não fornece ou revender servidores iSNS. Você pode obter esses servidores de um fornecedor suportado pelo NetApp.
+
+
+
+== Como os SVMs interagem com um servidor iSNS
+
+O servidor iSNS se comunica com cada máquina virtual de storage (SVM) por meio do LIF de gerenciamento do SVM. O LIF de gerenciamento Registra todos os nomes, alias e informações do portal do nó de destino iSCSI com o serviço iSNS para um SVM específico.
+
+No exemplo a seguir, o SVM "'VS1'" usa o gerenciamento de SVM LIF "'VS1_mgmt_lif" para se Registrar no servidor iSNS. Durante o Registro do iSNS, um SVM envia todas as LIFs iSCSI por meio do LIF de gerenciamento do SVM para o iSNS Server. Depois que o Registro do iSNS for concluído, o servidor iSNS tem uma lista de todos os LIFs que servem iSCSI em "'VS1"". Se um cluster contiver vários SVMs, cada SVM precisará se Registrar individualmente no servidor iSNS para usar o serviço iSNS.
+
+image:bsag_c-mode_iSNS_register.png["Exemplo de interação com o servidor SVM e iSNS 1"]
+
+No próximo exemplo, depois que o servidor iSNS concluir o Registro com o destino, o Host A pode descobrir todos os LIFs para "'VS1" através do servidor iSNS, conforme indicado na Etapa 1. Depois que o Host A concluir a descoberta dos LIFs para "'VS1"", o Host A pode estabelecer uma conexão com qualquer um dos LIFs em "'VS1"", como mostrado na Etapa 2. O host A não está ciente de nenhum dos LIFs em "'VS2" até que o LIF de gerenciamento "'VS2_mgmt_LIF" para Registros "'VS2" com o servidor iSNS.
+
+image:bsag_c-mode_iSNS_connect.png["Exemplo de interação com o servidor SVM e iSNS 2"]
+
+No entanto, se você definir as listas de acesso à interface, o host só poderá usar as LIFs definidas na lista de acesso à interface para acessar o destino.
+
+Depois que o iSNS for configurado inicialmente, o ONTAP atualizará automaticamente o servidor iSNS quando as configurações do SVM mudarem.
+
+Pode ocorrer um atraso de alguns minutos entre o momento em que você faz as alterações de configuração e quando o ONTAP envia a atualização para o servidor iSNS. Forçar uma atualização imediata das informações do iSNS no servidor iSNS: `vserver iscsi isns update`
+
+
+
+== Comandos para gerenciar iSNS
+
+O ONTAP fornece comandos para gerenciar seu serviço iSNS.
+
+|===
+
+
+| Se você quiser... | Use este comando... 
+
+
+ a| 
+Configurar um serviço iSNS
+ a| 
+`vserver iscsi isns create`
+
+
+
+ a| 
+Inicie um serviço iSNS
+ a| 
+`vserver iscsi isns start`
+
+
+
+ a| 
+Modifique um serviço iSNS
+ a| 
+`vserver iscsi isns modify`
+
+
+
+ a| 
+Exibir a configuração do serviço iSNS
+ a| 
+`vserver iscsi isns show`
+
+
+
+ a| 
+Forçar uma atualização das informações do iSNS registradas
+ a| 
+`vserver iscsi isns update`
+
+
+
+ a| 
+Pare um serviço iSNS
+ a| 
+`vserver iscsi isns stop`
+
+
+
+ a| 
+Remova um serviço iSNS
+ a| 
+`vserver iscsi isns delete`
+
+
+
+ a| 
+Veja a página de manual para um comando
+ a| 
+`man _command name_`
+
+|===
+Consulte a página de manual de cada comando para obter mais informações.

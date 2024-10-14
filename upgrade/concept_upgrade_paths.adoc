@@ -1,0 +1,857 @@
+---
+permalink: upgrade/concept_upgrade_paths.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, paths 
+summary: A versão do ONTAP para a qual você pode atualizar depende da plataforma de hardware e da versão do ONTAP atualmente em execução nos nós do cluster. 
+---
+= Caminhos de atualização do ONTAP compatíveis
+:hardbreaks:
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A versão do ONTAP para a qual você pode atualizar depende da plataforma de hardware e da versão do ONTAP atualmente em execução nos nós do cluster.
+
+Para verificar se a plataforma de hardware é suportada para a versão de atualização de destino, https://hwu.netapp.com["NetApp Hardware Universe"^] consulte . Utilize os link:https://imt.netapp.com/matrix/#welcome["Ferramenta de Matriz de interoperabilidade do NetApp"^] link:confirm-configuration.html["confirme o suporte para sua configuração"]para .
+
+.Para determinar sua versão atual do ONTAP:
+* No System Manager, clique em *Cluster > Overview*.
+* A partir da interface de linha de comando (CLI), use o `cluster image show` comando. Você também pode usar o `system node image show` comando no nível de privilégio avançado para exibir detalhes.
+
+
+
+
+== Tipos de caminhos de atualização
+
+Sempre que possível, são recomendadas atualizações automatizadas sem interrupções (ANDU). Dependendo de suas versões atuais e de destino, seu caminho de upgrade será *Direct*, *Direct multi-hop* ou *multi-stage*.
+
+* *Direct*
++
+Você sempre pode atualizar diretamente para a próxima família de versões adjacentes do ONTAP usando uma única imagem de software. Para muitas versões, você também pode instalar uma imagem de software que permite atualizar diretamente para versões que são até quatro versões posteriores à versão em execução.
+
++
+Por exemplo, você pode usar o caminho de atualização direta de 9.11.1 para 9.12.1, ou de 9.11.1 para 9.15.1.
+
++
+Todos os caminhos de atualização _Direct_ são suportados para link:concept_mixed_version_requirements.html["clusters de versões mistas"].
+
+* * Multi-hop direto *
++
+Para algumas atualizações automatizadas sem interrupções (ANDU) para versões não adjacentes, você precisa instalar a imagem de software para uma versão intermediária, bem como a versão de destino. O processo de atualização automatizada usa a imagem intermediária em segundo plano para concluir a atualização para a versão de destino.
+
++
+Por exemplo, se o cluster estiver executando 9,3 e você quiser atualizar para 9,7, você carregaria os pacotes de instalação do ONTAP para 9,5 e 9,7, em seguida, iniciaria ANDU para 9,7. O ONTAP atualiza automaticamente o cluster primeiro para 9,5 e depois para 9,7. Você deve esperar várias operações de aquisição/giveback e reinicializações relacionadas durante o processo.
+
+* * Multi-stage *
++
+Se um caminho de multi-hop direto ou direto não estiver disponível para sua versão de destino não adjacente, você deve primeiro atualizar para uma versão intermediária suportada e, em seguida, atualizar para a versão de destino.
+
++
+Por exemplo, se você estiver executando o 9,6 e quiser atualizar para o 9.11.1, você deve concluir uma atualização de vários estágios: Primeiro de 9,6 para 9,8 e depois de 9,8 para 9.11.1. Atualizações de versões anteriores podem exigir três ou mais estágios, com várias atualizações intermediárias.
+
++
+
+NOTE: Antes de iniciar atualizações em vários estágios, certifique-se de que a versão de destino seja suportada na plataforma de hardware.
+
+
+
+Antes de iniciar qualquer atualização importante, é uma prática recomendada atualizar primeiro para a versão de patch mais recente da versão do ONTAP em execução no cluster. Isso garantirá que quaisquer problemas na versão atual do ONTAP sejam resolvidos antes da atualização.
+
+Por exemplo, se o seu sistema estiver executando o ONTAP 9.3P9 e você estiver planejando atualizar para o 9.11.1, você deve primeiro atualizar para a versão mais recente do patch 9,3 e seguir o caminho de atualização de 9,3 para 9.11.1.
+
+Saiba mais https://kb.netapp.com/Support_Bulletins/Customer_Bulletins/SU2["Mínimo recomendado de lançamentos de ONTAP no site de suporte da NetApp"^]sobre .
+
+
+
+== Caminhos de atualização suportados
+
+Os seguintes caminhos de atualização são suportados para atualizações automáticas e manuais do seu software ONTAP. Esses caminhos de atualização se aplicam ao ONTAP e ao ONTAP Select no local. Existem diferentes https://docs.netapp.com/us-en/bluexp-cloud-volumes-ontap/task-updating-ontap-cloud.html#supported-upgrade-paths["Caminhos de atualização compatíveis para o Cloud Volumes ONTAP"^].
+
+
+NOTE: *Para clusters ONTAP de versão mista*: Todos os caminhos de atualização _direct_ e _direct multi-hop_ incluem versões ONTAP compatíveis com clusters de versão mista. As versões do ONTAP incluídas em atualizações _multi-estágio_ não são compatíveis para clusters de versões mistas. Por exemplo, uma atualização de 9,8 para 9.12.1 é uma atualização _direct_. Um cluster com nós executando 9,8 e 9.12.1 é um cluster de versão mista compatível. Uma atualização de 9,8 para 9.13.1 é uma atualização _multi-stage_. Um cluster com nós executando 9,8 e 9.13.1 não é um cluster de versão mista compatível.
+
+
+
+=== A partir de ONTAP 9.10,1 e posterior
+
+As atualizações automatizadas e manuais do ONTAP 9.10,1 e posteriores seguem os mesmos caminhos de atualização.
+
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização automatizado ou manual é... 
+
+
+| 9.14.1 | 9.15.1 | direta 
+
+
+.2+| 9.13.1 | 9.15.1 | direta 
+
+
+| 9.14.1 | direta 
+
+
+.3+| 9.12.1 | 9.15.1 | direta 
+
+
+| 9.14.1 | direta 
+
+
+| 9.13.1 | direta 
+
+
+.4+| 9.11.1 | 9.15.1 | direta 
+
+
+| 9.14.1 | direta 
+
+
+| 9.13.1 | direta 
+
+
+| 9.12.1 | direta 
+
+
+.5+| 9.10.1 | 9.15.1 | multi-stage -9.10.1 -> 9.14.1 -9.14.1 -> 9.15.1 
+
+
+| 9.14.1 | direta 
+
+
+| 9.13.1 | direta 
+
+
+| 9.12.1 | direta 
+
+
+| 9.11.1 | direta 
+|===
+
+
+=== A partir de ONTAP 9.9,1
+
+As atualizações automatizadas e manuais do ONTAP 9.9,1 seguem os mesmos caminhos de atualização.
+
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização automatizado ou manual é... 
+
+
+.6+| 9.9.1 | 9.15.1 | multi-stage -9,9.1->9.13.1 -9.13.1->9.15.1 
+
+
+| 9.14.1 | multi-stage -9,9.1->9.13.1 -9.13.1->9.14.1 
+
+
+| 9.13.1 | direta 
+
+
+| 9.12.1 | direta 
+
+
+| 9.11.1 | direta 
+
+
+| 9.10.1 | direta 
+|===
+
+
+=== A partir de ONTAP 9.8
+
+As atualizações automatizadas e manuais do ONTAP 9.8 seguem os mesmos caminhos de atualização.
+
+[NOTE]
+====
+Se você estiver atualizando qualquer um dos seguintes modelos de plataforma em uma configuração IP do MetroCluster do ONTAP 9.8 para 9.10.1 ou posterior, primeiro você deve atualizar para o ONTAP 9.9,1:
+
+* FAS2750
+* FAS500f
+* AFF A220
+* AFF A250
+
+
+====
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização automatizado ou manual é... 
+
+
+ a| 
+9,8
+| 9.15.1 | multi-stage -9,8 -> 9.12.1 -9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage -9,8 -> 9.12.1 -9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage -9,8 -> 9.12.1 -9.12.1 -> 9.13.1 
+
+
+| 9.12.1 | direta 
+
+
+| 9.11.1 | direta 
+
+
+| 9.10.1  a| 
+direta
+
+
+
+| 9.9.1 | direta 
+|===
+
+
+=== A partir de ONTAP 9.7
+
+Os caminhos de atualização do ONTAP 9.7 podem variar dependendo se você está executando uma atualização automática ou manual.
+
+[role="tabbed-block"]
+====
+.Caminhos automatizados
+--
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização automatizado é... 
+
+
+.8+| 9,7 | 9.15.1 | multi-stage -9,7 -> 9,8 -9,8 -> 9.12.1 -9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage -9,7 -> 9,8 -9,8 -> 9.12.1 -9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage -9,7 -> 9.9.1 -9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage -9,7 -> 9,8 -9,8 -> 9.12.1 
+
+
+| 9.11.1 | multi-hop direto (requer imagens para 9,8 e 9.11.1) 
+
+
+| 9.10.1 | Multi-hop direto (requer imagens para 9,8 e 9.10.1P1 ou versão P posterior) 
+
+
+| 9.9.1 | direta 
+
+
+| 9,8 | direta 
+|===
+--
+.Caminhos manuais
+--
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização manual é... 
+
+
+.8+| 9,7 | 9.15.1 | multi-stage -9,7 -> 9,8 -9,8 -> 9.12.1 -9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage -9,7 -> 9,8 -9,8 -> 9.12.1 -9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage -9,7 -> 9.9.1 -9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,7 -> 9,8 - 9,8 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,7 -> 9,8 - 9,8 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,7 -> 9,8 - 9,8 -> 9.10.1 
+
+
+| 9.9.1 | direta 
+
+
+| 9,8 | direta 
+|===
+--
+====
+
+
+=== A partir de ONTAP 9.6
+
+Os caminhos de atualização do ONTAP 9.6 podem variar dependendo se você está executando uma atualização automática ou manual.
+
+[role="tabbed-block"]
+====
+.Caminhos automatizados
+--
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização automatizado é... 
+
+
+.9+| 9,6 | 9.15.1 | multi-stage -9,6 -> 9,8 -9,8 -> 9.12.1 -9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage -9,6 -> 9,8 -9,8 -> 9.12.1 -9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage -9,6 -> 9,8 -9,8 -> 9.12.1 -9.12.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,6 -> 9,8 -9,8 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,6 -> 9,8 - 9,8 -> 9.11.1 
+
+
+| 9.10.1 | Multi-hop direto (requer imagens para 9,8 e 9.10.1P1 ou versão P posterior) 
+
+
+| 9.9.1 | multi-stage - 9,6 -> 9,8 - 9,8 -> 9.9.1 
+
+
+| 9,8 | direta 
+
+
+| 9,7 | direta 
+|===
+--
+.Caminhos manuais
+--
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização manual é... 
+
+
+.9+| 9,6 | 9.15.1 | multi-stage - 9,6 -> 9,8 - 9,8 -> 9.12.1 - 9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,6 -> 9,8 - 9,8 -> 9.12.1 - 9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,6 -> 9,8 - 9,8 -> 9.12.1 - 9.12.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,6 -> 9,8 - 9,8 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,6 -> 9,8 - 9,8 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,6 -> 9,8 - 9,8 -> 9.10.1 
+
+
+| 9.9.1 | multi-stage - 9,6 -> 9,8 - 9,8 -> 9.9.1 
+
+
+| 9,8 | direta 
+
+
+| 9,7 | direta 
+|===
+--
+====
+
+
+=== A partir de ONTAP 9.5
+
+Os caminhos de atualização do ONTAP 9.5 podem variar dependendo se você está executando uma atualização automática ou manual.
+
+[role="tabbed-block"]
+====
+.Caminhos automatizados
+--
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização automatizado é... 
+
+
+.10+| 9,5 | 9.15.1 | multi-stage - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.10.1 
+
+
+| 9.9.1 | multi-hop direto (requer imagens para 9,7 e 9,9.1) 
+
+
+| 9,8 | multi-stage - 9,5 -> 9,7 - 9,7 -> 9,8 
+
+
+| 9,7 | direta 
+
+
+| 9,6 | direta 
+|===
+--
+.Caminhos de atualização manual
+--
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização manual é... 
+
+
+.10+| 9,5 | 9.15.1 | multi-stage - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.10.1 
+
+
+| 9.9.1 | multi-stage - 9,5 -> 9,7 - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,5 -> 9,7 - 9,7 -> 9,8 
+
+
+| 9,7 | direta 
+
+
+| 9,6 | direta 
+|===
+--
+====
+
+
+=== De ONTAP 9.4-9,0
+
+Os caminhos de atualização do ONTAP 9.4, 9,3, 9,2, 9,1 e 9,0 podem variar dependendo se você está executando uma atualização automática ou uma atualização manual.
+
+.Atualização automatizada
+[%collapsible]
+====
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização automatizado é... 
+
+
+.11+| 9,4 | 9.15.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) - 9.9.1 -> 9.10.1 
+
+
+| 9.9.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9.9.1 (multi-hop direto, requer imagens para 9,7 e 9,9.1) 
+
+
+| 9,8 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,8 (multi-hop direto, requer imagens para 9,7 e 9,8) 
+
+
+| 9,7 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 
+
+
+| 9,6 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,5 | direta 
+
+
+.12+| 9,3 | 9.15.1 | multi-stage - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.10.1 (multi-hop direto, requer imagens para 9,8 e 9.10.1) 
+
+
+| 9.9.1 | multi-stage - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9,8 
+
+
+| 9,7 | multi-hop direto (requer imagens para 9,5 e 9,7) 
+
+
+| 9,6 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,5 | direta 
+
+
+| 9,4 | não disponível 
+
+
+.13+| 9,2 | 9.15.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.10.1 (multi-hop direto, requer imagens para 9,8 e 9.10.1) 
+
+
+| 9.9.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9,8 
+
+
+| 9,7 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) 
+
+
+| 9,6 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,5 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,4 | não disponível 
+
+
+| 9,3 | direta 
+
+
+.14+| 9,1 | 9.15.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9,8 - 9,8 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.10.1 (multi-hop direto, requer imagens para 9,8 e 9.10.1) 
+
+
+| 9.9.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9,8 
+
+
+| 9,7 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) 
+
+
+| 9,6 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,6 (multi-hop direto, requer imagens para 9,5 e 9,6) 
+
+
+| 9,5 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 
+
+
+| 9,4 | não disponível 
+
+
+| 9,3 | direta 
+
+
+| 9,2 | não disponível 
+
+
+.15+| 9,0 | 9.15.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 - 9.13.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.10.1 (multi-hop direto, requer imagens para 9,8 e 9.10.1) 
+
+
+| 9.9.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) - 9,7 -> 9,8 
+
+
+| 9,7 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,7 (multi-hop direto, requer imagens para 9,5 e 9,7) 
+
+
+| 9,6 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,5 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 
+
+
+| 9,4 | não disponível 
+
+
+| 9,3 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 
+
+
+| 9,2 | não disponível 
+
+
+| 9,1 | direta 
+|===
+====
+.Caminhos de atualização manual
+[%collapsible]
+====
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | Seu caminho de atualização ANDU é... 
+
+
+.11+| 9,4 | 9.15.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.10.1 
+
+
+| 9.9.1 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9,8 
+
+
+| 9,7 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,7 
+
+
+| 9,6 | multi-stage - 9,4 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,5 | direta 
+
+
+.12+| 9,3 | 9.15.1 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.10.1 
+
+
+| 9.9.1 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9,8 
+
+
+| 9,7 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,7 
+
+
+| 9,6 | multi-stage - 9,3 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,5 | direta 
+
+
+| 9,4 | não disponível 
+
+
+.13+| 9,2 | 9.15.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.10.1 
+
+
+| 9.9.1 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9,8 
+
+
+| 9,7 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 
+
+
+| 9,6 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,5 | multi-stage - 9,2 -> 9,3 - 9,3 -> 9,5 
+
+
+| 9,4 | não disponível 
+
+
+| 9,3 | direta 
+
+
+.14+| 9,1 | 9.15.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.10.1 
+
+
+| 9.9.1 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9,8 
+
+
+| 9,7 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 
+
+
+| 9,6 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,5 | multi-stage - 9,1 -> 9,3 - 9,3 -> 9,5 
+
+
+| 9,4 | não disponível 
+
+
+| 9,3 | direta 
+
+
+| 9,2 | não disponível 
+
+
+.15+| 9,0 | 9.15.1 | multi-estágios - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.15.1 
+
+
+| 9.14.1 | multi-estágios - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 - 9.12.1 -> 9.14.1 
+
+
+| 9.13.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.13.1 
+
+
+| 9.12.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.12.1 
+
+
+| 9.11.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.11.1 
+
+
+| 9.10.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 - 9.9.1 -> 9.10.1 
+
+
+| 9.9.1 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9.9.1 
+
+
+| 9,8 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 - 9,7 -> 9,8 
+
+
+| 9,7 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,7 
+
+
+| 9,6 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 - 9,5 -> 9,6 
+
+
+| 9,5 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 - 9,3 -> 9,5 
+
+
+| 9,4 | não disponível 
+
+
+| 9,3 | multi-stage - 9,0 -> 9,1 - 9,1 -> 9,3 
+
+
+| 9,2 | não disponível 
+
+
+| 9,1 | direta 
+|===
+====
+
+
+=== Data ONTAP 8
+
+Certifique-se de que sua plataforma pode executar a versão de destino do ONTAP usando o https://hwu.netapp.com["NetApp Hardware Universe"^].
+
+*Observação:* o Guia de Atualização do Data ONTAP 8.3 afirma erroneamente que em um cluster de quatro nós, você deve Planejar atualizar o nó que contém o epsilon por último. Isso não é mais um requisito para atualizações a partir do Data ONTAP 8.2,3. Para obter mais informações, https://mysupport.netapp.com/site/bugs-online/product/ONTAP/BURT/805277["NetApp Bugs Online Bug ID 805277"^]consulte .
+
+A partir de Data ONTAP 8.3.x:: Você pode atualizar diretamente para o ONTAP 9.1 e, em seguida, atualizar para versões posteriores.
+A partir de versões do Data ONTAP anteriores a 8,3.x, incluindo 8,2.x:: Você deve primeiro atualizar para o Data ONTAP 8.3.x, depois atualizar para o ONTAP 9.1 e, em seguida, atualizar para versões posteriores.
+

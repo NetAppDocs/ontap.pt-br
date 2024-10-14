@@ -1,0 +1,65 @@
+---
+permalink: data-protection/restore-single-file-snapshot-task.html 
+sidebar: sidebar 
+keywords: restore, single file, snapshot copy 
+summary: Você pode usar o comando volume snapshot restore-file para restaurar um único arquivo ou LUN a partir de uma cópia Snapshot. Você pode restaurar o arquivo para um local diferente no volume de leitura e gravação pai se não quiser substituir um arquivo existente. 
+---
+= Restaurar um único arquivo a partir de uma cópia Snapshot
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `volume snapshot restore-file` comando para restaurar um único arquivo ou LUN a partir de uma cópia Snapshot. Você pode restaurar o arquivo para um local diferente no volume de leitura e gravação pai se não quiser substituir um arquivo existente.
+
+.Sobre esta tarefa
+Se você estiver restaurando um LUN existente, um clone de LUN será criado e feito backup na forma de uma cópia Snapshot. Durante a operação de restauração, você pode ler e gravar no LUN.
+
+Os arquivos com fluxos são restaurados por padrão.
+
+.Passos
+. Listar as cópias Snapshot em um volume:
++
+`volume snapshot show -vserver _SVM_ -volume _volume_`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir mostra as cópias Snapshot `vol1` no :
+
++
+[listing]
+----
+
+clus1::> volume snapshot show -vserver vs1 -volume vol1
+
+Vserver Volume Snapshot                State    Size  Total% Used%
+------- ------ ---------- ----------- ------   -----  ------ -----
+vs1	    vol1   hourly.2013-01-25_0005  valid   224KB     0%    0%
+               daily.2013-01-25_0010   valid   92KB      0%    0%
+               hourly.2013-01-25_0105  valid   228KB     0%    0%
+               hourly.2013-01-25_0205  valid   236KB     0%    0%
+               hourly.2013-01-25_0305  valid   244KB     0%    0%
+               hourly.2013-01-25_0405  valid   244KB     0%    0%
+               hourly.2013-01-25_0505  valid   244KB     0%    0%
+
+7 entries were displayed.
+----
+. Restaurar um arquivo a partir de uma cópia Snapshot:
++
+`volume snapshot restore-file -vserver _SVM_ -volume _volume_ -snapshot _snapshot_ -path _file_path_ -restore-path _destination_path_`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir restaura o arquivo `myfile.txt`:
+
++
+[listing]
+----
+cluster1::> volume snapshot restore-file -vserver vs0 -volume vol1 -snapshot daily.2013-01-25_0010 -path /myfile.txt
+----
+

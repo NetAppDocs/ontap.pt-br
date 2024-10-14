@@ -1,0 +1,124 @@
+---
+permalink: nas-audit/create-persistent-stores.html 
+sidebar: sidebar 
+keywords: create, persistent store, fpolicy, asynchronous, non, mandatory 
+summary: A partir do ONTAP 9.14,1, o FPolicy permite configurar um armazenamento persistente para capturar eventos de acesso a arquivos para políticas assíncronas não obrigatórias. 
+---
+= Criar armazenamentos persistentes FPolicy
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Armazenamentos persistentes podem ajudar a desacoplar o processamento de e/S do cliente do processamento de notificações FPolicy para reduzir a latência do cliente. A partir do ONTAP 9.14,1, o FPolicy permite que você configure link:persistent-stores.html["armazenamentos persistentes"]para capturar eventos de acesso a arquivos para políticas assíncronas não obrigatórias no SVM. Configurações síncronas (obrigatórias ou não obrigatórias) e assíncronas obrigatórias não são suportadas.
+
+A partir do ONTAP 9.15,1, a configuração de armazenamento persistente do FPolicy é simplificada. O `persistent-store create` comando automatiza a criação de volume para o SVM e configura o volume para o armazenamento persistente.
+
+Há duas maneiras de criar um armazenamento persistente, dependendo da versão do ONTAP:
+
+* ONTAP 9.15,1 ou posterior: Quando você cria o armazenamento persistente, o ONTAP cria e configura automaticamente seu volume ao mesmo tempo. Isso simplifica a configuração de armazenamento persistente do FPolicy e implementa todas as práticas recomendadas.
+* ONTAP 9.14,1: Crie e configure manualmente um volume e, em seguida, crie um armazenamento persistente para o volume recém-criado.
+
+
+Apenas um armazenamento persistente pode ser configurado em cada SVM. Esse único armazenamento persistente precisa ser usado em todas as configurações de FPolicy nesse SVM, mesmo que as políticas sejam de parceiros diferentes.
+
+
+
+== Criar um armazenamento persistente (ONTAP 9.15,1 ou posterior)
+
+A partir do ONTAP 9.15,1, use o `fpolicy persistent-store create` comando para criar o armazenamento persistente FPolicy com criação e configuração de volume inline. O ONTAP bloqueia automaticamente o volume do acesso ao protocolo de usuário externo (CIFS/NFS).
+
+.Antes de começar
+* O SVM em que você deseja criar o armazenamento persistente deve ter pelo menos um agregado.
+* Você deve ter acesso aos agregados disponíveis para o SVM e permissões suficientes para criar volumes.
+
+
+.Passos
+. Crie o armazenamento persistente, que cria e configura o volume automaticamente:
++
+`vserver fpolicy persistent-store create -vserver <vserver> -persistent-store <name> -volume <volume_name> -size <size> -autosize-mode <off|grow|grow_shrink>`
+
++
+** O `vserver` parâmetro é o nome do SVM.
+** O `persistent-store` parâmetro é o nome do armazenamento persistente.
+** O `volume` parâmetro é o nome do volume de armazenamento persistente.
++
+
+NOTE: Se você quiser usar um volume vazio existente, use o `volume show` comando para localizá-lo e especificá-lo no parâmetro volume.
+
+** O `size` parâmetro é baseado na duração do tempo para o qual você deseja persistir os eventos que não são entregues ao servidor externo (aplicativo parceiro).
++
+Por exemplo, se você quiser que 30 minutos de eventos persistam em um cluster com uma capacidade de 30K notificações por segundo:
+
++
+Tamanho de volume necessário: 30000 x 30 x 60 x 0,6KB (tamanho médio do Registro de notificação): 32400000 KB, aproximadamente 32 GB
+
++
+Para encontrar a taxa de notificação aproximada, você pode entrar em Contato com seu aplicativo de parceiro FPolicy ou utilizar o contador FPolicy `requests_dispatched_rate`.
+
++
+
+NOTE: Se você estiver usando um volume existente, o parâmetro tamanho é opcional. Se você fornecer um valor para o parâmetro tamanho, ele modificará o volume com o tamanho especificado.
+
+** O `autosize-mode` parâmetro especifica o modo de dimensionamento automático para o volume. Os modos de dimensionamento automático suportados são:
++
+*** Desligado - o volume não cresce nem diminui em tamanho em resposta à quantidade de espaço usado.
+*** Crescer - o volume cresce automaticamente quando o espaço usado no volume está acima do limite de crescimento.
+*** Grow_shrink - o volume cresce ou encolhe em tamanho em resposta à quantidade de espaço usado.
+
+
+
+
+. Crie a política FPolicy e adicione o nome do armazenamento persistente a essa política. Para obter mais informações, link:create-fpolicy-policy-task.html["Crie a política FPolicy"]consulte .
+
+
+
+
+== Criar um armazenamento persistente (ONTAP 9.14,1)
+
+Você pode criar um volume e, em seguida, criar um armazenamento persistente para usar esse volume. Em seguida, você pode bloquear o volume recém-criado do acesso de protocolo de usuário externo (CIFS/NFS).
+
+.Passos
+. Crie um volume vazio na SVM que possa ser provisionado para o armazenamento persistente:
++
+`volume create -vserver <SVM Name> -volume <volume> -state <online> -policy <default> -unix-permissions <777> -size <value> -aggregate <aggregate name> -snapshot-policy <none>`
+
++
+Espera-se que um usuário administrador com Privileges RBAC suficiente (para criar um volume) crie um volume (usando o comando da cli de volume ou API REST) do tamanho desejado e forneça o nome desse volume como o `-volume` comando criar CLI no armazenamento persistente ou API REST.
+
++
+** O `vserver` parâmetro é o nome do SVM.
+** O `volume` parâmetro é o nome do volume de armazenamento persistente.
+** O `state` parâmetro deve ser definido como online para que o volume esteja disponível para uso.
+** O `policy` parâmetro é definido para a política de serviço FPolicy, se você já tiver um configurado. Caso contrário, você pode usar o `volume modify` comando mais tarde para adicionar a política.
+** O `unix-permissions` parâmetro é opcional.
+** O `size` parâmetro é baseado na duração do tempo para o qual você deseja persistir os eventos que não são entregues ao servidor externo (aplicativo parceiro).
++
+Por exemplo, se você quiser que 30 minutos de eventos persistam em um cluster com uma capacidade de 30K notificações por segundo:
+
++
+Tamanho de volume necessário: 30000 x 30 x 60 x 0,6KB (tamanho médio do Registro de notificação): 32400000 KB, aproximadamente 32 GB
+
++
+Para encontrar a taxa de notificação aproximada, você pode entrar em Contato com seu aplicativo de parceiro FPolicy ou utilizar o contador FPolicy `requests_dispatched_rate`.
+
+** O parâmetro agregado é necessário para volumes FlexVol, caso contrário não é necessário.
+** O `snapshot-policy` parâmetro deve ser definido como nenhum. Isso garante que não haja restauração acidental do snapshot levando à perda de eventos atuais e impede o possível processamento de eventos duplicados.
++
+Se você quiser usar um volume vazio existente, use o `volume show` comando para encontrá-lo e o `volume modify` comando para fazer as alterações necessárias. Certifique-se de que a política, o tamanho e `snapshot-policy` os parâmetros estão definidos corretamente para o armazenamento persistente.
+
+
+
+. Crie o armazenamento persistente:
++
+`vserver fpolicy persistent store create -vserver <SVM> -persistent-store <PS_name> -volume <volume>`
+
++
+** O `vserver` parâmetro é o nome do SVM.
+** O `persistent-store` parâmetro é o nome do armazenamento persistente.
+** O `volume` parâmetro é o nome do volume de armazenamento persistente.
+
+
+. Crie a política FPolicy e adicione o nome do armazenamento persistente a essa política. Para obter mais informações, link:create-fpolicy-policy-task.html["Crie a política FPolicy"]consulte .
+

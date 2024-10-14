@@ -1,0 +1,50 @@
+---
+sidebar: sidebar 
+permalink: networking/create_a_dns_load_balancing_zone.html 
+keywords: create, creation, creating, add, adding, dns, naming, name, service, load, balancing, balance, zone, lif, create a dns load balancing zone, improve lif performance 
+summary: Crie uma zona de balanceamento de carga DNS para melhorar o desempenho de LIF 
+---
+= Crie uma zona de balanceamento de carga DNS
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode criar uma zona de balanceamento de carga DNS para facilitar a seleção dinâmica de um LIF com base na carga, ou seja, o número de clientes montados em um LIF. Você pode criar uma zona de balanceamento de carga ao criar um LIF de dados.
+
+.Antes de começar
+O encaminhador DNS no servidor DNS de todo o site deve ser configurado para encaminhar todas as solicitações para a zona de balanceamento de carga para os LIFs configurados.
+
+O artigo da base de conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/How_to_set_up_DNS_load_balancing_in_clustered_Data_ONTAP["Como configurar o balanceamento de carga DNS no modo Cluster"^]no site de suporte da NetApp contém mais informações sobre a configuração do balanceamento de carga DNS usando encaminhamento condicional.
+
+.Sobre esta tarefa
+* Qualquer LIF de dados pode responder a consultas DNS para um nome de zona de balanceamento de carga DNS.
+* Uma zona de balanceamento de carga DNS deve ter um nome exclusivo no cluster e o nome da zona deve atender aos seguintes requisitos:
++
+** Não deve exceder 256 carateres.
+** Deve incluir pelo menos um período.
+** O primeiro e o último caráter não devem ser um período ou qualquer outro caráter especial.
+** Não pode incluir espaços entre carateres.
+** Cada rótulo no nome DNS não deve exceder 63 carateres.
++
+Um rótulo é o texto que aparece antes ou depois do período. Por exemplo, a zona DNS chamada storage.company.com tem três rótulos.
+
+
+
+
+
+.Passo
+Use o `network interface create` comando com a `dns-zone` opção para criar uma zona de balanceamento de carga DNS.
+
+Se a zona de balanceamento de carga já existir, o LIF é adicionado a ela. Para obter mais informações sobre o comando, consulte https://docs.netapp.com/us-en/ontap-cli["Referência do comando ONTAP"^] .
+
+O exemplo a seguir demonstra como criar uma zona de balanceamento de carga DNS chamada storage.company.com ao criar o LIF `lif1`:
+
+....
+network interface create -vserver vs0 -lif lif1 -home-node node1
+-home-port e0c -address 192.0.2.129 -netmask 255.255.255.128 -dns-zone storage.company.com
+....

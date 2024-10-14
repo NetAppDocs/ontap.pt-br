@@ -1,0 +1,70 @@
+---
+permalink: smb-admin/dynamic-home-directories-concept.html 
+sidebar: sidebar 
+keywords: ontap, home, directories, directory, configure, smb, share, map, base, connect, set, variable, creating, create, separate, share, user, define, home, relationship, entry, point, svm, how ontap enables dynamic home directories 
+summary: 'Os diretórios iniciais do ONTAP permitem configurar um compartilhamento SMB que mapeia para diferentes diretórios com base no usuário que se coneta a ele e um conjunto de variáveis. Em vez de criar compartilhamentos separados para cada usuário, você pode configurar um compartilhamento com alguns parâmetros do diretório inicial para definir a relação de um usuário entre um ponto de entrada (o compartilhamento) e o diretório inicial (um diretório no SVM).' 
+---
+= Como o ONTAP ativa diretórios base dinâmicos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os diretórios iniciais do ONTAP permitem configurar um compartilhamento SMB que mapeia para diferentes diretórios com base no usuário que se coneta a ele e um conjunto de variáveis. Em vez de criar compartilhamentos separados para cada usuário, você pode configurar um compartilhamento com alguns parâmetros do diretório inicial para definir a relação de um usuário entre um ponto de entrada (o compartilhamento) e o diretório inicial (um diretório no SVM).
+
+Um usuário que está conetado como um usuário convidado não tem um diretório home e não pode acessar os diretórios home de outros usuários. Existem quatro variáveis que determinam como um usuário é mapeado para um diretório:
+
+* *Nome da partilha*
++
+Este é o nome do compartilhamento que você cria ao qual o usuário se coneta. Você deve definir a propriedade do diretório base para esse compartilhamento.
+
++
+O nome do compartilhamento pode usar os seguintes nomes dinâmicos:
+
++
+** `%w` (O nome de utilizador do Windows do utilizador)
+** `%d` (O nome de domínio do Windows do utilizador)
+**  `%u` (O nome de usuário UNIX mapeado do usuário) para tornar o nome de compartilhamento exclusivo em todos os diretórios base, o nome de compartilhamento deve conter a/`%w` variável ou `%u`. O nome do compartilhamento pode conter tanto a `%d` e a/`%w` variável (por exemplo, `%d`/`%w` ), ou o nome do compartilhamento pode conter uma porção estática e uma porção variável (por exemplo, Home_/`%w`).
+
+
+* *Caminho de compartilhamento*
++
+Este é o caminho relativo, que é definido pelo compartilhamento e, portanto, está associado a um dos nomes de compartilhamento, que é anexado a cada caminho de pesquisa para gerar o caminho do diretório home inteiro do usuário a partir da raiz do SVM. Pode ser estático (por exemplo, `home` ), dinâmico (por exemplo, `%w`) ou uma combinação dos dois (por exemplo, `eng/%w`).
+
+* *Pesquisar caminhos*
++
+Esse é o conjunto de caminhos absolutos da raiz do SVM que você especifica que direciona a busca do ONTAP por diretórios base. Você pode especificar um ou mais caminhos de pesquisa usando o `vserver cifs home-directory search-path add` comando. Se você especificar vários caminhos de pesquisa, o ONTAP os tentará na ordem especificada até encontrar um caminho válido.
+
+* *Diretório*
++
+Este é o diretório home do usuário que você cria para o usuário. O nome do diretório é geralmente o nome do usuário. Você deve criar o diretório home em um dos diretórios que são definidos pelos caminhos de pesquisa.
+
+
+
+Como exemplo, considere a seguinte configuração:
+
+* Usuário: John Smith
+* Domínio de usuário: acme
+* Nome de usuário: jsmith
+* Nome do SVM: VS1
+* Nome de compartilhamento de diretório base nº 1: Home_ `%w` - caminho de compartilhamento: `%w`
+* Nome de compartilhamento do diretório base nº 2: `%w` - Caminho de compartilhamento: `%d/%w`
+* Caminho de pesquisa nº 1: `/vol0home/home`
+* Caminho de pesquisa nº 2: `/vol1home/home`
+* Caminho de pesquisa nº 3: `/vol2home/home`
+* Diretório base: `/vol1home/home/jsmith`
+
+
+Cenário 1: O usuário se coneta `\\vs1\home_jsmith` ao . Isso corresponde ao primeiro nome de compartilhamento do diretório inicial e gera o caminho `jsmith`relativo . O ONTAP procura agora um diretório nomeado `jsmith` verificando cada caminho de pesquisa em ordem:
+
+* `/vol0home/home/jsmith` não existe; passando para o caminho de pesquisa nº 2.
+* `/vol1home/home/jsmith` existe; portanto, o caminho de pesquisa nº 3 não está marcado; o usuário agora está conetado ao seu diretório inicial.
+
+
+Cenário 2: O usuário se coneta `\\vs1\jsmith` ao . Isso corresponde ao segundo nome de compartilhamento do diretório inicial e gera o caminho `acme/jsmith`relativo . O ONTAP procura agora um diretório nomeado `acme/jsmith` verificando cada caminho de pesquisa em ordem:
+
+* `/vol0home/home/acme/jsmith` não existe; passando para o caminho de pesquisa nº 2.
+* `/vol1home/home/acme/jsmith` não existe; passando para o caminho de pesquisa nº 3.
+* `/vol2home/home/acme/jsmith` não existe; o diretório home não existe; portanto, a conexão falha.
+

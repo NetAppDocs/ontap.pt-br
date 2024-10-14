@@ -1,0 +1,28 @@
+---
+permalink: volumes/quotas-activated-concept.html 
+sidebar: sidebar 
+keywords: quotas, how quotas are activated, quota activation 
+summary: Novas quotas e alterações às quotas existentes devem ser ativadas para serem efetivas. A ativação é efetuada ao nível do volume. Saber como funciona a ativação de cotas pode ajudá-lo a gerenciar suas cotas com menos interrupções. 
+---
+= Visão geral de como as cotas são ativadas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Novas quotas e alterações às quotas existentes devem ser ativadas para serem efetivas. A ativação é efetuada ao nível do volume. Saber como funciona a ativação de cotas pode ajudá-lo a gerenciar suas cotas com menos interrupções.
+
+As cotas são ativadas por _inicializando_ (ativando-as) ou por _redimensionamento_. Desativar cotas e ativá-las novamente é chamado de reinicializing.
+
+A duração do processo de ativação e o seu impactos na aplicação da quota depende do tipo de ativação:
+
+* O processo de inicialização envolve duas partes: Uma `quota on` tarefa e uma varredura de cota de todo o sistema de arquivos do volume. A digitalização começa após `quota on` a conclusão do trabalho com êxito. A verificação de quota pode demorar algum tempo; quanto mais ficheiros tiver o volume, mais tempo demora. Até que a digitalização esteja concluída, a ativação da quota não está concluída e as quotas não são aplicadas.
+* O processo de redimensionamento envolve apenas um `quota resize` trabalho. O redimensionamento demora menos tempo do que uma inicialização de quota porque não envolve uma verificação de quota. Durante um processo de redimensionamento, as cotas continuam a ser aplicadas.
+
+
+Por predefinição, os `quota on` trabalhos e `quota resize` são executados em segundo plano, o que permite utilizar outros comandos ao mesmo tempo.
+
+Erros e avisos do processo de ativação são enviados para o sistema de gerenciamento de eventos. Se você usar o `-foreground` parâmetro com os `volume quota on` comandos ou `volume quota resize`, o comando não retornará até que a tarefa esteja concluída; isso será útil se você estiver reinicializando a partir de um script. Para exibir erros e avisos mais tarde, você pode usar o `volume quota show` comando com o `-instance` parâmetro.
+
+A ativação da cota persiste entre paradas e reinicializações. O processo de ativação da cota não afeta a disponibilidade dos dados do sistema de armazenamento.

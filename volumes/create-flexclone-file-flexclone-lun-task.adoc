@@ -1,0 +1,50 @@
+---
+permalink: volumes/create-flexclone-file-flexclone-lun-task.html 
+sidebar: sidebar 
+keywords: create, flexclone file, flexclone lun, efficient, clone 
+summary: Você pode criar clones com uso eficiente de espaço e tempo de arquivos e LUNs no FlexVol ou no FlexClone volumes. 
+---
+= Crie um arquivo FlexClone ou FlexClone LUN
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Use o comando para criar clones com uso eficiente de espaço e tempo de arquivos e LUNs presentes no FlexVol volumes ou no FlexClone volumes `volume file clone create`.
+
+.O que você vai precisar
+* A licença FlexClone deve ser instalada no cluster. Esta licença está incluída no link:../system-admin/manage-licenses-concept.html#licenses-included-with-ontap-one["ONTAP One"].
+* Se vários intervalos de blocos forem usados para clonagem de sub-LUN ou clonagem de sub-arquivo, os números de bloco não devem se sobrepor.
+* Se você estiver criando um sub-LUN ou sub-arquivo em volumes com compactação adaptável ativada, os intervalos de bloco não devem ser desalinhados.
++
+Isso significa que o número do bloco de início da origem e o número do bloco de início de destino devem estar alinhados ou alinhados de forma ímpar.
+
+
+
+.Sobre esta tarefa
+Dependendo do Privileges atribuído pelo administrador do cluster, um administrador da SVM pode criar arquivos FlexClone e LUNs FlexClone.
+
+É possível especificar a configuração de FlexClone Files e FlexClone LUNs quando você cria e modifica clones. Por predefinição, a definição de velocidade de cruzeiro é desativada.
+
+Você pode sobrescrever um arquivo FlexClone existente ou LUN FlexClone ao criar um clone usando o `volume file clone create` comando com o `-overwrite-destination` parâmetro.
+
+Quando o nó atinge sua carga dividida máxima, o nó pára temporariamente de aceitar solicitações para criar arquivos FlexClone e LUNs FlexClone e emite uma `EBUSY` mensagem de erro. Quando a carga dividida para o nó cai abaixo do máximo, o nó aceita solicitações para criar arquivos FlexClone e LUNs FlexClone novamente. Você deve esperar até que o nó tenha capacidade para criar os clones antes de tentar a solicitação de criação novamente.
+
+.Passos
+. Crie um arquivo FlexClone ou FlexClone LUN usando o `volume file clone create` comando.
++
+O exemplo a seguir mostra como você pode criar um arquivo FlexClone file1_clone do arquivo pai file1_source no volume vol1:
+
++
+[listing]
+----
+cluster1::> volume file clone create -vserver vs0 -volume vol1 -source-path /file1_source -destination-path /file1_clone
+----
++
+Para obter mais informações sobre como usar esse comando, consulte as páginas man.
+
+
+
+.Informações relacionadas
+link:../concepts/manual-pages.html["Referência do comando ONTAP"]

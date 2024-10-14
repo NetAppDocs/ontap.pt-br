@@ -1,0 +1,144 @@
+---
+permalink: consistency-groups/configure-task.html 
+sidebar: sidebar 
+keywords: consistency groups, consistency group, application protection, parent, child, configure 
+summary: Crie um único grupo de consistência para gerenciamento de workload de aplicações e proteção de dados. 
+---
+= Configurar um único grupo de consistência
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os grupos de consistência podem ser criados com volumes existentes ou novos LUNs ou volumes (dependendo da versão do ONTAP). Um volume ou LUN só pode ser associado a um grupo de consistência de cada vez.
+
+.Sobre esta tarefa
+* No ONTAP 9.10,1 a 9.11.1, a modificação dos volumes de membros de um grupo de consistência após a criação não é suportada.
++
+A partir do ONTAP 9.12,1, você pode modificar os volumes de membros de um grupo de consistência. Para obter mais informações sobre este processo, xref:modify-task.html[Modifique um grupo de consistência]consulte .
+
+
+
+
+
+== Crie um grupo de consistência com novos LUNs ou volumes
+
+No ONTAP 9.10,1 a 9.12.1, você pode criar um grupo de consistência usando novos LUNs. A partir do ONTAP 9.13,1, o System Manager também dá suporte à criação de um grupo de consistência com novos namespaces NVMe ou novos volumes nas. (Isso também é suportado na API REST do ONTAP começando com ONTAP 9.12,1.)
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione * Adicionar * e, em seguida, selecione o protocolo para o seu objeto de armazenamento.
++
+No ONTAP 9.10,1 até 9.12.1, a única opção para um novo objeto de armazenamento é **usando novos LUNs**. A partir do ONTAP 9.13,1, o System Manager dá suporte à criação de grupos de consistência com novos namespaces NVMe e novos volumes nas.
+
+. Nomeie o grupo de consistência. Designar o número de volumes ou LUNs e a capacidade por volume ou LUN.
++
+.. **Tipo de aplicativo**: Se você estiver usando o ONTAP 9.12,1 ou posterior, selecione um tipo de aplicativo. Se nenhum valor for selecionado, o grupo de consistência será atribuído o tipo de ** outro ** por padrão. Saiba mais sobre a consistência da marcação no xref:modify-tags-task.html[Tags de aplicativos e componentes]. Se você planeja criar um grupo de consistência com uma política de proteção remota, use *Other*.
+.. Para **novos LUNs**: Selecione o sistema operacional host e o formato LUN. Insira as informações do iniciador do host.
+.. Para **novos volumes nas**: Escolha a opção de exportação apropriada (NFS ou SMB/CIFS) com base na configuração nas do SVM.
+.. Para **novos namespaces NVMe**: Selecione o sistema operacional do host e o subsistema NVMe.
+
+
+. Para configurar políticas de proteção, adicione um grupo de consistência filho ou permissões de acesso, selecione *mais opções*.
+. Selecione *Guardar*.
+. Confirme que o seu grupo de consistência foi criado retornando ao menu principal do grupo de consistência, onde ele aparecerá quando o trabalho for concluído. Se você definir uma política de proteção, saberá que ela foi aplicada quando você vir um escudo verde sob olhar sob a política apropriada, remota ou local.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, é possível criar um novo grupo de consistência com novos volumes usando a CLI do ONTAP. Os parâmetros específicos dependem se os volumes são SAN, NVMe ou NFS.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Criar um grupo de consistência com volumes NFS
+. Crie o grupo de consistência:
++
+`consistency-group create -vserver _SVM_name_ -consistency-group _consistency-group-name_ -volume _volume-prefix_ -volume-count _number_ -size _size_ -export-policy _policy_name_`
+
+
+
+.Crie um grupo de consistência com volumes SAN
+. Crie o grupo de consistência:
++
+`consistency-group create -vserver _SVM_name_ -consistency-group _consistency-group-name_ -lun _lun_name_ -size _size_ -lun-count _number_ -igroup _igroup_name_`
+
+
+
+.Crie um grupo de consistência com namespaces NVMe
+. Crie o grupo de consistência:
++
+`consistency-group create -vserver _SVM_name_ -consistency-group _consistency_group_name_ -namespace _namespace_name_ -volume-count _number_ -namespace-count _number_ -size _size_ -subsystem _subsystem_name_`
+
+
+
+.Depois de terminar
+. Confirme que seu grupo de consistência foi criado usando o `consistency-group show` comando.
+
+
+--
+====
+
+
+== Crie um grupo de consistência com volumes existentes
+
+Você pode usar volumes existentes para criar um grupo de consistência.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione * Adicionar* e depois *usando volumes existentes*.
+. Nomeie o grupo de consistência e selecione a VM de armazenamento.
++
+.. **Tipo de aplicativo**: Se você estiver usando o ONTAP 9.12,1 ou posterior, selecione um tipo de aplicativo. Se nenhum valor for selecionado, o grupo de consistência será atribuído o tipo de ** outro ** por padrão. Saiba mais sobre a consistência da marcação no xref:modify-tags-task.html[Tags de aplicativos e componentes]. Se o grupo consistência tiver uma relação de sincronização ativa do SnapMirror, você deve usar *Other*.
++
+
+NOTE: Em versões do ONTAP anteriores ao ONTAP 9.15,1, a sincronização ativa do SnapMirror é chamada de continuidade de negócios do SnapMirror.
+
+
+
+. Selecione os volumes existentes a incluir. Apenas os volumes que ainda não fazem parte de um grupo de consistência estarão disponíveis para seleção.
++
+
+NOTE: Se estiver criando um grupo de consistência com volumes existentes, o grupo de consistência será compatível com volumes FlexVol. Volumes com ou relacionamentos assíncronos SnapMirror ou SnapMirror podem ser adicionados a grupos de consistência, mas eles não têm reconhecimento de grupo de consistência. Os grupos de consistência não são compatíveis com buckets do S3 ou VMs de storage com relacionamentos SVMDR.
+
+. Selecione *Guardar*.
+. Confirme que o seu grupo de consistência foi criado retornando ao menu principal do grupo de consistência, onde ele aparece quando a tarefa ONTAP for concluída. Se você escolheu uma política de proteção, confirme que ela foi corretamente definida selecionando seu grupo de consistência no menu. Se você definir uma política de proteção, sabe que ela foi aplicada quando você vê um escudo verde sob olhar sob a política apropriada, remota ou local.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, é possível criar um grupo de consistência com volumes existentes usando a CLI do ONTAP.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Passos
+. Emita o `consistency-group create` comando. O `-volumes` parâmetro aceita uma lista separada por vírgulas de nomes de volume.
++
+`consistency-group create -vserver _SVM_name_ -consistency-group _consistency-group-name_ -volume _volumes_`
+
+. Visualize seu grupo de consistência usando o `consistency-group show` comando.
+
+
+--
+====
+.Próximas etapas
+* xref:protect-task.html[Proteja um grupo de consistência]
+* xref:modify-task.html[Modifique um grupo de consistência]
+* xref:clone-task.html[Clonar um grupo de consistência]
+

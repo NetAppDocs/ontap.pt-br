@@ -1,0 +1,38 @@
+---
+permalink: antivirus/file-protection-virus-scanning-concept.html 
+sidebar: sidebar 
+keywords: anti virus, understand, netapp, virus, scan 
+summary: O Vscan é uma solução de verificação antivírus desenvolvida pela NetApp que permite aos clientes proteger seus dados de serem comprometidos por vírus ou outros códigos maliciosos. Ele combina software antivírus fornecido pelo parceiro com recursos do ONTAP para dar aos clientes a flexibilidade de que precisam para gerenciar a verificação de arquivos. 
+---
+= Sobre a verificação de vírus NetApp
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O Vscan é uma solução de verificação antivírus desenvolvida pela NetApp que permite aos clientes proteger seus dados de serem comprometidos por vírus ou outros códigos maliciosos. Ele combina software antivírus fornecido pelo parceiro com recursos do ONTAP para dar aos clientes a flexibilidade de que precisam para gerenciar a verificação de arquivos.
+
+
+
+== Como a verificação de vírus funciona
+
+Os sistemas de storage descarregam as operações de verificação para servidores externos que hospedam softwares antivírus de terceiros.
+
+Com base no modo de digitalização ativo, o ONTAP envia solicitações de digitalização quando os clientes acessam arquivos por SMB (on-access) ou acessar arquivos em locais específicos, em um horário ou imediatamente (sob demanda).
+
+* Você pode usar _verificação no acesso_ para verificar se há vírus quando os clientes abrem, leem, renomeam ou fecham arquivos pelo SMB. As operações de arquivo são suspensas até que o servidor externo comunique o status de digitalização do arquivo. Se o ficheiro já tiver sido lido, o ONTAP permite a operação do ficheiro. Caso contrário, ele solicita uma verificação do servidor.
++
+A verificação no acesso não é suportada para NFS.
+
+* Você pode usar _On-demand scanning_ para verificar arquivos para vírus imediatamente ou em uma programação. Recomendamos que as verificações a pedido sejam executadas apenas em horas fora do pico para evitar sobrecarregar a infra-estrutura AV existente, que normalmente é dimensionada para a digitalização no acesso. O servidor externo atualiza o status de verificação dos arquivos verificados, de modo que a latência de acesso ao arquivo seja reduzida em relação ao SMB. Se houver modificações de arquivo ou atualizações de versão de software, ele solicita uma nova verificação de arquivo do servidor externo.
++
+Você pode usar a verificação sob demanda para qualquer caminho no namespace SVM, até mesmo para volumes exportados somente por NFS.
+
+
+
+Normalmente, você ativa os modos de digitalização sob demanda e de acesso sob demanda em uma SVM. Em ambos os modos, o software antivírus toma medidas corretivas em arquivos infetados com base em suas configurações de software.
+
+O conetor do antivírus ONTAP, fornecido pelo NetApp e instalado no servidor externo, lida com a comunicação entre o sistema de armazenamento e o software antivírus.
+
+image:how-virus-scanning-works-new.gif["Fluxo de trabalho de verificação de vírus. Isso explica como o conetor lida com a comunicação entre o sistema de armazenamento e o software antivírus."]

@@ -1,0 +1,94 @@
+---
+permalink: flexgroup/fast-directory-delete-asynchronous-task.html 
+sidebar: sidebar 
+keywords: perform, directory, delete, files, asynchronous, share, flexvol, flex vol, flexgroup, flex group, cancel 
+summary: A partir do ONTAP 9.8, você pode usar o comando async-delete do arquivo de volume para excluir arquivos e diretórios de compartilhamentos de clientes Linux e Windows em segundo plano. Você pode executar a exclusão assíncrona em volumes FlexVol e FlexGroup. 
+---
+= Exclua diretórios rapidamente no cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.8, você pode usar a funcionalidade _fast-Directory delete_ de baixa latência para excluir diretórios de compartilhamentos de clientes Linux e Windows de forma assíncrona (ou seja, em segundo plano). Os administradores de cluster e SVM podem executar operações de exclusão assíncrona no FlexVol e no FlexGroup volumes.
+
+Se você estiver usando uma versão do ONTAP anterior ao ONTAP 9.11,1, será necessário ser um administrador de cluster ou um administrador SVM usando o modo de privilégio avançado.
+
+A partir do ONTAP 9.11,1, um administrador de storage pode conceder direitos em um volume para permitir que clientes NFS e SMB realizem operações de exclusão assíncrona. Para obter mais informações, link:manage-client-async-dir-delete-task.html["Gerencie os direitos do cliente para excluir diretórios rapidamente"]consulte .
+
+A partir do ONTAP 9.8, você pode usar a funcionalidade de exclusão rápida de diretório usando a CLI do ONTAP. A partir do ONTAP 9.9,1, você pode usar essa funcionalidade com o Gerenciador do sistema. Para obter mais informações sobre esse processo, link:../task_nas_file_system_analytics_take_corrective_action.html["Tome medidas corretivas com base em análises"]consulte .
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Clique em *Storage > volumes* e, em seguida, clique em *Explorer*.
++
+Quando você passa o Mouse sobre um arquivo ou pasta, a opção para excluir é exibida. Você só pode excluir um objeto de cada vez.
+
+
+
+
+NOTE: Quando diretórios e arquivos são excluídos, os novos valores de capacidade de armazenamento não são exibidos imediatamente.
+
+--
+.CLI
+--
+*Use a CLI para executar uma rápida exclusão de diretório*
+
+. Entrar no modo de privilégio avançado:
++
+`-privilege advance`
+
+. Excluir diretórios em um volume FlexVol ou FlexGroup:
++
+`volume file async-delete start -vserver vserver_name -volume volume_name -path file_path -throttle throttle`
+
++
+O valor mínimo do acelerador é 10, o máximo é 100.000 e o padrão é 5000.
+
++
+O exemplo a seguir exclui o diretório chamado D2, que está localizado no diretório chamado D1.
+
++
+....
+cluster::*>volume file async-delete start -vserver vs1 -volume vol1 -path d1/d2
+....
+. Verifique se o diretório foi excluído:
++
+`event log show`
+
++
+O exemplo a seguir mostra a saída para o log de eventos quando o diretório é excluído com sucesso.
+
++
+....
+cluster-cli::*> event log show
+Time                 Node             Severity      Event
+-------------------  ---------------- ------------- --------------------
+MM/DD/YYYY 00:11:11  cluster-vsim     INFORMATIONAL asyncDelete.message.success: Async delete job on path d1/d2 of volume (MSID: 2162149232) was completed.
+....
+
+
+*Cancelar um trabalho de exclusão de diretório*
+
+. Entrar no modo de privilégio avançado:
++
+`set -privilege advanced`
+
+. Verifique se a exclusão do diretório está em andamento:
++
+`volume file async-delete show`
+
++
+Se o SVM, volume, JobID e caminho do diretório forem exibidos, você poderá cancelar o trabalho.
+
+. Cancelar a exclusão do diretório:
++
+`volume file async-delete cancel -vserver _SVM_name_ -volume _volume_name_ -jobid _job_id_`
+
+
+
+--
+====

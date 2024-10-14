@@ -1,0 +1,73 @@
+---
+permalink: s3-config/assess-networking-requirements-task.html 
+sidebar: sidebar 
+keywords: assess, networking, requirements 
+summary: Antes de fornecer armazenamento S3 para clientes, você deve verificar se a rede está corretamente configurada para atender aos requisitos de provisionamento S3. 
+---
+= Avaliar os requisitos de rede
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de fornecer armazenamento S3 para clientes, você deve verificar se a rede está corretamente configurada para atender aos requisitos de provisionamento S3.
+
+.Antes de começar
+Os seguintes objetos de rede de cluster devem ser configurados:
+
+* Portas físicas e lógicas
+* Domínios de broadcast
+* Sub-redes (se necessário)
+* IPspaces (conforme necessário, além do IPspace padrão)
+* Grupos de failover (conforme necessário, além do grupo de failover padrão para cada domínio de broadcast)
+* Firewalls externos
+
+
+.Sobre esta tarefa
+Para camadas remotas de capacidade FabricPool (nuvem) e clientes S3 remotos, você precisa usar um SVM de dados e configurar LIFs de dados. Para camadas de nuvem do FabricPool, você também precisa configurar LIFs entre clusters. O peering de cluster não é necessário.
+
+Para níveis de capacidade locais do FabricPool, você precisa usar o SVM do sistema (chamado de "'cluster'"), mas você tem duas opções de configuração de LIF:
+
+* Você pode usar os LIFs de cluster.
++
+Nesta opção, não é necessária nenhuma configuração de LIF adicional, mas haverá um aumento no tráfego nos LIFs de cluster. Além disso, o nível local não será acessível a outros clusters.
+
+* Você pode usar dados e LIFs entre clusters.
++
+Essa opção requer configuração adicional, incluindo a ativação das LIFs para o protocolo S3, mas o nível local também estará acessível como uma camada de nuvem FabricPool remota para outros clusters.
+
+
+
+.Passos
+. Exiba as portas físicas e virtuais disponíveis:
++
+`network port show`
+
++
+** Quando possível, você deve usar a porta com a velocidade mais alta para a rede de dados.
+** Todos os componentes da rede de dados devem ter a mesma configuração de MTU para obter o melhor desempenho.
+
+
+. Se você estiver planejando usar um nome de sub-rede para alocar o endereço IP e o valor de máscara de rede para um LIF, verifique se a sub-rede existe e tem endereços suficientes disponíveis:
++
+`network subnet show`
+
++
+As sub-redes contêm um conjunto de endereços IP que pertencem à mesma sub-rede da camada 3. As sub-redes são criadas usando o `network subnet create` comando.
+
+. Exibir IPspaces disponíveis:
++
+`network ipspace show`
+
++
+Você pode usar o IPspace padrão ou um IPspace personalizado.
+
+. Se você quiser usar endereços IPv6, verifique se IPv6 está ativado no cluster:
++
+`network options ipv6 show`
+
++
+Se necessário, você pode ativar o IPv6 usando o `network options ipv6 modify` comando.
+
+

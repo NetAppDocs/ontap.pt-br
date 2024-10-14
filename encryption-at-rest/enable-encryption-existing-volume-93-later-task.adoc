@@ -1,0 +1,84 @@
+---
+permalink: encryption-at-rest/enable-encryption-existing-volume-93-later-task.html 
+sidebar: sidebar 
+keywords: enabling, encryption, existing, volume encryption conversion start, command 
+summary: 'A partir do ONTAP 9.3, você pode usar o comando de início de conversão de criptografia de volume para habilitar a criptografia de um volume existente "no lugar", sem ter que mover o volume para um local diferente.' 
+---
+= Ative a criptografia em um volume existente com o comando de início da conversão de criptografia de volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.3, você pode usar o `volume encryption conversion start` comando para habilitar a criptografia de um volume existente "no lugar", sem ter que mover o volume para um local diferente.
+
+.Sobre esta tarefa
+Depois de iniciar uma operação de conversão, ela deve ser concluída. Se você encontrar um problema de desempenho durante a operação, você pode executar o `volume encryption conversion pause` comando para pausar a operação e o `volume encryption conversion resume` comando para retomar a operação.
+
+A partir do ONTAP 9.14,1, você pode usar `volume encryption conversion start` em um volume raiz SVM. Para obter mais informações, xref:configure-nve-svm-root-task.html[Configurar o NetApp volume Encryption em um volume raiz da SVM]consulte .
+
+
+NOTE: Não pode utilizar `volume encryption conversion start` para converter um volume SnapLock.
+
+.Passos
+. Ativar encriptação num volume existente:
++
+`volume encryption conversion start -vserver _svm_name_ -volume _volume_name_`
+
++
+Para obter a sintaxe de comando completa, link:https://docs.netapp.com/us-en/ontap-cli/volume-encryption-conversion-start.html["A referência do comando ONTAP"^]consulte .
+
++
+O comando a seguir habilita a criptografia no volume existente `vol1` :
+
++
+[listing]
+----
+cluster1::> volume encryption conversion start -vserver vs1 -volume vol1
+----
++
+O sistema cria uma chave de criptografia para o volume. Os dados no volume são criptografados.
+
+. Verifique o status da operação de conversão:
++
+`volume encryption conversion show`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
++
+O comando a seguir exibe o status da operação de conversão:
+
++
+[listing]
+----
+cluster1::> volume encryption conversion show
+
+Vserver   Volume   Start Time           Status
+-------   ------   ------------------   ---------------------------
+vs1       vol1     9/18/2017 17:51:41   Phase 2 of 2 is in progress.
+----
+. Quando a operação de conversão estiver concluída, verifique se o volume está ativado para criptografia:
++
+`volume show -is-encrypted true`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
++
+O comando a seguir exibe os volumes criptografados em `cluster1`:
+
++
+[listing]
+----
+cluster1::> volume show -is-encrypted true
+
+Vserver  Volume  Aggregate  State  Type  Size  Available  Used
+-------  ------  ---------  -----  ----  -----  --------- ----
+vs1      vol1    aggr2     online    RW  200GB    160.0GB  20%
+----
+
+
+.Resultado
+Se você estiver usando um servidor KMIP para armazenar as chaves de criptografia de um nó, o ONTAP enviará automaticamente uma chave de criptografia ao servidor quando você criptografar um volume.

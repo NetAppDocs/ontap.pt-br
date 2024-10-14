@@ -1,0 +1,66 @@
+---
+permalink: tape-backup/types-data-dump-engine-backs-up-concept.html 
+sidebar: sidebar 
+keywords: types, data, dump, engine, backs, up, files, directory, qtree, volumes 
+summary: O mecanismo de despejo permite que você faça backup de dados em fita para proteger contra desastres ou interrupções no controlador. Além de fazer backup de objetos de dados, como arquivos, diretórios, qtrees ou volumes inteiros, o mecanismo de despejo pode fazer backup de muitos tipos de informações sobre cada arquivo. Conhecer os tipos de dados que o mecanismo de despejo pode fazer backup e as restrições a serem levadas em consideração podem ajudá-lo a Planejar sua abordagem para a recuperação de desastres. 
+---
+= Tipos de dados que o motor de descarga faz backup
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O mecanismo de despejo permite que você faça backup de dados em fita para proteger contra desastres ou interrupções no controlador. Além de fazer backup de objetos de dados, como arquivos, diretórios, qtrees ou volumes inteiros, o mecanismo de despejo pode fazer backup de muitos tipos de informações sobre cada arquivo. Conhecer os tipos de dados que o mecanismo de despejo pode fazer backup e as restrições a serem levadas em consideração podem ajudá-lo a Planejar sua abordagem para a recuperação de desastres.
+
+Além de fazer backup de dados em arquivos, o mecanismo de despejo pode fazer backup das seguintes informações sobre cada arquivo, conforme aplicável:
+
+* UNIX GID, proprietário UID e permissões de arquivo
+* Tempo de acesso, criação e modificação do UNIX
+* Tipo de ficheiro
+* Tamanho do ficheiro
+* Nome DOS, atributos dos e tempo de criação
+* Listas de controle de acesso (ACLs) com 1.024 entradas de controle de acesso (ACEs)
+* Informações de Qtree
+* Caminhos de junção
+
+
+Os caminhos de junção são copiados como links simbólicos.
+
+* Clones de LUN e LUN
++
+Você pode fazer backup de um objeto LUN inteiro; no entanto, não é possível fazer backup de um único arquivo dentro do objeto LUN. Da mesma forma, você pode restaurar um objeto LUN inteiro, mas não um único arquivo dentro do LUN.
+
++
+[NOTE]
+====
+O mecanismo de despejo faz backup de clones de LUN como LUNs independentes.
+
+====
+* Arquivos alinhados à VM
++
+O backup de arquivos alinhados à VM não é suportado em versões anteriores ao Data ONTAP 8.1,2.
+
+
+
+[NOTE]
+====
+Quando um clone de LUN com backup de snapshot é transferido do Data ONTAP operando no modo 7 para o ONTAP, ele se torna um LUN inconsistente. O motor de descarga não faz backup de LUNs inconsistentes.
+
+====
+Quando você restaura dados para um volume, a e/S do cliente é restrita nos LUNs sendo restaurados. A restrição LUN é removida apenas quando a operação de restauração de despejo estiver concluída. Da mesma forma, durante uma operação de restauração de um único arquivo ou LUN do SnapMirror, a e/S do cliente é restrita em arquivos e LUNs sendo restaurados. Esta restrição é removida apenas quando a operação de restauração de um único arquivo ou LUN estiver concluída. Se um backup de despejo for executado em um volume no qual uma restauração de despejo ou uma operação de restauração de arquivo único SnapMirror ou LUN está sendo executada, os arquivos ou LUNs que têm restrição de e/S cliente não serão incluídos no backup. Esses arquivos ou LUNs são incluídos em uma operação de backup subsequente se a restrição de e/S do cliente for removida.
+
+[NOTE]
+====
+Um LUN em execução no Data ONTAP 8.3 que é feito backup em fita pode ser restaurado apenas para 8,3 e versões posteriores e não para uma versão anterior. Se o LUN for restaurado para uma versão anterior, o LUN será restaurado como um arquivo.
+
+====
+Quando você faz backup de um volume secundário do SnapVault ou de um destino do volume SnapMirror em fita, apenas os dados do volume são copiados. Não é feito backup dos metadados associados. Portanto, quando você tenta restaurar o volume, apenas os dados nesse volume são restaurados. As informações sobre as relações SnapMirror de volume não estão disponíveis no backup e, portanto, não são restauradas.
+
+Se você despejar um arquivo que tenha apenas permissões do Windows NT e restaurá-lo para uma qtree ou volume de estilo UNIX, o arquivo obtém as permissões UNIX padrão para essa qtree ou volume.
+
+Se você despejar um arquivo que tenha apenas permissões UNIX e restaurá-lo para uma qtree ou volume no estilo NTFS, o arquivo obtém as permissões padrão do Windows para essa qtree ou volume.
+
+Outros despejos e restaurações preservam permissões.
+
+Você pode fazer backup de arquivos alinhados à VM e da `vm-align-sector` opção. Para obter mais informações sobre arquivos alinhados à VM, link:../volumes/index.html["Gerenciamento de storage lógico"]consulte .

@@ -1,0 +1,339 @@
+---
+sidebar: sidebar 
+permalink: networking/combine_physical_ports_to_create_interface_groups.html 
+keywords: combine, ports, ifgrp, interface, group, create, creating, add, adding, types, single-mode, single, mode, static, dynamic, multimode, best, practice, port-based, port, based, load, balance, balancing, ip, address, mac, sequential, remove, removing, delete, deleting, combine physical ports to create interface groups, interface group types, characteristics of single-mode interface groups, characteristics of static multimode interface groups, dynamic multimode interface group, load balancing in multimode interface groups, port-based load balancing, ip address and mac address load balancing, sequential load balancing, create an interface group, add a port to an interface group, remove a port from an interface group, delete an interface group 
+summary: Combine duas ou mais portas físicas em uma única porta lógica para criar um grupo de interfaces 
+---
+= Combine portas físicas para criar grupos de interface
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um grupo de interface, também conhecido como Grupo de agregação de link (LAG), é criado combinando duas ou mais portas físicas no mesmo nó em uma única porta lógica. A porta lógica oferece maior resiliência, maior disponibilidade e compartilhamento de carga.
+
+
+
+== Tipos de grupo de interfaces
+
+Três tipos de grupos de interface são suportados no sistema de armazenamento: Modo único, multimodo estático e multimodo dinâmico. Cada grupo de interfaces fornece diferentes níveis de tolerância a falhas. Os grupos de interface multimodo fornecem métodos para o tráfego de rede de balanceamento de carga.
+
+
+
+=== Caraterísticas dos grupos de interface monomodo
+
+Em um grupo de interface de modo único, apenas uma das interfaces no grupo de interfaces está ativa. As outras interfaces estão em espera, prontas para assumir se a interface ativa falhar.
+
+Caraterísticas de grupos de interface de modo único:
+
+* Para failover, o cluster monitora o link ativo e controla o failover. Como o cluster monitora o link ativo, não há necessidade de configuração de switch.
+* Pode haver mais de uma interface em espera em um grupo de interface de modo único.
+* Se um grupo de interface de modo único abranger vários switches, você deve conetar os switches com um ISL (Inter-Switch Link).
+* Para um grupo de interface de modo único, as portas do switch devem estar no mesmo domínio de broadcast.
+* Os pacotes ARP de monitoramento de link, que têm um endereço de origem 0,0.0,0, são enviados pelas portas para verificar se as portas estão no mesmo domínio de broadcast.
+
+
+A figura a seguir é um exemplo de um grupo de interface de modo único. Na figura, e0a e e1a fazem parte do grupo de interfaces monomodo a0a. Se a interface ativa, e0a, falhar, a interface standby e1a assume e mantém a conexão com o switch.
+
+image:ontap_nm_image6.png["Um grupo de interface de modo único"]
+
+
+NOTE: Para realizar a funcionalidade de modo único, a abordagem recomendada é usar grupos de failover. Ao usar um grupo de failover, a segunda porta ainda pode ser usada para outros LIFs e não precisa permanecer sem uso. Além disso, os grupos de failover podem abranger mais de duas portas e abranger portas em vários nós.
+
+
+
+=== Caraterísticas de grupos de interface multimodo estático
+
+A implementação do grupo de interfaces multimodo estático no ONTAP está em conformidade com a norma IEEE 802,3ad (estática). Qualquer switch que suporte agregados, mas não tenha troca de pacotes de controle para configurar um agregado, pode ser usado com grupos de interface multimodo estático.
+
+Os grupos de interface multimodo estático não estão em conformidade com a norma IEEE 802,3ad (dinâmica), também conhecida como Link Aggregation Control Protocol (LACP). O LACP é equivalente ao Protocolo de agregação de portas (PAgP), o protocolo de agregação de links proprietário da Cisco.
+
+A seguir estão as caraterísticas de um grupo de interfaces multimodo estático:
+
+* Todas as interfaces do grupo de interfaces estão ativas e compartilham um único endereço MAC.
++
+** Várias conexões individuais são distribuídas entre as interfaces no grupo de interfaces.
+** Cada conexão ou sessão usa uma interface dentro do grupo de interfaces. Quando você usa o esquema de balanceamento de carga sequencial, todas as sessões são distribuídas por links disponíveis em uma base pacote a pacote e não são vinculadas a uma interface específica do grupo de interfaces.
+
+
+* Grupos de interface multimodo estático podem se recuperar de uma falha de até interfaces "n-1", onde n é o número total de interfaces que formam o grupo de interfaces.
+* Se uma porta falhar ou for desconetada, o tráfego que estava atravessando o link com falha será automaticamente redistribuído para uma das interfaces restantes.
+* Os grupos de interface multimodo estático podem detetar uma perda de link, mas não conseguem detetar uma perda de conetividade com o cliente ou configurações incorretas de switch que possam afetar a conetividade e o desempenho.
+* Um grupo de interface multimodo estático requer um switch que suporte a agregação de links em várias portas de switch. O switch é configurado de modo que todas as portas às quais os links de um grupo de interfaces estão conetados façam parte de uma única porta lógica. Alguns switches podem não suportar agregação de links de portas configuradas para quadros jumbo. Para obter mais informações, consulte a documentação do fornecedor do switch.
+* Várias opções de balanceamento de carga estão disponíveis para distribuir o tráfego entre as interfaces de um grupo de interfaces multimodo estático.
+
+
+A figura a seguir é um exemplo de um grupo de interfaces multimodo estático. As interfaces e0a, e1a, E2A e E3A fazem parte do grupo de interfaces multimodo A1A. Todas as quatro interfaces no grupo de interfaces multimodo A1A estão ativas.
+
+image:ontap_nm_image7.png["Um grupo de interfaces multimodo dinâmico"]
+
+Existem várias tecnologias que permitem que o tráfego em um único link agregado seja distribuído entre vários switches físicos. As tecnologias usadas para habilitar essa capacidade variam entre os produtos de rede. Os grupos de interface multimodo estático no ONTAP estão em conformidade com os padrões IEEE 802,3.3af. Se uma determinada tecnologia de agregação de links de múltiplos switches for considerada interoperacional ou conforme aos padrões IEEE 802,3.1X, ela deverá operar com o ONTAP.
+
+O padrão IEEE 802,3 afirma que o dispositivo transmissor em um link agregado determina a interface física para transmissão. Portanto, o ONTAP é apenas responsável por distribuir tráfego de saída e não pode controlar como os quadros de entrada chegam. Se você quiser gerenciar ou controlar a transmissão de tráfego de entrada em um link agregado, essa transmissão deve ser modificada no dispositivo de rede conetado diretamente.
+
+
+
+=== Grupo de interfaces multimodo dinâmico
+
+Os grupos de interface multimodo dinâmico implementam o Link Aggregation Control Protocol (LACP) para comunicar a associação do grupo ao switch diretamente conetado. O LACP permite detetar a perda do status do link e a incapacidade do nó de se comunicar com a porta do switch de conexão direta.
+
+A implementação dinâmica do grupo de interface multimodo no ONTAP está em conformidade com IEEE 802,3 AD (802,1 AX). O ONTAP não oferece suporte ao Protocolo de agregação de portas (PAgP), que é um protocolo de agregação de links proprietário da Cisco.
+
+Um grupo de interface multimodo dinâmico requer um switch que suporte LACP.
+
+O ONTAP implementa o LACP no modo ativo não configurável que funciona bem com switches configurados no modo ativo ou passivo. O ONTAP implementa os temporizadores LACP longos e curtos (para uso com valores não configuráveis de 3 segundos e 90 segundos), conforme especificado no IEEE 802,3 AD (802,1AX).
+
+O algoritmo de balanceamento de carga do ONTAP determina a porta membro a ser usada para transmitir tráfego de saída e não controla como os quadros de entrada são recebidos. O switch determina o membro (porta física individual) de seu grupo de canais de portas a ser usado para transmissão, com base no algoritmo de balanceamento de carga configurado no grupo de canais de portas do switch. Portanto, a configuração do switch determina a porta membro (porta física individual) do sistema de armazenamento para receber tráfego. Para obter mais informações sobre como configurar o switch, consulte a documentação do fornecedor do switch.
+
+Se uma interface individual não receber pacotes de protocolo LACP sucessivos, essa interface individual é marcada como "lag_inactive" na saída do comando "ifgrp status". O tráfego existente é automaticamente reencaminhado para quaisquer interfaces ativas restantes.
+
+As regras a seguir se aplicam ao usar grupos de interface multimodo dinâmico:
+
+* Os grupos de interface multimodo dinâmico devem ser configurados para usar os métodos de balanceamento de carga baseados em porta, baseados em IP, baseados em MAC ou round robin.
+* Em um grupo de interface multimodo dinâmico, todas as interfaces devem estar ativas e compartilhar um único endereço MAC.
+
+
+A figura a seguir é um exemplo de um grupo de interface multimodo dinâmico. As interfaces e0a, e1a, E2A e E3A fazem parte do grupo de interfaces multimodo A1A. Todas as quatro interfaces no grupo de interfaces multimodo dinâmico A1A estão ativas.
+
+image:ontap_nm_image7.png["Um grupo de interfaces multimodo dinâmico"]
+
+
+
+=== Balanceamento de carga em grupos de interface multimodo
+
+Você pode garantir que todas as interfaces de um grupo de interfaces multimodo sejam igualmente utilizadas para o tráfego de saída usando o endereço IP, endereço MAC, métodos de balanceamento de carga sequenciais ou baseados em porta para distribuir o tráfego de rede igualmente pelas portas de rede de um grupo de interfaces multimodo.
+
+O método de balanceamento de carga para um grupo de interfaces multimodo só pode ser especificado quando o grupo de interfaces é criado.
+
+*Prática recomendada*: O balanceamento de carga baseado em porta é recomendado sempre que possível. Use balanceamento de carga baseado em porta, a menos que haja um motivo específico ou limitação na rede que o impeça.
+
+
+
+==== Balanceamento de carga baseado em porta
+
+O balanceamento de carga baseado em porta é o método recomendado.
+
+Você pode equalizar o tráfego em um grupo de interfaces multimodo com base nas portas da camada de transporte (TCP/UDP) usando o método de balanceamento de carga baseado em porta.
+
+O método de balanceamento de carga baseado em porta usa um algoritmo de hash rápido nos endereços IP de origem e destino, juntamente com o número da porta da camada de transporte.
+
+
+
+==== Balanceamento de carga de endereço IP e endereço MAC
+
+O balanceamento de carga de endereço IP e endereço MAC são os métodos para equalizar o tráfego em grupos de interface multimodo.
+
+Esses métodos de balanceamento de carga usam um algoritmo de hash rápido nos endereços de origem e destino (endereço IP e endereço MAC). Se o resultado do algoritmo de hash mapear para uma interface que não está no estado de link UP, a próxima interface ativa será usada.
+
+
+NOTE: Não selecione o método de balanceamento de carga de endereço MAC ao criar grupos de interface em um sistema que se conete diretamente a um roteador. Em tal configuração, para cada quadro IP de saída, o endereço MAC de destino é o endereço MAC do roteador. Como resultado, apenas uma interface do grupo de interfaces é usada.
+
+O balanceamento de carga de endereço IP funciona da mesma forma para endereços IPv4 e IPv6.
+
+
+
+==== Balanceamento de carga sequencial
+
+Você pode usar balanceamento de carga sequencial para distribuir pacotes de forma igual entre vários links usando um algoritmo round robin. Você pode usar a opção sequencial para balanceamento de carga do tráfego de uma única conexão em vários links para aumentar a taxa de transferência de conexão única.
+
+No entanto, como o balanceamento de carga sequencial pode causar a entrega de pacotes fora do pedido, um desempenho extremamente ruim pode resultar. Portanto, o balanceamento de carga sequencial geralmente não é recomendado.
+
+
+
+== Crie um grupo de interfaces ou LAG
+
+É possível criar um grupo de interfaces ou LAG (modo único, multimodo estático ou multimodo dinâmico (LACP) para apresentar uma única interface aos clientes combinando os recursos das portas de rede agregadas.
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Use o System Manager para criar um LAG*
+
+.Passos
+. Selecione *rede > porta Ethernet > Grupo de agregação de link* para criar um LAG.
+. Selecione o nó na lista suspensa.
+. Escolha uma das seguintes opções:
++
+.. ONTAP para *selecionar automaticamente o domínio de transmissão (recomendado)*.
+.. Para selecionar manualmente um domínio de broadcast.
+
+
+. Selecione as portas para formar o LAG.
+. Selecione o modo:
++
+.. Único: Apenas uma porta é usada de cada vez.
+.. Múltiplas: Todas as portas podem ser usadas simultaneamente.
+.. LACP: O protocolo LACP determina as portas que podem ser usadas.
+
+
+. Selecione o balanceamento de carga:
++
+.. Baseado em IP
+.. Baseado em Mac
+.. Porta
+.. Sequencial
+
+
+. Salve suas alterações.
+
+
+image:AddLag01.png["Adicionar gráfico de atraso"]
+
+--
+.CLI
+--
+*Use a CLI para criar um grupo de interfaces*
+
+Para obter uma lista completa de restrições de configuração aplicáveis a grupos de interface de portas, consulte a `network port ifgrp add-port` página de manual.
+
+Ao criar um grupo de interfaces multimodo, você pode especificar qualquer um dos seguintes métodos de balanceamento de carga:
+
+* `port`: O tráfego de rede é distribuído com base nas portas da camada de transporte (TCP/UDP). Este é o método de balanceamento de carga recomendado.
+* `mac`: O tráfego de rede é distribuído com base em endereços MAC.
+* `ip`: O tráfego de rede é distribuído com base em endereços IP.
+* `sequential`: O tráfego de rede é distribuído à medida que é recebido.
+
+
+
+NOTE: O endereço MAC de um grupo de interfaces é determinado pela ordem das portas subjacentes e como essas portas são inicializadas durante a inicialização. Portanto, você não deve assumir que o endereço MAC do ifgrp é persistente em reinicializações ou atualizações do ONTAP.
+
+.Passo
+Use o `network port ifgrp create` comando para criar um grupo de interfaces.
+
+Os grupos de interface devem ser nomeados usando a `a<number><letter>` sintaxe . Por exemplo, a0a, a0b, A1c e A2A são nomes de grupos de interface válidos.
+
+Para obter mais informações sobre esse comando, consulte https://docs.netapp.com/us-en/ontap-cli["Referência do comando ONTAP"^] .
+
+O exemplo a seguir mostra como criar um grupo de interfaces chamado a0a com uma função de distribuição de porta e um modo de multimodo:
+
+`network port ifgrp create -node _cluster-1-01_ -ifgrp _a0a_ -distr-func _port_ -mode _multimode_`
+
+--
+====
+
+
+== Adicione uma porta a um grupo de interfaces ou LAG
+
+Você pode adicionar até 16 portas físicas a um grupo de interfaces ou LAG para todas as velocidades de portas.
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Use o System Manager para adicionar uma porta a um LAG*
+
+.Passos
+. Selecione *rede > porta Ethernet > LAG* para editar um LAG.
+. Selecione portas adicionais no mesmo nó para adicionar ao LAG.
+. Salve suas alterações.
+
+
+--
+.CLI
+--
+*Use a CLI para adicionar portas a um grupo de interfaces*
+
+.Passo
+Adicionar portas de rede ao grupo de interfaces:
+
+`network port ifgrp add-port`
+
+Para obter mais informações sobre esse comando, consulte https://docs.netapp.com/us-en/ontap-cli["Referência do comando ONTAP"^] .
+
+O exemplo a seguir mostra como adicionar a porta e0c a um grupo de interfaces chamado a0a:
+
+`network port ifgrp add-port -node _cluster-1-01_ -ifgrp _a0a_ -port _e0c_`
+
+A partir do ONTAP 9.8, os grupos de interface são automaticamente colocados em um domínio de broadcast apropriado cerca de um minuto após a primeira porta física ser adicionada ao grupo de interfaces. Se você não quiser que o ONTAP faça isso e preferir colocar manualmente o ifgrp em um domínio de broadcast, especifique o `-skip-broadcast-domain-placement` parâmetro como parte do `ifgrp add-port` comando.
+
+--
+====
+
+
+== Remova uma porta de um grupo de interfaces ou LAG
+
+Você pode remover uma porta de um grupo de interfaces que hospeda LIFs, desde que não seja a última porta no grupo de interfaces. Não há nenhum requisito de que o grupo de interfaces não deve hospedar LIFs ou que o grupo de interfaces não deve ser a porta inicial de um LIF, considerando que você não está removendo a última porta do grupo de interfaces. No entanto, se você estiver removendo a última porta, então você deve migrar ou mover os LIFs do grupo de interfaces primeiro.
+
+.Sobre esta tarefa
+Você pode remover até 16 portas (interfaces físicas) de um grupo de interfaces ou LAG.
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Use o System Manager para remover uma porta de um LAG*
+
+.Passos
+. Selecione *rede > porta Ethernet > LAG* para editar um LAG.
+. Selecione as portas a serem removidas do LAG.
+. Salve suas alterações.
+
+
+--
+.CLI
+--
+*Use a CLI para remover portas de um grupo de interfaces*
+
+.Passo
+Remover portas de rede de um grupo de interfaces:
+
+`network port ifgrp remove-port`
+
+O exemplo a seguir mostra como remover a porta e0c de um grupo de interfaces chamado a0a:
+
+`network port ifgrp remove-port -node _cluster-1-01_ -ifgrp _a0a_ -port _e0c_`
+
+--
+====
+
+
+== Exclua um grupo de interfaces ou LAG
+
+Você pode excluir grupos de interface ou LAGs se quiser configurar LIFs diretamente nas portas físicas subjacentes ou decidir alterar o grupo de interfaces ou o modo LAG ou a função de distribuição.
+
+.Antes de começar
+* O grupo de interfaces ou LAG não deve estar hospedando um LIF.
+* O grupo de interfaces ou LAG não deve ser nem a porta inicial nem o destino de failover de um LIF.
+
+
+O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+*Use o System Manager para excluir um LAG*
+
+.Passos
+. Selecione *rede > porta Ethernet > LAG* para excluir um LAG.
+. Selecione o LAG que deseja remover.
+. Eliminar o LAG.
+
+
+--
+.CLI
+--
+*Use a CLI para excluir um grupo de interfaces*
+
+.Passo
+Use o `network port ifgrp delete` comando para excluir um grupo de interfaces.
+
+Para obter mais informações sobre esse comando, consulte https://docs.netapp.com/us-en/ontap-cli["Referência do comando ONTAP"^] .
+
+O exemplo a seguir mostra como excluir um grupo de interfaces chamado a0b:
+
+`network port ifgrp delete -node _cluster-1-01_ -ifgrp _a0b_`
+
+--
+====

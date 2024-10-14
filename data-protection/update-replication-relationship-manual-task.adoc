@@ -1,0 +1,43 @@
+---
+permalink: data-protection/update-replication-relationship-manual-task.html 
+sidebar: sidebar 
+keywords: update, replication, relationship, manual, snap mirror, snapmirror, synchronous 
+summary: Talvez seja necessário atualizar manualmente uma relação de replicação se uma atualização falhar porque o volume de origem foi movido. 
+---
+= Atualizar uma relação de replicação manualmente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Talvez seja necessário atualizar manualmente uma relação de replicação se uma atualização falhar porque o volume de origem foi movido.
+
+.Sobre esta tarefa
+O SnapMirror aborta quaisquer transferências de um volume de origem movido até que você atualize a relação de replicação manualmente.
+
+A partir do ONTAP 9.5, as relações síncronas do SnapMirror são suportadas. Embora os volumes de origem e destino estejam sempre sincronizados nessas relações, a exibição do cluster secundário é sincronizada com o primário apenas por hora. Se você quiser exibir os dados pontuais no destino, você deve executar uma atualização manual executando o `snapmirror update` comando.
+
+.Passo
+. Atualizar manualmente uma relação de replicação:
++
+`snapmirror update -source-path <SVM:volume>|<cluster://SVM/volume>, ... -destination-path <SVM:volume>|<cluster://SVM/volume>, ...`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[NOTE]
+====
+Você deve executar esse comando a partir do SVM de destino ou do cluster de destino. O comando falhará se uma cópia Snapshot comum não existir na origem e no destino.  `snapmirror initialize`Use para reinicializar o relacionamento.
+
+====
++
+O exemplo a seguir atualiza a relação entre o volume de origem `volA` ligado `svm1` e o volume de destino `volA_dst` ligado `svm_backup`:
+
++
+[listing]
+----
+cluster_src::> snapmirror update -source-path svm1:volA -destination-path svm_backup:volA_dst
+----
+

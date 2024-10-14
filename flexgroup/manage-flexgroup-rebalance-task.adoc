@@ -1,0 +1,323 @@
+---
+permalink: flexgroup/manage-flexgroup-rebalance-task.html 
+sidebar: sidebar 
+keywords: enable, storage, rebalance, modify, stop, status, flexgroup, volume 
+summary: A partir do ONTAP 9.12,1, você pode rebalancear volumes FlexGroup movendo arquivos de um componente em um FlexGroup para outro componente sem interrupções. 
+---
+= Rebalancear os volumes FlexGroup
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.12,1, você pode rebalancear volumes FlexGroup movendo arquivos de um componente em um FlexGroup para outro componente sem interrupções.
+
+O rebalanceamento do FlexGroup ajuda a redistribuir a capacidade quando os desequilíbrios se desenvolvem ao longo do tempo devido à adição de novos arquivos e ao crescimento de arquivos. Depois de iniciar manualmente a operação de rebalancear, o ONTAP seleciona os arquivos e os move automaticamente e sem interrupções.
+
+[NOTE]
+====
+Você deve estar ciente de que o rebalanceamento do FlexGroup degrada o desempenho do sistema quando um grande número de arquivos é movido como parte de um único evento de rebalanceamento ou sobre vários eventos de rebalanceamento devido à criação de inodes de várias partes. Cada arquivo movido como parte de um evento de rebalanceamento tem 2 inodes de várias partes associadas a esse arquivo. Quanto maior o número de arquivos com inodes multipartes como uma porcentagem do número total de arquivos em um FlexGroup, maior o impactos no desempenho. Certos casos de uso, como uma conversão de FlexVol para FlexGroup, podem resultar em uma quantidade significativa de criação de inodes em várias partes.
+
+====
+O rebalanceamento está disponível somente quando todos os nós do cluster estiverem executando o ONTAP 9.12,1 ou versões posteriores. Você deve habilitar a funcionalidade de dados granulares em qualquer volume do FlexGroup que execute a operação de rebalanceamento. Depois que essa funcionalidade estiver ativada, você não poderá reverter para o ONTAP 9.11,1 e versões anteriores, a menos que você exclua esse volume ou restauração de uma cópia Snapshot criada antes que a configuração fosse ativada.
+
+A partir do ONTAP 9.14,1, o ONTAP apresenta um algoritmo para mover arquivos em volumes com dados granulares ativados sem interação do usuário, sem interrupções e proativamente. O algoritmo opera em cenários muito específicos e direcionados para aliviar gargalos de desempenho. Os cenários em que esse algoritmo pode agir incluem carga de gravação muito pesada em um conjunto específico de arquivos em um nó no cluster ou um arquivo em crescimento contínuo em um diretório pai muito quente.
+
+
+
+== Considerações sobre o rebalanceamento do FlexGroup
+
+Você deve estar ciente de como o rebalanceamento do FlexGroup funciona e como ele interage com outros recursos do ONTAP.
+
+* Conversão de FlexVol para FlexGroup
++
+É recomendável que você _não_ use o rebalanceamento automático do FlexGroup após uma conversão de FlexVol para FlexGroup. Em vez disso, você pode usar o recurso de movimentação de arquivos retroativos disruptivos disponível no ONTAP 9.10,1 e posterior, digitando o `volume rebalance file-move` comando. Para obter a sintaxe de comando, consulte a `volume rebalance file-move start` página man.
+
++
+O rebalanceamento com o recurso de rebalanceamento automático do FlexGroup pode degradar o desempenho ao mover um grande número de arquivos, como quando você executa uma conversão de FlexVol para FlexGroup, e até 50 a 85% dos dados no FlexVol volume são movidos para um novo componente.
+
+* Tamanho mínimo e máximo do arquivo
++
+A seleção de arquivos para rebalanceamento automático é baseada em blocos salvos. O tamanho mínimo de arquivo considerado para rebalanceamento é de 100 MB por padrão (pode ser configurado tão baixo quanto 20 MB usando o parâmetro min-file-size mostrado abaixo) e o tamanho máximo do arquivo é de 100 GB.
+
+* Arquivos nas cópias Snapshot
++
+Você pode configurar o rebalanceamento do FlexGroup para considerar apenas os arquivos a serem movidos que não estão presentes atualmente em nenhuma cópia Snapshot. Quando o rebalanceamento é iniciado, uma notificação é exibida se uma operação de cópia Snapshot for agendada a qualquer momento durante uma operação de rebalanceamento.
+
++
+As cópias snapshot ficam restritas se um arquivo estiver sendo movido e estiver passando por enquadramento no destino. Uma operação de restauração de cópia Snapshot não é permitida enquanto o rebalanceamento de arquivos estiver em andamento.
+
++
+Qualquer cópia Snapshot criada após a `granular-data` opção ser ativada não pode ser replicada para um sistema que executa o ONTAP 9.11,1 e versões anteriores porque o ONTAP 9.11,1 e versões anteriores não suportam inodes de várias partes.
+
+* Operações da SnapMirror
++
+O rebalanceamento do FlexGroup deve ocorrer entre operações SnapMirror agendadas. Uma operação SnapMirror pode falhar se um arquivo estiver sendo relocado antes que uma operação SnapMirror comece se essa movimentação de arquivo não for concluída dentro do período de 24 minutos de tentativa do SnapMirror. Qualquer nova realocação de arquivo que comece após uma transferência do SnapMirror ser iniciada não falhará.
+
+* Eficiência de storage de compressão baseada em arquivo
++
+Com a eficiência de storage de compactação baseado em arquivo, o arquivo é descompactado antes de ser movido para o destino. Assim, a economia de compactação será perdida. A economia de compressão é recuperada depois que um scanner de fundo iniciado manualmente é executado no volume FlexGroup após o rebalanceamento. No entanto, se qualquer arquivo estiver associado a uma cópia Snapshot em qualquer volume, o arquivo será ignorado para compactação.
+
+* Deduplicação
++
+Mover arquivos desduplicados pode causar maior uso geral do volume FlexGroup. Durante o rebalanceamento de arquivos, apenas blocos exclusivos são movidos para o destino, liberando essa capacidade na origem. Os blocos compartilhados permanecem na origem e são copiados para o destino. Embora isso alcance o objetivo de reduzir a capacidade usada em um componente de origem quase completa, ele também pode levar ao aumento do uso geral no volume FlexGroup devido a cópias de blocos compartilhados nos novos destinos. Isso também é possível quando os arquivos que fazem parte de uma cópia Snapshot são movidos. A economia de espaço não será totalmente reconhecida até que o agendamento de cópia Snapshot seja reciclado e não haja mais cópias dos arquivos nas cópias Snapshot.
+
+* Volumes FlexClone
++
+Se o rebalanceamento de arquivos estiver em andamento quando um volume FlexClone for criado, o rebalanceamento não será realizado no volume FlexClone. O rebalanceamento no volume FlexClone deve ser realizado após a criação.
+
+* Movimentação de arquivos
++
+Quando um arquivo é movido durante uma operação de rebalanceamento do FlexGroup, o tamanho do arquivo é relatado como parte da contagem de cotas nos componentes de origem e destino. Quando a movimentação estiver concluída, a contagem de cotas retorna ao normal e o tamanho do arquivo só é relatado no novo destino.
+
+* Proteção autônoma contra ransomware
++
+A partir do ONTAP 9.13,1, a proteção autônoma contra ransomware é suportada durante operações de rebalanceamento ininterruptas e sem interrupções.
+
+* Volumes de armazenamento de objetos
++
+O rebalanceamento da capacidade de volume não é compatível com volumes de armazenamento de objetos, como buckets do S3.
+
+
+
+
+
+== Ative o rebalanceamento do FlexGroup
+
+A partir do ONTAP 9.12,1, é possível habilitar o rebalanceamento automático de volume FlexGroup sem interrupções para redistribuir arquivos entre componentes do FlexGroup.
+
+A partir do ONTAP 9.13,1, você pode agendar uma única operação de rebalanceamento do FlexGroup para começar em uma data e hora no futuro.
+
+.Antes de começar
+Você deve ter habilitado a `granular-data` opção no volume FlexGroup antes de ativar o rebalanceamento do FlexGroup. Você pode ativá-lo usando um destes métodos:
+
+* Quando você cria o volume FlexGroup usando o `volume create` comando
+* Modificando um volume FlexGroup existente para ativar a configuração usando o `volume modify` comando
+* Definindo-o automaticamente quando o rebalanceamento do FlexGroup é iniciado usando o `volume rebalance` comando
+
+
+.Passos
+Você pode gerenciar o rebalanceamento do FlexGroup usando o Gerenciador de sistemas do ONTAP ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *armazenamento > volumes* e localize o volume FlexGroup para reequilibrar.
+. image:icon_dropdown_arrow.gif["Ícone pendente"]Selecione para ver os detalhes do volume.
+. Em *Estado do saldo do FlexGroup* selecione *Rebalancamento*.
++
+
+NOTE: A opção *Rebalancamento* só está disponível quando o status FlexGroup estiver fora de equilíbrio.
+
+. Na janela *Rebalancar volume*, altere as configurações padrão conforme necessário.
+. Para agendar a operação de rebalanceamento, selecione *reequilibrar mais tarde* e insira a data e a hora.
+
+
+--
+.CLI
+--
+. Iniciar o reequilíbrio automático: `volume rebalance start -vserver _SVM_name_ -volume _volume_name_`
++
+Opcionalmente, você pode especificar as seguintes opções:
+
++
+[[-Max-runtime] <time interval>] tempo de execução máximo
+
++
+[-Max-threshold <percent>] limite máximo de desequilíbrio por constituinte
+
++
+[-min-threshold <percent>] limiar mínimo de desequilíbrio por constituinte
+
++
+[-max-file-moves <integer>] o máximo de movimentos simultâneos de arquivos por constituinte
+
++
+Tamanho mínimo do ficheiro [<integer>[KB|MB|GB|TB|PB]]]
+
++
+[-start-time <mm/dd/yyyy-00:00:00>] Agendar rebalanceamento data e hora de início
+
++
+[-exclude-snapshots] excluem arquivos presos em cópias Snapshot
+
++
+Exemplo:
+
++
+[listing]
+----
+volume rebalance start -vserver vs0 -volume fg1
+----
+
+
+--
+====
+
+
+== Modificar as configurações de rebalancear do FlexGroup
+
+Você pode alterar uma configuração de rebalanceamento do FlexGroup para atualizar o limite de desequilíbrio, o número de arquivos simultâneos move o tamanho mínimo do arquivo, o tempo de execução máximo e para incluir ou excluir cópias Snapshot. As opções para modificar seu cronograma de rebalanceamento do FlexGroup estão disponíveis a partir do ONTAP 9.13,1.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *armazenamento > volumes* e localize o volume FlexGroup para reequilibrar.
+. image:icon_dropdown_arrow.gif["Ícone pendente"]Selecione para ver os detalhes do volume.
+. Em *Estado do saldo do FlexGroup* selecione *Rebalancamento*.
++
+
+NOTE: A opção *Rebalancamento* só está disponível quando o status FlexGroup estiver fora de equilíbrio.
+
+. Na janela *Rebalancar volume*, altere as configurações padrão conforme necessário.
+
+
+--
+.CLI
+--
+. Modificar o reequilíbrio automático: `volume rebalance modify -vserver _SVM_name_ -volume _volume_name_`
++
+Pode especificar uma ou mais das seguintes opções:
+
++
+[[-Max-runtime] <time interval>] tempo de execução máximo
+
++
+[-Max-threshold <percent>] limite máximo de desequilíbrio por constituinte
+
++
+[-min-threshold <percent>] limiar mínimo de desequilíbrio por constituinte
+
++
+[-max-file-moves <integer>] o máximo de movimentos simultâneos de arquivos por constituinte
+
++
+Tamanho mínimo do ficheiro [<integer>[KB|MB|GB|TB|PB]]]
+
++
+[-start-time <mm/dd/yyyy-00:00:00>] Agendar rebalanceamento data e hora de início
+
++
+[-exclude-snapshots] excluem arquivos presos em cópias Snapshot
+
+
+
+--
+====
+
+
+== Parar o rebalancear FlexGroup
+
+Depois que o rebalanceamento do FlexGroup estiver ativado ou programado, você poderá pará-lo a qualquer momento.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *armazenamento > volumes* e localize o volume FlexGroup.
+. image:icon_dropdown_arrow.gif["Ícone pendente"]Selecione para ver os detalhes do volume.
+. Selecione *Parar reequilíbrio*.
+
+
+--
+.CLI
+--
+. Parar o reequilíbrio do FlexGroup: `volume rebalance stop -vserver _SVM_name_ -volume _volume_name_`
+
+
+--
+====
+
+
+== Visualizar o status do FlexGroup Rebalanceance
+
+Você pode exibir o status de uma operação de rebalancear a FlexGroup, a configuração do FlexGroup Rebalancamento, o tempo de operação no rebalancear e os detalhes da instância.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *armazenamento > volumes* e localize o volume FlexGroup.
+. image:icon_dropdown_arrow.gif["Ícone pendente"]Selecione para ver os detalhes do FlexGroup.
+. *Status do saldo do FlexGroup* é exibido perto da parte inferior do painel de detalhes.
+. Para ver informações sobre a última operação de reequilíbrio, selecione *Estado de reequilíbrio do último volume*.
+
+
+--
+.CLI
+--
+. Veja o status de uma operação de rebalanceamento do FlexGroup: `volume rebalance show`
++
+Exemplo de estado de rebalanceamento:
+
++
+[listing]
+----
+> volume rebalance show
+Vserver: vs0
+                                                        Target     Imbalance
+Volume       State                  Total      Used     Used       Size     %
+------------ ------------------ --------- --------- --------- --------- -----
+fg1          idle                     4GB   115.3MB         -       8KB    0%
+----
++
+Exemplo de detalhes de configuração do rebalanceamento:
+
++
+[listing]
+----
+> volume rebalance show -config
+Vserver: vs0
+                    Max            Threshold         Max          Min          Exclude
+Volume              Runtime        Min     Max       File Moves   File Size    Snapshot
+---------------     ------------   -----   -----     ----------   ---------    ---------
+fg1                 6h0m0s         5%      20%          25          4KB          true
+----
++
+Exemplo de detalhes do tempo de rebalanceamento:
+
++
+[listing]
+----
+> volume rebalance show -time
+Vserver: vs0
+Volume               Start Time                    Runtime        Max Runtime
+----------------     -------------------------     -----------    -----------
+fg1                  Wed Jul 20 16:06:11 2022      0h1m16s        6h0m0s
+----
++
+Exemplo de detalhes da instância de rebalancear:
+
++
+[listing]
+----
+    > volume rebalance show -instance
+    Vserver Name: vs0
+    Volume Name: fg1
+    Is Constituent: false
+    Rebalance State: idle
+    Rebalance Notice Messages: -
+    Total Size: 4GB
+    AFS Used Size: 115.3MB
+    Constituent Target Used Size: -
+    Imbalance Size: 8KB
+    Imbalance Percentage: 0%
+    Moved Data Size: -
+    Maximum Constituent Imbalance Percentage: 1%
+    Rebalance Start Time: Wed Jul 20 16:06:11 2022
+    Rebalance Stop Time: -
+    Rebalance Runtime: 0h1m32s
+    Rebalance Maximum Runtime: 6h0m0s
+    Maximum Imbalance Threshold per Constituent: 20%
+    Minimum Imbalance Threshold per Constituent: 5%
+    Maximum Concurrent File Moves per Constituent: 25
+    Minimum File Size: 4KB
+    Exclude Files Stuck in Snapshot Copies: true
+----
+
+
+--
+====

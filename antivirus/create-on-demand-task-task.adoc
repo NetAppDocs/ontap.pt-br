@@ -1,0 +1,86 @@
+---
+permalink: antivirus/create-on-demand-task-task.html 
+sidebar: sidebar 
+keywords: create, on-demand, task, vserver vscan 
+summary: Uma tarefa sob demanda define o escopo de uma digitalização sob demanda. Pode especificar o tamanho máximo dos ficheiros a digitalizar, as extensões e os caminhos dos ficheiros a incluir na digitalização e as extensões e caminhos dos ficheiros a excluir da digitalização. 
+---
+= Crie uma tarefa sob demanda
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Uma tarefa sob demanda define o escopo da verificação de vírus sob demanda. Pode especificar o tamanho máximo dos ficheiros a digitalizar, as extensões e os caminhos dos ficheiros a incluir na digitalização e as extensões e caminhos dos ficheiros a excluir da digitalização. Os arquivos nos subdiretórios são verificados por padrão.
+
+.Sobre esta tarefa
+* Pode existir no máximo 10 (dez) tarefas sob demanda para cada SVM, mas apenas uma pode estar ativa.
+* Uma tarefa a pedido cria um relatório, que tem informações sobre as estatísticas relacionadas com as digitalizações. Este relatório é acessível com um comando ou baixando o arquivo de relatório criado pela tarefa no local definido.
+
+
+.Antes de começar
+* Você deve ter xref:create-on-access-policy-task.html[criou uma política de acesso]. A política pode ser uma política padrão ou criada pelo usuário. Sem a política de acesso, não é possível ativar a digitalização.
+
+
+.Passos
+. Crie uma tarefa sob demanda:
++
+`vserver vscan on-demand-task create -vserver _data_SVM_ -task-name _task_name_ -scan-paths _paths_of_files_to_scan_ -report-directory _report_directory_path_ -report-expiry-time _expiration_time_for_report_ -schedule cron_schedule -max-file-size _max_size_of_files_to_scan_ -paths-to-exclude _paths_ -file-ext-to-exclude _file_extensions_ -file-ext-to-include _file_extensions_ -scan-files-with-no-ext true|false -directory-recursion true|false`
+
++
+** A `-file-ext-to-exclude` definição substitui a `-file-ext-to-include` definição.
+** Defina `-scan-files-with-no-ext` como verdadeiro para digitalizar arquivos sem extensões.
+
+
++
+Para obter uma lista completa de opções, consulte link:https://docs.netapp.com/us-en/ontap-cli/vserver-vscan-on-demand-task-create.html["referência do comando"^].
+
++
+O comando a seguir cria uma tarefa sob demanda chamada `Task1` no SVM VS1:
+
++
+[listing]
+----
+cluster1::> vserver vscan on-demand-task create -vserver vs1 -task-name Task1 -scan-paths "/vol1/","/vol2/cifs/" -report-directory "/report" -schedule daily -max-file-size 5GB -paths-to-exclude "/vol1/cold-files/" -file-ext-to-include "vmdk?","mp*" -file-ext-to-exclude "mp3","mp4" -scan-files-with-no-ext false
+[Job 126]: Vscan On-Demand job is queued. Use the "job show -id 126" command to view the status.
+----
++
+
+NOTE: Pode utilizar o `job show` comando para visualizar o estado do trabalho. Pode utilizar os `job pause` comandos e `job resume` para pausar e reiniciar o trabalho ou o `job stop` comando para terminar o trabalho.
+
+. Verifique se a tarefa a pedido foi criada:
++
+`vserver vscan on-demand-task show -instance data_SVM -task-name task_name`
+
++
+Para obter uma lista completa de opções, consulte a página de manual do comando.
+
++
+O comando a seguir exibe os detalhes `Task1` da tarefa:
+
++
+[listing]
+----
+cluster1::> vserver vscan on-demand-task show -instance vs1 -task-name Task1
+
+                           Vserver: vs1
+                         Task Name: Task1
+                List of Scan Paths: /vol1/, /vol2/cifs/
+             Report Directory Path: /report
+                      Job Schedule: daily
+Max File Size Allowed for Scanning: 5GB
+            File Paths Not to Scan: /vol1/cold-files/
+       File Extensions Not to Scan: mp3, mp4
+           File Extensions to Scan: vmdk?, mp*
+      Scan Files with No Extension: false
+           Request Service Timeout: 5m
+                    Cross Junction: true
+               Directory Recursion: true
+                     Scan Priority: low
+                  Report Log Level: info
+        Expiration Time for Report: -
+----
+
+
+.Depois de terminar
+Você deve habilitar a digitalização no SVM antes que a tarefa seja agendada para ser executada.

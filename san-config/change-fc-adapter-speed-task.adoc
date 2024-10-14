@@ -1,0 +1,53 @@
+---
+permalink: san-config/change-fc-adapter-speed-task.html 
+sidebar: sidebar 
+keywords: change, fc adapter, speed 
+summary: Você deve definir a velocidade da porta de destino do adaptador para corresponder à velocidade do dispositivo ao qual ele se coneta, em vez de usar a negociação automática. Uma porta definida como negociação automática pode levar mais tempo para se reconetar após uma tomada de controle/giveback ou outra interrupção. 
+---
+= Altere a velocidade do adaptador FC
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve definir a velocidade da porta de destino do adaptador para corresponder à velocidade do dispositivo ao qual ele se coneta, em vez de usar a negociação automática. Uma porta definida como negociação automática pode levar mais tempo para se reconetar após uma tomada de controle/giveback ou outra interrupção.
+
+.O que você vai precisar
+Todos os LIFs que usam esse adaptador como porta inicial devem estar offline.
+
+.Sobre esta tarefa
+Como essa tarefa abrange todas as máquinas virtuais de armazenamento (SVMs) e todas as LIFs em um cluster, você deve usar os `-home-port` parâmetros e `-home-lif` para limitar o escopo dessa operação. Se você não usar esses parâmetros, a operação se aplica a todos os LIFs no cluster, o que pode não ser desejável.
+
+.Passos
+. Tire todos os LIFs neste adaptador offline:
++
+`network interface modify -vserver * -lif * { -home-node node1 -home-port 0c } -status-admin down`
+
+. Coloque o adaptador offline:
++
+`network fcp adapter modify -node node1 -adapter 0c -state down`
+
++
+Se o adaptador não ficar offline, você também pode remover o cabo da porta apropriada do adaptador no sistema.
+
+. Determine a velocidade máxima do adaptador de porta:
++
+`fcp adapter show -instance`
+
++
+Não é possível modificar a velocidade do adaptador para além da velocidade máxima.
+
+. Alterar a velocidade do adaptador:
++
+`network fcp adapter modify -node node1 -adapter 0c -speed 16`
+
+. Coloque o adaptador online:
++
+`network fcp adapter modify -node node1 -adapter 0c -state up`
+
+. Coloque todos os LIFs no adaptador online:
++
+`network interface modify -vserver * -lif * { -home-node node1 -home-port 0c } -status-admin up`
+
+

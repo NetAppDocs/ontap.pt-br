@@ -1,0 +1,87 @@
+---
+permalink: encryption-at-rest/destroy-nse-disks-task.html 
+sidebar: sidebar 
+keywords: fips, drive, sed, inaccessible, destroy, psid, physical secure ID, nrd plus, encrypt, 
+summary: 'Se você quiser tornar os dados em uma unidade FIPS ou SED permanentemente inacessíveis e não precisar reutilizar a unidade, use o `storage encryption disk destroy` comando para destruir o disco.' 
+---
+= Destrua uma unidade FIPS ou SED
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você quiser tornar os dados em uma unidade FIPS ou SED permanentemente inacessíveis e não precisar reutilizar a unidade, use o `storage encryption disk destroy` comando para destruir o disco.
+
+.Sobre esta tarefa
+Quando você destrói uma unidade FIPS ou SED, o sistema define a chave de criptografia de disco para um valor aleatório desconhecido e bloqueia a unidade irreversivelmente. Isso torna o disco praticamente inutilizável e os dados nele permanentemente inacessíveis. No entanto, você pode redefinir o disco para suas configurações configuradas de fábrica usando a ID física segura (PSID) impressa na etiqueta do disco. Para obter mais informações, link:return-self-encrypting-disks-keys-not-available-task.html["Retornar uma unidade FIPS ou SED ao serviço quando as chaves de autenticação são perdidas"]consulte .
+
+
+NOTE: Você não deve destruir uma unidade FIPS ou SED, a menos que tenha o serviço Non-Returnable Disk Plus (NRD Plus). Destruir um disco anula sua garantia.
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa.
+
+.Passos
+. Migre qualquer dado que precise ser preservado para um agregado em outro disco diferente.
+. Exclua o agregado na unidade FIPS ou SED a ser destruído:
++
+`storage aggregate delete -aggregate aggregate_name`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[listing]
+----
+cluster1::> storage aggregate delete -aggregate aggr1
+----
+. Identifique a ID do disco para a unidade FIPS ou SED a ser destruída:
++
+`storage encryption disk show`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[listing]
+----
+cluster1::> storage encryption disk show
+Disk    Mode Data Key ID
+-----   ---- ----------------------------------------------------------------
+0.0.0   data F1CB30AFF1CB30B00101000000000000A68B167F92DD54196297159B5968923C
+0.0.1   data F1CB30AFF1CB30B00101000000000000A68B167F92DD54196297159B5968923C
+1.10.2  data F1CB30AFF1CB30B00101000000000000CF0EFD81EA9F6324EA97B369351C56AC
+[...]
+----
+. Destrua o disco:
++
+`storage encryption disk destroy -disk disk_id`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[NOTE]
+====
+É-lhe pedido que introduza uma frase de confirmação antes de continuar. Insira a frase exatamente como mostrado na tela.
+
+====
++
+[listing]
+----
+cluster1::> storage encryption disk destroy -disk 1.10.2
+
+Warning: This operation will cryptographically destroy 1 spare or broken
+         self-encrypting disks on 1 node.
+         You cannot reuse destroyed disks unless you revert
+         them to their original state using the PSID value.
+         To continue, enter
+          destroy disk
+         :destroy disk
+
+Info: Starting destroy on 1 disk.
+      View the status of the operation by using the
+      "storage encryption disk show-status" command.
+----
+

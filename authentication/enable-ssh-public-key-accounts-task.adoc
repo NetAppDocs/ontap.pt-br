@@ -1,0 +1,84 @@
+---
+permalink: authentication/enable-ssh-public-key-accounts-task.html 
+sidebar: sidebar 
+keywords: enable, ssh, public key, accounts 
+summary: Você pode usar o comando security login create para permitir que as contas de administrador acessem um administrador ou data SVM com uma chave pública SSH. 
+---
+= Ativar contas de chave pública SSH
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `security login create` comando para habilitar contas de administrador para acessar um administrador ou SVM de dados com uma chave pública SSH.
+
+.Sobre esta tarefa
+* Você deve associar a chave pública à conta antes que a conta possa acessar o SVM.
++
+xref:manage-public-key-authentication-concept.adoc[Associar uma chave pública a uma conta de utilizador]
+
++
+Pode executar esta tarefa antes ou depois de ativar o acesso à conta.
+
+* Se você não tiver certeza da função de controle de acesso que deseja atribuir à conta de login, use o `security login modify` comando para adicionar a função mais tarde.
+
+
+Se quiser ativar o modo FIPS no cluster, as contas de chave pública SSH existentes sem os algoritmos de chave suportados devem ser reconfiguradas com um tipo de chave suportado. As contas devem ser reconfiguradas antes de ativar o FIPS ou a autenticação do administrador falhar.
+
+A tabela a seguir indica algoritmos de tipo de chave de host compatíveis com conexões SSH ONTAP. Esses tipos de chave não se aplicam à configuração da autenticação pública SSH.
+
+[cols="30,30,30"]
+|===
+
+
+| Lançamento do ONTAP | Tipos de chave compatíveis no modo FIPS | Tipos de chave compatíveis no modo não FIPS 
+
+
+ a| 
+9.11.1 e mais tarde
+ a| 
+ecdsa-sha2-nistp256
+ a| 
+ecdsa-sha2-nistp256 e rsa-sha2-512 e rsa-sha2-256 e ssh-ed25519 e ssh-dss e ssh-rsa
+
+
+
+ a| 
+9.10.1 e anteriores
+ a| 
+ecdsa-sha2-nistp256 e ssh-ed25519
+ a| 
+ecdsa-sha2-nistp256 ssh-ed25519 ssh-dss e ssh-rsa
+
+|===
+
+NOTE: O suporte para o algoritmo de chave de host ssh-ed25519 é removido a partir de ONTAP 9.11,1.
+
+Para obter mais informações, link:../networking/configure_network_security_using_federal_information_processing_standards_@fips@.html["Configurar a segurança da rede usando o FIPS"]consulte .
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa.
+
+.Passo
+. Habilite as contas de administrador local para acessar um SVM usando uma chave pública SSH:
++
+`security login create -vserver _SVM_name_ -user-or-group-name user_or_group_name -application _application_ -authmethod _authentication_method_ -role _role_ -comment _comment_`
+
++
+Para obter a sintaxe de comando completa, consulte link:config-worksheets-reference.html["folha de trabalho"].
+
++
+O comando a seguir permite que a conta de administrador SVM `svmadmin1` com a função predefinida `vsadmin-volume` acesse o SVM``engData1`` usando uma chave pública SSH:
+
++
+[listing]
+----
+cluster1::>security login create -vserver engData1 -user-or-group-name svmadmin1 -application ssh -authmethod publickey -role vsadmin-volume
+----
+
+
+.Depois de terminar
+Se você não tiver associado uma chave pública à conta de administrador, deverá fazê-lo antes que a conta possa acessar o SVM.
+
+xref:manage-public-key-authentication-concept.adoc[Associar uma chave pública a uma conta de utilizador]

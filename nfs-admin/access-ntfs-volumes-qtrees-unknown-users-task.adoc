@@ -1,0 +1,63 @@
+---
+permalink: nfs-admin/access-ntfs-volumes-qtrees-unknown-users-task.html 
+sidebar: sidebar 
+keywords: handle, nfs, access, ntfs, volumes, qtrees, unknown, unix, users 
+summary: Se o ONTAP não conseguir identificar usuários UNIX tentando se conetar a volumes ou qtrees com estilo de segurança NTFS, ele não poderá mapear explicitamente o usuário para um usuário do Windows. Você pode configurar o ONTAP para negar acesso a esses usuários para segurança mais rigorosa ou mapeá-los para um usuário padrão do Windows para garantir um nível mínimo de acesso para todos os usuários. 
+---
+= Lidar com o acesso NFS a volumes NTFS ou qtrees para usuários UNIX desconhecidos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se o ONTAP não conseguir identificar usuários UNIX tentando se conetar a volumes ou qtrees com estilo de segurança NTFS, ele não poderá mapear explicitamente o usuário para um usuário do Windows. Você pode configurar o ONTAP para negar acesso a esses usuários para segurança mais rigorosa ou mapeá-los para um usuário padrão do Windows para garantir um nível mínimo de acesso para todos os usuários.
+
+.O que você vai precisar
+Um usuário padrão do Windows deve ser configurado se você quiser habilitar essa opção.
+
+.Sobre esta tarefa
+Se um usuário UNIX tentar acessar volumes ou qtrees com estilo de segurança NTFS, o usuário UNIX deve primeiro ser mapeado para um usuário do Windows para que o ONTAP possa avaliar adequadamente as permissões NTFS. No entanto, se o ONTAP não conseguir procurar o nome do usuário UNIX nas fontes de serviço de nome de informações de usuário configuradas, ele não poderá mapear explicitamente o usuário UNIX para um usuário específico do Windows. Você pode decidir como lidar com esses usuários UNIX desconhecidos das seguintes maneiras:
+
+* Negar acesso a usuários UNIX desconhecidos.
++
+Isso impõe segurança mais rigorosa, exigindo mapeamento explícito para todos os usuários UNIX para obter acesso a volumes NTFS ou qtrees.
+
+* Mapeie usuários UNIX desconhecidos para um usuário padrão do Windows.
++
+Isso fornece menos segurança, mas mais conveniência, garantindo que todos os usuários obtenham um nível mínimo de acesso a volumes NTFS ou qtrees por meio de um usuário padrão do Windows.
+
+
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+`set -privilege advanced`
+
+. Execute uma das seguintes ações:
++
+[cols="35,65"]
+|===
+
+
+| Se você quiser o usuário padrão do Windows para usuários UNIX desconhecidos... | Digite o comando... 
+
+
+ a| 
+Ativado
+ a| 
+`vserver nfs modify -vserver vserver_name -map-unknown-uid-to-default-windows-user enabled`
+
+
+
+ a| 
+Desativado
+ a| 
+`vserver nfs modify -vserver vserver_name -map-unknown-uid-to-default-windows-user disabled`
+
+|===
+. Voltar ao nível de privilégio de administrador:
++
+`set -privilege admin`
+
+

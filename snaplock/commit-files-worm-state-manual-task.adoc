@@ -1,0 +1,264 @@
+---
+permalink: snaplock/commit-files-worm-state-manual-task.html 
+sidebar: sidebar 
+keywords: commit, file, worm, manually, nfs, cifs, read, only, automatically, program, appendable, nfs, cifs, chunk, vam 
+summary: 'Você pode comprometer arquivos para WORM (uma gravação, muitas leituras) manualmente ou armazená-los automaticamente. Você também pode criar arquivos anexados WORM.' 
+---
+= Armazene dados no WORM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode comprometer arquivos para WORM (uma gravação, muitas leituras) manualmente ou armazená-los automaticamente. Você também pode criar arquivos anexados WORM.
+
+
+
+== Armazene dados em WORM manualmente
+
+Armazene um arquivo no WORM manualmente, fazendo o arquivo somente leitura. Você pode usar qualquer comando ou programa adequado sobre NFS ou CIFS para alterar o atributo de leitura e gravação de um arquivo para somente leitura. Você pode optar por enviar arquivos manualmente se quiser garantir que um aplicativo tenha terminado de gravar em um arquivo para que o arquivo não seja comprometido prematuramente ou se houver problemas de dimensionamento para o scanner de confirmação automática por causa de um grande número de volumes.
+
+.O que você vai precisar
+* O arquivo que você deseja confirmar deve residir em um volume SnapLock.
+* O ficheiro tem de ser gravável.
+
+
+.Sobre esta tarefa
+O volume ComplianceClock Time é gravado `ctime` no campo do arquivo quando o comando ou programa é executado. A hora do ComplianceClock determina quando o tempo de retenção para o arquivo foi atingido.
+
+.Passos
+. Use um comando ou programa adequado para alterar o atributo de leitura e gravação de um arquivo para somente leitura.
++
+Em um shell UNIX, use o seguinte comando para criar um arquivo chamado `document.txt` somente leitura:
+
++
+[listing]
+----
+chmod -w document.txt
+----
++
+Em um shell do Windows, use o seguinte comando para criar um arquivo chamado `document.txt` somente leitura:
+
++
+[listing]
+----
+attrib +r document.txt
+----
+
+
+
+
+== Armazene dados no WORM automaticamente
+
+O recurso de autocommit do SnapLock permite que você armazene arquivos no WORM automaticamente. O recurso de confirmação automática vincula um arquivo ao estado WORM em um volume SnapLock se o arquivo não for alterado durante o período de confirmação automática. O recurso de confirmação automática está desativado por padrão.
+
+.O que você vai precisar
+* Os arquivos que você deseja confirmar automaticamente devem residir em um volume SnapLock.
+* O volume SnapLock deve estar online.
+* O volume SnapLock deve ser um volume de leitura e gravação.
+
+
+[NOTE]
+====
+O recurso de confirmação automática do SnapLock verifica todos os arquivos no volume e envia um arquivo se ele atender ao requisito de confirmação automática. Pode haver um intervalo de tempo entre quando o arquivo está pronto para o autocommit e quando ele é realmente confirmado pelo scanner de autocommit SnapLock. No entanto, o arquivo ainda está protegido de modificações e exclusão pelo sistema de arquivos assim que for elegível para autocommit.
+
+====
+.Sobre esta tarefa
+O _autocommit period_ especifica o período de tempo em que os arquivos devem permanecer inalterados antes de serem autocommitidos. A alteração de um arquivo antes do término do período de confirmação automática reinicia o período de confirmação automática do arquivo.
+
+A tabela a seguir mostra os valores possíveis para o período de confirmação automática:
+
+|===
+| Valor | Unidade | Notas 
+
+
+ a| 
+nenhum
+ a| 
+-
+ a| 
+O padrão.
+
+
+
+ a| 
+5 - 5256000
+ a| 
+minutos
+ a| 
+-
+
+
+
+ a| 
+1 - 87600
+ a| 
+horas
+ a| 
+-
+
+
+
+ a| 
+1 - 3650
+ a| 
+dias
+ a| 
+-
+
+
+
+ a| 
+1 - 120
+ a| 
+meses
+ a| 
+-
+
+
+
+ a| 
+1 - 10
+ a| 
+anos
+ a| 
+-
+
+|===
+[NOTE]
+====
+O valor mínimo é de 5 minutos e o valor máximo é de 10 anos.
+
+====
+.Passos
+. Arquivos AUTOCOMMIT em um volume SnapLock para WORM:
++
+`*volume snaplock modify -vserver _SVM_name_ -volume _volume_name_ -autocommit-period _autocommit_period_*`
+
++
+Para obter uma lista completa de opções, consulte a página de manual do comando.
+
++
+O comando a seguir autocommits os arquivos no `vol1` volume do SVM VS1, desde que os arquivos permaneçam inalterados por 5 horas:
+
++
+[listing]
+----
+cluster1::>volume snaplock modify -vserver vs1 -volume vol1 -autocommit-period 5hours
+----
+
+
+
+
+== Crie um arquivo anexado WORM
+
+Um arquivo anexado WORM retém os dados gravados de forma incremental, como entradas de log. Você pode usar qualquer comando ou programa adequado para criar um arquivo anexado WORM ou usar o recurso SnapLock _volume append mode_ para criar arquivos anexados WORM por padrão.
+
+
+
+== Use um comando ou programa para criar um arquivo anexado WORM
+
+Você pode usar qualquer comando ou programa adequado em NFS ou CIFS para criar um arquivo anexado WORM. Um arquivo anexado WORM retém os dados gravados de forma incremental, como entradas de log. Os dados são anexados ao arquivo em blocos de 256 KB. À medida que cada pedaço é escrito, o pedaço anterior se torna protegido WORM. Não é possível eliminar o ficheiro até que o período de retenção tenha decorrido.
+
+.O que você vai precisar
+O arquivo WORM anexado deve residir em um volume SnapLock.
+
+.Sobre esta tarefa
+Os dados não precisam ser gravados sequencialmente no bloco ativo de 256 KB. Quando os dados são gravados no byte n 256KB e 1 do arquivo, o segmento anterior de 256 KB fica protegido por WORM.
+
+Qualquer gravação não ordenada além do bloco ativo de 256 KB atual resultará na redefinição do bloco ativo de 256KB para o último deslocamento e fará com que as gravações em desvios mais antigos falhem com um erro 'Read Only File System (ROFS)'. Os desvios de gravação dependem do aplicativo cliente. Um cliente que não esteja em conformidade com a semântica de gravação de arquivo WORM append pode causar o encerramento incorreto do conteúdo de gravação. Portanto, é recomendável garantir que o cliente siga as restrições de deslocamento para gravações não ordenadas ou garantir gravações síncronas montando o sistema de arquivos no modo síncrono.
+
+.Passos
+. Use um comando ou programa adequado para criar um arquivo de comprimento zero com o tempo de retenção desejado.
++
+Em um shell UNIX, use o seguinte comando para definir um tempo de retenção de 21 de novembro de 2020 6:00 em um arquivo de comprimento zero chamado `document.txt`:
+
++
+[listing]
+----
+touch -a -t 202011210600 document.txt
+----
+. Use um comando ou programa adequado para alterar o atributo de leitura e gravação do arquivo para somente leitura.
++
+Em um shell UNIX, use o seguinte comando para criar um arquivo chamado `document.txt` somente leitura:
+
++
+[listing]
+----
+chmod 444 document.txt
+----
+. Use um comando ou programa adequado para alterar o atributo de leitura e gravação do arquivo de volta para gravável.
++
+[NOTE]
+====
+Esta etapa não é considerada um risco de conformidade porque não há dados no arquivo.
+
+====
++
+Em um shell UNIX, use o seguinte comando para fazer um arquivo chamado `document.txt` gravável:
+
++
+[listing]
+----
+chmod 777 document.txt
+----
+. Use um comando ou programa adequado para começar a gravar dados no arquivo.
++
+Em um shell UNIX, use o seguinte comando para gravar dados no `document.txt`:
+
++
+[listing]
+----
+echo test data >> document.txt
+----
++
+[NOTE]
+====
+Altere as permissões de arquivo de volta para somente leitura quando você não precisar mais anexar dados ao arquivo.
+
+====
+
+
+
+
+== Use o modo de adição de volume para criar arquivos anexados WORM
+
+A partir do ONTAP 9.3, você pode usar o recurso SnapLock _volume append mode_ (VAM) para criar arquivos anexados WORM por padrão. Um arquivo anexado WORM retém os dados gravados de forma incremental, como entradas de log. Os dados são anexados ao arquivo em blocos de 256 KB. À medida que cada pedaço é escrito, o pedaço anterior se torna protegido WORM. Não é possível eliminar o ficheiro até que o período de retenção tenha decorrido.
+
+.O que você vai precisar
+* O arquivo WORM anexado deve residir em um volume SnapLock.
+* O volume SnapLock deve estar desmontado e vazio de cópias Snapshot e arquivos criados pelo usuário.
+
+
+.Sobre esta tarefa
+Os dados não precisam ser gravados sequencialmente no bloco ativo de 256 KB. Quando os dados são gravados no byte n 256KB e 1 do arquivo, o segmento anterior de 256 KB fica protegido por WORM.
+
+Se você especificar um período de auto-commit para o volume, os arquivos anexados WORM que não são modificados por um período maior do que o período de auto-commit são comprometidos com WORM.
+
+[NOTE]
+====
+O VAM não é compatível com volumes de log de auditoria do SnapLock.
+
+====
+.Passos
+. Ativar VAM:
++
+`*volume snaplock modify -vserver _SVM_name_ -volume _volume_name_ -is-volume-append-mode-enabled true|false*`
+
++
+Para obter uma lista completa de opções, consulte a página de manual do comando.
+
++
+O comando a seguir habilita o VAM no `vol1` volume de SVM``vs1``:
+
++
+[listing]
+----
+cluster1::>volume snaplock modify -vserver vs1 -volume vol1 -is-volume-append-mode-enabled true
+----
+. Use um comando ou programa adequado para criar arquivos com permissões de gravação.
++
+Por padrão, os arquivos são anexados WORM.
+
+

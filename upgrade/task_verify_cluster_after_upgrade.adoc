@@ -1,0 +1,186 @@
+---
+permalink: upgrade/task_verify_cluster_after_upgrade.html 
+sidebar: sidebar 
+keywords: ontap, upgrade, upgrade, verify, status, health, post, after 
+summary: Depois de atualizar o ONTAP, verifique a versão do cluster, a integridade do cluster e a integridade do storage. Para configurações do MetroCluster FC, verifique se o switchover automático não planejado está ativado. 
+---
+= Verifique o cluster após a atualização do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois de atualizar o ONTAP, verifique a versão do cluster, a integridade do cluster e a integridade do storage. Para configurações do MetroCluster FC, verifique também se o cluster está habilitado para switchover automático não planejado.
+
+
+
+== Verifique a versão do cluster
+
+Depois que todos os pares de HA tiverem sido atualizados, use o comando version para verificar se todos os nós estão executando a liberação de destino.
+
+A versão do cluster é a versão mais baixa do ONTAP em execução em qualquer nó no cluster. Se a versão do cluster não for a versão de destino do ONTAP, você poderá atualizar o cluster.
+
+. Verifique se a versão do cluster é a versão de destino do ONTAP:
++
+[source, cli]
+----
+version
+----
+. Se a versão do cluster não for a versão de destino do ONTAP, você deve verificar o status de atualização de todos os nós:
++
+[source, cli]
+----
+system node upgrade-revert show
+----
+
+
+
+
+== Verifique a integridade do cluster
+
+Depois de atualizar um cluster, você deve verificar se os nós estão íntegros e qualificados para participar do cluster e se o cluster está em quórum.
+
+. Verifique se os nós do cluster estão online e estão qualificados para participar do cluster:
++
+[source, cli]
+----
+cluster show
+----
++
+[listing]
+----
+cluster1::> cluster show
+Node                  Health  Eligibility
+--------------------- ------- ------------
+node0                 true    true
+node1                 true    true
+----
++
+Se algum nó não for saudável ou não for elegível, verifique se há erros nos logs do EMS e tome medidas corretivas.
+
+. Defina o nível de privilégio como avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Verifique os detalhes de configuração para cada processo RDB.
++
+** A época do banco de dados relacional e as epochs do banco de dados devem corresponder para cada nó.
+** O mestre de quórum por anel deve ser o mesmo para todos os nós.
++
+Observe que cada anel pode ter um mestre de quórum diferente.
+
++
+|===
+
+
+| Para exibir este processo RDB... | Digite este comando... 
+
+
+ a| 
+Aplicação de gerenciamento
+ a| 
+`cluster ring show -unitname mgmt`
+
+
+
+ a| 
+Base de dados de localização de volume
+ a| 
+`cluster ring show -unitname vldb`
+
+
+
+ a| 
+Gerenciador de interface virtual
+ a| 
+`cluster ring show -unitname vifmgr`
+
+
+
+ a| 
+Daemon de gerenciamento SAN
+ a| 
+`cluster ring show -unitname bcomd`
+
+|===
++
+Este exemplo mostra o processo do banco de dados de localização de volume:
+
+
+
++
+[listing]
+----
+cluster1::*> cluster ring show -unitname vldb
+Node      UnitName Epoch    DB Epoch DB Trnxs Master    Online
+--------- -------- -------- -------- -------- --------- ---------
+node0     vldb     154      154      14847    node0     master
+node1     vldb     154      154      14847    node0     secondary
+node2     vldb     154      154      14847    node0     secondary
+node3     vldb     154      154      14847    node0     secondary
+4 entries were displayed.
+----
+. Se você estiver operando em um ambiente SAN, verifique se cada nó está em um quórum de SAN:
++
+[source, cli]
+----
+cluster kernel-service show
+----
++
+[listing]
+----
+cluster1::*> cluster kernel-service show
+Master            Cluster           Quorum        Availability  Operational
+Node              Node              Status        Status        Status
+----------------- ----------------- ------------- ------------- -------------
+cluster1-01       cluster1-01       in-quorum     true          operational
+                  cluster1-02       in-quorum     true          operational
+2 entries were displayed.
+----
+
+
+.Informações relacionadas
+link:../system-admin/index.html["Administração do sistema"]
+
+
+
+== Verificar se o switchover não planejado automático está ativado (somente configurações MetroCluster FC)
+
+Se o seu cluster estiver em uma configuração MetroCluster FC, você deve verificar se o switchover automático não planejado está ativado depois de atualizar o ONTAP.
+
+Se estiver a utilizar uma configuração IP do MetroCluster, ignore este procedimento.
+
+.Passos
+. Verifique se o switchover não planejado automático está ativado:
++
+[source, cli]
+----
+metrocluster show
+----
++
+Se o switchover não planejado automático estiver ativado, a seguinte instrução aparece na saída do comando:
+
++
+[listing]
+----
+AUSO Failure Domain  auso-on-cluster-disaster
+----
+. Se a instrução não aparecer, ative um switchover não planejado automático:
++
+[source, cli]
+----
+metrocluster modify -auto-switchover-failure-domain auso-on-cluster-disaster
+----
+. Verifique se um switchover não planejado automático foi ativado:
++
+[source, cli]
+----
+metrocluster show
+----
+
+
+.Informações relacionadas
+link:../disks-aggregates/index.html["Gerenciamento de disco e agregado"]

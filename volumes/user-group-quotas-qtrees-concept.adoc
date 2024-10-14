@@ -1,0 +1,47 @@
+---
+permalink: volumes/user-group-quotas-qtrees-concept.html 
+sidebar: sidebar 
+keywords: how, user and group quotas, work, with, qtrees 
+summary: As cotas de árvore limitam o tamanho geral da qtree. Para impedir que usuários ou grupos individuais consumam toda a qtree, você especifica uma cota de usuário ou grupo para essa qtree. 
+---
+= Como as cotas de usuário e grupo funcionam com qtrees
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+As cotas de árvore limitam o tamanho geral da qtree. Para impedir que usuários ou grupos individuais consumam toda a qtree, você especifica uma cota de usuário ou grupo para essa qtree.
+
+.Exemplo de cota de usuário em uma qtree
+Suponha que você tenha as seguintes regras de cota:
+
+[listing]
+----
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol1
+
+Vserver: vs0               Policy: default           Volume: vol1
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   ""        ""      off          50MB        -       -        -       45MB
+user   jsmith    ""      off          80MB        -       -        -       75MB
+----
+Você percebe que um determinado usuário, kjones, está ocupando muito espaço em uma qtree crítica, proj1, que reside no vol1. Você pode restringir o espaço desse usuário adicionando a seguinte regra de cota:
+
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -volume vol1 -policy-name default -type user -target "kjones" -qtree "proj1" -disk-limit 20m -threshold 15m
+
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol1
+
+Vserver: vs0               Policy: default           Volume: vol1
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   ""        ""      off          50MB        -       -        -       45MB
+user   jsmith    ""      off          80MB        -       -        -       75MB
+user   kjones    proj1   off          20MB        -       -        -       15MB
+----

@@ -1,0 +1,54 @@
+---
+permalink: fabricpool/modify-tiering-policy-cooling-period-task.html 
+sidebar: sidebar 
+keywords: managing, storage, tiering, modifying, volume, tiering, policy, tiering, minimum, cooling period 
+summary: 'Você pode alterar a política de disposição em categorias de um volume para controlar se os dados são movidos para a categoria de nuvem quando ficam inativos (frios). Para um volume com a política de disposição em camadas somente snapshot ou automática, você também pode especificar o período mínimo de resfriamento de disposição em camadas que os dados do usuário devem permanecer inativos antes que sejam movidos para a camada de nuvem.' 
+---
+= Gerenciar a disposição em camadas de storage modificando a política de disposição em camadas de um volume ou o período mínimo de resfriamento em camadas
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode alterar a política de disposição em categorias de um volume para controlar se os dados são movidos para a categoria de nuvem quando ficam inativos (_cold_). No caso de um volume com a `snapshot-only` política de disposição em camadas ou `auto` , você também pode especificar o período mínimo de resfriamento de disposição em camadas que os dados do usuário devem permanecer inativos antes de serem movidos para a categoria de nuvem.
+
+.O que você vai precisar
+Alterar um volume para a `auto` política de disposição em camadas ou modificar o período mínimo de resfriamento em camadas requer o ONTAP 9.4 ou posterior.
+
+.Sobre esta tarefa
+A alteração da política de disposição em camadas de um volume altera apenas o comportamento de disposição em camadas subsequente do volume. Ele não migra os dados para a camada de nuvem de forma retroativa.
+
+Alterar a política de disposição em camadas pode afetar quanto tempo leva para os dados ficarem inativos e serem movidos para a camada de nuvem.
+
+link:tiering-policies-concept.html#what-happens-when-you-modify-the-tiering-policy-of-a-volume-in-fabricpool["O que acontece quando você modifica a política de disposição em camadas de um volume no FabricPool"]
+
+.Passos
+. Modifique a política de disposição em camadas para um volume existente usando o `volume modify` comando com o `-tiering-policy` parâmetro:
++
+Você pode especificar uma das seguintes políticas de disposição em categorias:
+
++
+** `snapshot-only` (predefinição)
+** `auto`
+** `all`
+** `none`
++
+link:tiering-policies-concept.html#types-of-fabricpool-tiering-policies["Tipos de políticas de disposição em camadas do FabricPool"]
+
+
+
+. Se o volume usar a `snapshot-only` política de disposição em camadas ou `auto` e você quiser modificar o período mínimo de resfriamento em camadas, use o `volume modify` comando com o `-tiering-minimum-cooling-days` parâmetro opcional no nível avançado de privilégio.
++
+Você pode especificar um valor entre 2 e 183 para os dias mínimos de resfriamento em categorias. Se você estiver usando uma versão do ONTAP anterior a 9,8, poderá especificar um valor entre 2 e 63 para os dias mínimos de resfriamento em categorias.
+
+
+
+.Exemplo de modificação da política de disposição em camadas e do período mínimo de resfriamento de um volume
+O exemplo a seguir altera a política de disposição em camadas do volume "myvol" no SVM "'VS1" `auto` e o período mínimo de resfriamento em camadas para 45 dias:
+
+[listing]
+----
+cluster1::> volume modify -vserver vs1 -volume myvol
+-tiering-policy auto -tiering-minimum-cooling-days 45
+----

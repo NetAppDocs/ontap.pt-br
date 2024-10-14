@@ -1,0 +1,84 @@
+---
+permalink: system-admin/positional-parameters-concept.html 
+sidebar: sidebar 
+keywords: understand, positional, parameters, cli, command, input, query 
+summary: Você pode aproveitar a funcionalidade de parâmetro posicional da CLI do ONTAP para aumentar a eficiência na entrada de comandos. Você pode consultar um comando para identificar parâmetros que são posicionais para o comando. 
+---
+= Sobre parâmetros posicionais
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode aproveitar a funcionalidade de parâmetro posicional da CLI do ONTAP para aumentar a eficiência na entrada de comandos. Você pode consultar um comando para identificar parâmetros que são posicionais para o comando.
+
+
+
+== O que é um parâmetro posicional
+
+* Um parâmetro posicional é um parâmetro que não requer que você especifique o nome do parâmetro antes de especificar o valor do parâmetro.
+* Um parâmetro posicional pode ser intercalado com parâmetros não posicionais na entrada do comando, desde que observe sua sequência relativa com outros parâmetros posicionais no mesmo comando, como indicado na `*_command_name ?_*` saída.
+* Um parâmetro posicional pode ser um parâmetro obrigatório ou opcional para um comando.
+* Um parâmetro pode ser posicional para um comando, mas não posicional para outro.
+
+
+[NOTE]
+====
+O uso da funcionalidade de parâmetro posicional em scripts não é recomendado, especialmente quando os parâmetros posicionais são opcionais para o comando ou têm parâmetros opcionais listados antes deles.
+
+====
+
+
+== Identificar um parâmetro posicional
+
+Você pode identificar um parâmetro posicional na `*_command_name ?_*` saída do comando. Um parâmetro posicional tem colchetes em torno do nome do parâmetro, em um dos seguintes formatos:
+
+* [`_-parameter_name_` `_parameter_value_`] mostra um parâmetro necessário que é posicional.
+* [`_-parameter_name_`[ `_parameter_value_`] mostra um parâmetro opcional que é posicional.
+
+
+Por exemplo, quando exibido como o seguinte na `*_command_name ?_*` saída, o parâmetro é posicional para o comando em que aparece:
+
+* `[-lif] <lif-name>`
+* `[[-lif] <lif-name>]`
+
+
+No entanto, quando exibido como o seguinte, o parâmetro é não posicional para o comando em que aparece:
+
+* `-lif <lif-name>`
+* `[-lif <lif-name>]`
+
+
+
+
+== Exemplos de uso de parâmetros posicionais
+
+No exemplo a seguir, a `*_volume create ?_*` saída mostra que três parâmetros são posicionais para o comando: `-volume` `-aggregate` , E `-size`.
+
+[listing]
+----
+cluster1::> volume create ?
+   -vserver <vserver name>                Vserver Name
+   [-volume] <volume name>                Volume Name
+   [-aggregate] <aggregate name>          Aggregate Name
+  [[-size] {<integer>[KB|MB|GB|TB|PB]}]   Volume Size
+  [ -state {online|restricted|offline|force-online|force-offline|mixed} ]
+                                          Volume State (default: online)
+  [ -type {RW|DP|DC} ]                    Volume Type (default: RW)
+  [ -policy <text> ]                      Export Policy
+  [ -user <user name> ]                   User ID
+  ...
+  [ -space-guarantee|-s {none|volume} ]   Space Guarantee Style (default: volume)
+  [ -percent-snapshot-space <percent> ]   Space Reserved for Snapshot Copies
+  ...
+----
+No exemplo a seguir, o `volume create` comando é especificado sem tirar vantagem da funcionalidade do parâmetro posicional:
+
+`cluster1::> volume create -vserver svm1 -volume vol1 -aggregate *aggr1 -size 1g* -percent-snapshot-space 0`
+
+Os exemplos a seguir usam a funcionalidade de parâmetro posicional para aumentar a eficiência da entrada de comando. Os parâmetros posicionais são intercalados com parâmetros não posicionais no `volume create` comando, e os valores dos parâmetros posicionais são especificados sem os nomes dos parâmetros. Os parâmetros posicionais são especificados na mesma sequência indicada pela `*volume create ?*` saída. Ou seja, o valor para `-volume` é especificado antes do `-aggregate` de , que por sua vez é especificado antes do de `-size`.
+
+`cluster1::> volume create *vol2* *aggr1* *1g* -vserver svm1 -percent-snapshot-space 0`
+
+`cluster1::> volume create -vserver svm1 *vol3* -snapshot-policy default *aggr1* -nvfail off *1g* -space-guarantee none`

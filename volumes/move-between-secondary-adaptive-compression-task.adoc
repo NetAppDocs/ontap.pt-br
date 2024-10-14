@@ -1,0 +1,101 @@
+---
+permalink: volumes/move-between-secondary-adaptive-compression-task.html 
+sidebar: sidebar 
+keywords: move, secondary compression, adaptive compression 
+summary: Você pode alternar entre compactação secundária e compactação adaptável, dependendo da quantidade de leituras de dados. 
+---
+= Mova entre compressão secundária e compressão adaptável
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode alternar entre compactação secundária e compactação adaptável, dependendo da quantidade de leituras de dados. A compressão adaptável é preferida quando há um alto volume de leituras aleatórias no sistema e um desempenho mais alto é necessário. A compressão secundária é preferida quando os dados são gravados sequencialmente e são necessárias economias de compressão mais elevadas.
+
+.Sobre esta tarefa
+O tipo de compressão padrão é selecionado com base em seus agregados e plataforma.
+
+.Passos
+. Desativar a eficiência no volume:
++
+`volume efficiency off`
+
++
+Por exemplo, o seguinte comando desativa a eficiência no volume vol1:
+
++
+`volume efficiency off -vserver vs1 -volume vol1`
+
+. Mude para o nível de privilégio avançado:
++
+`set -privilege advanced`
+
+. Descomprimir os dados comprimidos:
++
+`volume efficiency undo`
+
++
+Por exemplo, o comando a seguir descompacta os dados compatados no volume vol1:
+
++
+`volume efficiency undo -vserver vs1 -volume vol1 -compression true`
+
++
+[NOTE]
+====
+Você deve verificar se tem espaço suficiente no volume para acomodar os dados descompactados.
+
+====
+. Altere para o nível de privilégio admin:
++
+`set -privilege admin`
+
+. Verifique se o estado da operação está inativo:
++
+`volume efficiency show`
+
++
+Por exemplo, o comando a seguir exibe o status de uma operação de eficiência no volume vol1:
+
++
+`volume efficiency show -vserver vs1 -volume vol1`
+
+. Ative a eficiência para o volume:
++
+`volume efficiency on` Por exemplo, o seguinte comando permite a eficiência no volume vol1:
+
++
+`volume efficiency on -vserver vs1 -volume vol1`
+
+. Ative a compressão de dados e, em seguida, defina o tipo de compressão:
++
+`volume efficiency modify`
+
++
+Por exemplo, o comando a seguir habilita a compactação de dados e define o tipo de compactação como compressão secundária no volume vol1:
+
++
+`volume efficiency modify -vserver vs1 -volume vol1 -compression true -compression-type secondary`
+
++
+[NOTE]
+====
+Esta etapa só permite a compactação secundária no volume; os dados no volume não são compatados.
+
+** Para comprimir dados existentes em sistemas AFF, tem de executar o scanner de compressão em segundo plano.
+** Para compactar dados existentes em agregados Flash Pool ou agregados de HDD, é necessário executar a compactação em segundo plano.
+
+
+====
+. Opcional: Ativar a compressão em linha:
++
+`volume efficiency modify`
+
++
+Por exemplo, o comando a seguir habilita a compactação inline no volume vol1:
+
++
+`volume efficiency modify -vserver vs1 -volume vol1 -inline-compression true`
+
+

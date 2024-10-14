@@ -1,0 +1,105 @@
+---
+permalink: system-admin/create-banner-task.html 
+sidebar: sidebar 
+keywords: create, banner, svm, access, cluster, ssh, session 
+summary: 'Você pode criar um banner para exibir uma mensagem para alguém que tente acessar o cluster ou SVM. O banner é exibido em uma sessão de console (apenas para acesso ao cluster) ou em uma sessão SSH (para acesso ao cluster ou SVM) antes que um usuário seja solicitado a autenticação.' 
+---
+= Crie um banner
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode criar um banner para exibir uma mensagem para alguém que tente acessar o cluster ou SVM. O banner é exibido em uma sessão de console (apenas para acesso ao cluster) ou em uma sessão SSH (para acesso ao cluster ou SVM) antes que um usuário seja solicitado a autenticação.
+
+.Passos
+. Use o `security login banner modify` comando para criar um banner para o cluster ou SVM:
++
+|===
+| Se você quiser... | Então... 
+
+
+ a| 
+Especifique uma mensagem que seja uma única linha
+ a| 
+Utilize o `-message`[.code]``text`` parâmetro " " para especificar o texto.
+
+
+
+ a| 
+Inclua novas linhas (também conhecidas como fim de linhas) na mensagem
+ a| 
+Use o comando sem o `-message` parâmetro ou `-uri` para iniciar o modo interativo para editar o banner.
+
+
+
+ a| 
+Faça upload de conteúdo de um local para usar para o banner
+ a| 
+Use o `-uri` parâmetro para especificar a localização FTP ou HTTP do conteúdo.
+
+|===
++
+O tamanho máximo para um banner é de 2.048 bytes, incluindo novas linhas.
+
++
+Um banner criado usando o `-uri` parâmetro é estático. Não é atualizado automaticamente para refletir as alterações subsequentes do conteúdo fonte.
+
++
+O banner criado para o cluster também é exibido para todos os SVMs que não têm um banner existente. Qualquer banner criado posteriormente para um SVM substitui o banner no nível do cluster desse SVM. Especificar o `-message` parâmetro com um hífen entre aspas duplas (`"-"`) para o SVM redefine o SVM para usar o banner no nível do cluster.
+
+. Verifique se o banner foi criado exibindo-o com o `security login banner show` comando.
++
+Especificar o `-message` parâmetro com uma string vazia (`""`) exibe banners que não têm conteúdo.
+
++
+Especificar o `-message` parâmetro com `"-"` exibe todos os SVMs (admin ou dados) que não têm um banner configurado.
+
+
+
+.Exemplos de criação de banners
+O exemplo a seguir usa o modo não interativo para criar um banner para o cluster "'cluster1"":
+
+[listing]
+----
+cluster1::> security login banner modify -message "Authorized users only!"
+
+cluster1::>
+----
+O exemplo a seguir usa o modo interativo para criar um banner para o "VM1" SVM:
+
+[listing]
+----
+cluster1::> security login banner modify -vserver svm1
+
+Enter the message of the day for Vserver "svm1".
+Max size: 2048. Enter a blank line to terminate input. Press Ctrl-C to abort.
+0        1         2         3         4         5         6         7         8
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+The svm1 SVM is reserved for authorized users only!
+
+
+cluster1::>
+----
+O exemplo a seguir exibe os banners que foram criados:
+
+[listing]
+----
+cluster1::> security login banner show
+Vserver: cluster1
+Message
+-----------------------------------------------------------------------------
+Authorized users only!
+
+Vserver: svm1
+Message
+-----------------------------------------------------------------------------
+The svm1 SVM is reserved for authorized users only!
+
+2 entries were displayed.
+
+cluster1::>
+----
+.Informações relacionadas
+xref:manage-banner-reference.adoc[Gerenciar o banner]

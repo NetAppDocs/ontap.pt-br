@@ -1,0 +1,41 @@
+---
+permalink: nfs-admin/enable-access-windows-nfs-clients-task.html 
+sidebar: sidebar 
+keywords: enable, access, windows, nfs, clients 
+summary: 'O ONTAP suporta acesso a arquivos de clientes Windows NFSv3. Isso significa que os clientes que executam sistemas operacionais Windows com suporte a NFSv3 podem acessar arquivos em exportações NFSv3 no cluster. Para usar essa funcionalidade com êxito, você deve configurar corretamente a máquina virtual de storage (SVM) e estar ciente de certos requisitos e limitações.' 
+---
+= Ative o acesso para clientes Windows NFS
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP suporta acesso a arquivos de clientes Windows NFSv3. Isso significa que os clientes que executam sistemas operacionais Windows com suporte a NFSv3 podem acessar arquivos em exportações NFSv3 no cluster. Para usar essa funcionalidade com êxito, você deve configurar corretamente a máquina virtual de storage (SVM) e estar ciente de certos requisitos e limitações.
+
+.Sobre esta tarefa
+Por padrão, o suporte ao cliente do Windows NFSv3 está desativado.
+
+.Antes de começar
+O NFSv3 precisa estar habilitado no SVM.
+
+.Passos
+. Ativar o suporte ao cliente do Windows NFSv3:
++
+`vserver nfs modify -vserver _svm_name_ -v3-ms-dos-client enabled -mount-rootonly disabled`
+
+. Em todos os SVMs que suportam clientes Windows NFSv3, desative os `-enable-ejukebox` parâmetros e `-v3-connection-drop`:
++
+`vserver nfs modify -vserver vserver_name -enable-ejukebox false -v3-connection-drop disabled`
+
++
+Os clientes do Windows NFSv3 agora podem montar exportações no sistema de armazenamento.
+
+. Certifique-se de que cada cliente do Windows NFSv3 utiliza suportes rígidos especificando a `-o mtype=hard` opção.
++
+Isso é necessário para garantir montagens confiáveis.
+
++
+`mount -o mtype=hard \\10.53.33.10\vol\vol1 z:\`
+
+

@@ -1,0 +1,62 @@
+---
+permalink: flexcache/global-file-locking-task.html 
+sidebar: sidebar 
+keywords: global file locking, flexcache, relationship 
+summary: Você pode habilitar o bloqueio global de arquivos em volumes do FlexCache se desejar privilegiar a consistência sobre a disponibilidade. 
+---
+= Ative o bloqueio global de ficheiros
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.10,1, o bloqueio global de arquivos pode ser aplicado para evitar leituras em todos os arquivos armazenados em cache relacionados.
+
+Com o bloqueio global de arquivos ativado, as modificações no volume de origem são suspensas até que todos os volumes do FlexCache estejam online. Você só deve ativar o bloqueio global de arquivos quando tiver controle sobre a confiabilidade das conexões entre cache e origem devido à suspensão e possíveis tempos limite de modificações quando os volumes FlexCache estiverem offline.
+
+.Antes de começar
+* O bloqueio global de arquivos requer que os clusters que contêm a origem e todos os caches associados estejam executando o ONTAP 9.9,1 ou posterior. O bloqueio global de arquivos pode ser ativado em volumes FlexCache novos ou existentes. O comando pode ser executado em um volume e se aplica a todos os volumes FlexCache associados.
+* Tem de estar no nível de privilégio avançado para ativar o bloqueio global de ficheiros.
+* Se você reverter para uma versão do ONTAP anterior à 9,9.1, o bloqueio de arquivos global deve ser desativado primeiro na origem e caches associados. Para desativar, a partir do volume de origem, execute: `volume flexcache prepare-to-downgrade -disable-feature-set 9.10.0`
+* O processo para habilitar o bloqueio global de arquivos depende se a origem tem caches existentes:
++
+** <<enable-gfl-new>>
+** <<enable-gfl-existing>>
+
+
+
+
+
+
+== Habilite o bloqueio global de arquivos em novos volumes do FlexCache
+
+.Passos
+. Crie o volume FlexCache com `-is-global-file-locking` definido como verdadeiro:
++
+`volume flexcache create volume _volume_name_ -is-global-file-locking-enabled true`
+
++
+
+NOTE: O valor padrão de `-is-global-file-locking` é "'false'". Quando quaisquer `volume flexcache create` comandos subsequentes são executados em um volume, eles devem ser passados com `-is-global-file-locking enabled` SET como "'true'".
+
+
+
+
+
+== Habilite o bloqueio global de arquivos em volumes FlexCache existentes
+
+.Passos
+. O bloqueio global de ficheiros tem de ser definido a partir do volume de origem.
+. A origem não pode ter quaisquer outras relações existentes (por exemplo, SnapMirror). Qualquer relacionamento existente deve ser dissociado. Todos os caches e volumes devem ser conetados no momento da execução do comando. Para verificar o estado da ligação, execute:
++
+`volume flexcache connection-status show`
+
++
+O status de todos os volumes listados deve ser exibido como `connected.` para obter mais informações, consulte link:view-connection-status-origin-task.html["Exibir o status de uma relação do FlexCache"] ou link:synchronize-properties-origin-volume-task.html["Sincronizar propriedades de um volume FlexCache de uma origem"].
+
+. Ativar o bloqueio global de ficheiros nas caches:
++
+`volume flexcache origin config show/modify -volume _volume_name_ -is-global-file-locking-enabled true`
+
+

@@ -1,0 +1,149 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/interoperability-reference.html 
+keywords: SM-BC, SMBC, restrictions, consistency group, endpoint limits, solaris, aix, hp-ux, fanout, snapmirror active sync 
+summary: O SnapMirror ative Sync é compatível com vários sistemas operacionais e outros recursos do ONTAP. 
+---
+= Interoperabilidade de sincronização ativa do SnapMirror
+:allow-uri-read: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+O SnapMirror ative Sync é compatível com vários sistemas operacionais, hosts de aplicativos e outros recursos do ONTAP.
+
+
+NOTE: Para obter detalhes específicos de capacidade de suporte e interoperabilidade não abordados aqui, consulte a ferramenta de Matriz de interoperabilidade (http://mysupport.netapp.com/matrix["IMT"^]).
+
+
+
+== Hosts de aplicativos
+
+Os hosts de aplicativos de suporte a sincronização ativa do SnapMirror incluem Hyper-V, Red Hat Enterprise Linux (RHEL), VMware, VMware vSphere Metro Storage Cluster (vMSC), Windows Server e, a partir do ONTAP 9.14,1, cluster de failover de servidor do Windows.
+
+
+
+== Sistemas operacionais
+
+O SnapMirror ative Sync é compatível com vários sistemas operacionais, incluindo:
+
+* AIX via PVR (Início ONTAP 9.11,1)
+* HP-UX (Início do ONTAP 9.10,1)
+* Solaris 11,4 (Início do ONTAP 9.10,1)
+
+
+
+
+=== AIX
+
+A partir do ONTAP 9.11,1, o AIX é suportado com a sincronização ativa do SnapMirror via PVR.
+
+O SnapMirror active Sync pode fornecer proteção de dados RPO zero, mas o processo de failover com AIX requer etapas adicionais para reconhecer a alteração de caminho. Os LUNs que não fazem parte de um grupo de volume raiz terão uma pausa de e/S até que um `cfgmgr` comando seja executado. Isso pode ser automatizado, e a maioria dos aplicativos retomará as operações sem interrupções adicionais.
+
+Os LUNs que fazem parte de um grupo de volumes raiz geralmente não devem ser protegidos com a sincronização ativa do SnapMirror. Não é possível executar o `cfgmgr` comando após um failover, o que significa que uma reinicialização é necessária para reconhecer as alterações nos caminhos SAN. Você ainda pode alcançar a proteção de dados RPO zero do grupo de volume raiz, mas o failover causará interrupções.
+
+Consulte sua equipe de conta do NetApp para obter mais informações sobre a sincronização ativa do SnapMirror com o AIX.
+
+
+
+=== HP-UX
+
+A partir do ONTAP 9.10,1, é suportada a sincronização ativa do SnapMirror para HP-UX.
+
+.Failover automático não planejado com HP-UX
+Um evento de failover não planejado automático (AUFO) no cluster mestre isolado pode ser causado por falha de evento duplo quando a conexão entre o cluster primário e o cluster secundário é perdida e a conexão entre o cluster primário e o mediador também é perdida. Este é considerado um evento raro, ao contrário de outros eventos AUFO.
+
+* Nesse cenário, pode levar mais de 120 segundos para que a I/o seja retomada no host HP-UX. Dependendo dos aplicativos que estão sendo executados, isso pode não levar a interrupções de e/S ou mensagens de erro.
+* Para remediar, é necessário reiniciar os aplicativos no host HP-UX que tenham uma tolerância de interrupção inferior a 120 segundos.
+
+
+
+
+=== Solaris
+
+A partir do ONTAP 9.10,1, o SnapMirror ative Sync suporta o Solaris 11,4.
+
+Para garantir que os aplicativos clientes Solaris não sejam disruptivos quando ocorrer um switchover não planejado de failover de local em um ambiente de sincronização ativa do SnapMirror, modifique as configurações padrão do Solaris os. Para configurar o Solaris com as configurações recomendadas, consulte o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Protection_and_Security/SnapMirror/Solaris_Host_support_recommended_settings_in_SnapMirror_Business_Continuity_(SM-BC)_configuration["Configurações recomendadas no SnapMirror ative Sync"^].
+
+
+
+== Interoperabilidade do ONTAP
+
+O SnapMirror active Sync integra-se a componentes do ONTAP para estender seus recursos de proteção de dados.
+
+
+
+=== FabricPool
+
+O SnapMirror active Sync é compatível com volumes de origem e destino em agregados FabricPool com políticas de disposição em camadas Nenhuma, Snapshot ou automática. O SnapMirror active Sync não é compatível com agregados FabricPool usando uma política de disposição em camadas.
+
+
+
+=== Configurações de fan-out
+
+No xref:../data-protection/supported-deployment-config-concept.html[configurações de fan-out], o volume de origem pode ser espelhado em um ponto de extremidade de destino de sincronização ativa do SnapMirror e em um ou mais relacionamentos assíncronos do SnapMirror.
+
+image:fanout-diagram.png["Diagrama de uma configuração de fan-out"]
+
+A sincronização ativa do SnapMirror é compatível xref:../data-protection/supported-deployment-config-concept.html[configurações de fan-out] com a `MirrorAllSnapshots` política e, a partir do ONTAP 9.11,1, a `MirrorAndVault` política. As configurações de fan-out não são suportadas na sincronização ativa do SnapMirror com a `XDPDefault` política.
+
+A partir do ONTAP 9.15,1, o SnapMirror ative Sync suporta reconfiguração automática na etapa fan-out após um evento de failover. Se o failover do local primário para o local secundário tiver sido bem-sucedido, o local terciário será reconfigurado automaticamente para tratar o local secundário como a origem. A reconfiguração é acionada por um failover planejado ou não planejado. A reconfiguração também ocorre após o failback para o site primário.
+
+Para obter informações sobre como gerenciar sua configuração de fan-out em versões anteriores do ONTAP, xref:recover-unplanned-failover-task.adoc[retomar a proteção na configuração de fan-out]consulte .
+
+
+
+=== Restauração NDMP
+
+A partir do ONTAP 9.13,1, você pode usar xref:../tape-backup/transfer-data-ndmpcopy-task.html[NDMP para copiar e restaurar dados] com a sincronização ativa do SnapMirror. O uso do NDMP permite que você mova dados para a fonte de sincronização ativa do SnapMirror para concluir uma restauração sem pausar a proteção. Isso é particularmente útil em configurações de fan-out.
+
+
+
+=== SnapCenter
+
+A sincronização ativa do SnapMirror é suportada com o SnapCenter a partir link:https://docs.netapp.com/us-en/snapcenter/index.html["SnapCenter 5,0"^]do . O SnapCenter permite a criação de snapshots que podem ser usados para proteger e recuperar aplicativos e máquinas virtuais, permitindo soluções de armazenamento sempre disponíveis com granularidade no nível do aplicativo.
+
+
+
+=== SnapRestore
+
+O SnapMirror ative Sync é compatível com SnapRestore de arquivo único e parcial.
+
+.SnapRestore de um único arquivo
+A partir do ONTAP 9.11,1, xref:../data-protection/restore-single-file-snapshot-task.html[Single-file SnapRestore] é compatível com volumes de sincronização ativos do SnapMirror. É possível restaurar um único arquivo de uma cópia Snapshot replicada da fonte de sincronização ativa do SnapMirror para o destino. Como os volumes podem conter um ou mais LUNs, esse recurso ajuda a implementar uma operação de restauração menos disruptiva, restaurando de maneira granular um único LUN sem interromper os outros LUNs. O Single File SnapRestore tem duas opções: In-place e out-of-place.
+
+.SnapRestore de arquivo parcial
+A partir do ONTAP 9.12,1, link:../data-protection/restore-part-file-snapshot-task.html["Restauração parcial de LUN"] é compatível com volumes de sincronização ativos do SnapMirror. É possível restaurar os dados de cópias Snapshot criadas por aplicações que foram replicadas entre a fonte (volume) de sincronização ativa do SnapMirror e os volumes de destino (cópia Snapshot). LUN parcial ou restauração de arquivos pode ser necessária se você precisar restaurar um banco de dados em um host que armazena vários bancos de dados no mesmo LUN. O uso desta funcionalidade requer que você saiba o deslocamento de byte inicial da contagem de dados e bytes.
+
+
+
+=== LUNs grandes e grandes volumes
+
+O suporte para LUNs grandes e volumes grandes (maiores de 100 TB) depende da versão do ONTAP que você está usando e da sua plataforma.
+
+[role="tabbed-block"]
+====
+.ONTAP 9.12.1P2 e posterior
+--
+* Para o ONTAP 9.12,1 P2 e posterior, o SnapMirror ative Sync suporta LUNs grandes e volumes grandes superiores a 100TB GB no ASA e no AFF (incluindo a série C).
+
+
+
+NOTE: Nas versões 9.12.1P2 e posteriores do ONTAP, você precisa garantir que os clusters primário e secundário sejam all-flash SAN Arrays (ASA) ou all-flash array (AFF) e que ambos tenham ONTAP 9.12,1 P2 ou posterior instalado. Se o cluster secundário estiver executando uma versão anterior ao ONTAP 9.12.1P2 ou se o tipo de array não for o mesmo que o cluster primário, a relação síncrona poderá ficar fora de sincronia se o volume primário aumentar acima de 100 TB.
+
+--
+.ONTAP 9.9,1 - 9.12.1P1
+--
+* Para versões do ONTAP entre o ONTAP 9.9,1 e o 9.12.1 P1 (inclusive), LUNs grandes e volumes maiores que 100TB TB são compatíveis apenas com arrays all-flash SAN.
+
+
+
+NOTE: Para versões do ONTAP entre o ONTAP 9.9,1 e o 9.12.1 P2, você deve garantir que os clusters primário e secundário sejam all-flash SAN arrays e que ambos tenham o ONTAP 9.9,1 ou posterior instalado. Se o cluster secundário estiver executando uma versão anterior ao ONTAP 9.9,1 ou se não for um array SAN all-flash, a relação síncrona poderá ficar fora de sincronia se o volume primário aumentar acima de 100 TB.
+
+--
+====
+.Mais informações
+* link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Protection_and_Security/SnapMirror/How_to_configure_an_AIX_host_for_SnapMirror_Business_Continuity_(SM-BC)["Como configurar um host AIX para sincronização ativa do SnapMirror"^]
+

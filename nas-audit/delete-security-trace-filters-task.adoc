@@ -1,0 +1,62 @@
+---
+permalink: nas-audit/delete-security-trace-filters-task.html 
+sidebar: sidebar 
+keywords: delete, security trace filters 
+summary: 'Quando você não precisa mais de uma entrada de filtro de rastreamento de segurança, você pode excluí-lo. Como você pode ter um máximo de 10 filtros de rastreamento de segurança por máquina virtual de armazenamento (SVM), excluir filtros desnecessários permite criar novos filtros se você atingir o máximo.' 
+---
+= Excluir filtros de rastreamento de segurança
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando você não precisa mais de uma entrada de filtro de rastreamento de segurança, você pode excluí-lo. Como você pode ter um máximo de 10 filtros de rastreamento de segurança por máquina virtual de armazenamento (SVM), excluir filtros desnecessários permite criar novos filtros se você atingir o máximo.
+
+.Sobre esta tarefa
+Para identificar de forma exclusiva o filtro de rastreamento de segurança que você deseja excluir, você deve especificar o seguinte:
+
+* O nome do SVM ao qual o filtro de rastreamento é aplicado
+* O número do índice do filtro do traçado
+
+
+.Passos
+. Identifique o número do índice do filtro da entrada do filtro de rastreamento de segurança que você deseja excluir:
++
+`vserver security trace filter show -vserver vserver_name`
+
++
+`vserver security trace filter show -vserver vs1`
+
++
+[listing]
+----
+
+Vserver  Index   Client-IP            Path            Trace-Allow  Windows-Name
+-------- -----  -----------  ----------------------   -----------  -------------
+vs1        1    -            /dir1/dir2/file.txt          yes      -
+vs1        2    -            /dir3/dir4/                  no       mydomain\joe
+----
+. Usando as informações do número do índice do filtro da etapa anterior, exclua a entrada do filtro:
++
+`vserver security trace filter delete -vserver vserver_name -index index_number`
+
++
+`vserver security trace filter delete -vserver vs1 -index 1`
+
+. Verifique se a entrada do filtro de rastreamento de segurança foi excluída:
++
+`vserver security trace filter show -vserver vserver_name`
+
++
+`vserver security trace filter show -vserver vs1`
+
++
+[listing]
+----
+
+Vserver  Index   Client-IP            Path            Trace-Allow   Windows-Name
+-------- -----  -----------  ----------------------   -----------   -------------
+vs1        2    -            /dir3/dir4/                  no        mydomain\joe
+----
+

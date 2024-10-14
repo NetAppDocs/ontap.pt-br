@@ -1,0 +1,55 @@
+---
+permalink: flexgroup/reactivate-original-source-after-disaster-task.html 
+sidebar: sidebar 
+keywords: reactivate, original, source, flexgroup, volume, disaster 
+summary: Quando o volume FlexGroup de origem ficar disponível, é possível ressincronizar os volumes FlexGroup de origem e destino originais. Todos os novos dados no volume FlexGroup de destino são perdidos. 
+---
+= Reative o volume original do FlexGroup após o desastre
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando o volume FlexGroup de origem ficar disponível, é possível ressincronizar os volumes FlexGroup de origem e destino originais. Todos os novos dados no volume FlexGroup de destino são perdidos.
+
+.Sobre esta tarefa
+Todas as regras de quota ativas no volume de destino são desativadas e as regras de quota são eliminadas antes de ser efetuada a ressincronização.
+
+Você pode usar os `volume quota policy rule create` comandos e `volume quota modify` para criar e reativar regras de cota após a conclusão da operação de ressincronização.
+
+.Passos
+. A partir do cluster de destino, ressincronize a relação SnapMirror volume FlexGroup: `snapmirror resync -destination-path dst_svm:dest_flexgroup`
+. Veja o status da relação SnapMirror: `snapmirror show -expand`
++
+[listing]
+----
+cluster2::> snapmirror show -expand
+                                                                       Progress
+Source            Destination Mirror  Relationship   Total             Last
+Path        Type  Path        State   Status         Progress  Healthy Updated
+----------- ---- ------------ ------- -------------- --------- ------- --------
+vss:s       XDP  vsd:dst        Snapmirrored
+                                      Idle           -         true    -
+vss:s__0001 XDP  vsd:dst__0001  Snapmirrored
+                                      Idle           -         true    -
+vss:s__0002 XDP  vsd:dst__0002  Snapmirrored
+                                      Idle           -         true    -
+vss:s__0003 XDP  vsd:dst__0003  Snapmirrored
+                                      Idle           -         true    -
+vss:s__0004 XDP  vsd:dst__0004  Snapmirrored
+                                      Idle           -         true    -
+vss:s__0005 XDP  vsd:dst__0005  Snapmirrored
+                                      Idle           -         true    -
+vss:s__0006 XDP  vsd:dst__0006  Snapmirrored
+                                      Idle           -         true    -
+vss:s__0007 XDP  vsd:dst__0007  Snapmirrored
+                                      Idle           -         true    -
+vss:s__0008 XDP  vsd:dst__0008  Snapmirrored
+                                      Idle           -         true    -
+...
+----
++
+O status da relação SnapMirror de cada componente é `Snapmirrored`.
+
+

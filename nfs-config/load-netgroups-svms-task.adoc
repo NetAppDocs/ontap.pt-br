@@ -1,0 +1,59 @@
+---
+permalink: nfs-config/load-netgroups-svms-task.html 
+sidebar: sidebar 
+keywords: load, netgroups, svms 
+summary: 'Um dos métodos que você pode usar para combinar clientes em regras de política de exportação é usando hosts listados em netgroups. Você pode carregar netgroups de um URI (identificador de recurso uniforme) em SVMs como uma alternativa ao uso de netgroups armazenados em servidores de nomes externos (carga de netgroup de serviço de nome de serviços vserver).' 
+---
+= Carregue netgroups em SVMs
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Um dos métodos que você pode usar para combinar clientes em regras de política de exportação é usando hosts listados em netgroups. Você pode carregar netgroups de um URI (identificador de recurso uniforme) em SVMs como uma alternativa ao uso de netgroups armazenados em servidores de nomes externos (`vserver services name-service netgroup load`).
+
+.O que você vai precisar
+Os arquivos netgroup devem atender aos seguintes requisitos antes de serem carregados em um SVM:
+
+* O arquivo deve usar o mesmo formato de arquivo de texto netgroup apropriado que é usado para preencher NIS.
++
+O ONTAP verifica o formato do arquivo de texto do netgroup antes de carregá-lo. Se o arquivo contiver erros, ele não será carregado e uma mensagem será exibida indicando as correções que você tem que executar no arquivo. Depois de corrigir os erros, você pode recarregar o arquivo netgroup no SVM especificado.
+
+* Todos os carateres alfabéticos nos nomes de host no arquivo netgroup devem estar em minúsculas.
+* O tamanho máximo de ficheiro suportado é de 5 MB.
+* O nível máximo suportado para netgroups de aninhamento é 1000.
+* Somente nomes de host DNS primários podem ser usados ao definir nomes de host no arquivo netgroup.
++
+Para evitar problemas de acesso à exportação, os nomes de host não devem ser definidos usando Registros DNS CNAME ou round robin.
+
+* As partes de usuário e domínio de triplos no arquivo netgroup devem ser mantidas vazias porque o ONTAP não as suporta.
++
+Apenas a parte host/IP é suportada.
+
+
+
+.Sobre esta tarefa
+O ONTAP suporta pesquisas netgroup-by-host para o arquivo netgroup local. Depois de carregar o arquivo netgroup, o ONTAP cria automaticamente um mapa netgroup.byhost para ativar as pesquisas netgroup-by-host. Isso pode acelerar significativamente as pesquisas de netgroup locais ao processar regras de política de exportação para avaliar o acesso do cliente.
+
+.Passo
+. Carregue netgroups em SVMs a partir de um URI:
++
+`vserver services name-service netgroup load -vserver _vserver_name_ -source {ftp|http|ftps|https}://_uri_`
+
++
+Carregar o arquivo netgroup e construir o mapa netgroup.byhost pode levar vários minutos.
+
++
+Se quiser atualizar os netgroups, você pode editar o arquivo e carregar o arquivo netgroup atualizado no SVM.
+
+
+
+.Exemplo
+O comando a seguir carrega definições de netgroup no SVM chamado VS1 a partir do URL HTTP `+http://intranet/downloads/corp-netgroup+` :
+
+[listing]
+----
+vs1::> vserver services name-service netgroup load -vserver vs1
+-source http://intranet/downloads/corp-netgroup
+----

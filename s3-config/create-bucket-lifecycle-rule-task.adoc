@@ -1,0 +1,175 @@
+---
+permalink: s3-config/create-bucket-lifecycle-rule-task.html 
+sidebar: sidebar 
+keywords: s3, bucket, cli, lifecycle, rule 
+summary: A partir do ONTAP 9.13,1, você pode implementar a expiração do objeto S3. 
+---
+= Crie uma regra de gerenciamento do ciclo de vida do bucket
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.13,1, é possível criar regras de gerenciamento de ciclo de vida para gerenciar os ciclos de vida dos objetos nos buckets do S3. Você pode definir regras de exclusão para objetos específicos em um bucket e, por meio dessas regras, expirar esses objetos de bucket. Isso permite que você atenda aos requisitos de retenção e gerencie o storage geral de objetos do S3 com eficiência.
+
+
+NOTE: Se o bloqueio de objetos estiver ativado para os objetos de bucket, as regras de gerenciamento de ciclo de vida para expiração de objetos não serão aplicadas em objetos bloqueados. Para obter informações sobre o bloqueio de objetos, link:../s3-config/create-bucket-task.html["Crie um bucket"]consulte .
+
+.Antes de começar
+* Um SVM habilitado para S3 que contenha um servidor S3 e um bucket já deve existir. Consulte link:create-svm-s3-task.html["Criar um SVM para S3"] para obter mais informações.
+* Você deve estar ciente de que as regras de gerenciamento do ciclo de vida do bucket não são compatíveis com configurações do MetroCluster.
+
+
+.Sobre esta tarefa
+Ao criar suas regras de gerenciamento de ciclo de vida, você pode aplicar as seguintes ações de exclusão aos objetos bucket:
+
+* Exclusão de versões atuais - esta ação expira objetos identificados pela regra. Se o controle de versão estiver habilitado no bucket, o S3 tornará todos os objetos expirados indisponíveis. Se o controle de versão não estiver habilitado, essa regra excluirá os objetos permanentemente. A ação CLI é `Expiration`.
+* Exclusão de versões não-atuais - esta ação especifica quando S3 pode remover permanentemente objetos não-atuais. A ação CLI é `NoncurrentVersionExpiration`.
+* Eliminação de marcadores de eliminação expirados - esta ação elimina marcadores de eliminação de objetos expirados. Em buckets habilitados para versionamento, objetos com marcadores de exclusão se tornam as versões atuais dos objetos. Os objetos não são excluídos e nenhuma ação pode ser executada neles. Esses objetos expiram quando não há versões atuais associadas a eles. A ação CLI é `Expiration`.
+* Eliminação de carregamentos de várias partes incompletos - esta ação define um tempo máximo (em dias) que pretende permitir que os carregamentos de várias partes permaneçam em curso. Depois disso, eles são excluídos. A ação CLI é `AbortIncompleteMultipartUpload`.
+
+
+O procedimento que você segue depende da interface que você usa. Com o ONTAP 9.13,1, você precisa usar o CLI. A partir do ONTAP 9.14,1, você também pode usar o Gerenciador do sistema.
+
+
+
+== Gerencie regras de gerenciamento de ciclo de vida com a CLI
+
+A partir do ONTAP 9.13,1, você pode usar a CLI do ONTAP para criar regras de gerenciamento de ciclo de vida para expirar objetos nos buckets do S3.
+
+.Antes de começar
+Para a CLI, você precisa definir os campos obrigatórios para cada tipo de ação de expiração ao criar uma regra de gerenciamento do ciclo de vida do bucket. Esses campos podem ser modificados após a criação inicial. A tabela a seguir exibe os campos exclusivos para cada tipo de ação.
+
+[cols="30,70"]
+|===
+
+
+| Tipo de ação | Campos únicos 
+
+
+ a| 
+Não CurrentVersionExpiration
+ a| 
+* `-non-curr-days` - Número de dias após os quais as versões não atuais serão excluídas
+* `-new-non-curr-versions` - Número de versões não atuais mais recentes a reter
+
+
+
+
+ a| 
+Expiração
+ a| 
+* `-obj-age-days` - Número de dias desde a criação, após o qual a versão atual dos objetos pode ser excluída
+* `-obj-exp-date` - Data específica em que os objetos devem expirar
+* `-expired-obj-del-markers` - Limpar marcadores de exclusão de objeto
+
+
+
+
+ a| 
+AbortIncompleteMultipartUpload
+ a| 
+* `-after-initiation-days` - Número de dias de início, após o qual o upload pode ser abortado
+
+
+|===
+Para que a regra de gerenciamento do ciclo de vida do bucket seja aplicada somente a um subconjunto específico de objetos, os administradores devem definir cada filtro ao criar a regra. Se esses filtros não forem definidos ao criar a regra, a regra será aplicada a todos os objetos dentro do intervalo.
+
+Todos os filtros podem ser modificados após a criação inicial _exceto_ para o seguinte
+
+* `-prefix`
+* `-tags`
+* `-obj-size-greater-than`
+* `-obj-size-less-than`
+
+
+.Passos
+. Use o `vserver object-store-server bucket lifecycle-management-rule create` comando com campos obrigatórios para o seu tipo de ação de expiração para criar a regra de gerenciamento do ciclo de vida do bucket.
+
+
+.Exemplo
+O comando a seguir cria uma regra de gerenciamento do ciclo de vida do bucket NonCurrentVersionExpiration:
+
+[listing]
+----
+vserver object-store-server bucket lifecycle-management-rule create -vserver <svm_name> -bucket <bucket_name> -rule-id <rule_name> -action NonCurrentVersionExpiration -index <lifecycle_rule_index_integer> -is-enabled {true|false} -prefix <object_name> -tags <text> -obj-size-greater-than {<integer>[KB|MB|GB|TB|PB]} -obj-size-less-than {<integer>[KB|MB|GB|TB|PB]} -new-non-curr-versions <integer> -non-curr-days <integer>
+----
+.Exemplo
+O comando a seguir cria uma regra de gerenciamento do ciclo de vida do bucket Expiration:
+
+[listing]
+----
+vserver object-store-server bucket lifecycle-management-rule create -vserver <svm_name> -bucket <bucket_name> -rule-id <rule_name> -action Expiration -index <lifecycle_rule_index_integer> -is-enabled {true|false} -prefix <object_name> -tags <text> -obj-size-greater-than {<integer>[KB|MB|GB|TB|PB]} -obj-size-less-than {<integer>[KB|MB|GB|TB|PB]} -obj-age-days <integer> -obj-exp-date <"MM/DD/YYYY HH:MM:SS"> -expired-obj-del-marker {true|false}
+----
+.Exemplo
+O comando a seguir cria uma regra de gerenciamento do ciclo de vida do bucket do AbortIncompleteMultipartUpload:
+
+[listing]
+----
+vserver object-store-server bucket lifecycle-management-rule create -vserver <svm_name> -bucket <bucket_name> -rule-id <rule_name> -action AbortIncompleteMultipartUpload -index <lifecycle_rule_index_integer> -is-enabled {true|false} -prefix <object_name> -tags <text> -obj-size-greater-than {<integer>[KB|MB|GB|TB|PB]} -obj-size-less-than {<integer>[KB|MB|GB|TB|PB]} -after-initiation-days <integer>
+----
+
+
+== Gerencie regras de gerenciamento de ciclo de vida com o System Manager
+
+A partir do ONTAP 9.14,1, você pode expirar S3 objetos usando o Gerenciador de sistema. Você pode adicionar, editar e excluir regras de gerenciamento de ciclo de vida para seus objetos S3D. Além disso, você pode importar uma regra de ciclo de vida criada para um bucket e utilizá-la para os objetos em outro bucket. Você pode desativar uma regra ativa e ativá-la mais tarde.
+
+
+
+=== Adicionar uma regra de gerenciamento de ciclo de vida
+
+. Clique em *armazenamento > baldes*.
+. Selecione o intervalo para o qual você deseja especificar a regra de expiração.
+. Clique no image:icon_kabob.gif["Ícone de opções do menu"] ícone e selecione *Gerenciar regras de ciclo de vida*.
+. Clique em *Add > Lifecycle rule*.
+. Na página Adicionar uma regra de ciclo de vida, adicione o nome da regra.
+. Defina o escopo da regra, se você deseja que ela seja aplicada a todos os objetos no bucket ou em objetos específicos. Se você quiser especificar objetos, adicione pelo menos um dos seguintes critérios de filtro:
++
+.. Prefixo: Especifique um prefixo dos nomes das chaves do objeto aos quais a regra deve ser aplicada. Normalmente, é o caminho ou pasta do objeto. Você pode inserir um prefixo por regra. A menos que um prefixo válido seja fornecido, a regra se aplica a todos os objetos em um bucket.
+.. Tags: Especifique até três pares de chaves e valores (tags) para os objetos aos quais a regra deve ser aplicada. Somente chaves válidas são usadas para filtragem. O valor é opcional. No entanto, se você adicionar valores, certifique-se de adicionar apenas valores válidos para as chaves correspondentes.
+.. Tamanho: Você pode limitar o escopo entre os tamanhos mínimo e máximo dos objetos. Pode introduzir um ou ambos os valores. A unidade padrão é MIB.
+
+
+. Especifique a ação:
++
+.. *Expire a versão atual dos objetos*: Defina uma regra para tornar todos os objetos atuais permanentemente indisponíveis após um número específico de dias desde a sua criação ou em uma data específica. Esta opção não estará disponível se a opção *Excluir marcadores de exclusão de objetos expirados* estiver selecionada.
+.. *Excluir permanentemente versões não atuais*: Especifique o número de dias após os quais a versão se torna não atual e, posteriormente, pode ser excluído, e o número de versões a reter.
+.. *Excluir marcadores de exclusão de objetos expirados*: Selecione esta ação para excluir objetos com marcadores de exclusão expirados, ou seja, excluir marcadores sem um objeto atual associado.
++
+
+NOTE: Essa opção fica indisponível quando você seleciona a opção *expire a versão atual dos objetos* que exclui automaticamente todos os objetos após o período de retenção. Essa opção também fica indisponível quando tags de objeto são usadas para filtragem.
+
+.. *Excluir carregamentos de várias partes incompletos*: Defina o número de dias após os quais os uploads de várias partes incompletos serão excluídos. Se os uploads de várias partes que estão em andamento falharem dentro do período de retenção especificado, você poderá excluir os uploads de várias partes incompletos. Esta opção fica indisponível quando as tags de objeto são usadas para filtragem.
+.. Clique em *Salvar*.
+
+
+
+
+
+
+=== Importar uma regra de ciclo de vida
+
+. Clique em *armazenamento > baldes*.
+. Selecione o intervalo para o qual você deseja importar a regra de expiração.
+. Clique no image:icon_kabob.gif["Ícone de opções do menu"] ícone e selecione *Gerenciar regras de ciclo de vida*.
+. Clique em *Adicionar > Importar uma regra*.
+. Selecione o intervalo a partir do qual você deseja importar a regra. As regras de gerenciamento de ciclo de vida definidas para o bucket selecionado são exibidas.
+. Selecione a regra que pretende importar. Você tem a opção de selecionar uma regra de cada vez, sendo a seleção padrão a primeira regra.
+. Clique em *Importar*.
+
+
+
+
+=== Edite, exclua ou desative uma regra
+
+Você só pode editar as ações de gerenciamento de ciclo de vida associadas à regra. Se a regra foi filtrada com tags de objeto, as opções *Excluir marcadores de exclusão de objeto expirados* e *Excluir carregamentos de várias partes incompletos* não estarão disponíveis.
+
+Quando você exclui uma regra, essa regra não se aplicará mais a objetos associados anteriormente.
+
+. Clique em *armazenamento > baldes*.
+. Selecione o intervalo para o qual deseja editar, excluir ou desativar a regra de gerenciamento de ciclo de vida.
+. Clique no image:icon_kabob.gif["Ícone de opções do menu"] ícone e selecione *Gerenciar regras de ciclo de vida*.
+. Selecione a regra pretendida. Você pode editar e desativar uma regra de cada vez. Você pode excluir várias regras de uma só vez.
+. Selecione *Edit*, *Delete* ou *Disable* e conclua o procedimento.
+

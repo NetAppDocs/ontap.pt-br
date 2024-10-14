@@ -1,0 +1,62 @@
+---
+permalink: ndmp/configure-backup-user-cluster-task.html 
+sidebar: sidebar 
+keywords: configure, backup, user, cluster 
+summary: Para autenticar NDMP com escopo SVM a partir do aplicativo de backup, deve haver um usuário administrativo com Privileges suficiente e uma senha NDMP. 
+---
+= Ative um usuário de backup para autenticação NDMP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para autenticar NDMP com escopo SVM a partir do aplicativo de backup, deve haver um usuário administrativo com Privileges suficiente e uma senha NDMP.
+
+.Sobre esta tarefa
+Você deve gerar uma senha NDMP para usuários de administração de backup. É possível habilitar usuários de administração de backup no nível de cluster ou SVM e, se necessário, criar um novo usuário. Por padrão, os usuários com as seguintes funções podem se autenticar para backup NDMP:
+
+* Em todo o cluster: `admin` Ou `backup`
+* SVMs individuais: `vsadmin` Ou `vsadmin-backup`
+
+
+Se estiver a utilizar um utilizador NIS ou LDAP, o utilizador tem de existir no respetivo servidor. Você não pode usar um usuário do ative Directory.
+
+.Passos
+. Exibir os usuários e permissões de administrador atuais:
++
+`security login show`
+
+. Se necessário, crie um novo usuário de backup NDMP com o `security login create` comando e a função apropriada para o SVM Privileges individual ou em todo o cluster.
++
+Pode especificar um nome de utilizador de cópia de segurança local ou um nome de utilizador NIS ou LDAP para o `-user-or-group-name` parâmetro.
+
++
+O comando a seguir cria o usuário de backup `backup_admin1` com a `backup` função para todo o cluster:
+
++
+`cluster1::> security login create -user-or-group-name backup_admin1 -application ssh -authmethod password -role backup`
+
++
+O comando a seguir cria o usuário de `vsbackup_admin1` backup com a `vsadmin-backup` função de um SVM individual:
+
++
+`cluster1::> security login create -user-or-group-name vsbackup_admin1 -application ssh -authmethod password -role vsadmin-backup`
+
++
+Introduza uma palavra-passe para o novo utilizador e confirme.
+
+. Gere uma senha para o administrador SVM usando o `vserver services ndmp generate password` comando.
++
+A senha gerada deve ser usada para autenticar a conexão NDMP pelo aplicativo de backup.
+
++
+[listing]
+----
+cluster1::> vserver services ndmp generate-password -vserver cluster1 -user backup_admin1
+
+ Vserver: cluster1
+    User: backup_admin1
+Password: qG5CqQHYxw7tE57g
+----
+

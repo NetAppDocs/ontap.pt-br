@@ -1,0 +1,96 @@
+---
+sidebar: sidebar 
+permalink: task_nas_enable_linux_nfs.html 
+keywords: ontap, netapp, provision nas storage, linux, enable, nfs, modify storage VM, configure DNS, configure name server, configure Kerberos, configure TLS, TLS, NMFS over TLS 
+summary: Modifique as VMs de storage para habilitar servidores NFS para fornecer dados a clientes Linux. 
+---
+= Ative o storage nas para servidores Linux usando NFS
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Crie ou modifique VMs de storage para habilitar servidores NFS para fornecer dados a clientes Linux.
+
+Ative uma VM de storage nova ou existente para o protocolo NFS usando este procedimento.
+
+image:workflow_nas_enable_linux_nfs.png["Resumo do fluxo de trabalho: 1 Ativar a política de exportação vol de raiz aberta do NFS 2 3 Configurar DNS 4 Configurar serviços de nomes 5 Configurar a encriptação, se necessário"]
+
+.Antes de começar
+Certifique-se de que anotou os detalhes de configuração de qualquer rede, autenticação ou serviços de segurança necessários no seu ambiente.
+
+.Passos
+. Habilite o NFS em uma VM de storage.
++
+** Para novas VMs de armazenamento: Clique em *Storage > Storage VMs*, clique em *Add*, insira um nome de VM de armazenamento e, na guia *SMB/CIFS, NFS, S3*, selecione *Enable NFS*.
++
+... Confirme o idioma predefinido.
+... Adicione interfaces de rede.
+... Atualizar as informações da conta do administrador da VM de armazenamento (opcional).
+
+
+** Para VMs de armazenamento existentes: Clique em *Storage > Storage VMs*, selecione uma VM de armazenamento, clique em *Settings* e, em seguida, clique em image:icon_gear.gif["Ícone ações"]*NFS*.
+
+
+. Abra a política de exportação do volume raiz da VM de storage:
++
+.. Clique em *Storage > volumes*, selecione o volume raiz da VM de armazenamento (que por padrão é _volume-name_ _root) e, em seguida, clique na política exibida em *Export Policy*.
+.. Clique em *Add* para adicionar uma regra.
++
+*** Especificação do cliente `0.0.0.0/0`
+*** Protocolos de acesso: NFS
+*** Detalhes de acesso: UNIX Read-only
+
+
+
+
+. Configurar DNS para resolução de nome de host: Clique em *armazenamento > armazenamento de VMs*, selecione a VM de armazenamento, clique em *Configurações* e, em seguida, clique em image:icon_gear.gif["Ícone ações"]*DNS*.
+. Configure os serviços de nomes conforme necessário.
++
+.. Clique em *Storage > Storage VMs*, selecione a VM de armazenamento, clique em *Settings* e clique em for image:icon_gear.gif["Ícone ações"]LDAP ou NIS.
+.. Clique image:icon_pencil.gif["Ícone de edição"] no mosaico Name Services Switch para incluir quaisquer alterações.
+
+
+. Configure a encriptação, se necessário:
+
+
+[role="tabbed-block"]
+====
+.Configurar TLS para clientes NFS
+--
+
+NOTE: O NFS em TLS está disponível no ONTAP 9.15,1 como prévia pública. Como oferta de prévia, o NFS em TLS não é compatível com workloads de produção no ONTAP 9.15,1.
+
+.Passos
+. Consulte link:nfs-admin/tls-nfs-strong-security-concept.html["requisitos"^]o para NFS sobre TLS antes de começar.
+. Clique em *Storage > Storage VMs*, selecione a VM de armazenamento e clique em *Settings*.
+. No bloco *NFS*, clique em *NFS over TLS settings*.
+. Na área *NFS over TLS settings*, selecione uma interface de rede NFS para a qual deseja ativar o TLS.
+. Clique em image:icon_kabob.gif["Ícone de opções do menu"] para essa interface.
+. Clique em *Ativar*.
+. Na caixa de diálogo *Configuração TLS da interface de rede*, inclua um certificado para uso com TLS selecionando uma das seguintes opções:
++
+** *Certificado instalado*: Escolha um certificado previamente instalado na lista suspensa.
+** *Novo certificado*: Escolha um nome comum para o certificado.
+** *Certificado assinado por CA externo*: Siga as instruções para colar o conteúdo do seu certificado e chave privada nas caixas.
+
+
+. Clique em *Salvar*.
+
+
+--
+.Configurar Kerberos
+--
+.Passos
+. Clique em *Storage > Storage VMs*, selecione a VM de armazenamento e clique em *Settings*.
+. Clique image:icon_arrow.gif["Ícone de seta"]no mosaico Kerberos e, em seguida, clique em *Add*.
+
+
+--
+====

@@ -1,0 +1,125 @@
+---
+sidebar: sidebar 
+permalink: high-availability/ha_manual_takeover.html 
+keywords: ontap, high, availability, ha, pair, manual, takeover, moving, move, epislon, manually, initiated 
+summary: Você pode executar uma aquisição manualmente quando a manutenção for necessária no parceiro e em outras situações semelhantes. 
+---
+= Comandos de aquisição manual
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Você pode executar uma aquisição manualmente quando a manutenção for necessária no parceiro e em outras situações semelhantes. Dependendo do estado do parceiro, o comando que você usa para executar a aquisição varia.
+
+|===
+
+
+| Se você quiser... | Use este comando... 
+
+
+| Assuma o nó de parceiro | `storage failover takeover` 
+
+
+| Monitore o progresso da takeover à medida que os agregados do parceiro são movidos para o nó fazendo o takeover | `storage failover show‑takeover` 
+
+
+| Exibir o status de failover de storage para todos os nós no cluster | `storage failover show` 
+
+
+| Assuma o nó de parceiro sem migrar LIFs | `storage failover takeover ‑skip‑lif‑migration‑before‑takeover true` 
+
+
+| Assuma o nó do parceiro, mesmo que haja uma incompatibilidade de disco | `storage failover takeover ‑skip‑lif‑migration‑before‑takeover true` 
+
+
+| Assuma o nó do parceiro mesmo que haja uma incompatibilidade de versão do ONTAP *Observação:* essa opção só é usada durante o processo de atualização do ONTAP sem interrupções. | `storage failover takeover ‑option allow‑version‑mismatch` 
+
+
+| Assuma o nó de parceiro sem realizar a realocação de agregados | `storage failover takeover ‑bypass‑optimization true` 
+
+
+| Assuma o nó de parceiro antes que o parceiro tenha tempo para fechar seus recursos de storage com simplicidade | `storage failover takeover ‑option immediate` 
+|===
+[NOTE]
+====
+Antes de emitir o comando de failover de armazenamento com a opção imediata, você deve migrar as LIFs de dados para outro nó usando o seguinte comando: `network interface migrate-all -node _node_`
+
+Se você especificar o `storage failover takeover ‑option immediate` comando sem primeiro migrar as LIFs de dados, a migração de LIF de dados do nó será significativamente adiada mesmo que a `skip‑lif‑migration‑before‑takeover` opção não seja especificada.
+
+Da mesma forma, se você especificar a opção imediata, a otimização de aquisição negociada será ignorada mesmo que a opção de otimização de desvio esteja definida como _false_.
+
+====
+
+
+== Mover o epsilon para certas aquisições iniciadas manualmente
+
+Você deve mover o epsilon se esperar que qualquer aquisição iniciada manualmente possa resultar em uma falha inesperada de nó do sistema de armazenamento longe de uma perda de quorum em todo o cluster.
+
+.Sobre esta tarefa
+Para realizar a manutenção planejada, você precisa assumir o controle de um dos nós de um par de HA. O quorum em todo o cluster deve ser mantido para evitar interrupções não planejadas de dados do cliente para os nós restantes. Em alguns casos, executar o takeover pode resultar em um cluster que é uma falha inesperada de nó longe da perda de quorum em todo o cluster.
+
+Isso pode ocorrer se o nó que está sendo tomado contém epsilon ou se o nó com epsilon não estiver saudável. Para manter um cluster mais resiliente, é possível transferir o epsilon para um nó íntegro que não está sendo assumido. Normalmente, esse seria o parceiro de HA.
+
+Somente nós saudáveis e elegíveis participam da votação do quórum. Para manter o quórum em todo o cluster, são necessários mais de N/2 votos (onde _N_ representa a soma de nós on-line saudáveis e elegíveis). Em clusters com um número par de nós on-line, o epsilon adiciona peso de votação adicional para manter o quórum para o nó ao qual é atribuído.
+
+
+NOTE: Embora a votação de formação de cluster possa ser modificada usando o `cluster modify ‑eligibility false` comando, você deve evitar isso, exceto para situações como restaurar a configuração do nó ou manutenção prolongada do nó. Se você definir um nó como inelegível, ele deixará de fornecer dados SAN até que o nó seja redefinido para elegível e reinicializado. O acesso a dados nas ao nó também pode ser afetado quando o nó não é elegível.
+
+.Passos
+. Verifique o estado do cluster e confirme se o epsilon é retido por um nó saudável que não está sendo assumido:
++
+.. Mude para o nível de privilégio avançado, confirmando que deseja continuar quando o prompt do modo avançado for exibido (*>):
++
+`set -privilege advanced`
+
+.. Determine qual nó contém o epsilon:
++
+`cluster show`
+
++
+No exemplo a seguir, Node1 contém epsilon:
+
++
+|===
+
+
+| Nó | Saúde | Elegibilidade | Epsilon 
+
+
+ a| 
+Node1 Node2
+ a| 
+verdadeiro
+ a| 
+verdadeiro
+ a| 
+verdadeiro falso
+
+|===
++
+Se o nó que você deseja assumir não tiver o epsilon, avance para o passo 4.
+
+
+
+. Remova o epsilon do nó que você deseja assumir:
++
+`cluster modify -node Node1 -epsilon false`
+
+. Atribua o epsilon ao nó do parceiro (neste exemplo, Node2):
++
+`cluster modify -node Node2 -epsilon true`
+
+. Realize a operação de aquisição:
++
+`storage failover takeover -ofnode _node_name_`
+
+. Voltar ao nível de privilégio de administrador:
++
+`set -privilege admin`
+
+

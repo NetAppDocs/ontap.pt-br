@@ -1,0 +1,42 @@
+---
+permalink: volumes/configure-automatic-grow-shrink-size-task.html 
+sidebar: sidebar 
+keywords: configure, volumes, automatically, grow, shrink, size, automatic, space 
+summary: Você pode configurar os volumes do FlexVol para aumentar e diminuir automaticamente de acordo com a quantidade de espaço que eles atualmente exigem. 
+---
+= Configure volumes para aumentar e diminuir automaticamente o tamanho
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode configurar os volumes do FlexVol para aumentar e diminuir automaticamente de acordo com a quantidade de espaço que eles atualmente exigem. O crescimento automático ajuda a evitar que um volume fique sem espaço, se o agregado puder fornecer mais espaço. O encolhimento automático impede que um volume seja maior do que o necessário, liberando espaço no agregado para uso por outros volumes.
+
+.Sobre esta tarefa
+O Autoshink só pode ser usado em combinação com o crescimento automático para atender às demandas de espaço em constante mudança e não está disponível sozinho. Quando a opção Autoshink está ativada, o ONTAP gerencia automaticamente o comportamento de encolhimento de um volume para evitar um ciclo infinito de ações com crescimento automático e com redução automática.
+
+À medida que um volume aumenta, o número máximo de arquivos que ele pode conter pode ser aumentado automaticamente. Quando um volume é reduzido, o número máximo de arquivos que ele pode conter permanece inalterado e um volume não pode ser encolhido automaticamente abaixo do tamanho que corresponde ao número máximo de arquivos atual. Por esse motivo, pode não ser possível reduzir automaticamente um volume até o tamanho original.
+
+Por padrão, o tamanho máximo para o qual um volume pode crescer é de 120% do tamanho no qual o crescimento automático é ativado. Se você precisar garantir que o volume pode crescer para ser maior do que isso, você deve definir o tamanho máximo para o volume de acordo.
+
+.Antes de começar
+O FlexVol volume deve estar online.
+
+.Passo
+. Configure o volume para crescer e diminuir seu tamanho automaticamente:
++
+`volume autosize -vserver _SVM_name_ -volume _volume_name_ -mode grow_shrink`
+
++
+O comando a seguir habilita alterações automáticas de tamanho para um volume chamado test2. O volume é configurado para começar a diminuir quando está 60% cheio. Os valores padrão são usados para quando começará a crescer e seu tamanho máximo.
+
++
+[listing]
+----
+cluster1::> volume autosize -vserver vs2 test2 -shrink-threshold-percent 60
+vol autosize: Flexible volume "vs2:test2" autosize settings UPDATED.
+
+Volume modify successful on volume: test2
+----
+

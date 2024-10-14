@@ -1,0 +1,72 @@
+---
+permalink: encryption-at-rest/enable-cluster-fips-compliant-mode-task.html 
+sidebar: sidebar 
+keywords: enabling, cluster-wide, fips-compliant mode, kmip, server, connections 
+summary: Você pode usar o comando security config Modify com a opção -is-fips-enabled para habilitar o modo compatível com FIPS em todo o cluster para dados em trânsito. Isso força o cluster a usar o OpenSSL no modo FIPS ao se conetar a servidores KMIP. 
+---
+= Habilite o modo compatível com FIPS em todo o cluster para conexões de servidor KMIP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `security config modify` comando com a -`is-fips-enabled` opção de ativar o modo compatível com FIPS em todo o cluster para dados em trânsito. Isso força o cluster a usar o OpenSSL no modo FIPS ao se conetar a servidores KMIP.
+
+.Sobre esta tarefa
+Quando você ativa o modo compatível com FIPS em todo o cluster, o cluster usará automaticamente somente pacotes de codificação validados por FIPS e TLS1,2. O modo compatível com FIPS em todo o cluster está desativado por padrão.
+
+Você deve reinicializar os nós de cluster manualmente após modificar a configuração de segurança em todo o cluster.
+
+.Antes de começar
+* O controlador de storage deve ser configurado no modo compatível com FIPS.
+* Todos os servidores KMIP precisam oferecer suporte a TLSv1,2. O sistema requer o TLSv1,2 para concluir a conexão com o servidor KMIP quando o modo compatível com FIPS em todo o cluster estiver ativado.
+
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+`set -privilege advanced`
+
+. Verifique se o TLSv1,2 é suportado:
++
+`security config show -supported-protocols`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+[listing]
+----
+cluster1::> security config show
+          Cluster                                              Cluster Security
+Interface FIPS Mode  Supported Protocols     Supported Ciphers Config Ready
+--------- ---------- ----------------------- ----------------- ----------------
+SSL       false      TLSv1.2, TLSv1.1, TLSv1 ALL:!LOW:         yes
+                                             !aNULL:!EXP:
+                                             !eNULL
+----
+. Ativar o modo compatível com FIPS em todo o cluster:
++
+`security config modify -is-fips-enabled true -interface SSL`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
+. Reinicializar os nós de cluster manualmente.
+. Verifique se o modo compatível com FIPS em todo o cluster está ativado:
++
+`security config show`
+
++
+[listing]
+----
+cluster1::> security config show
+          Cluster                                              Cluster Security
+Interface FIPS Mode  Supported Protocols     Supported Ciphers Config Ready
+--------- ---------- ----------------------- ----------------- ----------------
+SSL       true       TLSv1.2, TLSv1.1        ALL:!LOW:         yes
+                                             !aNULL:!EXP:
+                                             !eNULL:!RC4
+----
+

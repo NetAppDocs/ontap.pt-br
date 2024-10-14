@@ -1,0 +1,246 @@
+---
+sidebar: sidebar 
+permalink: networking/configure_ip_security_@ipsec@_over_wire_encryption.html 
+keywords: ipsec, security, internet protocol, on wire, in transit, encrypt, encryption, secure, enable ipsec, security ipsec config show, ipsec config modify, ipsec config show, security ipsec policy create, protocols, local-ports, remote-ports, spd, security policy database,ipsec identities 
+summary: Para garantir que os dados estejam continuamente seguros e criptografados, mesmo enquanto estiverem em trânsito, o ONTAP usa o protocolo IPsec no modo de transporte 
+---
+= Configurar a segurança IP (IPsec) através da criptografia por fio
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+O ONTAP usa a segurança do protocolo de Internet (IPsec) no modo de transporte para garantir que os dados estejam continuamente seguros e criptografados, mesmo em trânsito. O IPsec oferece criptografia de dados para todo o tráfego IP, incluindo os protocolos NFS, iSCSI e SMB.
+
+A partir do ONTAP 9.12,1, o suporte a IPsec do protocolo de host front-end está disponível nas configurações de conexão de malha MetroCluster IP e MetroCluster. O suporte a IPsec em clusters MetroCluster é limitado ao tráfego de host front-end e não é compatível com LIFs MetroCluster.
+
+A partir do ONTAP 9.10,1, você pode usar chaves pré-compartilhadas (PSKs) ou certificados para autenticação com IPsec. Anteriormente, apenas PSKs eram suportados com IPsec.
+
+A partir do ONTAP 9.9,1, os algoritmos de criptografia usados pelo IPsec são validados pelo FIPS 140-2. Os algoritmos são gerados pelo módulo criptográfico NetApp no ONTAP, que carrega a validação FIPS 140-2.
+
+A partir do ONTAP 9.8, o ONTAP suporta IPsec no modo de transporte.
+
+Depois que o IPsec é configurado, o tráfego de rede entre o cliente e o ONTAP é protegido com medidas preventivas para combater ataques de repetição e man-in-the-middle (MITM).
+
+Para criptografia de tráfego de peering de cluster e NetApp SnapMirror, criptografia de peering de cluster (CPE), a segurança da camada de transporte (TLS) ainda é recomendada pelo IPsec para o trânsito seguro por cabo. Isso ocorre porque o TLS tem melhor desempenho do que o IPsec.
+
+Enquanto o recurso IPsec está ativado no cluster, a rede requer uma entrada SPD (Security Policy Database) para corresponder ao tráfego a ser protegido e especificar detalhes de proteção (como conjunto de codificações e método de autenticação) antes que o tráfego possa fluir. Uma entrada SPD correspondente também é necessária em cada cliente.
+
+
+
+== Ative o IPsec no cluster
+
+Você pode habilitar o IPsec no cluster para garantir que os dados estejam continuamente seguros e criptografados, mesmo em trânsito.
+
+.Passos
+. Descubra se o IPsec já está habilitado:
++
+`security ipsec config show`
+
++
+Se o resultado incluir `IPsec Enabled: false`, avance para o passo seguinte.
+
+. Ativar IPsec:
++
+`security ipsec config modify -is-enabled true`
+
+. Execute o comando Discovery novamente:
++
+`security ipsec config show`
+
++
+O resultado agora `IPsec Enabled: true`inclui .
+
+
+
+
+
+== Prepare-se para a criação de diretiva IPsec com autenticação de certificado
+
+Você pode ignorar esta etapa se estiver usando apenas chaves pré-compartilhadas (PSKs) para autenticação e não usar autenticação de certificado.
+
+Antes de criar uma diretiva IPsec que usa certificados para autenticação, você deve verificar se os seguintes pré-requisitos são atendidos:
+
+* Tanto o ONTAP quanto o cliente devem ter o certificado CA da outra parte instalado para que os certificados da entidade final (ONTAP ou cliente) sejam verificáveis por ambos os lados
+* Um certificado é instalado para o ONTAP LIF que participa da política
+
+
+
+NOTE: ONTAP LIFs podem compartilhar certificados. Não é necessário um mapeamento individual entre certificados e LIFs.
+
+.Passos
+. Instale todos os certificados de CA usados durante a autenticação mútua, incluindo CAs do lado do ONTAP e do lado do cliente, no gerenciamento de certificados do ONTAP, a menos que ele já esteja instalado (como é o caso de uma CA raiz autoassinada do ONTAP).
++
+* Exemplo de comando*
+`cluster::> security certificate install -vserver svm_name -type server-ca -cert-name my_ca_cert`
+
+. Para garantir que a CA instalada esteja dentro do caminho de pesquisa da CA IPsec durante a autenticação, adicione as CAs de gerenciamento de certificados ONTAP ao módulo IPsec usando o `security ipsec ca-certificate add` comando.
++
+* Exemplo de comando*
+`cluster::> security ipsec ca-certificate add -vserver svm_name -ca-certs my_ca_cert`
+
+. Crie e instale um certificado para uso pelo ONTAP LIF. A CA do emissor deste certificado já deve ser instalada no ONTAP e adicionada ao IPsec.
++
+* Exemplo de comando*
+`cluster::> security certificate install -vserver svm_name -type server -cert-name my_nfs_server_cert`
+
+
+
+Para obter mais informações sobre certificados no ONTAP, consulte os comandos do certificado de segurança na documentação do ONTAP 9 .
+
+
+
+== Definir o banco de dados de políticas de segurança (SPD)
+
+O IPsec requer uma entrada SPD antes de permitir que o tráfego flua na rede. Isso é verdade se você estiver usando um PSK ou um certificado para autenticação.
+
+.Passos
+. Use o `security ipsec policy create` comando para:
++
+.. Selecione o endereço IP do ONTAP ou a sub-rede de endereços IP para participar do transporte IPsec.
+.. Selecione os endereços IP do cliente que se conetarão aos endereços IP do ONTAP.
++
+
+NOTE: O cliente deve suportar o Internet Key Exchange versão 2 (IKEv2) com uma chave pré-compartilhada (PSK).
+
+.. Opcional. Selecione os parâmetros de tráfego detalhados, como os protocolos da camada superior (UDP, TCP, ICMP, etc. ), os números de porta local e os números de porta remota para proteger o tráfego. Os parâmetros correspondentes são `protocols`, `local-ports` e `remote-ports` respetivamente.
++
+Ignore esta etapa para proteger todo o tráfego entre o endereço IP do ONTAP e o endereço IP do cliente. Proteger todo o tráfego é o padrão.
+
+.. Insira PSK ou infra-estrutura de chave pública (PKI) para `auth-method` o parâmetro para o método de autenticação desejado.
++
+... Se você inserir um PSK, inclua os parâmetros e pressione <enter> para que o prompt digite e verifique a chave pré-compartilhada.
++
+
+NOTE: `local-identity` E `remote-identity` os parâmetros são opcionais se o host e o cliente usarem strongSwan e nenhuma política de curinga for selecionada para o host ou cliente.
+
+... Se introduzir uma PKI, terá de introduzir também os `cert-name` `local-identity` parâmetros , . `remote-identity` Se a identidade do certificado do lado remoto for desconhecida ou se forem esperadas várias identidades de cliente, insira a identidade `ANYTHING`especial .
+
+
+
+
+
+
+....
+security ipsec policy create -vserver vs1 -name test34 -local-ip-subnets 192.168.134.34/32 -remote-ip-subnets 192.168.134.44/32
+Enter the preshared key for IPsec Policy _test34_ on Vserver _vs1_:
+....
+....
+security ipsec policy create -vserver vs1 -name test34 -local-ip-subnets 192.168.134.34/32 -remote-ip-subnets 192.168.134.44/32 -local-ports 2049 -protocols tcp -auth-method PKI -cert-name my_nfs_server_cert -local-identity CN=netapp.ipsec.lif1.vs0 -remote-identity ANYTHING
+....
+O tráfego IP não pode fluir entre o cliente e o servidor até que o ONTAP e o cliente tenham configurado as diretivas IPsec correspondentes e as credenciais de autenticação (PSK ou certificado) estejam no lugar em ambos os lados. Para obter detalhes, consulte a configuração IPsec do lado do cliente.
+
+
+
+== Use identidades IPsec
+
+Para o método de autenticação de chave pré-compartilhada, identidades locais e remotas são opcionais se o host e o cliente usarem strongSwan e nenhuma política de curinga for selecionada para o host ou cliente.
+
+Para o método de autenticação PKI/certificado, as identidades locais e remotas são obrigatórias. As identidades especificam qual identidade é certificada no certificado de cada lado e são usadas no processo de verificação. Se a identidade remota for desconhecida ou se puder ser muitas identidades diferentes, use a identidade `ANYTHING`especial .
+
+.Sobre esta tarefa
+Dentro do ONTAP, as identidades são especificadas modificando a entrada SPD ou durante a criação da política SPD. O SPD pode ser um endereço IP ou um nome de identidade de formato de cadeia de carateres.
+
+.Passo
+Para modificar uma configuração de identidade SPD existente, use o seguinte comando:
+
+`security ipsec policy modify`
+
+.Exemplo de comando
+`security ipsec policy modify -vserver _vs1_ -name _test34_ -local-identity _192.168.134.34_ -remote-identity _client.fooboo.com_`
+
+
+
+== Configuração de vários clientes IPsec
+
+Quando um pequeno número de clientes precisa aproveitar o IPsec, usar uma única entrada SPD para cada cliente é suficiente. No entanto, quando centenas ou mesmo milhares de clientes precisam utilizar o IPsec, o NetApp recomenda o uso de uma configuração de vários clientes IPsec.
+
+.Sobre esta tarefa
+O ONTAP é compatível com a conexão de vários clientes em várias redes a um único endereço IP SVM com IPsec ativado. Você pode fazer isso usando um dos seguintes métodos:
+
+* *Configuração de sub-rede*
++
+Para permitir que todos os clientes em uma sub-rede específica (por exemplo, 192.168.134.0/24) se conetem a um único endereço IP SVM usando uma única entrada de política SPD, você deve especificar o `remote-ip-subnets` formulário de sub-rede in. Além disso, você deve especificar o `remote-identity` campo com a identidade do lado do cliente correta.
+
+
+
+
+NOTE: Ao usar uma única entrada de diretiva em uma configuração de sub-rede, os clientes IPsec nessa sub-rede compartilham a identidade IPsec e a chave pré-compartilhada (PSK). No entanto, isso não é verdade com a autenticação de certificado. Ao usar certificados, cada cliente pode usar seu próprio certificado exclusivo ou um certificado compartilhado para autenticar. O IPsec do ONTAP verifica a validade do certificado com base nas CAs instaladas em seu armazenamento de confiança local. O ONTAP também suporta verificação de lista de revogação de certificados (CRL).
+
+* *Permitir a configuração de todos os clientes*
++
+Para permitir que qualquer cliente, independentemente do endereço IP de origem, se conete ao endereço IP habilitado para IPsec SVM, use o `0.0.0.0/0` caractere curinga ao especificar o `remote-ip-subnets` campo.
+
++
+Além disso, você deve especificar o `remote-identity` campo com a identidade do lado do cliente correta. Para autenticação de certificado, pode introduzir `ANYTHING`.
+
++
+Além disso, quando o `0.0.0.0/0` caractere curinga é usado, você deve configurar um número de porta local ou remota específico para usar. Por exemplo, `NFS port 2049`.
+
++
+.Passos
+.. Use um dos comandos a seguir para configurar o IPsec para vários clientes.
++
+... Se você estiver usando *configuração de sub-rede* para oferecer suporte a vários clientes IPsec:
++
+`security ipsec policy create -vserver _vserver_name_ -name _policy_name_ -local-ip-subnets _IPsec_IP_address/32_ -remote-ip-subnets _IP_address/subnet_ -local-identity _local_id_ -remote-identity _remote_id_`
+
++
+.Exemplo de comando
+`security ipsec policy create -vserver _vs1_ -name _subnet134_ -local-ip-subnets _192.168.134.34/32_ -remote-ip-subnets _192.168.134.0/24_ -local-identity _ontap_side_identity_ -remote-identity _client_side_identity_`
+
+... Se você estiver usando *permitir que a configuração de todos os clientes* ofereça suporte a vários clientes IPsec:
++
+`security ipsec policy create -vserver _vserver_name_ -name _policy_name_ -local-ip-subnets _IPsec_IP_address/32_ -remote-ip-subnets _0.0.0.0/0_ -local-ports _port_number_ -local-identity _local_id_ -remote-identity _remote_id_`
+
++
+.Exemplo de comando
+`security ipsec policy create -vserver _vs1_ -name _test35_ -local-ip-subnets _IPsec_IP_address/32_ -remote-ip-subnets _0.0.0.0/0_ -local-ports _2049_ -local-identity _ontap_side_identity_ -remote-identity _client_side_identity_`
+
+
+
+
+
+
+
+
+
+== Estatísticas IPsec
+
+Por meio da negociação, um canal de segurança chamado Associação de Segurança IKE (SA) pode ser estabelecido entre o endereço IP do ONTAP SVM e o endereço IP do cliente. As SAS IPsec são instaladas em ambos os endpoints para fazer o trabalho real de criptografia e descriptografia de dados.
+
+Você pode usar comandos de estatísticas para verificar o status de SAS IPsec e SAS IKE.
+
+.Comandos de exemplo
+Comando de exemplo IKE SA:
+
+`security ipsec show-ikesa -node _hosting_node_name_for_svm_ip_`
+
+Comando e saída de amostra IPsec SA:
+
+`security ipsec show-ipsecsa -node _hosting_node_name_for_svm_ip_`
+
+....
+cluster1::> security ipsec show-ikesa -node cluster1-node1
+            Policy Local           Remote
+Vserver     Name   Address         Address         Initator-SPI     State
+----------- ------ --------------- --------------- ---------------- -----------
+vs1         test34
+                   192.168.134.34  192.168.134.44  c764f9ee020cec69 ESTABLISHED
+....
+Comando e saída de amostra IPsec SA:
+
+....
+security ipsec show-ipsecsa -node hosting_node_name_for_svm_ip
+
+cluster1::> security ipsec show-ipsecsa -node cluster1-node1
+            Policy  Local           Remote          Inbound  Outbound
+Vserver     Name    Address         Address         SPI      SPI      State
+----------- ------- --------------- --------------- -------- -------- ---------
+vs1         test34
+                    192.168.134.34  192.168.134.44  c4c5b3d6 c2515559 INSTALLED
+....

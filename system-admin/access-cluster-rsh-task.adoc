@@ -1,0 +1,115 @@
+---
+permalink: system-admin/access-cluster-rsh-task.html 
+sidebar: sidebar 
+keywords: access, cluster, rsh, cluster, administrative, task, secure, protocol, service, policy, lif, firewall, role 
+summary: Você pode emitir solicitações RSH ao cluster para executar tarefas administrativas. O RSH não é um protocolo seguro e está desativado por padrão. 
+---
+= Aceda ao cluster utilizando o RSH
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode emitir solicitações RSH ao cluster para executar tarefas administrativas. O RSH não é um protocolo seguro e está desativado por padrão.
+
+Telnet e RSH não são protocolos seguros; você deve considerar o uso de SSH para acessar o cluster. O SSH fornece um shell remoto seguro e sessão de rede interativa. Para obter mais informações, link:./access-cluster-ssh-task.html["Acesse o cluster usando SSH"]consulte .
+
+.Antes de começar
+As seguintes condições devem ser cumpridas antes de poder utilizar o RSH para aceder ao cluster:
+
+* Tem de ter uma conta de utilizador local de cluster configurada para utilizar o RSH como método de acesso.
++
+O `-application` parâmetro dos `security login` comandos especifica o método de acesso para uma conta de usuário. Para obter mais informações, consulte as `security login` páginas de manual.
+
+
+
+.Sobre esta tarefa
+* O ONTAP suporta um máximo de 50 sessões de RSH simultâneas por nó.
++
+Se o LIF de gerenciamento de cluster reside no nó, ele compartilha esse limite com o LIF de gerenciamento de nós.
+
++
+Se a taxa de conexões de entrada for superior a 10 por segundo, o serviço será temporariamente desativado por 60 segundos.
+
+* Os comandos RSH requerem Privileges avançado.
+
+
+[role="tabbed-block"]
+====
+.ONTAP 9 .6 ou posterior
+--
+.Passos
+. Confirme se o protocolo de segurança RSH está ativado:
++
+`security protocol show`
+
++
+.. Se o protocolo de segurança RSH estiver ativado, avance para o passo seguinte.
+.. Se o protocolo de segurança RSH não estiver ativado, utilize o seguinte comando para o ativar:
++
+`security protocol modify -application rsh -enabled true`
+
+
+
+. Confirme se o `management-rsh-server` serviço existe nas LIFs de gerenciamento:
++
+`network interface show -services management-rsh-server`
+
++
+.. Se o `management-rsh-server` serviço existir, avance para o passo seguinte.
+.. Se o `management-rsh-server` serviço não existir, use o seguinte comando para adicioná-lo:
++
+`network interface service-policy add-service -vserver cluster1 -policy default-management -service management-rsh-server`
+
+
+
+
+
+--
+.ONTAP 9 .5 ou anterior
+--
+.Antes de começar
+As seguintes condições devem ser cumpridas antes de poder utilizar o RSH para aceder ao cluster:
+
+* O RSH já deve estar habilitado na política de firewall de gerenciamento que é usada pelos LIFs de gerenciamento de cluster ou nó para que as solicitações RSH possam passar pelo firewall.
++
+Por predefinição, o RSH está desativado. O comando show de política de firewall de serviços do sistema com o `-service rsh` parâmetro exibe se o RSH foi ativado em uma política de firewall. Para obter mais informações, consulte as `system services firewall policy` páginas de manual.
+
+* Se você usar conexões IPv6, o IPv6 já deve estar configurado e habilitado no cluster e as políticas de firewall já devem ser configuradas com endereços IPv6.
++
+O `network options ipv6 show` comando exibe se o IPv6 está ativado. O `system services firewall policy show` comando exibe políticas de firewall.
+
+
+
+.Passos
+. Em um host de administração, digite o seguinte comando:
++
+`rsh hostname_or_IP -l username:passwordcommand`
+
++
+`hostname_or_IP` É o nome do host ou o endereço IP do LIF de gerenciamento de cluster ou um LIF de gerenciamento de nós. Recomenda-se a utilização do LIF de gestão de clusters. Você pode usar um endereço IPv4 ou IPv6.
+
++
+`command` É o comando que você deseja executar sobre RSH.
+
+
+
+--
+====
+.Exemplo de uma solicitação RSH
+O exemplo a seguir mostra como o usuário chamado "joe", que foi configurado com RSH Access, pode emitir uma solicitação RSH para executar o `cluster show` comando:
+
+[listing]
+----
+
+admin_host$ rsh 10.72.137.28 -l joe:password cluster show
+
+Node                  Health  Eligibility
+--------------------- ------- ------------
+node1                 true    true
+node2                 true    true
+2 entries were displayed.
+
+admin_host$
+----

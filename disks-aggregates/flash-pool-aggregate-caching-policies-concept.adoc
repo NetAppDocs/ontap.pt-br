@@ -1,0 +1,34 @@
+---
+permalink: disks-aggregates/flash-pool-aggregate-caching-policies-concept.html 
+sidebar: sidebar 
+keywords: cache, flash pool, policy, local tier, aggregate 
+summary: 'Políticas de armazenamento em cache são aplicadas a volumes que residem em camadas locais (agregados) do Flash Pool. Você deve entender como as políticas de armazenamento em cache funcionam antes de alterá-las.' 
+---
+= Políticas de armazenamento em cache de camada local (agregado) do Flash Pool
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+As políticas de armazenamento em cache para os volumes em uma camada local do Flash Pool (agregado) permitem que você implante o Flash como um cache de alta performance para seu conjunto de dados em trabalho, ao mesmo tempo em que usa HDDs de baixo custo para dados acessados com menos frequência. Se você estiver fornecendo cache para duas ou mais camadas locais do Flash Pool, use o particionamento SSD do Flash Pool para compartilhar SSDs entre as camadas locais no Flash Pool.
+
+As políticas de armazenamento em cache são aplicadas a volumes que residem nas camadas locais do Flash Pool. Você deve entender como as políticas de armazenamento em cache funcionam antes de alterá-las.
+
+Na maioria dos casos, a política de cache padrão de "'auto'" é a melhor política de armazenamento em cache a ser usada. A política de armazenamento em cache só deve ser alterada se uma política diferente fornecer melhor performance para seu workload. A configuração da política de armazenamento em cache errada pode degradar gravemente o desempenho do volume; a degradação do desempenho pode aumentar gradualmente ao longo do tempo.
+
+As políticas de armazenamento em cache combinam uma política de armazenamento em cache de leitura e uma política de armazenamento em cache de gravação. O nome da política concatena os nomes da política de armazenamento em cache de leitura e da política de armazenamento em cache de escrita, separados por um hífen. Se não houver nenhum hífen no nome da política, a política de cache de gravação é "nenhum", exceto para a política "auto".
+
+As políticas de armazenamento em cache para leitura otimizam para a performance de leitura futura, colocando uma cópia dos dados no cache, além dos dados armazenados em HDDs. Para políticas de cache de leitura que inserem dados no cache para operações de gravação, o cache opera como um cache _write-through_.
+
+Os dados inseridos no cache usando a política de armazenamento em cache de gravação só existem no cache; não há cópia em HDDs. O cache do Flash Pool está protegido por RAID. A ativação do armazenamento em cache de gravação torna os dados das operações de gravação disponíveis para leituras do cache imediatamente, ao mesmo tempo em que atrasa a gravação dos dados em HDDs até que eles fiquem fora do cache.
+
+Se você mover um volume de um nível local do Flash Pool para um nível local de nível único, ele perderá sua política de armazenamento em cache; se você mais tarde movê-lo de volta para um nível local do Flash Pool, será atribuída a política de armazenamento em cache padrão de "'auto". Se você mover um volume entre dois níveis local do Flash Pool, a política de armazenamento em cache será preservada.
+
+
+
+== Alterar uma política de armazenamento em cache
+
+Você pode usar a CLI para alterar a política de armazenamento em cache de um volume que reside em um nível local do Flash Pool usando o `-caching-policy` parâmetro com o `volume create` comando.
+
+Quando você cria um volume em um nível local do Flash Pool, por padrão, a política de armazenamento em cache ""automático"" é atribuída ao volume.

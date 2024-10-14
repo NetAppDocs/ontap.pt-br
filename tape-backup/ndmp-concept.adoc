@@ -1,0 +1,57 @@
+---
+permalink: tape-backup/ndmp-concept.html 
+sidebar: sidebar 
+keywords: ncmp, considerations, using, service, storage, system 
+summary: Você precisa levar em conta várias considerações ao iniciar o serviço NDMP no sistema de storage. 
+---
+= Considerações ao usar NDMP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você precisa levar em conta várias considerações ao iniciar o serviço NDMP no sistema de storage.
+
+* Cada nó dá suporte a um máximo de 16 backups, restaurações ou combinações simultâneos dos dois usando unidades de fita conetadas.
+* Os serviços NDMP podem gerar dados do histórico de arquivos a pedido de aplicativos de backup NDMP.
++
+O histórico de arquivos é usado por aplicativos de backup para permitir a recuperação otimizada de subconjuntos de dados selecionados de uma imagem de backup. A geração e o processamento do histórico de arquivos podem consumir muito tempo e uso intenso de CPU para o sistema de storage e para o aplicativo de backup.
+
++
+[NOTE]
+====
+SMTape não suporta histórico de arquivos.
+
+====
++
+Se sua proteção de dados estiver configurada para recuperação de desastres - onde toda a imagem de backup será recuperada - você pode desativar a geração do histórico de arquivos para reduzir o tempo de backup. Consulte a documentação do aplicativo de backup para determinar se é possível desativar a geração do histórico de arquivos NDMP.
+
+* A política de firewall para NDMP é ativada por padrão em todos os tipos de LIF.
+* No modo NDMP com escopo de nó, o backup de um FlexVol volume requer que você use o aplicativo de backup para iniciar um backup em um nó que possua o volume.
++
+No entanto, não é possível fazer backup de um volume raiz de nó.
+
+* Você pode executar backup NDMP de qualquer LIF conforme permitido pelas políticas de firewall.
++
+Se você usar um LIF de dados, deverá selecionar um LIF que não esteja configurado para failover. Se um LIF de dados falhar durante uma operação NDMP, a operação NDMP falhará e deverá ser executada novamente.
+
+* No modo NDMP com escopo de nó e no modo NDMP com escopo de máquina virtual de armazenamento (SVM) sem suporte de extensão DE CAB, a conexão de dados NDMP usa o mesmo LIF da conexão de controle NDMP.
+* Durante a migração de LIF, as operações de backup e restauração contínuas são interrompidas.
++
+Você deve iniciar as operações de backup e restauração após a migração de LIF.
+
+* O caminho de backup NDMP é do formato `_/vserver_name/volume_name/path_name_`.
++
+`_path_name_` É opcional e especifica o caminho do diretório, arquivo ou cópia Snapshot.
+
+* Quando um destino SnapMirror é feito backup em fita usando o mecanismo de despejo, apenas os dados no volume são copiados.
++
+No entanto, se um destino SnapMirror for feito backup em fita usando SMTape, os metadados também serão copiados. As relações do SnapMirror e os metadados associados não são copiados para a fita. Portanto, durante a restauração, apenas os dados nesse volume são restaurados, mas as relações SnapMirror associadas não são restauradas.
+
+
+
+.Informações relacionadas
+xref:cluster-aware-backup-extension-concept.adoc[O que a extensão Cluster Aware Backup faz]
+
+link:../system-admin/index.html["Administração do sistema"]

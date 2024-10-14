@@ -1,0 +1,56 @@
+---
+permalink: system-admin/configure-discovery-cluster-management-switches-task.html 
+sidebar: sidebar 
+keywords: configuring, discovery, cluster, management, network, switches, cisco, discovery, protocol, cdp, switch, health 
+summary: 'O monitor de integridade do switch de cluster tenta automaticamente descobrir os switches de rede de gerenciamento e cluster usando o Protocolo de detecção de Cisco (CDP). Você deve configurar o monitor de integridade se ele não conseguir descobrir automaticamente um switch ou se você não quiser usar o CDP para deteção automática.' 
+---
+= Configurar a descoberta de switches de rede de gerenciamento e cluster
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O monitor de integridade do switch de cluster tenta automaticamente descobrir os switches de rede de gerenciamento e cluster usando o Protocolo de detecção de Cisco (CDP). Você deve configurar o monitor de integridade se ele não conseguir descobrir automaticamente um switch ou se você não quiser usar o CDP para deteção automática.
+
+.Sobre esta tarefa
+O `system cluster-switch show` comando lista os switches que o monitor de integridade descobriu. Se você não vir um switch que você esperava ver nessa lista, o monitor de integridade não poderá descobri-lo automaticamente.
+
+.Passos
+. Se você quiser usar o CDP para deteção automática, faça o seguinte:
++
+.. Certifique-se de que o Protocolo de detecção de Cisco (CDP) está ativado nos seus comutadores.
++
+Consulte a documentação do switch para obter instruções.
+
+.. Execute o seguinte comando em cada nó no cluster para verificar se o CDP está ativado ou desativado:
++
+`*run -node _node_name_ -command options cdpd.enable*`
+
++
+Se o CDP estiver ativado, passe à operação d. se o CDP estiver desativado, passe à operação c.
+
+.. Execute o seguinte comando para ativar o CDP:
++
+`*run -node _node_name_ -command options cdpd.enable on*`
+
++
+Aguarde cinco minutos antes de ir para o próximo passo.
+
+.. Use o `system cluster-switch show` comando para verificar se o ONTAP agora pode descobrir automaticamente os switches.
+
+
+. Se o monitor de integridade não conseguir descobrir automaticamente um switch, use o `system cluster-switch create` comando para configurar a descoberta do switch:
++
+[listing]
+----
+cluster1::> system cluster-switch create -device switch1 -address 192.0.2.250 -snmp-version SNMPv2c -community cshm1! -model NX5020 -type cluster-network
+----
++
+Aguarde cinco minutos antes de ir para o próximo passo.
+
+. Use o `system cluster-switch show` comando para verificar se o ONTAP pode descobrir o switch para o qual você adicionou informações.
+
+
+.Depois de terminar
+Verifique se o monitor de integridade pode monitorar seus switches.

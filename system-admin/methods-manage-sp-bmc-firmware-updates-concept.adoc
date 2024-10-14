@@ -1,0 +1,72 @@
+---
+permalink: system-admin/methods-manage-sp-bmc-firmware-updates-concept.html 
+sidebar: sidebar 
+keywords: methods, manage, sp, bmc, firmware, update, image, baseline, download 
+summary: O ONTAP inclui uma imagem de firmware do SP que é chamada de imagem de linha de base. Se uma nova versão do firmware do SP ficar disponível posteriormente, você tem a opção de baixá-lo e atualizar o firmware do SP para a versão baixada sem atualizar a versão do ONTAP. 
+---
+= Métodos de gerenciamento de atualizações de firmware do SP/BMC
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O ONTAP inclui uma imagem de firmware do SP que é chamada de _imagem de linha de base_. Se uma nova versão do firmware do SP ficar disponível posteriormente, você tem a opção de baixá-lo e atualizar o firmware do SP para a versão baixada sem atualizar a versão do ONTAP.
+
+[NOTE]
+====
+Este tópico aplica-se tanto ao SP como ao BMC.
+
+====
+O ONTAP oferece os seguintes métodos para gerenciar atualizações de firmware do SP:
+
+* A funcionalidade de atualização automática do SP está ativada por predefinição, permitindo que o firmware do SP seja atualizado automaticamente nos seguintes cenários:
++
+** Quando você atualiza para uma nova versão do ONTAP
++
+O processo de atualização do ONTAP inclui automaticamente a atualização do firmware do SP, desde que a versão do firmware do SP fornecida com o ONTAP seja mais recente do que a versão do SP executada no nó.
+
++
+[NOTE]
+====
+O ONTAP deteta uma atualização automática do SP com falha e aciona uma ação corretiva para tentar novamente a atualização automática do SP até três vezes. Se todas as três tentativas falharem, consulte o link do artigo da base de dados de Conhecimento: https://kb.NetApp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_os/Health_Monitor_SPAutoUpgradeFailedMajorAlert__SP AutoSupport_upgrade_Fails_-_AutoSupport_Message[Health Monitor SPAutoUpgradeFailed SP upgrade_Message].
+
+====
+** Quando você faz o download de uma versão do firmware do SP a partir do site de suporte da NetApp e a versão baixada é mais recente do que a versão que o SP está atualmente em execução
+** Quando você faz o downgrade ou reverte para uma versão anterior do ONTAP
++
+O firmware do SP é atualizado automaticamente para a versão compatível mais recente que é suportada pela versão do ONTAP para a qual você reverteu ou baixou. Não é necessária uma atualização manual do firmware do SP.
+
+
+
++
+Você tem a opção de desativar a funcionalidade de atualização automática do SP usando o `system service-processor image modify` comando. No entanto, é recomendável que você deixe a funcionalidade ativada. Desativar a funcionalidade pode resultar em combinações subótimas ou não qualificadas entre a imagem ONTAP e a imagem de firmware SP.
+
+* O ONTAP permite acionar manualmente uma atualização do SP e especificar como a atualização deve ocorrer usando o `system service-processor image update` comando.
++
+Você pode especificar as seguintes opções:
+
++
+** O pacote de firmware do SP a utilizar (`-package`)
++
+Você pode atualizar o firmware do SP para um pacote baixado especificando o nome do arquivo do pacote. O comando ADVANCE `system image package show` exibe todos os arquivos de pacote (incluindo os arquivos do pacote de firmware do SP) que estão disponíveis em um nó.
+
+** Se deve usar o pacote de firmware SP de linha de base para a atualização do SP (`-baseline`)
++
+Você pode atualizar o firmware do SP para a versão de linha de base fornecida com a versão atual do ONTAP.
+
+
+
++
+[NOTE]
+====
+Se utilizar algumas das opções ou parâmetros de atualização mais avançados, as definições de configuração do BMC poderão ser temporariamente eliminadas. Após a reinicialização, o ONTAP pode levar até 10 minutos para restaurar a configuração do BMC.
+
+====
+* O ONTAP permite exibir o status da atualização de firmware SP mais recente acionada pelo ONTAP usando o `system service-processor image update-progress show` comando.
+
+
+Qualquer ligação existente ao SP é terminada quando o firmware do SP está a ser atualizado. Este é o caso se a atualização do firmware do SP é acionada automaticamente ou manualmente.
+
+.Informações relacionadas
+https://mysupport.netapp.com/site/downloads/firmware/system-firmware-diagnostics["Downloads do NetApp: Firmware e Diagnóstico do sistema"^]

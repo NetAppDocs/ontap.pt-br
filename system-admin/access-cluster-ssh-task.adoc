@@ -1,0 +1,134 @@
+---
+permalink: system-admin/access-cluster-ssh-task.html 
+sidebar: sidebar 
+keywords: access, ssh, cluster, administrative, task 
+summary: Você pode emitir solicitações SSH para o cluster para executar tarefas administrativas. O SSH está ativado por predefinição. 
+---
+= Acesse o cluster usando SSH
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode emitir solicitações SSH para um cluster ONTAP para executar tarefas administrativas. O SSH está ativado por predefinição.
+
+.Antes de começar
+* Você deve ter uma conta de usuário configurada para usar `ssh` como método de acesso.
++
+O `-application` parâmetro dos `security login` comandos especifica o método de acesso para uma conta de usuário. O `security login` https://docs.netapp.com/us-en/ontap-cli/security-login-create.html#description["páginas de manual"^] contém informações adicionais.
+
+* Se você usar uma conta de usuário de domínio do ative Directory (AD) para acessar o cluster, um túnel de autenticação para o cluster deve ter sido configurado por meio de uma VM de armazenamento habilitada para CIFS e sua conta de usuário de domínio do AD também deve ter sido adicionada ao cluster `ssh` como método de acesso e `domain` como método de autenticação.
+
+
+.Sobre esta tarefa
+* Você deve usar um cliente OpenSSH 5,7 ou posterior.
+* Apenas o protocolo SSH v2 é suportado; o SSH v1 não é suportado.
+* O ONTAP suporta um máximo de 64 sessões de SSH simultâneas por nó.
++
+Se o LIF de gerenciamento de cluster reside no nó, ele compartilha esse limite com o LIF de gerenciamento de nós.
+
++
+Se a taxa de conexões de entrada for superior a 10 por segundo, o serviço será temporariamente desativado por 60 segundos.
+
+* O ONTAP suporta apenas os algoritmos de criptografia AES e 3DES (também conhecidos como _cifras_) para SSH.
++
+O AES é suportado com 128, 192 e 256 bits no comprimento da chave. 3DES tem 56 bits no comprimento da chave como no DES original, mas é repetido três vezes.
+
+* Quando o modo FIPS está ativado, os clientes SSH devem negociar com algoritmos de chave pública Elliptic Curve Digital Signature Algorithm (ECDSA) para que a conexão seja bem-sucedida.
+* Se você quiser acessar a CLI do ONTAP a partir de um host do Windows, você pode usar um utilitário de terceiros, como o PuTTY.
+* Se você usar um nome de usuário do Windows AD para fazer login no ONTAP, use as mesmas letras maiúsculas ou minúsculas que foram usadas quando o nome de usuário e o nome de domínio do AD foram criados no ONTAP.
++
+Os nomes de usuários DE ANÚNCIOS e nomes de domínio não diferenciam maiúsculas de minúsculas. No entanto, os nomes de usuário do ONTAP são sensíveis a maiúsculas e minúsculas. A incompatibilidade de casos entre o nome de utilizador criado no ONTAP e o nome de utilizador criado no AD resulta numa falha de início de sessão.
+
+
+
+.Opções de autenticação SSH
+* A partir do ONTAP 9.3, você pode link:../authentication/setup-ssh-multifactor-authentication-task.html["Ative a autenticação multifator SSH"^] para contas de administrador locais.
++
+Quando a autenticação multifator SSH está ativada, os usuários são autenticados usando uma chave pública e uma senha.
+
+* A partir do ONTAP 9.4, você pode link:../authentication/grant-access-nis-ldap-user-accounts-task.html["Ative a autenticação multifator SSH"^] para usuários remotos LDAP e NIS.
+* A partir do ONTAP 9.13,1, você pode opcionalmente adicionar validação de certificado ao processo de autenticação SSH para melhorar a segurança de login. Para fazer isso, link:../authentication/manage-ssh-public-keys-and-certificates.html["Associar um certificado X,509 à chave pública"^]uma conta usa. Se você fizer login usando SSH com uma chave pública SSH e um certificado X,509, o ONTAP verificará a validade do certificado X,509 antes de autenticar com a chave pública SSH. O login SSH é recusado se esse certificado estiver expirado ou revogado e a chave pública SSH for desativada automaticamente.
+* A partir do ONTAP 9.14,1, os administradores do ONTAP podem link:../authentication/configure-cisco-duo-mfa-task.html["Adicione a autenticação de dois fatores do Cisco Duo ao processo de autenticação SSH"^]melhorar a segurança de login. Após o primeiro login depois de ativar a autenticação Cisco Duo, os usuários precisarão Registrar um dispositivo para servir como autenticador para sessões SSH.
+* A partir do ONTAP 9.15,1, os administradores podem link:../authentication/dynamic-authorization-overview.html["Configurar autorização dinâmica"^]fornecer autenticação adaptativa adicional aos usuários SSH com base na pontuação de confiança do usuário.
+
+
+.Passos
+. A partir de um host com acesso à rede do cluster ONTAP, digite o `ssh` comando em um dos seguintes formatos:
++
+** `*ssh _username@hostname_or_IP_ [_command_]*`
+** `*ssh -l _username hostname_or_IP_ [_command_]*`
+
+
+
+
+Se você estiver usando uma conta de usuário de domínio do AD, você deve especificar `_username_` no formato `_domainname\\AD_accountname_` (com backslashes duplos após o nome de domínio) ou `"_domainname\AD_accountname_"` (entre aspas duplas e com uma única barra invertida após o nome de domínio).
+
+`_hostname_or_IP_` É o nome do host ou o endereço IP do LIF de gerenciamento de cluster ou um LIF de gerenciamento de nós. Recomenda-se a utilização do LIF de gestão de clusters. Você pode usar um endereço IPv4 ou IPv6.
+
+`_command_` Não é necessário para sessões interativas SSH.
+
+.Exemplos de solicitações SSH
+Os exemplos a seguir mostram como a conta de usuário chamada "joe" pode emitir uma solicitação SSH para acessar um cluster cujo LIF de gerenciamento de cluster é 10.72.137.28:
+
+[listing]
+----
+$ ssh joe@10.72.137.28
+Password:
+cluster1::> cluster show
+Node                  Health  Eligibility
+--------------------- ------- ------------
+node1                 true    true
+node2                 true    true
+2 entries were displayed.
+----
+[listing]
+----
+$ ssh -l joe 10.72.137.28 cluster show
+Password:
+Node                  Health  Eligibility
+--------------------- ------- ------------
+node1                 true    true
+node2                 true    true
+2 entries were displayed.
+----
+Os exemplos a seguir mostram como a conta de usuário chamada "john" do domínio chamado "domain1" pode emitir uma solicitação SSH para acessar um cluster cujo LIF de gerenciamento de cluster é 10.72.137.28:
+
+[listing]
+----
+$ ssh DOMAIN1\\john@10.72.137.28
+Password:
+cluster1::> cluster show
+Node                  Health  Eligibility
+--------------------- ------- ------------
+node1                 true    true
+node2                 true    true
+2 entries were displayed.
+----
+[listing]
+----
+$ ssh -l "DOMAIN1\john" 10.72.137.28 cluster show
+Password:
+Node                  Health  Eligibility
+--------------------- ------- ------------
+node1                 true    true
+node2                 true    true
+2 entries were displayed.
+----
+O exemplo a seguir mostra como a conta de usuário chamada "joe" pode emitir uma solicitação SSH MFA para acessar um cluster cujo LIF de gerenciamento de cluster é 10.72.137.32:
+
+[listing]
+----
+$ ssh joe@10.72.137.32
+Authenticated with partial success.
+Password:
+cluster1::> cluster show
+Node                  Health  Eligibility
+--------------------- ------- ------------
+node1                 true    true
+node2                 true    true
+2 entries were displayed.
+----
+.Informações relacionadas
+link:../authentication/index.html["Autenticação de administrador e RBAC"]

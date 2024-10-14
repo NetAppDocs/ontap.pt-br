@@ -1,0 +1,43 @@
+---
+permalink: nvme/change-host-priority-nvme-task.html 
+sidebar: sidebar 
+keywords: manage, nvme, host, priority, regular, high priority, allocate more I/O, allocate, higher, i/o, queue counts, queue-depths, queue, depth 
+summary: A partir do ONTAP 9.14,1, você pode habilitar seu subsistema NVM a priorizar a alocação de recursos para hosts específicos. 
+---
+= Alterar a prioridade do host NVMe
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.14,1, você pode configurar o subsistema NVMe para priorizar a alocação de recursos para hosts específicos. Por padrão, quando um host é adicionado ao subsistema, é atribuída uma prioridade regular. Os hosts atribuídos a uma alta prioridade são alocadas contagens de filas de e/S maiores e profundidades de filas.
+
+Você pode usar a interface de linha de comando (CLI) do ONTAP para alterar manualmente a prioridade padrão de regular para alta. Para alterar a prioridade atribuída a um host, você deve remover o host do subsistema e adicioná-lo de volta.
+
+.Passos
+. Verifique se a prioridade do host está definida como regular:
++
+[source, cli]
+----
+vserver nvme show-host-priority
+----
+. Remova o host do subsistema:
++
+[source, cli]
+----
+vserver nvme subsystem host remove –vserver <svm_name> -subsystem <subsystem> -host-nqn <host_nqn>
+----
+. Verifique se o host foi removido do subsistema:
++
+[source, cli]
+----
+vserver nvme subsystem host show
+----
+. Adicione o host de volta ao subsistema com alta prioridade:
++
+[source, cli]
+----
+vserver nvme subsystem host add -vserver <SVM_name> -subsystem <subsystem_name> -host-nqn <Host_NQN_:subsystem._subsystem_name> -priority high
+----
+

@@ -1,0 +1,65 @@
+---
+sidebar: sidebar 
+permalink: file-system-analytics/considerations-concept.html 
+keywords: file system analytics, performance, SVM 
+summary: O File System Analytics foi desenvolvido para fornecer visibilidade de volumes com dados nas ativos. Existem restrições e limitações ao seu uso. 
+---
+= Considerações para análise do sistema de arquivos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você deve estar ciente de certos limites de uso e possíveis impactos no desempenho associados à implementação do File System Analytics.
+
+
+
+== Relacionamentos protegidos por SVM
+
+Se você tiver habilitado a análise do sistema de arquivos em volumes com SVM em um relacionamento de proteção, os dados de análise não serão replicados para o SVM de destino. Se o SVM de origem precisar ser ressincronizado em uma operação de recuperação, será necessário rehabilitar manualmente as análises dos volumes desejados após a recuperação.
+
+
+
+== Considerações de desempenho
+
+Em alguns casos, a ativação do File System Analytics pode afetar negativamente o desempenho durante a coleta inicial de metadados. Isso geralmente é visto em sistemas que estão na utilização máxima. Para evitar a ativação de análises em tais sistemas, você pode usar as ferramentas de monitoramento de desempenho do Gerenciador do sistema do ONTAP.
+
+Se você tiver um aumento notável na latência, consulte o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/High_or_fluctuating_latency_after_turning_on_NetApp_ONTAP_File_System_Analytics["Latência alta ou flutuante após ativar a análise do sistema de arquivos do NetApp ONTAP"^].
+
+
+
+== Considerações de digitalização
+
+Quando você ativa o análise de capacidade, o ONTAP realiza uma verificação de inicialização para análise de capacidade. A verificação acessa metadados para todos os arquivos em volumes para os quais a análise de capacidade está ativada. Nenhum dado de ficheiro é lido durante a digitalização. A partir do ONTAP 9.14,1, você pode acompanhar o andamento da verificação com a API REST, na guia **Explorer** do Gerenciador de sistema ou com o `volume analytics show` comando CLI. Se houver um evento de limitação, o ONTAP fornecerá uma notificação.
+
+Ao ativar a análise do sistema de arquivos em um volume, certifique-se de que pelo menos 5 a 8% do espaço disponível do volume esteja livre. Se o volume tiver o dimensionamento automático ativado, calcule o tamanho disponível com base no tamanho máximo do crescimento automático. A partir do ONTAP 9.15,1, o ONTAP apresenta uma mensagem de erro se não houver espaço suficiente disponível quando você ativar a análise do sistema de arquivos em um volume.
+
+Após a conclusão da verificação, o File System Analytics é atualizado continuamente em tempo real à medida que o sistema de arquivos muda.
+
+O tempo necessário para a digitalização é proporcional ao número de diretórios e ficheiros no volume. Como a digitalização coleta metadados, o tamanho do arquivo não afeta o tempo de digitalização.
+
+Para obter mais informações sobre a digitalização de inicialização, link:https://www.netapp.com/pdf.html?item=/media/20707-tr-4867.pdf["TR-4867: Diretrizes de melhores práticas para análise de sistemas de arquivos"^]consulte .
+
+
+
+=== Práticas recomendadas
+
+Você deve iniciar a verificação em volumes que não compartilham agregados. Você pode ver quais agregados estão hospedando atualmente quais volumes usando o comando:
+
+`volume show -volume _comma-separated-list_of_volumes_ -fields aggr-list`
+
+Enquanto a verificação é executada, os volumes continuam a servir o tráfego do cliente. Recomenda-se que inicie a verificação durante períodos em que antecipe um menor tráfego de clientes.
+
+Se o tráfego do cliente aumentar, ele irá consumir recursos do sistema e fazer com que a varredura leve mais tempo.
+
+A partir do ONTAP 9.12,1, você pode pausar a coleta de dados no Gerenciador do sistema e com a CLI do ONTAP.
+
+* Se você estiver usando a CLI do ONTAP:
++
+** Você pode pausar a coleta de dados com o comando: `volume analytics initialization pause -vserver _svm_name_ -volume _volume_name_`
+** Uma vez que o tráfego do cliente abrandou, você pode retomar a coleta de dados com o comando: `volume analytics initialization resume -vserver _svm_name_ -volume _volume_name_`
+
+
+* Se você estiver usando o System Manager, na exibição *Explorer* do menu de volume, use os botões *Pausa coleta de dados* e *Resume coleta de dados* para gerenciar a digitalização.
+

@@ -1,0 +1,279 @@
+---
+permalink: nas-audit/plan-auditing-config-concept.html 
+sidebar: sidebar 
+keywords: plan, audit, configuration, svm, rotate, logs, size, schedule, rotation, dr, disaster recovery 
+summary: 'Antes de configurar a auditoria em máquinas virtuais de armazenamento (SVMs), você deve entender quais opções de configuração estão disponíveis e Planejar os valores que deseja definir para cada opção. Essas informações podem ajudá-lo a configurar a configuração de auditoria que atende às necessidades da sua empresa.' 
+---
+= Planejar a configuração de auditoria
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de configurar a auditoria em máquinas virtuais de armazenamento (SVMs), você deve entender quais opções de configuração estão disponíveis e Planejar os valores que deseja definir para cada opção. Essas informações podem ajudá-lo a configurar a configuração de auditoria que atende às necessidades da sua empresa.
+
+Existem certos parâmetros de configuração que são comuns a todas as configurações de auditoria.
+
+Além disso, existem certos parâmetros que você pode usar para especificar quais métodos são usados ao girar os logs de auditoria consolidados e convertidos. Você pode especificar um dos três métodos a seguir ao configurar a auditoria:
+
+* Rode registos com base no tamanho do registo
++
+Este é o método padrão usado para girar logs.
+
+* Gire os logs com base em um agendamento
+* Rodar registos com base no tamanho e na programação do registo (qualquer que seja o evento que ocorrer primeiro)
+
+
+[NOTE]
+====
+Pelo menos um dos métodos de rotação de log deve ser sempre definido.
+
+====
+
+
+== Parâmetros comuns a todas as configurações de auditoria
+
+Há dois parâmetros necessários que você deve especificar ao criar a configuração de auditoria. Há também três parâmetros opcionais que você pode especificar:
+
+[cols="40,30,10,10,10"]
+|===
+
+
+| Tipo de informação | Opção | Obrigatório | Incluir | Seus valores 
+
+
+ a| 
+_Nome da SVM_
+
+Nome do SVM no qual você pode criar a configuração de auditoria. O SVM já deve existir.
+ a| 
+`-vserver` `vserver_name`
+ a| 
+Sim
+ a| 
+Sim
+ a| 
+
+
+
+ a| 
+_Log Destination path_
+
+Especifica o diretório onde os logs de auditoria convertidos são armazenados, normalmente um volume ou qtree dedicado. O caminho já deve existir no namespace SVM.
+
+O caminho pode ter até 864 carateres de comprimento e deve ter permissões de leitura e gravação.
+
+Se o caminho não for válido, o comando de configuração de auditoria falhará.
+
+Se o SVM for uma fonte de recuperação de desastres do SVM, o caminho de destino do log não poderá estar no volume raiz. Isso ocorre porque o conteúdo do volume raiz não é replicado para o destino de recuperação de desastres.
+
+Não é possível usar um volume FlexCache como destino de log (ONTAP 9.7 e posterior).
+ a| 
+`-destination` `text`
+ a| 
+Sim
+ a| 
+Sim
+ a| 
+
+
+
+ a| 
+_Categorias de eventos a auditar_
+
+Especifica as categorias de eventos a auditar. As seguintes categorias de eventos podem ser auditadas:
+
+* Eventos de acesso a arquivos (SMB e NFSv4)
+* Eventos de logon e logoff SMB
+* Eventos de preparação da política de acesso central
++
+Os eventos de preparação da política de acesso central estão disponíveis a partir dos domínios do ative Directory do Windows 2012.
+
+* Eventos de categoria de compartilhamento de arquivos
+* Auditoria de eventos de mudança de política
+* Eventos de gerenciamento de contas de usuário local
+* Eventos de gerenciamento de grupo de segurança
+* Eventos de alteração da política de autorização
+
+
+O padrão é auditar o acesso a arquivos e eventos de logon e logoff SMB.
+
+*Observação:* antes de poder especificar `cap-staging` como categoria de evento, um servidor SMB deve existir na SVM. Embora você possa ativar o estadiamento da diretiva de acesso central na configuração de auditoria sem ativar o Controle de Acesso Dinâmico no servidor SMB, os eventos de estadiamento da política de acesso central são gerados somente se o Controle de Acesso Dinâmico estiver ativado. O Dynamic Access Control é ativado através de uma opção de servidor SMB. Ele não está habilitado por padrão.
+ a| 
+`-events` {`file-ops`|`cifs-logon-logoff`|`cap-staging`|`file-share`|`audit-policy-change`|`user-account`|`security-group`|`authorization-policy-change`Selecione
+ a| 
+Não
+ a| 
+ a| 
+
+
+
+ a| 
+_Formato de saída do ficheiro de registo_
+
+Determina o formato de saída dos logs de auditoria. O formato de saída pode ser um formato de log específico do ONTAP `XML` ou do Microsoft Windows `EVTX`. Por padrão, o formato de saída é `EVTX`.
+ a| 
+`-format` {`xml`|`evtx`Selecione
+ a| 
+Não
+ a| 
+ a| 
+
+
+
+ a| 
+_Limite de rotação de arquivos de log_
+
+Determina quantos arquivos de log de auditoria devem ser mantidos antes de girar o arquivo de log mais antigo. Por exemplo, se você inserir um valor de `5`, os últimos cinco arquivos de log serão retidos.
+
+Um valor de `0` indica que todos os arquivos de log são mantidos. O valor padrão é 0.
+ a| 
+`-rotate-limit` `integer`
+ a| 
+Não
+ a| 
+ a| 
+
+|===
+
+
+== Parâmetros usados para determinar quando girar logs de eventos de auditoria
+
+*Rotate logs com base no tamanho do log*
+
+O padrão é girar os logs de auditoria com base no tamanho.
+
+* O tamanho padrão do log é de 100 MB
+* Se você quiser usar o método de rotação de log padrão e o tamanho padrão do log, não será necessário configurar nenhum parâmetro específico para a rotação de log.
+* Se você quiser girar os logs de auditoria somente com base em um tamanho de log, use o seguinte comando para desdefinir o `-rotate-schedule-minute` parâmetro: `vserver audit modify -vserver vs0 -destination / -rotate-schedule-minute -`
+
+
+Se você não quiser usar o tamanho padrão do log, você pode configurar o `-rotate-size` parâmetro para especificar um tamanho de log personalizado:
+
+[cols="40,30,10,10,10"]
+|===
+
+
+| Tipo de informação | Opção | Obrigatório | Incluir | Seus valores 
+
+
+ a| 
+_Limite de tamanho do ficheiro de registo_
+
+Determina o limite de tamanho do arquivo de log de auditoria.
+ a| 
+`-rotate-size` {`integer`[KB|MB|GB|TB|PB]
+ a| 
+Não
+ a| 
+ a| 
+
+|===
+*Rotate logs com base em uma programação*
+
+Se você optar por girar os logs de auditoria com base em um agendamento, poderá agendar a rotação de logs usando os parâmetros de rotação baseados em tempo em qualquer combinação.
+
+* Se utilizar rotação baseada no tempo, o `-rotate-schedule-minute` parâmetro é obrigatório.
+* Todos os outros parâmetros de rotação baseados no tempo são opcionais.
+* O programa de rotação é calculado utilizando todos os valores relacionados com o tempo.
++
+Por exemplo, se você especificar apenas o `-rotate-schedule-minute` parâmetro, os arquivos de log de auditoria serão girados com base nos minutos especificados em todos os dias da semana, durante todas as horas em todos os meses do ano.
+
+* Se você especificar apenas um ou dois parâmetros de rotação baseados no tempo (por exemplo, `-rotate-schedule-month` e `-rotate-schedule-minutes`), os arquivos de log serão girados com base nos valores de minuto especificados em todos os dias da semana, durante todas as horas, mas somente durante os meses especificados.
++
+Por exemplo, você pode especificar que o log de auditoria deve ser girado durante os meses de janeiro, março e agosto em todas as segundas, quartas e sábados às 10:30 da manhã
+
+* Se você especificar valores para ambos `-rotate-schedule-dayofweek` e `-rotate-schedule-day`, eles serão considerados independentemente.
++
+Por exemplo, se você especificar `-rotate-schedule-dayofweek` como sexta-feira e `-rotate-schedule-day` como 13, os logs de auditoria serão girados em todas as sextas-feiras e no dia 13th do mês especificado, não apenas em todas as sextas-feiras, dia 13th.
+
+* Se você quiser girar os logs de auditoria somente com base em uma programação, use o seguinte comando para desdefinir o `-rotate-size` parâmetro: `vserver audit modify -vserver vs0 -destination / -rotate-size -`
+
+
+Você pode usar a seguinte lista de parâmetros de auditoria disponíveis para determinar quais valores usar para configurar uma programação para rotações de log de eventos de auditoria:
+
+[cols="40,30,10,10,10"]
+|===
+
+
+| Tipo de informação | Opção | Obrigatório | Incluir | Seus valores 
+
+
+ a| 
+_Calendário de rotação de Registro: Mês_
+
+Determina a programação mensal para os logs de auditoria rotativos.
+
+Os valores válidos `January` são através de `December`, e `all`. Por exemplo, você pode especificar que o log de auditoria deve ser girado durante os meses de janeiro, março e agosto.
+ a| 
+`-rotate-schedule-month` `chron_month`
+ a| 
+Não
+ a| 
+ a| 
+
+
+
+ a| 
+_Calendário de rotação de Registro: Dia da semana_
+
+Determina o cronograma diário (dia da semana) para logs de auditoria rotativos.
+
+Os valores válidos `Sunday` são através de `Saturday`, e `all`. Por exemplo, você pode especificar que o log de auditoria deve ser girado às terças e sextas-feiras, ou durante todos os dias de uma semana.
+ a| 
+`-rotate-schedule-dayofweek` `chron_dayofweek`
+ a| 
+Não
+ a| 
+ a| 
+
+
+
+ a| 
+_Calendário de rotação de Registro: Dia_
+
+Determina o dia do calendário do mês para a rotação do log de auditoria.
+
+Os valores válidos variam de `1` até `31`. Por exemplo, você pode especificar que o log de auditoria deve ser girado nos 10th e 20th dias de um mês ou em todos os dias de um mês.
+ a| 
+`-rotate-schedule-day` `chron_dayofmonth`
+ a| 
+Não
+ a| 
+ a| 
+
+
+
+ a| 
+_Calendário de rotação de Registro: Hora_
+
+Determina a programação horária para girar o log de auditoria.
+
+Os valores válidos variam de `0` (meia-noite) a `23` (11:00 p.m.).  `all`Especificar gira os logs de auditoria a cada hora. Por exemplo, você pode especificar que o log de auditoria deve ser girado às 6 (6 a.m.) e 18 (6 p.m.).
+ a| 
+`-rotate-schedule-hour` `chron_hour`
+ a| 
+Não
+ a| 
+ a| 
+
+
+
+ a| 
+_Calendário de rotação de Registro: Minuto_
+
+Determina o cronograma de minutos para girar o log de auditoria.
+
+Os valores válidos variam de `0` a `59`. Por exemplo, você pode especificar que o log de auditoria deve ser girado aos 30th minutos.
+ a| 
+`-rotate-schedule-minute` `chron_minute`
+ a| 
+Sim, se configurar a rotação de log baseada em programação; caso contrário, não
+ a| 
+ a| 
+
+|===
+*Rotate logs com base no tamanho e horário do log*
+
+Você pode optar por girar os arquivos de log com base no tamanho do log e em uma programação, definindo o `-rotate-size` parâmetro e os parâmetros de rotação baseados no tempo em qualquer combinação. Por exemplo: Se `-rotate-size` estiver definido para 10 MB e `-rotate-schedule-minute` estiver definido para 15, os arquivos de log rodam quando o tamanho do arquivo de log atinge 10 MB ou nos 15th minutos de cada hora (o que ocorrer primeiro).

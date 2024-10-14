@@ -1,0 +1,100 @@
+---
+permalink: volumes/enable-data-compression-volume-task.html 
+sidebar: sidebar 
+keywords: enable, data compression, FlexVol, space, volume, volume efficiency modify 
+summary: 'Ative a compactação de dados e atribua um tipo de compactação em um FlexVol volume para obter economia de espaço usando o `volume efficiency modify` comando.' 
+---
+= Ativar a compactação de dados em um volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode ativar a compactação de dados em um FlexVol volume para obter economia de espaço usando o `volume efficiency modify` comando. Você também pode atribuir um tipo de compactação ao volume, se não quiser o tipo de compactação padrão.
+
+.Antes de começar
+Você deve ter habilitado a deduplicação no volume.
+
+[NOTE]
+====
+* A deduplicação só precisa ser ativada e não precisa ser executada no volume.
+* O scanner de compactação deve ser usado para compactar os dados existentes nos volumes presentes nas plataformas AFF.
+
+
+====
+link:enable-deduplication-volume-task.html["Habilitando a deduplicação em um volume"]
+
+.Sobre esta tarefa
+* Em agregados HDD e agregados Flash Pool, você pode habilitar a compactação in-line e pós-processo ou apenas a compactação pós-processo em um volume.
++
+Se você está habilitando ambos, então você deve ativar a compressão pós-processo no volume antes de ativar a compressão inline.
+
+* Nas plataformas AFF, somente a compactação in-line é suportada.
++
+Antes de ativar a compressão em linha, você deve ativar a compressão pós-processo no volume. No entanto, como a compressão pós-processo não é suportada em plataformas AFF, nenhuma compressão pós-processo ocorre nesses volumes e uma mensagem EMS é gerada informando que a compressão pós-processo foi ignorada.
+
+* A eficiência de armazenamento sensível à temperatura é introduzida no ONTAP 9.8. Com esse recurso, a eficiência de storage é aplicada de acordo com os dados ativos ou inativos. Para dados inativos, blocos de dados maiores são compatados e, para dados ativos, que são sobrescritos com mais frequência, blocos de dados menores são compatados, tornando o processo mais eficiente. A eficiência de storage sensível à temperatura é ativada automaticamente em volumes AFF com thin Provisioning recém-criados.
+* O tipo de compressão é atribuído automaticamente com base na plataforma do agregado:
++
+[cols="2*"]
+|===
+| Plataforma/agregados | Tipo de compressão 
+
+
+ a| 
+AFF
+ a| 
+Compressão adaptável
+
+
+
+ a| 
+Agregados Flash Pool
+ a| 
+Compressão adaptável
+
+
+
+ a| 
+Agregados HDD
+ a| 
+Compressão secundária
+
+|===
+
+
+.Opções
+* Use o `volume efficiency modify` comando para habilitar a compactação de dados com o tipo de compactação padrão.
++
+O comando a seguir habilita a compactação pós-processo no volume VolA do SVM VS1:
+
++
+`volume efficiency modify -vserver vs1 -volume VolA -compression true`
+
++
+O comando a seguir habilita a compactação pós-processo e inline no volume VolA do SVM VS1:
+
++
+`volume efficiency modify -vserver vs1 -volume VolA -compression true -inline-compression true`
+
+* Use o `volume efficiency modify` comando no nível de privilégio avançado para habilitar a compactação de dados com um tipo de compactação específico.
++
+.. Use o `set -privilege advanced` comando para alterar o nível de privilégio para avançado.
+.. Use o `volume efficiency modify` comando para atribuir um tipo de compactação a um volume.
++
+O comando a seguir habilita a compactação pós-processo e atribui o tipo de compactação adaptável ao volume VolA do SVM VS1:
+
++
+`volume efficiency modify -vserver vs1 -volume VolA -compression true -compression-type adaptive`
+
++
+O comando a seguir habilita a compactação pós-processo e inline e atribui o tipo de compactação adaptável ao volume VolA do SVM VS1:
+
++
+`volume efficiency modify -vserver vs1 -volume VolA -compression true -compression-type adaptive -inline-compression true`
+
+.. Use o `set -privilege admin` comando para alterar o nível de privilégio para admin.
+
+
+

@@ -1,0 +1,53 @@
+---
+permalink: tape-backup/before-restoring-data-concept.html 
+sidebar: sidebar 
+keywords: considerations, restore, file, data, original, path, destination, operation, required, space 
+summary: Você pode restaurar os dados de backup para o caminho original ou para um destino diferente. Se estiver a restaurar dados de cópia de segurança para um destino diferente, tem de preparar o destino para a operação de restauro. 
+---
+= Considerações antes de restaurar dados
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode restaurar os dados de backup para o caminho original ou para um destino diferente. Se estiver a restaurar dados de cópia de segurança para um destino diferente, tem de preparar o destino para a operação de restauro.
+
+Antes de restaurar dados para o caminho original ou para um destino diferente, você deve ter as seguintes informações e atender aos seguintes requisitos:
+
+* O nível da restauração
+* O caminho para o qual você está restaurando os dados
+* O fator de bloqueio usado durante o backup
+* Se você estiver fazendo uma restauração incremental, todas as fitas devem estar na cadeia de backup
+* Uma unidade de fita disponível e compatível com a fita a ser restaurada
+
+
+Antes de restaurar dados para um destino diferente, você deve executar as seguintes operações:
+
+* Se você estiver restaurando um volume, você deve criar um novo volume.
+* Se você estiver restaurando uma qtree ou um diretório, você deve renomear ou mover arquivos que provavelmente tenham os mesmos nomes que os arquivos que você está restaurando.
+
+
+[NOTE]
+====
+No ONTAP 9, os nomes de qtree suportam o formato Unicode. As versões anteriores do ONTAP não suportam este formato. Se uma qtree com nomes Unicode no ONTAP 9 for copiada para uma versão anterior do ONTAP usando o `ndmpcopy` comando ou através da restauração de uma imagem de backup em uma fita, a qtree será restaurada como um diretório regular e não como uma qtree com formato Unicode.
+
+====
+[NOTE]
+====
+Se um arquivo restaurado tiver o mesmo nome que um arquivo existente, o arquivo existente será substituído pelo arquivo restaurado. No entanto, os diretórios não são sobrescritos.
+
+====
+Para renomear um arquivo, diretório ou qtree durante a restauração sem usar DAR, você deve definir a variável de ambiente EXTRAIR como `E`.
+
+
+
+== Espaço necessário no sistema de armazenamento de destino
+
+Você precisa de cerca de 100 MB mais espaço no sistema de armazenamento de destino do que a quantidade de dados a serem restaurados.
+
+[NOTE]
+====
+A operação de restauração verifica a disponibilidade de espaço de volume e inode no volume de destino quando a operação de restauração é iniciada. Definir a variável de ambiente FORÇAR para `Y` fazer com que a operação de restauração pule as verificações de espaço de volume e disponibilidade de inode no caminho de destino. Se não houver espaço de volume suficiente ou inodes disponíveis no volume de destino, a operação de restauração recupera a quantidade de dados permitidos pelo espaço de volume de destino e pela disponibilidade de inodes. A operação de restauração pára quando não há mais espaço de volume ou inodes restantes.
+
+====

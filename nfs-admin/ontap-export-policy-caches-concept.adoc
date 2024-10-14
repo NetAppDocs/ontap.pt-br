@@ -1,0 +1,70 @@
+---
+permalink: nfs-admin/ontap-export-policy-caches-concept.html 
+sidebar: sidebar 
+keywords: ontap, use, export, policy, cache 
+summary: Para melhorar o desempenho do sistema, o ONTAP usa caches locais para armazenar informações como nomes de host e grupos de rede. Isso permite que o ONTAP processe regras de política de exportação mais rapidamente do que recuperar as informações de fontes externas. Entender o que são os caches e o que eles fazem pode ajudá-lo a solucionar problemas de acesso ao cliente. 
+---
+= Como o ONTAP usa caches de política de exportação
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para melhorar o desempenho do sistema, o ONTAP usa caches locais para armazenar informações como nomes de host e grupos de rede. Isso permite que o ONTAP processe regras de política de exportação mais rapidamente do que recuperar as informações de fontes externas. Entender o que são os caches e o que eles fazem pode ajudá-lo a solucionar problemas de acesso ao cliente.
+
+Você configura políticas de exportação para controlar o acesso do cliente às exportações NFS. Cada política de exportação contém regras e cada regra contém parâmetros que correspondem à regra aos clientes que solicitam acesso. Alguns desses parâmetros exigem que o ONTAP entre em Contato com uma fonte externa, como servidores DNS ou NIS, para resolver objetos como nomes de domínio, nomes de host ou netgroups.
+
+Essas comunicações com fontes externas levam um pouco de tempo. Para aumentar o desempenho, o ONTAP reduz o tempo necessário para resolver objetos de regra de política de exportação armazenando informações localmente em cada nó em vários caches.
+
+[cols="2*"]
+|===
+| Nome do cache | Tipo de informação armazenada 
+
+
+ a| 
+Acesso
+ a| 
+Mapeamentos de clientes para políticas de exportação correspondentes
+
+
+
+ a| 
+Nome
+ a| 
+Mapeamentos de nomes de usuário UNIX para IDs de usuário UNIX correspondentes
+
+
+
+ a| 
+ID
+ a| 
+Mapeamentos de IDs de usuário UNIX para IDs de usuário UNIX correspondentes e IDs de grupo UNIX estendidos
+
+
+
+ a| 
+Host
+ a| 
+Mapeamentos de nomes de host para endereços IP correspondentes
+
+
+
+ a| 
+Grupo de rede
+ a| 
+Mapeamentos de netgroups para endereços IP correspondentes de membros
+
+
+
+ a| 
+Showmount
+ a| 
+Lista de diretórios exportados do namespace SVM
+
+|===
+Se você alterar as informações nos servidores de nomes externos em seu ambiente depois que o ONTAP as recuperou e armazenou localmente, os caches agora podem conter informações desatualizadas. Embora o ONTAP atualize caches automaticamente após determinados períodos de tempo, os caches diferentes têm tempos e algoritmos diferentes de expiração e atualização.
+
+Outro motivo possível para que os caches contenham informações desatualizadas é quando o ONTAP tenta atualizar informações em cache, mas encontra uma falha ao tentar se comunicar com servidores de nomes. Se isso acontecer, o ONTAP continuará a usar as informações atualmente armazenadas nos caches locais para evitar a interrupção do cliente.
+
+Como resultado, as solicitações de acesso ao cliente que devem ser bem-sucedidas podem falhar e as solicitações de acesso ao cliente que devem falhar podem ser bem-sucedidas. Você pode exibir e lavar manualmente alguns dos caches de política de exportação ao solucionar problemas de acesso ao cliente.

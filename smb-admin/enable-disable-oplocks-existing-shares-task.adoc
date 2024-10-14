@@ -1,0 +1,88 @@
+---
+permalink: smb-admin/enable-disable-oplocks-existing-shares-task.html 
+sidebar: sidebar 
+keywords: oplock, enable, smb, share, storage, virtual, machine, svm, default, circumstance, disable, alternative, enable or disable oplocks on existing smb shares 
+summary: 'Os Oplocks são ativados em compartilhamentos SMB em máquinas virtuais de armazenamento (SVMs) por padrão. Em algumas circunstâncias, você pode querer desativar os oplocks; alternativamente, se você tiver desabilitado previamente os oplocks em uma ação, você pode querer reativar os oplocks.' 
+---
+= Ative ou desative os oplocks em compartilhamentos SMB existentes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os Oplocks são ativados em compartilhamentos SMB em máquinas virtuais de armazenamento (SVMs) por padrão. Em algumas circunstâncias, você pode querer desativar os oplocks; alternativamente, se você tiver desabilitado previamente os oplocks em uma ação, você pode querer reativar os oplocks.
+
+.Sobre esta tarefa
+Se os oplocks estiverem ativados no volume que contém uma partilha, mas a propriedade de partilha de oplock para essa partilha estiver desativada, os oplocks serão desativados para essa partilha. A desativação de oplocks em um compartilhamento tem precedência sobre a ativação de oplocks no volume. Desativar os oplocks na partilha, desativa os oplocks oportunistas e de leasing. Você pode ativar ou desativar os oplocks em compartilhamentos existentes a qualquer momento.
+
+.Passo
+. Execute a ação aplicável:
++
+|===
+| Se você quiser... | Então... 
+
+
+ a| 
+Ative os oplocks em um compartilhamento modificando um compartilhamento existente
+ a| 
+Introduza o seguinte comando: `vserver cifs share properties add -vserver _vserver_name_ -share-name share_name -share-properties oplocks`
+
+[NOTE]
+====
+Você pode especificar propriedades de compartilhamento adicionais a serem adicionadas usando uma lista delimitada por vírgulas.
+
+====
+As propriedades recém-adicionadas são anexadas à lista existente de propriedades de compartilhamento. Quaisquer propriedades de compartilhamento que você especificou anteriormente permanecem em vigor.
+
+
+
+ a| 
+Desative os oplocks em um compartilhamento modificando um compartilhamento existente
+ a| 
+Introduza o seguinte comando: `vserver cifs share properties remove -vserver _vserver_name_ -share-name _share_name_ -share-properties oplocks`
+
+[NOTE]
+====
+Você pode especificar propriedades de compartilhamento adicionais para remover usando uma lista delimitada por vírgulas.
+
+====
+As propriedades de compartilhamento que você remover são excluídas da lista existente de propriedades de compartilhamento; no entanto, as propriedades de compartilhamento configuradas anteriormente que você não remove permanecem em vigor.
+
+|===
+
+
+.Exemplos
+O comando a seguir habilita os oplocks para o compartilhamento chamado "Engenharia" na máquina virtual de armazenamento (SVM, anteriormente conhecido como SVM) VS1:
+
+[listing]
+----
+cluster1::> vserver cifs share properties add -vserver vs1 -share-name Engineering -share-properties oplocks
+
+cluster1::> vserver cifs share properties show
+Vserver          Share            Properties
+---------------- ---------------- -----------------
+vs1              Engineering      oplocks
+                                  browsable
+                                  changenotify
+                                  showsnapshot
+----
+O comando a seguir desativa os oplocks para a ação chamada "Engenharia" no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs share properties remove -vserver vs1 -share-name Engineering -share-properties oplocks
+
+cluster1::> vserver cifs share properties show
+Vserver          Share            Properties
+---------------- ---------------- -----------------
+vs1              Engineering      browsable
+                                  changenotify
+                                  showsnapshot
+----
+.Informações relacionadas
+xref:enable-disable-oplocks-when-creating-shares-task.adoc[Ativar ou desativar os oplocks ao criar compartilhamentos SMB]
+
+xref:monitor-oplock-status-task.adoc[Monitorização do estado de oplock]
+
+xref:add-remove-share-properties-existing-share-task.adoc[Adicionar ou remover propriedades de compartilhamento em um compartilhamento SMB existente]

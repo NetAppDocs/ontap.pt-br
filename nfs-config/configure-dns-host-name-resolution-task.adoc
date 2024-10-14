@@ -1,0 +1,87 @@
+---
+permalink: nfs-config/configure-dns-host-name-resolution-task.html 
+sidebar: sidebar 
+keywords: enabling, dns, host-name, resolution, enable, host, name, resolve, automatic configuration validation 
+summary: Você pode usar o comando dns do serviço de nomes de serviços vserver para habilitar o DNS em uma SVM e configurá-lo para usar o DNS para resolução de nome de host. Os nomes de host são resolvidos usando servidores DNS externos. 
+---
+= Ative DNS para resolução de nome de host
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `vserver services name-service dns` comando para habilitar o DNS em uma SVM e configurá-lo para usar o DNS para resolução de nome de host. Os nomes de host são resolvidos usando servidores DNS externos.
+
+.O que você vai precisar
+Um servidor DNS em todo o site deve estar disponível para pesquisas de nome de host.
+
+Você deve configurar mais de um servidor DNS para evitar um único ponto de falha. O `vserver services name-service dns create` comando emite um aviso se você inserir apenas um nome de servidor DNS.
+
+.Sobre esta tarefa
+O _Network Management Guide_ contém informações sobre a configuração de DNS dinâmico na SVM.
+
+.Passos
+. Habilite o DNS na SVM:
++
+`vserver services name-service dns create -vserver _vserver_name_ -domains _domain_name_ -name-servers _ip_addresses_ -state enabled`
+
++
+O comando a seguir habilita servidores de servidor DNS externos no SVM VS1:
+
++
+[listing]
+----
+vserver services name-service dns create -vserver vs1.example.com -domains example.com -name-servers 192.0.2.201,192.0.2.202 -state enabled
+----
++
+[NOTE]
+====
+A partir do ONTAP 9.2, o `vserver services name-service dns create` comando executa uma validação automática de configuração e relata uma mensagem de erro se o ONTAP não puder entrar em Contato com o servidor de nomes.
+
+====
+. Exiba as configurações do domínio DNS usando o `vserver services name-service dns show` comando.
++
+O comando a seguir exibe as configurações DNS para todos os SVMs no cluster:
+
++
+[listing]
+----
+vserver services name-service dns show
+                                             Name
+Vserver           State     Domains             Servers
+----------------- --------- ------------------- -------------
+cluster1          enabled   example.com         192.0.2.201,
+                                                192.0.2.202
+vs1.example.com   enabled   example.com         192.0.2.201,
+                                                192.0.2.202
+----
++
+O comando a seguir exibe informações detalhadas de configuração de DNS para SVM VS1:
+
++
+[listing]
+----
+vserver services name-service dns show -vserver vs1.example.com
+               Vserver: vs1.example.com
+               Domains: example.com
+          Name Servers: 192.0.2.201, 192.0.2.202
+    Enable/Disable DNS: enabled
+        Timeout (secs): 2
+      Maximum Attempts: 1
+----
+. Valide o status dos servidores de nomes usando o `vserver services name-service dns check` comando.
++
+O `vserver services name-service dns check` comando está disponível a partir de ONTAP 9.2.
+
++
+[listing]
+----
+vserver services name-service dns check -vserver vs1.example.com
+
+Vserver           Name Server     Status       Status Details
+----------------  -------------   ----------   --------------------------
+vs1.example.com   10.0.0.50         up         Response time (msec): 2
+vs1.example.com   10.0.0.51         up         Response time (msec): 2
+----
+

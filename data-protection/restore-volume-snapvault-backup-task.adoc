@@ -1,0 +1,128 @@
+---
+permalink: data-protection/restore-volume-snapvault-backup-task.html 
+sidebar: sidebar 
+keywords: restore, content, volume, snapmirror, destination, snap mirror, snapshot, vault, snapvault, read-write, incremental 
+summary: É possível restaurar o conteúdo de um volume inteiro a partir de uma cópia Snapshot em um volume de destino do SnapMirror. Você pode restaurar o conteúdo do volume para o volume de origem original ou para um volume diferente. 
+---
+= Restaure o conteúdo de um volume a partir de um destino SnapMirror
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É possível restaurar o conteúdo de um volume inteiro a partir de uma cópia Snapshot em um volume de destino do SnapMirror. Pode restaurar o conteúdo do volume para o volume de origem original ou para um volume diferente.
+
+.Sobre esta tarefa
+Este procedimento aplica-se aos sistemas FAS, AFF e ASA atuais. Se tiver um sistema ASA R2 (ASA A1K, ASA A70 ou ASA A90), siga link:https://docs.netapp.com/us-en/asa-r2/data-protection/restore-data.html["estes passos"^] para restaurar os dados. Os sistemas ASA R2 fornecem uma experiência de ONTAP simplificada específica para clientes somente SAN.
+
+O volume de destino para a operação de restauração deve ser um dos seguintes:
+
+* Um volume de leitura e gravação, nesse caso, o SnapMirror executa uma _restauração incremental_, desde que os volumes de origem e destino tenham uma cópia Snapshot comum (como normalmente ocorre quando você está restaurando para o volume de origem original).
++
+[NOTE]
+====
+O comando falhará se não houver uma cópia Snapshot comum. Não é possível restaurar o conteúdo de um volume para um volume de leitura e gravação vazio.
+
+====
+* Um volume de proteção de dados vazio, nesse caso, o SnapMirror executa uma _restauração de linha de base_, na qual a cópia Snapshot especificada e todos os blocos de dados que ele faz referência são transferidos para o volume de origem.
+
+
+Restaurar o conteúdo de um volume é uma operação disruptiva. O tráfego SMB não deve estar em execução no volume primário do SnapVault quando uma operação de restauração está em execução.
+
+Se o volume de destino para a operação de restauração tiver a compactação ativada e o volume de origem não tiver a compactação ativada, desative a compactação no volume de destino. Você precisa reativar a compactação após a conclusão da operação de restauração.
+
+Todas as regras de quota definidas para o volume de destino são desativadas antes de a restauração ser executada. Você pode usar o `volume quota modify` comando para reativar regras de cota após a conclusão da operação de restauração.
+
+Quando os dados em um volume são perdidos ou corrompidos, você pode reverter seus dados restaurando a partir de uma cópia Snapshot anterior.
+
+Este procedimento substitui os dados atuais no volume de origem por dados de uma versão anterior da cópia Snapshot. Deve executar esta tarefa no cluster de destino.
+
+.Passos
+Você pode restaurar o conteúdo de um volume usando o Gerenciador do sistema ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Clique em *proteção > relacionamentos* e, em seguida, clique no nome do volume de origem.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"] em e selecione *Restore*.
+. Em *fonte*, o volume da fonte é selecionado por padrão. Clique em *outro volume* se quiser escolher um volume diferente da origem.
+. Em *destino*, escolha a cópia Snapshot que deseja restaurar.
+. Se a origem e o destino estiverem localizados em clusters diferentes, no cluster remoto, clique em *proteção > relacionamentos* para monitorar o progresso da restauração.
+
+
+--
+.CLI
+--
+. Listar as cópias Snapshot no volume de destino:
++
+[source, cli]
+----
+volume snapshot show -vserver <SVM> -volume <volume>
+----
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+O exemplo a seguir mostra as cópias Snapshot `vserverB:secondary1` no destino:
+
++
+[listing]
+----
+
+cluster_dst::> volume snapshot show -vserver vserverB -volume secondary1
+
+Vserver     Volume      Snapshot                State    Size  Total% Used%
+-------     ------      ---------- ----------- ------   -----  ------ -----
+vserverB    secondary1  hourly.2013-01-25_0005  valid   224KB     0%    0%
+                        daily.2013-01-25_0010   valid   92KB      0%    0%
+                        hourly.2013-01-25_0105  valid   228KB     0%    0%
+                        hourly.2013-01-25_0205  valid   236KB     0%    0%
+                        hourly.2013-01-25_0305  valid   244KB     0%    0%
+                        hourly.2013-01-25_0405  valid   244KB     0%    0%
+                        hourly.2013-01-25_0505  valid   244KB     0%    0%
+
+7 entries were displayed.
+----
+. Restaure o conteúdo de um volume a partir de uma cópia Snapshot em um volume de destino do SnapMirror:
++
+`snapmirror restore -source-path <SVM:volume>|<cluster://SVM/volume> -destination-path <SVM:volume>|<cluster://SVM/volume> -source-snapshot <snapshot>`
+
++
+Para obter a sintaxe completa do comando, consulte a página man.
+
++
+
+NOTE: Você deve executar esse comando a partir da fonte original SVM ou do cluster de origem original.
+
++
+O comando a seguir restaura o conteúdo do volume de origem original `primary1` da cópia Snapshot `daily.2013-01-25_0010` no volume de destino original `secondary1` :
+
++
+[listing]
+----
+cluster_src::> snapmirror restore -source-path vserverB:secondary1 -destination-path vserverA:primary1 -source-snapshot daily.2013-01-25_0010
+
+Warning: All data newer than Snapshot copy daily.2013-01-25_0010 on volume vserverA:primary1 will be deleted.
+
+Do you want to continue? {y|n}: y
+
+[Job 34] Job is queued: snapmirror restore from source vserverB:secondary1 for the snapshot daily.2013-01-25_0010.
+----
+. Remonte o volume restaurado e reinicie todos os aplicativos que usam o volume.
+
+
+--
+====
+
+
+== Outras maneiras de fazer isso em ONTAP
+
+[cols="2"]
+|===
+| Para executar estas tarefas com... | Veja este conteúdo... 
+
+
+| System Manager Classic (disponível com o ONTAP 9.7 e versões anteriores) | link:https://docs.netapp.com/us-en/ontap-system-manager-classic/volume-restore-snapvault/index.html["Restauração de volume usando visão geral do SnapVault"^] 
+|===

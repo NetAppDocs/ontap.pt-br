@@ -1,0 +1,59 @@
+---
+permalink: encryption-at-rest/move-encrypted-volume-task.html 
+sidebar: sidebar 
+keywords: moving, encrypted, volume 
+summary: Você pode usar o comando volume move start para mover um volume criptografado. O volume movido pode residir no mesmo agregado ou em um agregado diferente. 
+---
+= Mover um volume criptografado
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode usar o `volume move start` comando para mover um volume criptografado. O volume movido pode residir no mesmo agregado ou em um agregado diferente.
+
+.Sobre esta tarefa
+A movimentação falhará se o nó de destino ou o volume de destino não suportar criptografia de volume.
+
+A `-encrypt-destination` opção para `volume move start` o padrão é verdadeiro para volumes criptografados. O requisito para especificar que não deseja que o volume de destino seja criptografado garante que você não descriptografe inadvertidamente os dados no volume.
+
+.Antes de começar
+Você deve ser um administrador de cluster para executar esta tarefa. Como alternativa, você pode ser um administrador SVM a quem o administrador do cluster delegou autoridade. Para obter mais informações, link:delegate-volume-encryption-svm-administrator-task.html["delegar autoridade para executar o comando de movimentação de volume"]consulte .
+
+.Passos
+. Mova um volume criptografado existente e deixe os dados no volume criptografados:
++
+`volume move start -vserver _SVM_name_ -volume _volume_name_ -destination-aggregate _aggregate_name_`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
++
+O comando a seguir move um volume existente nomeado `vol1` para o agregado de destino `aggr3` e deixa os dados no volume criptografados:
+
++
+[listing]
+----
+cluster1::> volume move start -vserver vs1 -volume vol1 -destination-aggregate aggr3
+----
+. Verifique se o volume está ativado para criptografia:
++
+`volume show -is-encrypted true`
+
++
+Para obter a sintaxe de comando completa, consulte a página man para o comando.
+
++
+O comando a seguir exibe os volumes criptografados em `cluster1`:
+
++
+[listing]
+----
+cluster1::> volume show -is-encrypted true
+
+Vserver  Volume  Aggregate  State  Type  Size  Available  Used
+-------  ------  ---------  -----  ----  -----  --------- ----
+vs1      vol1    aggr3     online    RW  200GB    160.0GB  20%
+----
+

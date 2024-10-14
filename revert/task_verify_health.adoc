@@ -1,0 +1,171 @@
+---
+permalink: revert/task_verify_health.html 
+sidebar: sidebar 
+keywords: ontap, revert, reverting, reversion, downgrade, downgrading, verifying, verify, cluster, health 
+summary: Depois de reverter ou fazer o downgrade de um cluster, você deve verificar se os nós estão íntegros e qualificados para participar do cluster e se o cluster está em quórum. 
+---
+= Verifique a integridade do cluster e do armazenamento após o downgrade ou a reversão
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois de fazer o downgrade ou reverter um cluster, você deve verificar se os nós estão íntegros e qualificados para participar do cluster e se o cluster está em quórum. Você também deve verificar o status dos discos, agregados e volumes.
+
+
+
+== Verifique a integridade do cluster
+
+. Verifique se os nós do cluster estão online e estão qualificados para participar do cluster: `cluster show`
++
+[listing]
+----
+cluster1::> cluster show
+Node                  Health  Eligibility
+--------------------- ------- ------------
+node0                 true    true
+node1                 true    true
+----
++
+Se algum nó não for saudável ou não for elegível, verifique se há erros nos logs do EMS e tome medidas corretivas.
+
+. Defina o nível de privilégio como avançado
+`set -privilege advanced`
++
+Entre `y` para continuar.
+
+. Verifique os detalhes de configuração para cada processo RDB.
++
+** A época do banco de dados relacional e as epochs do banco de dados devem corresponder para cada nó.
+** O mestre de quórum por anel deve ser o mesmo para todos os nós.
++
+Observe que cada anel pode ter um mestre de quórum diferente.
+
++
+[cols="2*"]
+|===
+| Para exibir este processo RDB... | Digite este comando... 
+
+
+ a| 
+Aplicação de gerenciamento
+ a| 
+`cluster ring show -unitname mgmt`
+
+
+
+ a| 
+Base de dados de localização de volume
+ a| 
+`cluster ring show -unitname vldb`
+
+
+
+ a| 
+Gerenciador de interface virtual
+ a| 
+`cluster ring show -unitname vifmgr`
+
+
+
+ a| 
+Daemon de gerenciamento SAN
+ a| 
+`cluster ring show -unitname bcomd`
+
+|===
++
+Este exemplo mostra o processo do banco de dados de localização de volume:
+
+
+
++
+[listing]
+----
+cluster1::*> cluster ring show -unitname vldb
+Node      UnitName Epoch    DB Epoch DB Trnxs Master    Online
+--------- -------- -------- -------- -------- --------- ---------
+node0     vldb     154      154      14847    node0     master
+node1     vldb     154      154      14847    node0     secondary
+node2     vldb     154      154      14847    node0     secondary
+node3     vldb     154      154      14847    node0     secondary
+4 entries were displayed.
+----
+. Voltar ao nível de privilégio de administrador: `set -privilege admin`
+. Se você estiver operando em um ambiente SAN, verifique se cada nó está em um quórum de SAN: `event log show  -severity informational -message-name scsiblade.*`
++
+A mensagem de evento scsipblade mais recente para cada nó deve indicar que o scsi-blade está em quórum.
+
++
+[listing]
+----
+cluster1::*> event log show  -severity informational -message-name scsiblade.*
+Time             Node       Severity       Event
+---------------  ---------- -------------- ---------------------------
+MM/DD/YYYY TIME  node0      INFORMATIONAL  scsiblade.in.quorum: The scsi-blade ...
+MM/DD/YYYY TIME  node1      INFORMATIONAL  scsiblade.in.quorum: The scsi-blade ...
+----
+
+
+.Informações relacionadas
+link:../system-admin/index.html["Administração do sistema"]
+
+
+
+== Verifique a integridade do armazenamento
+
+Depois de reverter ou fazer downgrade de um cluster, você deve verificar o status dos discos, agregados e volumes.
+
+. Verifique o status do disco:
++
+[cols="2*"]
+|===
+| Para verificar... | Faça isso... 
+
+
+ a| 
+Discos quebrados
+ a| 
+.. Exibir todos os discos quebrados: `storage disk show -state broken`
+.. Remova ou substitua quaisquer discos quebrados.
+
+
+
+
+ a| 
+Discos em manutenção ou reconstrução
+ a| 
+.. Exiba todos os discos em estados de manutenção, pendentes ou reconstrução: `storage disk show -state maintenance|pending|reconstructing`
+.. Aguarde até que a operação de manutenção ou reconstrução termine antes de prosseguir.
+
+
+|===
+. Verifique se todos os agregados estão online exibindo o estado do storage físico e lógico, incluindo agregados de storage: `storage aggregate show -state !online`
++
+Este comando exibe os agregados que estão _não_ online. Todos os agregados devem estar online antes e depois de realizar uma grande atualização ou reversão.
+
++
+[listing]
+----
+cluster1::> storage aggregate show -state !online
+There are no entries matching your query.
+----
+. Verifique se todos os volumes estão online exibindo quaisquer volumes que estejam _não_ online: `volume show -state !online`
++
+Todos os volumes devem estar online antes e depois de realizar uma grande atualização ou reversão.
+
++
+[listing]
+----
+cluster1::> volume show -state !online
+There are no entries matching your query.
+----
+. Verifique se não existem volumes inconsistentes: `volume show -is-inconsistent true`
++
+Consulte o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/Volume_Showing_WAFL_Inconsistent["Volume Mostrando WAFL inconsistente"]sobre como resolver os volumes inconsistentes.
+
+
+
+.Informações relacionadas
+link:../disks-aggregates/index.html["Gerenciamento de disco e agregado"]

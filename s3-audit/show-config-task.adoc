@@ -1,0 +1,120 @@
+---
+permalink: s3-audit/show-config-task.html 
+sidebar: sidebar 
+keywords: s3 audit, show, display 
+summary: Esta tarefa explica como mostrar informações sobre auditorias S3 com a CLI. 
+---
+= Mostrar configurações de auditoria do S3
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Depois de concluir a configuração de auditoria, você pode verificar se a auditoria está configurada corretamente e está habilitada. Você também pode exibir informações sobre todas as configurações de auditoria de armazenamento de objetos no cluster.
+
+.Sobre esta tarefa
+É possível exibir informações sobre configurações de auditoria de bucket e SVM.
+
+* Buckets – use o `vserver object-store-server audit event-selector show` comando
++
+Sem parâmetros, o comando exibe as seguintes informações sobre buckets em todos os SVMs no cluster com configurações de auditoria de armazenamento de objetos:
+
++
+** Nome do SVM
+** Nome do intervalo
+** Valores de acesso e permissão
+
+
+* SVMs – use o `vserver object-store-server audit show` comando
++
+Sem parâmetros, o comando exibe as seguintes informações sobre todos os SVMs no cluster com configurações de auditoria de armazenamento de objetos:
+
++
+** Nome do SVM
+** Estado de auditoria
+** Diretório de destino
+
+
+
+
+Você pode especificar o `-fields` parâmetro para especificar quais informações de configuração de auditoria serão exibidas.
+
+.Procedimento
+Mostrar informações sobre configurações de auditoria do S3:
+
+[cols="2,4"]
+|===
+| Se pretender modificar a configuração para... | Digite... 
+
+
+| Baldes | `vserver object-store-server audit event-selector show [-vserver _svm_name_] [_parameters_]` 
+
+
+| SVMs  a| 
+`vserver object-store-server audit show [-vserver _svm_name_] [_parameters_]`
+
+|===
+.Exemplos
+O exemplo a seguir exibe informações para um único bucket:
+
+[listing]
+----
+cluster1::> vserver object-store-server audit event-selector show -vserver vs1 -bucket test-bucket
+     Vserver     Bucket     Access          Permission
+     ----------- ---------- --------------- ----------
+     vs1         bucket1    read-only       allow-only
+----
+O exemplo a seguir exibe informações de todos os buckets em um SVM:
+
+[listing]
+----
+cluster1::> vserver object-store-server audit event-selector show -vserver vs1
+
+     Vserver           :vs1
+     Bucket            :test-bucket
+     Access            :all
+     Permission        :all
+----
+O exemplo a seguir exibe o nome, o estado de auditoria, os tipos de eventos, o formato de log e o diretório de destino para todos os SVMs.
+
+[listing]
+----
+cluster1::> vserver object-store-server audit show
+
+Vserver     State  Event Types Log Format Target Directory
+----------- ------ ----------- ---------- --------------------
+vs1         false  data        json       /audit_log
+----
+O exemplo a seguir exibe os nomes e detalhes da SVM sobre o log de auditoria de todos os SVMs.
+
+[listing]
+----
+cluster1::> vserver object-store-server audit show -log-save-details
+
+                  Rotation                           Rotation
+      Vserver     File Size Rotation Schedule        Limit
+      ----------- --------- ------------------------ --------
+      vs1         100MB     -                        0
+----
+O exemplo a seguir exibe em forma de lista todas as informações de configuração de auditoria sobre todos os SVMs.
+
+[listing]
+----
+cluster1::> vserver object-store-server audit show -instance
+
+                             Vserver: vs1
+                      Auditing state: true
+                Log Destination Path: /audit_log
+       Categories of Events to Audit: data
+                          Log Format: json
+                 Log File Size Limit: 100MB
+        Log Rotation Schedule: Month: -
+  Log Rotation Schedule: Day of Week: -
+          Log Rotation Schedule: Day: -
+         Log Rotation Schedule: Hour: -
+       Log Rotation Schedule: Minute: -
+                  Rotation Schedules: -
+            Log Files Rotation Limit: 0
+                  Log Retention Time: 0s
+----

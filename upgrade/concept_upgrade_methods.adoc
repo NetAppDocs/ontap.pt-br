@@ -1,0 +1,94 @@
+---
+permalink: upgrade/concept_upgrade_methods.html 
+sidebar: sidebar 
+keywords: upgrade, methods, andu, ndu, automated, automatic, system manager, cli, nondisruptive, disruptive, rolling upgrade, rolling update, batch upgrades, batch upgrade, rolling, batch 
+summary: 'O método que você usa para atualizar depende de sua configuração. Se disponível, a atualização sem interrupções automatizada (ANDU) usando o System Manager é o método preferido.' 
+---
+= Métodos de atualização do software ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode fazer uma atualização automatizada do software ONTAP usando o Gerenciamento do sistema. Como alternativa, você pode executar uma atualização automática ou manual usando a interface de linha de comando (CLI) do ONTAP. O método usado para atualizar o ONTAP depende da configuração, da versão atual do ONTAP e do número de nós no cluster. A NetApp recomenda o uso do Gerenciador de sistemas para realizar atualizações automatizadas, a menos que sua configuração exija uma abordagem diferente. Por exemplo, se você tiver uma configuração do MetroCluster com 4 nós executando o ONTAP 9.3 ou posterior, use o Gerenciador de sistema para realizar uma atualização automatizada (às vezes chamada de atualização sem interrupções automatizada ou ANDU). Se você tiver uma configuração do MetroCluster com 8 nós executando o ONTAP 9.2 ou anterior, use a CLI para realizar uma atualização manual.
+
+
+NOTE: Se estiver a atualizar para o ONTAP 9.15,1 ou posterior através do BlueXP , siga o link:https://docs.netapp.com/us-en/bluexp-software-updates/get-started/software-updates.html["Procedimento de atualização na documentação do BlueXP "^].
+
+Uma atualização pode ser executada usando o processo de atualização contínua ou o processo de atualização em lote. Ambos não causam interrupções.
+
+Para atualizações automatizadas, o ONTAP instala automaticamente a imagem ONTAP de destino em cada nó, valida os componentes do cluster para garantir que o cluster possa ser atualizado sem interrupções e, em seguida, executa uma atualização em lote ou contínua em segundo plano com base no número de nós. Para atualizações manuais, o administrador confirma manualmente que cada nó no cluster está pronto para atualização e, em seguida, executa as etapas para executar uma atualização contínua.
+
+.Atualizações contínuas do ONTAP
+O processo de atualização progressiva é o padrão para clusters com menos de 8 nós. No processo de atualização contínua, um nó é colocado offline e atualizado enquanto seu parceiro assume seu armazenamento. Quando a atualização do nó estiver concluída, o nó do parceiro devolverá o controle ao nó proprietário original, e o processo será repetido no nó do parceiro. Cada par de HA adicional é atualizado em sequência até que todos os pares de HA estejam executando a versão de destino.
+
+.Atualizações em lote do ONTAP
+O processo de atualização em lote é o padrão para clusters de 8 nós ou mais. No processo de atualização em lote, o cluster é dividido em dois lotes. Cada lote contém vários pares de HA. No primeiro lote, o primeiro nó de cada par de HA é atualizado simultaneamente com o primeiro nó de todos os outros pares de HA no lote.
+
+No exemplo a seguir, há dois pares de HA em cada lote. Quando a atualização em lote começa, o nó A e o nó C são atualizados simultaneamente.
+
+image:batch_upgrade_set_1_ieops-1607.png["Etapa de atualização em lote 1"]
+
+Após a atualização dos primeiros nós de cada par de HA ser concluída, os nós de parceiros no lote 1 são atualizados simultaneamente.
+
+No exemplo a seguir, depois que o nó A e o nó C são atualizados, o nó B e o nó D são atualizados simultaneamente.
+
+image:batch_upgrade_set_2_ieops-1619.png["Etapa de atualização em lote 2"]
+
+O processo é repetido para os nós no lote 2. O primeiro nó de cada par de HA é atualizado simultaneamente com o primeiro nó de todos os outros pares de HA no lote.
+
+No exemplo a seguir, o nó e e o nó G são atualizados simultaneamente.
+
+image:batch_upgrade_set_3_ieops-1612.png["Etapa de atualização em lote 3"]
+
+Após a atualização dos primeiros nós de cada par de HA ser concluída, os nós de parceiros no lote 2 são atualizados simultaneamente.
+
+No exemplo a seguir, o nó F e o nó H são atualizados simultaneamente para concluir o processo de atualização em lote.
+
+image:batch_upgrade_set_4_ieops-1620.png["Etapa de atualização em lote 4"]
+
+
+
+== Métodos de atualização recomendados do ONTAP com base na configuração
+
+Os métodos de atualização suportados pela sua configuração estão listados por ordem de utilização recomendada.
+
+[cols="4"]
+|===
+| Configuração | Versão de ONTAP | Número de nós | Método de atualização recomendado 
+
+
+| Padrão | 9,0 ou posterior | 2 ou mais  a| 
+* xref:task_upgrade_andu_sm.html[Sem interrupções automatizadas com o System Manager]
+* xref:task_upgrade_andu_cli.html[Sem interrupções automatizadas com a CLI]
+
+
+
+
+| Padrão | 9,0 ou posterior | Único | link:../system-admin/single-node-clusters.html["Interrupções automatizadas"] 
+
+
+| MetroCluster | 9,3 ou posterior | 8  a| 
+* xref:task_upgrade_andu_cli.html[Sem interrupções automatizadas com a CLI]
+* xref:task_updating_a_four_or_eight_node_mcc.html[Sem interrupções manuais para MetroCluster de 4 ou 8 nós usando a CLI]
+
+
+
+
+| MetroCluster | 9,3 ou posterior | 2,4  a| 
+* xref:task_upgrade_andu_sm.html[Sem interrupções automatizadas com o System Manager]
+* xref:task_upgrade_andu_cli.html[Sem interrupções automatizadas com a CLI]
+
+
+
+
+| MetroCluster | 9,2 ou anterior | 4, 8 | xref:task_updating_a_four_or_eight_node_mcc.html[Sem interrupções manuais para MetroCluster de 4 ou 8 nós usando a CLI] 
+
+
+| MetroCluster | 9,2 ou anterior | 2 | xref:task_updating_a_two_node_metrocluster_configuration_in_ontap_9_2_and_earlier.html[Sem interrupções manuais para MetroCluster de 2 nós usando a CLI] 
+|===
+ANDU usando o System Manager é o método de atualização recomendado para todas as atualizações de patch, independentemente da configuração.
+
+
+NOTE: Um xref:task_updating_an_ontap_cluster_disruptively.html[atualização disruptiva manual] pode ser executado em qualquer configuração. No entanto, você não deve executar uma atualização disruptiva a menos que você possa colocar o cluster offline durante a atualização. Se estiver operando em um ambiente SAN, você deverá estar preparado para encerrar ou suspender todos os clientes SAN antes de executar uma atualização disruptiva. As atualizações disruptivas são realizadas usando a CLI do ONTAP.

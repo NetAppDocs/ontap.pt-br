@@ -1,0 +1,34 @@
+---
+permalink: smb-admin/optimize-user-access-force-group-share-concept.html 
+sidebar: sidebar 
+keywords: create, share, ontap, command, line, data, unix, effective, security, smb, user, group, force-group, predefined, database, force-group, access, how to optimize smb user access with the force-group share setting 
+summary: Quando você cria um compartilhamento da linha de comando ONTAP para dados com segurança efetiva UNIX, você pode especificar que todos os arquivos criados por usuários SMB nesse compartilhamento pertencem ao mesmo grupo, conhecido como grupo de força, que deve ser um grupo predefinido no banco de dados de grupos UNIX. O uso de um grupo de força torna mais fácil garantir que os arquivos possam ser acessados por usuários SMB pertencentes a vários grupos. 
+---
+= Otimize o acesso do usuário SMB com a configuração de compartilhamento de grupo de força
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando você cria um compartilhamento da linha de comando ONTAP para dados com segurança efetiva UNIX, você pode especificar que todos os arquivos criados por usuários SMB nesse compartilhamento pertencem ao mesmo grupo, conhecido como _force-group_, que deve ser um grupo predefinido no banco de dados de grupos UNIX. O uso de um grupo de força torna mais fácil garantir que os arquivos possam ser acessados por usuários SMB pertencentes a vários grupos.
+
+Especificar um grupo de força é significativo apenas se o compartilhamento estiver em um UNIX ou em uma qtree misto. Não há necessidade de definir um grupo de força para compartilhamentos em um volume NTFS ou qtree porque o acesso a arquivos nesses compartilhamentos é determinado pelas permissões do Windows, não GIDs UNIX.
+
+Se um grupo de força tiver sido especificado para uma ação, o seguinte se tornará verdadeiro para a partilha:
+
+* Os usuários SMB no grupo de força que acessam esse compartilhamento são temporariamente alterados para o GID do grupo de força.
++
+Este GID permite que eles acessem arquivos neste compartilhamento que não são acessíveis normalmente com seu GID principal ou UID.
+
+* Todos os arquivos neste compartilhamento criados por usuários SMB pertencem ao mesmo grupo de força, independentemente do GID principal do proprietário do arquivo.
+
+
+Quando os usuários SMB tentam acessar um arquivo criado pelo NFS, os GIDs principais dos usuários SMB determinam os direitos de acesso.
+
+O grupo force não afeta a forma como os usuários NFS acessam arquivos neste compartilhamento. Um arquivo criado por NFS adquire o GID do proprietário do arquivo. A determinação das permissões de acesso é baseada no UID e GID principal do usuário NFS que está tentando acessar o arquivo.
+
+O uso de um grupo de força torna mais fácil garantir que os arquivos possam ser acessados por usuários SMB pertencentes a vários grupos. Por exemplo, se você quiser criar um compartilhamento para armazenar as páginas da Web da empresa e dar acesso de gravação a usuários nos departamentos de Engenharia e Marketing, você pode criar um compartilhamento e dar acesso de gravação a um grupo de força chamado "'webgroup1". Devido ao grupo force, todos os arquivos criados por usuários SMB neste compartilhamento são de propriedade do grupo "'webgroup1". Além disso, os usuários recebem automaticamente o GID do grupo "'webgroup1" ao acessar o compartilhamento. Como resultado, todos os usuários podem escrever para esse compartilhamento sem que você precise gerenciar os direitos de acesso dos usuários nos departamentos de Engenharia e Marketing.
+
+.Informações relacionadas
+xref:create-share-force-group-setting-task.adoc[Criando um compartilhamento SMB com a configuração de compartilhamento de grupo de força]

@@ -1,0 +1,219 @@
+---
+permalink: consistency-groups/modify-task.html 
+sidebar: sidebar 
+keywords: consistency groups, shrink, expand, add volumes, remove volumes, move volumes, smbc 
+summary: É possível modificar um grupo de consistência adicionando ou removendo volumes ou movendo volumes entre grupos de consistência filho. 
+---
+= Modificar volumes de membros em um grupo de consistência
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.12,1, é possível modificar um grupo de consistência removendo volumes ou adicionando volumes (expandindo o grupo de consistência). A partir do ONTAP 9.13,1, é possível mover volumes entre grupos de consistência filho se eles compartilharem um pai comum.
+
+
+
+== Adicione volumes a um grupo de consistência
+
+A partir do ONTAP 9.12,1, você pode adicionar volumes a um grupo de consistência sem interrupções.
+
+.Sobre esta tarefa
+* Não é possível adicionar volumes associados a outro grupo de consistência.
+* Os grupos de consistência são compatíveis com protocolos nas, SAN e NVMe.
+* Você pode adicionar até 16 volumes de cada vez a um grupo de consistência se os ajustes estiverem dentro do xref:limits.html[limites do grupo de consistência].
+* A partir do ONTAP 9.13,1, você pode adicionar volumes a um grupo de consistência sem interrupções com uma política de sincronização ativa do SnapMirror ativa ou assíncrona do SnapMirror.
+* Quando você adiciona volumes a um grupo de consistência protegido pela sincronização ativa do SnapMirror, o status da relação de sincronização ativa do SnapMirror muda para "expansão" até que o espelhamento e a proteção estejam configurados para o novo volume. Se ocorrer um desastre no cluster primário antes que esse processo seja concluído, o grupo de consistência voltará à sua composição original como parte da operação de failover.
+* No ONTAP 9.12,1 e anteriores, _não é possível adicionar volumes a um grupo de consistência em uma relação de sincronização ativa do SnapMirror. Primeiro, você deve excluir a relação de sincronização ativa do SnapMirror, modificar o grupo de consistência e restaurar a proteção com a sincronização ativa do SnapMirror.
+* A partir do ONTAP 9.12,1, a API REST do ONTAP suporta a adição de _new_ ou volumes existentes a um grupo de consistência. Para obter mais informações sobre a API REST do ONTAP, link:https://docs.netapp.com/us-en/ontap-automation/reference/api_reference.html#access-a-copy-of-the-ontap-rest-api-reference-documentation["Documentação de referência da API REST do ONTAP"^]consulte .
++
+A partir do ONTAP 9.13,1, essa funcionalidade é suportada no Gerenciador de sistemas.
+
+* Ao expandir um grupo de consistência, as cópias Snapshot do grupo de consistência capturado antes da modificação serão consideradas parciais. Qualquer operação de restauração com base nessa cópia Snapshot refletirá o grupo de consistência no momento do snapshot.
+* Se você estiver usando ONTAP 9.10,1 até 9.11.1, não poderá modificar um grupo de consistência. Para alterar a configuração de um grupo de consistência no ONTAP 9.10,1 ou 9.11.1, você deve excluir o grupo de consistência e criar um novo grupo de consistência com os volumes que deseja incluir.
+* A partir do ONTAP 9.14,1, é possível replicar snapshots granular de volume para o cluster de destino usando o SnapMirror assíncrono. Ao expandir um grupo de consistência usando o SnapMirror assíncrono, os snapshots granulares de volume só são replicados depois de expandir o grupo de consistência quando a política SnapMirror é EspelrorAll ou EspelrorAndVault. Somente snapshots granulares em volume mais recentes que o grupo de consistência de linha de base Snapshot são replicados.
+* Se você adicionar volumes a um grupo de consistência em uma relação de recuperação de desastres da SVM (compatível a partir de ONTAP 9.14,1), será necessário atualizar a relação de recuperação de desastres da SVM do cluster de destino após a expansão do grupo de consistência. Para obter mais informações, xref:../data-protection/update-replication-relationship-manual-task.html[Atualizar uma relação de replicação manualmente]consulte .
+
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.12,1, você pode executar esta operação com o Gerenciador do sistema.
+
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência que deseja modificar.
+. Se você estiver modificando um único grupo de consistência, na parte superior do menu *volumes*, selecione *mais* e, em seguida, *expandir* para adicionar um volume.
++
+Se você estiver modificando um grupo de consistência filho, identifique o grupo de consistência pai que deseja modificar. Selecione o botão *>* para visualizar os grupos de consistência filho e, em seguida, selecione image:../media/icon_kabob.gif["Ícone de opções do menu"] ao lado do nome do grupo de consistência filho que deseja modificar. Nesse menu, selecione *expandir*.
+
+. Selecione até 16 volumes para adicionar ao grupo de consistência.
+. Selecione *Guardar*. Quando a operação for concluída, exiba os volumes recém-adicionados no menu *volumes* do grupo de consistência.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, é possível adicionar volumes a um grupo de consistência usando a CLI do ONTAP.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Adicionar volumes existentes
+. Emita o seguinte comando. O `-volumes` parâmetro aceita uma lista de volumes separados por vírgulas.
++
+
+NOTE: Inclua o parâmetro somente `-parent-consistency-group` se o grupo de consistência estiver em uma relação hierárquica.
+
++
+`consistency-group volume add -vserver _svm_name_ -consistency-group _consistency_group_name_ -parent-consistency-group _parent_consistency_group_ -volume _volumes_`
+
+
+
+.Adicione novos volumes
+O procedimento para adicionar novos volumes depende do protocolo que está a utilizar.
+
+
+NOTE: Inclua o parâmetro somente `-parent-consistency-group` se o grupo de consistência estiver em uma relação hierárquica.
+
+* Para adicionar novos volumes sem exportá-los:
++
+`consistency-group volume create -vserver _SVM_name_ -consistency-group _child_consistency_group_ -parent-consistency-group existingParentCg -volume _volume_name_ -size _size_`
+
+* Para adicionar novos volumes NFS:
++
+`consistency-group volume create -vserver _SVM_name_ -consistency-group _consistency-group-name_ -volume _volume-prefix_ -volume-count _number_ -size _size_ -export-policy _policy_name_`
+
+* Para adicionar novos volumes SAN:
++
+`consistency-group volume create -vserver _SVM_name_ -consistency-group _consistency-group-name_ -lun _lun_name_ -size _size_ -lun-count _number_ -igroup _igroup_name_`
+
+* Para adicionar novos namespaces NVMe:
++
+`consistency-group volume create -vserver _SVM_name_ -consistency-group _consistency_group_name_ -namespace _namespace_name_ -volume-count _number_ -namespace-count _number_ -size _size_ -subsystem _subsystem_name_`
+
+
+
+--
+====
+
+
+== Remover volumes de um grupo de consistência
+
+Os volumes removidos de um grupo de consistência não são excluídos. Eles permanecem ativos no cluster.
+
+.Sobre esta tarefa
+* Não é possível remover volumes de um grupo de consistência em uma relação de recuperação de desastres do SnapMirror active Sync ou SVM. Primeiro, você deve excluir a relação de sincronização ativa do SnapMirror para modificar o grupo de consistência e, em seguida, restabelecer a relação.
+* Se um grupo de consistência não tiver volumes após a operação de remoção, o grupo de consistência será excluído.
+* Quando um volume é removido de um grupo de consistência, os instantâneos existentes do grupo de consistência permanecem, mas são considerados inválidos. Os instantâneos existentes não podem ser usados para restaurar o conteúdo do grupo de consistência. Snapshots granulares em volume permanecem válidos.
+* Se você excluir um volume do cluster, ele será removido automaticamente do grupo de consistência.
+* Para alterar a configuração de um grupo de consistência no ONTAP 9.10,1 ou 9.11.1, você deve excluir o grupo de consistência e criar um novo grupo de consistência com os volumes de membros desejados.
+* A exclusão de um volume do cluster removerá automaticamente o grupo de consistência.
+
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.12,1, você pode executar esta operação com o Gerenciador do sistema.
+
+.Passos
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência único ou filho que deseja modificar.
+. No menu *volumes*, marque as caixas de seleção ao lado dos volumes individuais que deseja remover do grupo consistência.
+. Selecione *Remover volumes do grupo de consistência*.
+. Confirme se você entende que a remoção dos volumes fará com que todas as cópias Snapshot do grupo de consistência se tornem inválidas e selecione *Remover*.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, você pode remover volumes de um grupo de consistência usando a CLI.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Passo
+. Remova os volumes. O `-volumes` parâmetro aceita uma lista de volumes separados por vírgulas.
++
+Inclua o parâmetro somente `-parent-consistency-group` se o grupo de consistência estiver em uma relação hierárquica.
+
++
+`consistency-group volume remove -vserver _SVM_name_ -consistency-group _consistency_group_name_ -parent-consistency-group _parent_consistency_group_name_ -volume _volumes_`
+
+
+
+--
+====
+
+
+== Mover volumes entre grupos de consistência
+
+A partir do ONTAP 9.13,1, é possível mover volumes entre grupos de consistência filho que compartilham um pai.
+
+.Sobre esta tarefa
+* Você só pode mover volumes entre grupos de consistência aninhados no mesmo grupo de consistência pai.
+* Os instantâneos de grupos de consistência existentes tornam-se inválidos e não são mais acessíveis como instantâneos de grupos de consistência. Instantâneos de volume individuais permanecem válidos.
+* As cópias snapshot do grupo de consistência pai permanecem válidas.
+* Se você mover todos os volumes para fora de um grupo de consistência filho, esse grupo de consistência será excluído.
+* As modificações a um grupo de consistência devem respeitar xref:limits.html[limites do grupo de consistência]o .
+
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.12,1, você pode executar esta operação com o Gerenciador do sistema.
+
+.Passos
+. Selecione *armazenamento > grupos de consistência*.
+. Selecione o grupo de consistência pai que contém os volumes que deseja mover. Encontre o grupo de consistência filho e expanda o menu **volumes**. Selecione os volumes que pretende mover.
+. Selecione **mover**.
+. Escolha se deseja mover os volumes para um novo grupo de consistência ou um grupo existente.
++
+.. Para mover para um grupo de consistência existente, selecione **grupo de consistência filho existente** e escolha o nome do grupo de consistência no menu suspenso.
+.. Para mover para um novo grupo de consistência, selecione **novo grupo de consistência filho**. Insira um nome para o novo grupo de consistência filho e selecione um tipo de componente.
+
+
+. Selecione **mover**.
+
+
+--
+.CLI
+--
+A partir do ONTAP 9.14,1, é possível mover volumes entre grupos de consistência usando a CLI do ONTAP.
+
+.Antes de começar
+* Você deve estar no nível de privilégio de administrador para executar esta tarefa.
+* No ONTAP 9.14,1, você deve ser um administrador de cluster ou SVM para executar essa tarefa. A partir do ONTAP 9.15,1, qualquer utilizador no nível de privilégios de administrador pode executar esta tarefa.
+
+
+.Mover volumes para um novo grupo de consistência filho
+. O comando a seguir cria um novo grupo de consistência filho que contém os volumes designados.
++
+Ao criar o novo grupo de consistência, você designará novas políticas de snapshot, QoS e disposição em camadas.
+
++
+`consistency-group volume reassign -vserver _SVM_name_ -consistency-group _source_child_consistency_group_ -parent-consistency-group _parent_consistency_group_ -volume _volumes_ -new-consistency-group _consistency_group_name_ [-snapshot-policy _policy_ -qos-policy _policy_ -tiering-policy _policy_]`
+
+
+
+.Mover volumes para um grupo de consistência filho existente
+. Reatribuir os volumes. O `-volumes` parâmetro aceita uma lista separada por vírgulas de nomes de volume.
++
+`consistency-group volume reassign -vserver _SVM_name_ -consistency-group _source_child_consistency_group_ -parent-consistency-group _parent_consistency_group_ -volume _volumes_ -to-consistency-group _target_consistency_group_`
+
+
+
+--
+====
+.Informações relacionadas
+* xref:limits.html[Limites do grupo de consistência]
+* xref:clone-task.html[Clonar um grupo de consistência]
+

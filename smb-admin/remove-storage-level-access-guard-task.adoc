@@ -1,0 +1,95 @@
+---
+permalink: smb-admin/remove-storage-level-access-guard-task.html 
+sidebar: sidebar 
+keywords: remove, storage-level, access, guard, volume, qtree, set, access, security, storage, level, removing, modify, ntfs, directory, security, remove storage-level access guide 
+summary: Você pode remover o Storage-Level Access Guard em um volume ou qtree se não quiser mais definir a segurança de acesso no nível de armazenamento. A remoção do Storage-Level Access Guard não modifica ou remove a segurança regular do arquivo NTFS e do diretório. 
+---
+= Remova o Storage-Level Access Guard
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode remover o Storage-Level Access Guard em um volume ou qtree se não quiser mais definir a segurança de acesso no nível de armazenamento. A remoção do Storage-Level Access Guard não modifica ou remove a segurança regular do arquivo NTFS e do diretório.
+
+.Passos
+. Verifique se o volume ou a qtree tem o Storage-Level Access Guard configurado usando o `vserver security file-directory show` comando.
++
+`vserver security file-directory show -vserver vs1 -path /datavol2`
+
++
+[listing]
+----
+
+                Vserver: vs1
+              File Path: /datavol2
+      File Inode Number: 99
+         Security Style: ntfs
+        Effective Style: ntfs
+         DOS Attributes: 10
+ DOS Attributes in Text: ----D---
+Expanded Dos Attributes: -
+           Unix User Id: 0
+          Unix Group Id: 0
+         Unix Mode Bits: 777
+ Unix Mode Bits in Text: rwxrwxrwx
+                   ACLs: NTFS Security Descriptor
+                         Control:0xbf14
+                         Owner:BUILTIN\Administrators
+                         Group:BUILTIN\Administrators
+                         SACL - ACEs
+                           AUDIT-EXAMPLE\Domain Users-0xf01ff-OI|CI|FA
+                         DACL - ACEs
+                           ALLOW-EXAMPLE\Domain Admins-0x1f01ff-OI|CI
+                           ALLOW-EXAMPLE\Domain Users-0x1301bf-OI|CI
+
+                         Storage-Level Access Guard security
+                         DACL (Applies to Directories):
+                           ALLOW-BUILTIN\Administrators-0x1f01ff
+                           ALLOW-CREATOR OWNER-0x1f01ff
+                           ALLOW-EXAMPLE\Domain Admins-0x1f01ff
+                           ALLOW-EXAMPLE\Domain Users-0x120089
+                           ALLOW-NT AUTHORITY\SYSTEM-0x1f01ff
+                         DACL (Applies to Files):
+                           ALLOW-BUILTIN\Administrators-0x1f01ff
+                           ALLOW-CREATOR OWNER-0x1f01ff
+                           ALLOW-EXAMPLE\Domain Admins-0x1f01ff
+                           ALLOW-EXAMPLE\Domain Users-0x120089
+                           ALLOW-NT AUTHORITY\SYSTEM-0x1f01ff
+----
+. Remova o Storage-Level Access Guard usando o `vserver security file-directory remove-slag` comando.
++
+`vserver security file-directory remove-slag -vserver vs1 -path /datavol2`
+
+. Verifique se o Storage-Level Access Guard foi removido do volume ou qtree usando o `vserver security file-directory show` comando.
++
+`vserver security file-directory show -vserver vs1 -path /datavol2`
+
++
+[listing]
+----
+
+                Vserver: vs1
+              File Path: /datavol2
+      File Inode Number: 99
+         Security Style: ntfs
+        Effective Style: ntfs
+         DOS Attributes: 10
+ DOS Attributes in Text: ----D---
+Expanded Dos Attributes: -
+           Unix User Id: 0
+          Unix Group Id: 0
+         Unix Mode Bits: 777
+ Unix Mode Bits in Text: rwxrwxrwx
+                   ACLs: NTFS Security Descriptor
+                         Control:0xbf14
+                         Owner:BUILTIN\Administrators
+                         Group:BUILTIN\Administrators
+                         SACL - ACEs
+                           AUDIT-EXAMPLE\Domain Users-0xf01ff-OI|CI|FA
+                         DACL - ACEs
+                           ALLOW-EXAMPLE\Domain Admins-0x1f01ff-OI|CI
+                           ALLOW-EXAMPLE\Domain Users-0x1301bf-OI|CI
+----
+

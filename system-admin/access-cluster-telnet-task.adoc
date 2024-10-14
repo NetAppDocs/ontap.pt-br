@@ -1,0 +1,112 @@
+---
+permalink: system-admin/access-cluster-telnet-task.html 
+sidebar: sidebar 
+keywords: access, cluster, telnet, administrative, tasks, disable, default 
+summary: Você pode emitir solicitações Telnet para o cluster para executar tarefas administrativas. O Telnet está desativado por padrão. 
+---
+= Acesse o cluster usando Telnet
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode emitir solicitações Telnet para o cluster para executar tarefas administrativas. O Telnet está desativado por padrão.
+
+Telnet e RSH não são protocolos seguros; você deve considerar o uso de SSH para acessar o cluster. O SSH fornece um shell remoto seguro e sessão de rede interativa. Para obter mais informações, link:./access-cluster-ssh-task.html["Acesse o cluster usando SSH"]consulte .
+
+.Antes de começar
+As condições a seguir devem ser atendidas antes que você possa usar o Telnet para acessar o cluster:
+
+* Você deve ter uma conta de usuário local de cluster configurada para usar Telnet como método de acesso.
++
+O `-application` parâmetro dos `security login` comandos especifica o método de acesso para uma conta de usuário. Para obter mais informações, consulte as `security login` páginas de manual.
+
+
+
+.Sobre esta tarefa
+* O ONTAP suporta um máximo de 50 sessões Telnet simultâneas por nó.
++
+Se o LIF de gerenciamento de cluster reside no nó, ele compartilha esse limite com o LIF de gerenciamento de nós.
+
++
+Se a taxa de ligações em curso for superior a 10 por segundo, o serviço é temporariamente desativado durante 60 segundos.
+
+* Se você quiser acessar a CLI do ONTAP a partir de um host do Windows, você pode usar um utilitário de terceiros, como o PuTTY.
+* Os comandos RSH requerem Privileges avançado.
+
+
+[role="tabbed-block"]
+====
+.ONTAP 9 .6 ou posterior
+--
+.Passos
+. Confirme se o protocolo de segurança Telnet está ativado:
++
+`security protocol show`
+
++
+.. Se o protocolo de segurança Telnet estiver ativado, avance para o passo seguinte.
+.. Se o protocolo de segurança Telnet não estiver ativado, use o seguinte comando para ativá-lo:
++
+`security protocol modify -application telnet -enabled true`
+
+
+
+. Confirme se o `management-telnet-server` serviço existe nas LIFs de gerenciamento:
++
+`network interface show -services management-telnet-server`
+
++
+.. Se o `management-telnet-server` serviço existir, avance para o passo seguinte.
+.. Se o `management-telnet-server` serviço não existir, use o seguinte comando para adicioná-lo:
++
+`network interface service-policy add-service -vserver cluster1 -policy default-management -service management-telnet-server`
+
+
+
+
+
+--
+.ONTAP 9 .5 ou anterior
+--
+.Antes de começar
+As condições a seguir devem ser atendidas antes que você possa usar o Telnet para acessar o cluster:
+
+* O Telnet já deve estar habilitado na política de firewall de gerenciamento usada pelas LIFs de gerenciamento de cluster ou nó para que as solicitações Telnet possam passar pelo firewall.
++
+Por padrão, o Telnet está desativado. O `system services firewall policy show` comando com o `-service telnet` parâmetro exibe se o Telnet foi habilitado em uma política de firewall. Para obter mais informações, consulte as `system services firewall policy` páginas de manual.
+
+* Se você usar conexões IPv6, o IPv6 já deve estar configurado e habilitado no cluster e as políticas de firewall já devem ser configuradas com endereços IPv6.
++
+O `network options ipv6 show` comando exibe se o IPv6 está ativado. O `system services firewall policy show` comando exibe políticas de firewall.
+
+
+
+.Passos
+. Em um host de administração, digite o seguinte comando:
++
+`telnet hostname_or_IP`
+
++
+`hostname_or_IP` É o nome do host ou o endereço IP do LIF de gerenciamento de cluster ou um LIF de gerenciamento de nós. Recomenda-se a utilização do LIF de gestão de clusters. Você pode usar um endereço IPv4 ou IPv6.
+
+
+
+--
+====
+.Exemplo de uma solicitação Telnet
+O exemplo a seguir mostra como o usuário chamado "joe", que foi configurado com acesso Telnet, pode emitir uma solicitação Telnet para acessar um cluster cujo LIF de gerenciamento de cluster é 10.72.137.28:
+
+[listing]
+----
+
+admin_host$ telnet 10.72.137.28
+
+Data ONTAP
+login: joe
+Password:
+
+cluster1::>
+
+----

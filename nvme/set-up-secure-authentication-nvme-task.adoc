@@ -1,0 +1,95 @@
+---
+permalink: nvme/set-up-secure-authentication-nvme-task.html 
+sidebar: sidebar 
+keywords: manage, nvme, secure, authentication, tcp, dh-hmac-hcap, chap, setting up, set up, in-band, in band 
+summary: A partir do ONTAP 9.12,1, a autenticação bidirecional e segura entre um host NVMe e uma controladora é suportada pelo NVMe usando o protocolo de autenticação DH-HMAC-CHAP. 
+---
+= Configurar a autenticação na banda pelo NVMe
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.12,1, você pode usar a interface de linha de comando (CLI) do ONTAP para configurar a autenticação na banda (segura), bidirecional e unidirecional entre um host e uma controladora NVMe através dos protocolos NVMe/TCP e NVMe/FC usando a autenticação DH-HMAC-CHAP. A partir do ONTAP 9.14,1, a autenticação na banda pode ser configurada no Gerenciador do sistema.
+
+Para configurar a autenticação na banda, cada host ou controlador deve estar associado a uma chave DH-HMAC-CHAP, que é uma combinação do NQN do host ou controlador NVMe e um segredo de autenticação configurado pelo administrador. Para que um host ou controlador NVMe autentique seu peer, ele precisa saber a chave associada ao mesmo.
+
+Na autenticação unidirecional, uma chave secreta é configurada para o host, mas não para o controlador. Na autenticação bidirecional, uma chave secreta é configurada para o host e para o controlador.
+
+Sha-256 é a função hash padrão e 2048-bit é o grupo DH padrão.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.14,1, é possível usar o Gerenciador do sistema para configurar a autenticação na banda ao criar ou atualizar um subsistema NVMe, criar ou clonar espaços de nomes NVMe ou adicionar grupos de consistência com novos namespaces NVMe.
+
+.Passos
+. No System Manager, clique em *hosts > NVMe Subsystem* e, em seguida, clique em *Add*.
+. Adicione o nome do subsistema NVMe e selecione a VM de storage e o sistema operacional de host.
+. Introduza o NQN do anfitrião.
+. Selecione *Use in-band Authentication* ao lado do Host NQN.
+. Forneça o segredo do host e o segredo do controlador.
++
+A chave DH-HMAC-CHAP é uma combinação do NQN do host ou controlador NVMe e um segredo de autenticação configurado pelo administrador.
+
+. Selecione a função hash preferida e o grupo DH para cada host.
++
+Se você não selecionar uma função hash e um grupo DH, SHA-256 é atribuído como a função hash padrão e 2048 bits é atribuído como o grupo DH padrão.
+
+. Opcionalmente, clique em *Add* e repita as etapas conforme necessário para adicionar mais host.
+. Clique em *Salvar*.
+. Para verificar se a autenticação na banda está ativada, clique em *System Manager > hosts > NVMe Subsystem > Grid > Peek view*.
++
+Um ícone de chave transparente ao lado do nome do host indica que o modo unidirecional está ativado. Uma tecla opaca ao lado do nome do host indica que o modo bidirecional está ativado.
+
+
+
+--
+.CLI
+--
+.Passos
+. Adicione a autenticação DH-HMAC-CHAP ao subsistema NVMe:
++
+[source, cli]
+----
+vserver nvme subsystem host add -vserver <svm_name> -subsystem <subsystem> -host-nqn <host_nqn> -dhchap-host-secret <authentication_host_secret> -dhchap-controller-secret <authentication_controller_secret> -dhchap-hash-function <sha-256|sha-512> -dhchap-group <none|2048-bit|3072-bit|4096-bit|6144-bit|8192-bit>
+----
+. Verifique se o protocolo de autenticação DH-HMAC CHAP foi adicionado ao seu host:
++
+[source, cli]
+----
+vserver nvme subsystem host show
+----
++
+[listing]
+----
+  [ -dhchap-hash-function {sha-256|sha-512} ]  Authentication Hash Function
+  [ -dhchap-dh-group {none|2048-bit|3072-bit|4096-bit|6144-bit|8192-bit} ]
+                                               Authentication Diffie-Hellman
+                                               Group
+  [ -dhchap-mode {none|unidirectional|bidirectional} ]
+                                               Authentication Mode
+
+----
+. Verifique se a autenticação DH-HMAC CHAP foi executada durante a criação do controlador NVMe:
++
+[source, cli]
+----
+vserver nvme subsystem controller show
+----
++
+[listing]
+----
+ [ -dhchap-hash-function {sha-256|sha-512} ]  Authentication Hash Function
+ [ -dhchap-dh-group {none|2048-bit|3072-bit|4096-bit|6144-bit|8192-bit} ]
+                                               Authentication Diffie-Hellman
+                                               Group
+ [ -dhchap-mode {none|unidirectional|bidirectional} ]
+                                               Authentication Mode
+----
+
+
+--
+====
