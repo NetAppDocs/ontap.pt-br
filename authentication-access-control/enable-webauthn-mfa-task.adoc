@@ -1,0 +1,112 @@
+---
+sidebar: sidebar 
+permalink: authentication-access-control/enable-webauthn-mfa-task.html 
+keywords: mfa, multi-factor, authentication, authorization, webauthn, FIDO2, hardware key, enable, system manager 
+summary: Você pode ativar o WebAuthn MFA para usuários do System Manager. 
+---
+= Habilite o MFA WebAuthn para usuários ou grupos do Gerenciador de sistema do ONTAP
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Como administrador do ONTAP, você pode ativar o WebAuthn MFA para um usuário ou grupo do Gerenciador de sistema adicionando um novo usuário ou grupo com a opção de WebAuthn MFA ativada ou habilitando a opção para um usuário ou grupo existente.
+
+
+NOTE: Depois de ativar o WebAuthn MFA como o segundo método de autenticação para um usuário ou grupo, o usuário (ou todos os usuários desse grupo) será solicitado a Registrar um dispositivo FIDO2 de hardware no próximo login no System Manager. Esse Registro é gerenciado pelo sistema operacional local do usuário e geralmente consiste em inserir a chave de segurança, criar uma chave de acesso e tocar na chave de segurança (se suportada).
+
+
+
+== Ative o WebAuthn MFA ao criar um novo usuário ou grupo
+
+Você pode criar um novo usuário ou grupo com o WebAuthn MFA habilitado usando o Gerenciador de sistema ou a CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *Cluster > Settings*.
+. Selecione o ícone de seta ao lado de *usuários e funções*.
+. Selecione *Adicionar* em *usuários*.
+. Especifique um nome de usuário ou grupo e selecione uma função no menu suspenso para *função*.
+. Especifique um método de login e uma senha para o usuário ou grupo.
++
+WebAuthn MFA suporta métodos de login de "senha", "domínio" ou "nsswitch" para usuários e "domínio" ou "nsswitch" para grupos.
+
+. Na coluna *MFA para HTTP*, selecione *Enabled*.
+. Selecione *Guardar*.
+
+
+--
+.CLI
+--
+. Crie um novo usuário ou grupo com o WebAuthn MFA habilitado.
++
+No exemplo a seguir, o WebAuthn MFA é habilitado escolhendo "publikey" para o segundo método de autenticação:
+
++
+[source, console]
+----
+security login create -user-or-group-name <user_or_group_name> \
+                     -authentication-method domain \
+                     -second-authentication-method publickey \
+                     -application http \
+                     -role admin
+----
+
+
+--
+====
+
+
+== Ative o WebAuthn MFA para um usuário ou grupo existente
+
+Você pode ativar o WebAuthn MFA para um usuário ou grupo existente.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *Cluster > Settings*.
+. Selecione o ícone de seta ao lado de *usuários e funções*.
+. Na lista de utilizadores e grupos, selecione o menu de opções para o utilizador ou grupo que pretende editar.
++
+WebAuthn MFA suporta métodos de login de "senha", "domínio" ou "nsswitch" para usuários e "domínio" ou "nsswitch" para grupos.
+
+. Na coluna *MFA para HTTP* para esse usuário, selecione *Enabled*.
+. Selecione *Guardar*.
+
+
+--
+.CLI
+--
+. Modifique um usuário ou grupo existente para ativar o WebAuthn MFA para esse usuário ou grupo.
++
+No exemplo a seguir, o WebAuthn MFA é habilitado escolhendo "publikey" para o segundo método de autenticação:
+
++
+[source, console]
+----
+security login modify -user-or-group-name <user_or_group_name> \
+                     -authentication-method domain \
+                     -second-authentication-method publickey \
+                     -application http \
+                     -role admin
+----
+
+
+--
+====
+
+
+== Saiba mais
+
+Visite as páginas do manual do ONTAP para estes comandos:
+
+* https://docs.netapp.com/us-en/ontap-cli/security-login-create.html["login de segurança criar"^]
+* https://docs.netapp.com/us-en/ontap-cli/security-login-modify.html["modificação de início de sessão de segurança"^]
+

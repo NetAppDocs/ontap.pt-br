@@ -120,7 +120,7 @@ Antes de iniciar uma migração SVM, você deve atender aos seguintes pré-requi
 * Todos os nós no cluster de origem devem estar executando o ONTAP 9.10,1 ou posterior. Para obter suporte específico ao controlador de array ONTAP, link:https://hwu.netapp.com/["Hardware Universe"^]consulte .
 * Todos os nós no cluster de origem devem estar executando a mesma versão do ONTAP.
 * Todos os nós no cluster de destino devem estar executando a mesma versão do ONTAP.
-* O cluster de destino deve estar no mesmo ou não mais do que duas versões mais recentes do cluster de origem (ECV).
+* A versão do ONTAP do cluster de destino deve ser igual ou não mais do que duas versões mais recentes principais do cluster de origem.
 * Os clusters de origem e destino devem suportar a mesma sub-rede IP para acesso a LIF de dados.
 * O SVM de origem deve conter menos do que o xref:Maximum supported volumes per SVM[número máximo de volumes de dados suportados para a versão].
 * Espaço suficiente para a colocação do volume deve estar disponível no destino
@@ -207,10 +207,10 @@ A migração do SVM é compatível com volumes no FabricPools para as plataforma
 | Espelhos de partilha de carga | Não suportado |  
 
 
-| SVMs MetroCluster | Não suportado | Embora a migração do SVM não seja compatível com a migração do MetroCluster SVM, você pode usar a replicação assíncrona do SnapMirror para link:https://www.netapp.com/media/83785-tr-4966.pdf["Migrar um SVM em uma configuração do MetroCluster"]o . Você deve estar ciente de que o processo descrito para migrar um SVM em uma configuração do MetroCluster é _não_ um método sem interrupções. 
+| SVMs MetroCluster | ONTAP 9.16,1 | É possível migrar um SVM de um par de HA que não seja MetroCluster para uma configuração MetroCluster ou de uma configuração MetroCluster para um par de HA que não seja MetroCluster. Não é possível migrar um SVM de uma configuração do MetroCluster para outra configuração do MetroCluster. [NOTA] a migração do SVM não é compatível com a migração do MetroCluster SVM em versões anteriores ao ONTAP 9.16,1. Talvez você possa usar a replicação assíncrona do SnapMirror para link:https://www.netapp.com/media/83785-tr-4966.pdf["Migrar um SVM em uma configuração do MetroCluster"^]o . Você deve estar ciente de que usar o SnapMirror assíncrono para migrar um SVM em uma configuração do MetroCluster é _disruptive_ método de migração. 
 
 
-| Criptografia de agregados NetApp (NAE) | Não suportado | A migração não é suportada de uma fonte não encriptada para um destino encriptado. 
+| Criptografia de agregados NetApp (NAE) | Não suportado | A migração não é suportada para nenhum endpoint que utilize o NAE. 
 
 
 | Configurações NDMP | Não suportado |  
@@ -222,7 +222,7 @@ A migração do SVM é compatível com volumes no FabricPools para as plataforma
 | Logs de auditoria NFS e SMB | ONTAP 9.13,1  a| 
 [NOTE]
 ====
-O redirecionamento de log de auditoria só está disponível no modo de nuvem. Para a migração SVM no local com auditoria habilitada, você deve desativar a auditoria na SVM de origem e, em seguida, executar a migração.
+Para a migração SVM no local com auditoria habilitada, você deve desativar a auditoria na SVM de origem e, em seguida, executar a migração.
 
 ====
 Antes da migração para o SVM:
@@ -262,7 +262,7 @@ As migrações SMB são disruptivas e exigem uma atualização do cliente após 
 
 
 
-| Relacionamentos de nuvem da SnapMirror | ONTAP 9.12,1 | A partir do ONTAP 9.12,1, quando você migra um SVM com relacionamentos de nuvem SnapMirror, o cluster de destino precisa ter o link:../data-protection/snapmirror-licensing-concept.html#snapmirror-cloud-license["Licença de nuvem da SnapMirror"] instalado e a capacidade suficiente disponível para dar suporte à migração de capacidade nos volumes espelhados para a nuvem. 
+| Relacionamentos de nuvem da SnapMirror | ONTAP 9.12,1 | A partir do ONTAP 9.12,1, quando você migra um SVM no local com relacionamentos de nuvem do SnapMirror, o cluster de destino precisa ter o link:../data-protection/snapmirror-licensing-concept.html#snapmirror-cloud-license["Licença de nuvem da SnapMirror"] instalado e ter capacidade suficiente disponível para dar suporte à migração de capacidade nos volumes espelhados para a nuvem. 
 
 
 | Destino assíncrono SnapMirror | ONTAP 9.12,1 |  
@@ -300,16 +300,16 @@ Quando uma fonte SnapMirror é migrada, o ONTAP não impede a exclusão do volum
 | SnapMirror síncrono | Não suportado |  
 
 
-| Cópia Snapshot | ONTAP 9.10,1 |  
+| Instantâneos | ONTAP 9.10,1 |  
 
 
-| Bloqueio de cópias Snapshot à prova de violações | ONTAP 9.14,1 | O bloqueio de cópias Snapshot à prova de violações não é equivalente ao SnapLock. O SnapLock permanece sem suporte. 
+| Bloqueio de snapshot à prova de violações | ONTAP 9.14,1 | O bloqueio de snapshot à prova de violações não é equivalente ao SnapLock. O SnapLock Enterprise e o SnapLock Compliance permanecem sem suporte. 
 
 
 | Virtual IP LIFs/BGP | Não suportado |  
 
 
-| Console de armazenamento virtual 7,0 e posterior | Não suportado | O VSC faz parte https://docs.netapp.com/us-en/ontap-tools-vmware-vsphere/index.html["Ferramentas do ONTAP para o dispositivo virtual VMware vSphere"^] do início com o VSC 7,0. 
+| Console de armazenamento virtual 7,0 e posterior | Não suportado |  
 
 
 | Clones de volume | Não suportado |  
@@ -369,17 +369,17 @@ A tabela a seguir indica operações de volume com suporte à migração do SVM 
 | Restringir | Não é permitido | Permitido | Não suportado 
 
 
-| Os atributos de cópia Snapshot modificam | Permitido | Permitido | Não suportado 
+| Atributos do Snapshot modificam | Permitido | Permitido | Não suportado 
 
 
-| Cópia snapshot autodelete Modificar | Permitido | Permitido | Não suportado 
+| snapshot Autodelete Modificar | Permitido | Permitido | Não suportado 
 
 
-| Cópia Snapshot criar | Permitido | Permitido | Não suportado 
+| Criar Snapshot | Permitido | Permitido | Não suportado 
 
 
-| Eliminar cópia Snapshot | Permitido | Permitido | Não suportado 
+| Eliminar instantâneo | Permitido | Permitido | Não suportado 
 
 
-| Restaure o arquivo a partir da cópia Snapshot | Permitido | Permitido | Não suportado 
+| Restaure o arquivo a partir do snapshot | Permitido | Permitido | Não suportado 
 |===

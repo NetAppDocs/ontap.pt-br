@@ -1,37 +1,74 @@
 ---
 permalink: san-admin/enable-space-allocation.html 
 sidebar: sidebar 
-keywords: enable, space allocation, space reclamation, unmap, lun 
+keywords: enable, space allocation, space reclamation, unmap, lun, hole punching, namespace, nvme, san 
 summary: Ative a alocação de espaço para permitir que o host e o sistema de armazenamento cooperem no gerenciamento de espaço. 
 ---
-= Ativar alocação de espaço para SAN
+= Ativar a alocação de espaço ONTAP para protocolos SAN
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-Ative a alocação de espaço para permitir que seus hosts e sistemas de armazenamento cooperem no gerenciamento de espaço LUN.
+A alocação de espaço do ONTAP ajuda a impedir que seus LUNs ou namespaces NVMe fiquem offline se eles ficarem sem espaço e permitir que seus hosts SAN recuperem espaço.
 
-A partir do ONTAP 9.15,1, a alocação de espaço é ativada por padrão para LUNs recém-criados. A alocação de espaço foi desativada por padrão em versões anteriores do ONTAP (9.14.1 e anteriores).
+O suporte da ONTAP para alocação de espaço é baseado no protocolo SAN e na versão do ONTAP. A partir do ONTAP 9.16,1, a alocação de espaço é habilitada por padrão para protocolos iSCSI, FC e NVMe para todos os LUNs e namespaces recém-criados.
 
-A ativação da `space-allocation` configuração permite os seguintes benefícios:
+[cols="2,2,4a"]
+|===
+| Versão de ONTAP | Protocolos | A alocação de espaço é... 
 
-* *O ONTAP pode comunicar a um host que nenhum espaço livre está disponível para prestar serviço de escrita*: Essa comunicação é uma maneira mais graciosa para os hosts lidarem com situações fora do espaço. O LUN permanece on-line, mas não consegue atender a uma e/S de gravação até que o espaço fique disponível. Leia IO ainda pode ser executado. O efeito exato em um sistema operacional do host depende da configuração do host. Em alguns casos, o sistema operacional tenta novamente escrever IO até que ele seja bem-sucedido. Em outros casos, o sistema de arquivos poderia ser colocado offline.
+
+| 9.16.1 ou posterior  a| 
+* ISCSI
+* FC
+* NVMe
+
+ a| 
+Habilitado por padrão para LUNs e namespaces recém-criados
+
+
+
+.2+| 9.15.1  a| 
+* ISCSI
+* FC
+
+ a| 
+Habilitado por padrão para LUNs recém-criados
+
+
+
+| NVMe | Não suportado 
+
+
+.2+| 9.14.1 e anteriores  a| 
+* ISCSI
+* FC
+
+ a| 
+Desativado por padrão para LUNs recém-criados
+
+
+
+| NVMe | Não suportado 
+|===
+Quando a alocação de espaço está ativada:
+
+* Se um LUN ou namespace ficar sem espaço, o ONTAP se comunica com o host que nenhum espaço livre está disponível para operações de gravação. Como resultado, o LUN ou namespace permanece on-line e as operações de leitura continuam sendo atendidas. Dependendo da configuração do host, o host tenta novamente as operações de gravação até que ele seja bem-sucedido ou o sistema de arquivos do host seja colocado offline. As operações de gravação são retomadas quando espaço livre adicional se torna disponível para o LUN ou namespace.
 +
+Se a alocação de espaço não estiver ativada, quando um LUN ou namespace ficar sem espaço, todas as operações de e/S falharão e o LUN ou namespace for colocado off-line; o problema de espaço deve ser resolvido para retomar as operações normais. A nova digitalização de dispositivos LUN também pode ser necessária no host para restaurar caminhos e dispositivos para um estado operacional.
 
-NOTE: Se a `space-allocation` configuração não estiver ativada, um LUN entrará em um estado de `space-error` quando atingir um limite de espaço baixo e todas as IO falharem. O LUN precisa ser alterado novamente para `online` o estado depois que o problema de espaço foi resolvido. A nova digitalização de dispositivos LUN também pode ser necessária no host para restaurar caminhos e dispositivos para um estado operacional.
-
-* *Um host pode executar `SCSI UNMAP` (às vezes chamado `TRIM`) operações*: Essas operações permitem que um host identifique blocos de dados em um LUN que não são mais necessários porque eles não contêm mais dados válidos. A identificação normalmente acontece após a exclusão do arquivo. O sistema de armazenamento pode então desalocar esses blocos de dados para que o espaço possa ser consumido em outro lugar. Essa realocação melhora significativamente a eficiência geral de armazenamento, especialmente com sistemas de arquivos que têm alta rotatividade de dados.
+* Um host pode executar operações SCSI ou NVMe `UNMAP` (às vezes chamadas `TRIM`). As operações DE DESMAPEAMENTO permitem que um host identifique blocos de dados que não são mais necessários porque eles não contêm mais dados válidos. A identificação normalmente acontece após a exclusão do arquivo. O sistema de armazenamento pode então desalocar esses blocos de dados para que o espaço possa ser consumido em outro lugar. Essa realocação melhora significativamente a eficiência geral de armazenamento, especialmente com sistemas de arquivos que têm alta rotatividade de dados.
 
 
 .Antes de começar
-A ativação da alocação de espaço requer uma configuração de host que possa lidar corretamente com erros de alocação de espaço quando uma gravação não pode ser concluída. A alavancagem `SCSI UNMAP` requer uma configuração que possa usar o provisionamento de blocos lógicos conforme definido no padrão SCSI SBC-3.
+A ativação da alocação de espaço requer uma configuração de host que possa lidar corretamente com erros de alocação de espaço quando uma gravação não pode ser concluída. A utilização de SCSI ou NVMe `UNMAP` requer uma configuração que possa usar o provisionamento de bloco lógico conforme definido no padrão SCSI SBC-3.
 
-Os seguintes hosts atualmente suportam o provisionamento de thin Provisioning SCSI quando você ativa a alocação de espaço:
+Os hosts a seguir atualmente oferecem suporte a thin Provisioning quando você ativa a alocação de espaço:
 
 * Citrix XenServer 6,5 e posterior
-* ESXi 5,0 e posterior
+* VMware ESXi 5,0 e posterior
 * Kernel Oracle Linux 6,2 UEK e posterior
 * Red Hat Enterprise Linux 6,2 e posterior
 * SUSE Linux Enterprise Server 11 e posterior
@@ -39,10 +76,8 @@ Os seguintes hosts atualmente suportam o provisionamento de thin Provisioning SC
 * Windows
 
 
-A alocação de espaço não é compatível com hosts NVMe.
-
 .Sobre esta tarefa
-Quando você atualiza seu cluster para o ONTAP 9.15,1, a configuração de alocação de espaço para todos os LUNs criados antes da atualização de software permanece a mesma após a atualização, independentemente do tipo de host. Por exemplo, se um LUN foi criado no ONTAP 9.13,1 para um host VMware com alocação de espaço desativada, a alocação de espaço nesse LUN permanecerá desativada após a atualização para o ONTAP 9.15,1.
+Quando você atualiza seu cluster para o ONTAP 9.15,1 ou posterior, a configuração de alocação de espaço para todos os LUNs criados antes da atualização de software permanece a mesma após a atualização, independentemente do tipo de host. Por exemplo, se um LUN foi criado no ONTAP 9.13,1 para um host VMware com alocação de espaço desativada, a alocação de espaço nesse LUN permanecerá desativada após a atualização para o ONTAP 9.15,1.
 
 .Passos
 . Ativar alocação de espaço:
@@ -60,6 +95,36 @@ lun show -vserver <vserver_name> -volume <volume_name> -lun <lun_name> -fields s
 . Verifique se a alocação de espaço está ativada no sistema operacional do host.
 +
 
-NOTE: Algumas configurações de host, em particular o ESX, podem reconhecer automaticamente a alteração de configuração e não exigem intervenção do usuário. Outras configurações podem exigir uma nova digitalização do dispositivo. Alguns sistemas de arquivos e gerenciadores de volume podem exigir configurações específicas adicionais para habilitar a recuperação de espaço usando `SCSI UNMAP`o . A reinstalação de sistemas de arquivos ou uma reinicialização total do sistema operacional pode ser necessária. Consulte a documentação do sistema operacional específico para obter orientação.
+NOTE: Algumas configurações de host, incluindo algumas versões do VMware ESXi, podem reconhecer automaticamente a alteração de configuração e não exigem intervenção do usuário. Outras configurações podem exigir uma nova digitalização do dispositivo. Alguns sistemas de arquivos e gerenciadores de volume podem exigir configurações específicas adicionais para habilitar a recuperação de espaço usando `SCSI UNMAP`o . A reinstalação de sistemas de arquivos ou uma reinicialização total do sistema operacional pode ser necessária. Consulte a documentação do seu host específico para obter orientação.
 
 
+
+
+
+== Configuração de host para hosts NVMe posteriores e VMware ESXi 8.x
+
+Se você tiver um host VMware executando o ESXi 8.x ou posterior com o protocolo NVMe, depois de ativar a alocação de espaço no ONTAP, execute as etapas a seguir nos hosts.
+
+.Passos
+. No seu anfitrião ESXi, verifique se o DSM está desativado:
++
+`esxcfg-advcfg -g /SCSi/NVmeUseDsmTp4040`
+
++
+O valor esperado é 0.
+
+. Ativar o NVMe DSM:
++
+`esxcfg-advcfg -s 1 /Scsi/NvmeUseDsmTp4040`
+
+. Verifique se o DSM está ativado:
++
+`esxcfg-advcfg -g /SCSi/NVmeUseDsmTp4040`
+
++
+O valor esperado é 1.
+
+
+
+.Links relacionados
+Saiba mais link:https://docs.netapp.com/us-en/ontap-sanhost/nvme_esxi_8.html["Configuração de host NVMe-of para ESXi 8.x com ONTAP"^]sobre o .

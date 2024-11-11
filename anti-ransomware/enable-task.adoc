@@ -1,8 +1,8 @@
 ---
 sidebar: sidebar 
 permalink: anti-ransomware/enable-task.html 
-keywords: anti-ransomware overview, ransomware, security, introduce, autotonomous, protection, arp, detection, threat, attack, suspect, what ontap anti-ransomware detects, entropy, abnormal volume activity, extension conformity, how to recover data in after a ransomware attack, ransomware protection strategy 
-summary: A proteção autônoma contra ransomware é habilitada no modo de aprendizado, analisando cargas de trabalho para caraterizar o comportamento normal. No modo ativo, é sinalizada uma atividade anormal. 
+keywords: ransomware, arp, enable, set up, autonomous ransomware protection 
+summary: 'A partir do ONTAP 9.10,1, você pode ativar a proteção autônoma contra ransomware (ARP) em volumes novos ou existentes.' 
 ---
 = Ative a proteção Autonomous ransomware
 :hardbreaks:
@@ -12,33 +12,38 @@ summary: A proteção autônoma contra ransomware é habilitada no modo de apren
 :nofooter: 
 :icons: font
 :linkattrs: 
-:imagesdir: ./media/
+:imagesdir: ../media/
 
 
 [role="lead"]
-A partir do ONTAP 9.10,1, a proteção autônoma contra ransomware (ARP) pode ser ativada em volumes novos ou existentes. Primeiro, você ativa o ARP no modo de aprendizado, no qual o sistema analisa a carga de trabalho para caraterizar o comportamento normal. Você pode ativar o ARP em um volume existente ou criar um novo volume e ativar o ARP desde o início.
+A partir do ONTAP 9.10,1, você pode ativar a proteção autônoma contra ransomware (ARP) em um volume existente ou criar um novo volume e ativar o ARP desde o início.
+
+Se você quiser configurar o cluster do ONTAP para que todos os novos volumes sejam ativados por padrão para a proteção autônoma contra ransomware (ARP), consulte este link:enable-default-task.html["Procedimento ARP relacionado"].
 
 .Sobre esta tarefa
-Você deve sempre ativar o ARP inicialmente no modo de aprendizagem (ou Dry-run). O início no modo ativo pode levar a relatórios falsos positivos excessivos.
+* *Para ONTAP 9.10,1 a 9.15.1 e ARP com volumes FlexGroup* para essas versões do ONTAP, você deve sempre ativar o ARP inicialmente no link:index.html#learning-and-active-modes["modo de aprendizagem"]modo (ou "Dry-run"). Quando você ativa o ARP pela primeira vez no modo de aprendizado, o sistema analisa a carga de trabalho para caraterizar o comportamento normal. O início no modo ativo pode levar a relatórios falsos positivos excessivos.
++
+Recomenda-se que o ARP seja executado no modo de aprendizagem por um mínimo de 30 dias. A partir do ONTAP 9.13,1, o ARP determina automaticamente o intervalo ideal do período de aprendizagem e automatiza o switch, que pode ocorrer antes de 30 dias.
 
-Recomenda-se que o ARP seja executado no modo de aprendizagem por um mínimo de 30 dias. A partir do ONTAP 9.13,1, o ARP determina automaticamente o intervalo ideal do período de aprendizagem e automatiza o switch, que pode ocorrer antes de 30 dias. Para obter mais informações, link:index.html#learning-and-active-modes["Aprendizagem e modos ativos"]consulte .
+* *Para ONTAP 9.16,1 e posterior com volumes FlexVol* quando você ativa o ARP, a proteção ARP/AI começa imediatamente no modo ativo. Nenhum período de aprendizagem é necessário.
+
 
 
 NOTE: Nos volumes existentes, os modos de aprendizagem e ativos aplicam-se apenas a dados recém-gravados, não a dados já existentes no volume. Os dados existentes não são digitalizados e analisados, porque as caraterísticas do tráfego de dados normal anterior são assumidas com base nos novos dados depois que o volume é ativado para ARP.
 
 .Antes de começar
 * Você precisa ter uma VM de storage (SVM) habilitada para NFS, SMB (ou ambos).
-* O xref:index.html[licença correta] tem de estar instalado para a versão do ONTAP.
+* O xref:index.html#licenses-and-enablement[licença correta] tem de estar instalado para a versão do ONTAP.
 * Você precisa ter um workload nas com clientes configurados.
-* O volume em que deseja definir ARP precisa ser protegido e deve ter um link:../concepts/namespaces-junction-points-concept.html["caminho de junção"^]ativo .
+* O volume em que deseja definir ARP deve estar protegido e ter um link:../concepts/namespaces-junction-points-concept.html["caminho de junção"]ativo .
 * O volume tem de ser inferior a 100% cheio.
-* É recomendável configurar o sistema EMS para enviar notificações por e-mail, que incluirão avisos de atividade ARP. Para obter mais informações, link:../error-messages/configure-ems-events-send-email-task.html["Configurar eventos EMS para enviar notificações por e-mail"^]consulte .
-* A partir do ONTAP 9.13,1, é recomendável ativar a verificação multi-admin (MAV) para que dois ou mais administradores de usuário autenticados sejam necessários para a configuração ARP (Autonomous ransomware Protection). Para obter mais informações, link:../multi-admin-verify/enable-disable-task.html["Ative a verificação de vários administradores"^]consulte .
+* É recomendável configurar o sistema EMS para enviar notificações por e-mail, que incluirão avisos de atividade ARP. Para obter mais informações, link:../error-messages/configure-ems-events-send-email-task.html["Configurar eventos EMS para enviar notificações por e-mail"]consulte .
+* A partir do ONTAP 9.13,1, é recomendável ativar a verificação multi-admin (MAV) para que dois ou mais administradores de usuário autenticados sejam necessários para a configuração ARP (Autonomous ransomware Protection). Para obter mais informações, link:../multi-admin-verify/enable-disable-task.html["Ative a verificação de vários administradores"]consulte .
 
 
 
 
-== Ativar ARP
+== Ative ARP em um volume novo ou existente
 
 Você pode ativar o ARP usando o Gerenciador do sistema ou a CLI do ONTAP.
 
@@ -48,15 +53,14 @@ Você pode ativar o ARP usando o Gerenciador do sistema ou a CLI do ONTAP.
 --
 .Passos
 . Selecione *armazenamento > volumes* e, em seguida, selecione o volume que pretende proteger.
-. Na guia *Segurança* da visão geral *volumes*, selecione *Status* para alternar de Desativado para ativado no modo de aprendizado na caixa *Anti-ransomware*.
-. Quando o período de aprendizagem terminar, mude o ARP para o modo ativo.
+. Na guia *Security* da visão geral *volumes*, selecione *Status* para alternar de Disabled (Desativado) para Enabled (habilitado).
++
+** Se você estiver usando ARP com ONTAP 9.15,1 ou anterior ou ONTAP 9.16,1 com volumes FlexGroup, selecione *Enabled in learning-mode* na caixa *Anti-ransomware*.
 +
 
-NOTE: A partir do ONTAP 9.13,1, o ARP determina automaticamente o intervalo ideal do período de aprendizagem e automatiza o switch. Você pode link:../anti-ransomware/enable-default-task.html["Desative essa configuração na VM de armazenamento associada"] se quiser controlar o modo de aprendizagem para o interrutor de modo ativo manualmente.
+NOTE: A partir do ONTAP 9.13,1, o ARP determina automaticamente o intervalo ideal do período de aprendizagem e automatiza o switch. link:enable-default-task.html["Desative essa configuração na VM de armazenamento associada"]Pode controlar manualmente o modo de aprendizagem para a transição do modo ativo.
 
-+
-.. Selecione *armazenamento > volumes* e, em seguida, selecione o volume que está pronto para o modo ativo.
-.. Na guia *Segurança* da visão geral *volumes*, selecione *alternar* para o modo ativo na caixa Anti-ransomware.
+** Se você estiver usando ARP em volumes FlexVol com ONTAP 9.16,1 ou posterior, a funcionalidade ARP/AI não requer um período de aprendizado e o modo ativo é selecionado por padrão.
 
 
 . Você pode verificar o estado ARP do volume na caixa *Anti-ransomware*.
@@ -71,25 +75,21 @@ Para exibir o status ARP para todos os volumes: No painel *volumes*, selecione *
 O processo para ativar o ARP com a CLI difere se você estiver habilitando-o em um volume existente versus um novo volume.
 
 .Ative ARP em um volume existente
-. Modifique um volume existente para habilitar a proteção contra ransomware no modo de aprendizado:
+. Modifique um volume existente para habilitar a proteção contra ransomware:
 +
-`security anti-ransomware volume dry-run -volume _vol_name_ -vserver _svm_name_`
+** Para ONTAP 9.15,1 e anterior e ARP com volumes FlexGroup, defina o estado do volume para `dry-run` (modo de aprendizagem):
++
+`security anti-ransomware volume dry-run -volume <vol_name> -vserver <svm_name>`
 
+** Para ONTAP 9.16,1 e posterior com volumes ARP/AI e FlexVol, defina o estado do volume para `active` (modo ativo):
 +
-Se você estiver executando o ONTAP 9.13,1 ou posterior, o aprendizado adaptativo será ativado para que a mudança para o estado ativo seja feita automaticamente. Se você não quiser que esse comportamento seja ativado automaticamente, altere a configuração no nível SVM em todos os volumes associados:
+`security anti-ransomware volume active -volume <vol_name> -vserver <svm_name>`
 
-+
-`vserver modify _svm_name_ -anti-ransomware-auto-switch-from-learning-to-enabled false`
 
-. Quando o período de aprendizagem terminar, modifique o volume protegido para mudar para o modo ativo se ainda não tiver sido feito automaticamente:
-+
-`security anti-ransomware volume enable -volume _vol_name_ -vserver _svm_name_`
 
+. Se você atualizou para o ONTAP 9.13,1 ou posterior e o estado padrão ARP for `dry-run`, o aprendizado adaptável será ativado para que a alteração para o estado ativo seja feita automaticamente. Se você não quiser que esse comportamento seja ativado automaticamente, altere a configuração no nível SVM em todos os volumes associados:
 +
-Você também pode alternar para o modo ativo com o comando modificar volume:
-
-+
-`volume modify -volume _vol_name_ -vserver _svm_name_ -anti-ransomware-state active`
+`vserver modify <svm_name> -anti-ransomware-auto-switch-from-learning-to-enabled false`
 
 . Verifique o estado ARP do volume.
 +
@@ -98,25 +98,21 @@ Você também pode alternar para o modo ativo com o comando modificar volume:
 
 
 .Ative ARP em um novo volume
-. Criar um novo volume com a proteção antirransomware habilitada antes do provisionamento de dados.
+. Crie um novo volume com ARP ativado antes de provisionar dados:
 +
-`volume create -volume _vol_name_ -vserver _svm_name_  -aggregate _aggr_name_ -size _nn_ -anti-ransomware-state dry-run -junction-path /_path_name_`
+** Para ONTAP 9.15,1 e anterior e ARP com volumes FlexGroup, defina o estado para `dry-run` (modo de aprendizagem):
++
+`volume create -volume <vol_name> -vserver <svm_name> -aggregate <aggr_name> -size <nn> -anti-ransomware-state dry-run -junction-path </_path_name_>`
 
+** Para ONTAP 9.16,1 e posterior com volumes ARP/AI e FlexVol, defina o estado para `active` (modo ativo):
 +
-Se você estiver executando o ONTAP 9.13,1 ou posterior, o aprendizado adaptativo será ativado para que a mudança para o estado ativo seja feita automaticamente. Se você não quiser que esse comportamento seja ativado automaticamente, altere a configuração no nível SVM em todos os volumes associados:
+`volume create -volume <vol_name> -vserver <svm_name> -aggregate <aggr_name> -size <nn> -anti-ransomware-state active -junction-path </_path_name_>`
 
-+
-`vserver modify _svm_name_ -anti-ransomware-auto-switch-from-learning-to-enabled false`
 
-. Quando o período de aprendizagem terminar, modifique o volume protegido para mudar para o modo ativo se ainda não tiver sido feito automaticamente:
-+
-`security anti-ransomware volume enable -volume _vol_name_ -vserver _svm_name_`
 
+. Se você atualizou para o ONTAP 9.13,1 ou posterior e o estado padrão ARP for `dry-run`, o aprendizado adaptável será ativado para que a alteração para o estado ativo seja feita automaticamente. Se você não quiser que esse comportamento seja ativado automaticamente, altere a configuração no nível SVM em todos os volumes associados:
 +
-Você também pode alternar para o modo ativo com o comando modificar volume:
-
-+
-`volume modify -volume _vol_name_ -vserver _svm_name_ -anti-ransomware-state active`
+`vserver modify <svm_name> -anti-ransomware-auto-switch-from-learning-to-enabled false`
 
 . Verifique o estado ARP do volume.
 +
@@ -126,3 +122,6 @@ Você também pode alternar para o modo ativo com o comando modificar volume:
 
 --
 ====
+.Informações relacionadas
+* link:switch-learning-to-active-mode.html["Mude para o modo ativo após um período de aprendizagem"]
+

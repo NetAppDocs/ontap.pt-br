@@ -13,16 +13,41 @@ summary: Para instalar o serviço ONTAP Mediator, você deve garantir que todos 
 [role="lead"]
 Para instalar o serviço ONTAP Mediator, você deve garantir que todos os pré-requisitos sejam atendidos, buscar o pacote de instalação e executar o instalador no host. Este procedimento é utilizado para uma instalação ou atualização de uma instalação existente.
 
-.Sobre esta tarefa
 * A partir do ONTAP 9.7, você pode usar qualquer versão do Mediador ONTAP para monitorar uma configuração IP do MetroCluster.
 * A partir do ONTAP 9.8, você pode usar qualquer versão do ONTAP Mediator para monitorar uma relação de sincronização ativa do SnapMirror.
 
 
-.Antes de começar
-Você deve atender aos seguintes pré-requisitos.
 
 
-NOTE: O serviço ONTAP Mediator não é compatível com o modo FIPS Linux e impedirá que ele seja instalado com êxito. Você pode verificar se o modo FIPS está ativado usando o `fips-mode-setup --check` comando. Você pode desativar o modo FIPS usando o `fips-mode-setup --disable` comando. Reinicie após desativar o modo FIPS para instalar com êxito o serviço ONTAP Mediator.
+== Considerações sobre instalação e atualização
+
+Reveja as seguintes considerações antes de atualizar ou instalar o Mediador ONTAP.
+
+
+CAUTION: O ONTAP Mediator 1,8 e versões anteriores não é compatível com o modo FIPS e impedirá que ele seja instalado com sucesso. Você pode verificar se o modo FIPS está ativado usando o `fips-mode-setup --check` comando. Você pode desativar o modo FIPS usando o `fips-modesetup --disable` comando. Reinicie após desativar o modo FIPS para instalar com êxito o ONTAP Mediator 1,8 ou anterior.
+
+* Você deve atualizar o Mediador ONTAP para a versão mais recente disponível. As versões anteriores do ONTAP Mediator permanecem retrocompatíveis com todas as versões do ONTAP, mas as versões recentes incluem patches de segurança para todos os elementos de terceiros.
+* Quando você atualiza para uma nova versão do ONTAP Mediator, o instalador atualiza automaticamente para a versão SCST recomendada, a menos que uma versão superior esteja disponível. Para obter instruções sobre como instalar manualmente uma versão SCST mais alta, link:manage-task.html["Gerencie o serviço Mediator"]consulte . Para versões suportadas, consulte link:whats-new-concept.html#scst-support-matrix["Matriz de suporte SCST"].
++
+
+CAUTION: Se ocorrer uma falha de instalação, talvez seja necessário atualizar para uma versão posterior do ONTAP Mediator.
+
+* Se você instalar o `yum-utils` pacote, você pode usar o `needs-restarting` comando.
+
+
+
+
+=== Requisitos da OS
+
+Seu sistema operacional deve atender aos seguintes requisitos:
+
+* instalação física de 64 bits ou máquina virtual
+* 8 GB DE RAM
+* 1 GB de espaço em disco (usado para instalação de aplicativos, logs de servidor e banco de dados)
+* Usuário: Acesso root
+
+
+A tabela a seguir mostra os sistemas operacionais suportados para cada versão do ONTAP Mediator.
 
 [cols="30,70"]
 |===
@@ -32,9 +57,23 @@ NOTE: O serviço ONTAP Mediator não é compatível com o modo FIPS Linux e impe
 
 
  a| 
+1,9
+ a| 
+* Red Hat Enterprise Linux
++
+** Compatível: 8,4, 8,5, 8,6, 8,7, 8,9, 9,1 e 9,3 1
+** Recomendado: 8,8, 8,10, 9,0, 9,2 e 9,4
+
+
+* Rocky Linux 8 e 9
+
+
+
+
+ a| 
 1,8
  a| 
-* Red Hat Enterprise Linux: 8,6, 8,7, 8,8, 8,9, 8,10, 9,2, 9,3 e 9,4
+* Red Hat Enterprise Linux: 8,4, 8,5, 8,6, 8,7, 8,8, 8,9, 8,10, 9,0, 9,1, 9,2, 9,3 e 9,4
 * Rocky Linux 8 e 9
 
 
@@ -43,7 +82,7 @@ NOTE: O serviço ONTAP Mediator não é compatível com o modo FIPS Linux e impe
  a| 
 1,7
  a| 
-* Red Hat Enterprise Linux: 8,5, 8,6, 8,7, 8,8, 8,9, 9,0, 9,1, 9,2 e 9,3
+* Red Hat Enterprise Linux: 8,4, 8,5, 8,6, 8,7, 8,8, 8,9, 9,0, 9,1, 9,2 e 9,3
 * Rocky Linux 8 e 9
 
 
@@ -61,7 +100,7 @@ NOTE: O serviço ONTAP Mediator não é compatível com o modo FIPS Linux e impe
  a| 
 1,5
  a| 
-* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,1, 8,2, 8,3, 8,4, 8,5
+* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,0, 8,1, 8,2, 8,3, 8,4, 8,5
 * CentOS: 7,6, 7,7, 7,8, 7,9
 
 
@@ -70,7 +109,7 @@ NOTE: O serviço ONTAP Mediator não é compatível com o modo FIPS Linux e impe
  a| 
 1,4
  a| 
-* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,1, 8,2, 8,3, 8,4, 8,5
+* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,0, 8,1, 8,2, 8,3, 8,4, 8,5
 * CentOS: 7,6, 7,7, 7,8, 7,9
 
 
@@ -79,7 +118,7 @@ NOTE: O serviço ONTAP Mediator não é compatível com o modo FIPS Linux e impe
  a| 
 1,3
  a| 
-* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,1, 8,2, 8,3
+* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,0, 8,1, 8,2, 8,3
 * CentOS: 7,6, 7,7, 7,8, 7,9
 
 
@@ -88,53 +127,75 @@ NOTE: O serviço ONTAP Mediator não é compatível com o modo FIPS Linux e impe
  a| 
 1,2
  a| 
-* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 8,1
-* CentOS: 7,6, 7,7, 7,8
+* Red Hat Enterprise Linux: 7,6, 7,7, 7,8, 7,9, 8,0, 8,1
+* CentOS: 7,6, 7,7, 7,8, 7,9
 
 
 |===
-
-NOTE: A versão do kernel deve corresponder à versão do sistema operacional.
-
-* instalação física de 64 bits ou máquina virtual
-* 8 GB DE RAM
-* 1 GB de espaço em disco (usado para instalação de aplicativos, logs de servidor e banco de dados)
-* Usuário: Acesso root
+. Compatível significa que o RHEL não suporta mais esta versão, mas o ONTAP Mediator ainda pode ser instalado.
 
 
-Qualquer pacote de biblioteca, exceto o kernel, pode ser atualizado com segurança, mas pode exigir uma reinicialização para ter efeito dentro do aplicativo Mediador ONTAP. Uma janela de serviço é recomendada quando uma reinicialização é necessária.
-
-Se você instalar o `yum-utils` pacote, você pode usar o `needs-restarting` comando.
-
-O núcleo do kernel pode ser atualizado se estiver sendo atualizado para uma versão que ainda é suportada pela matriz de versão do Mediador ONTAP. Uma reinicialização será obrigatória, portanto, uma janela de serviço é necessária.
-
-O módulo do kernel SCST deve ser desinstalado antes da reinicialização e, em seguida, reinstalado após a reinicialização.
 
 
-NOTE: A atualização para um kernel além da versão de SO suportada para a versão específica do Mediador ONTAP não é suportada. (Isso provavelmente indica que o módulo SCST testado não irá compilar).
+=== Considerações de atualização DO SO e compatibilidade do kernel
 
+* Todos os pacotes de biblioteca, exceto o kernel, podem ser atualizados com segurança, mas podem exigir uma reinicialização para aplicar as alterações no aplicativo do Mediador ONTAP. Uma janela de serviço é recomendada quando uma reinicialização é necessária.
+* Você deve manter o kernel do sistema operacional atualizado. O núcleo do kernel pode ser atualizado para uma versão listada como suportada no link:whats-new-concept.html#scst-support-matrix["Matriz de versão do Mediador ONTAP"]. Uma reinicialização é obrigatória, então você deve Planejar uma janela de manutenção para a interrupção.
++
+** Você deve desinstalar o módulo do kernel SCST antes de reiniciar e depois reinstalá-lo depois.
+** Você deve ter uma versão suportada do SCST pronta para reinstalar antes de iniciar a atualização do sistema operacional do kernel.
+
+
+
+
+[NOTE]
+====
+* A versão do kernel deve corresponder à versão do sistema operacional.
+* A atualização para um kernel além da versão de SO suportada para a versão específica do Mediador ONTAP não é suportada. (Isso provavelmente indica que o módulo SCST testado não irá compilar).
+
+
+====
 
 
 == Registre uma chave de segurança quando o UEFI Secure Boot estiver ativado
 
-Se a Inicialização segura UEFI estiver ativada, para instalar o Mediador ONTAP, você terá que Registrar uma chave de segurança antes que o serviço do Mediador ONTAP possa ser iniciado. Para determinar se o sistema está habilitado para UEFI e o Secure Boot está ativado, execute as seguintes etapas:
+Para instalar o Mediador ONTAP com inicialização segura UEFI ativada, você deve Registrar uma chave de segurança antes que o serviço possa ser iniciado. A chave é gerada durante a etapa de compilação da instalação do SCST e salva como um par de chaves público-privado em sua máquina. Use o `mokutil` utilitário para adicionar a chave pública como uma chave de proprietário de máquina (MOK) ao firmware UEFI, permitindo que o sistema confie e carregue o módulo assinado. Salve a `mokutil` senha em um local seguro, pois isso é necessário ao reiniciar seu sistema para ativar o MOK.
+
+Para determinar se o sistema está habilitado para UEFI e o Secure Boot está ativado, execute as seguintes etapas:
 
 .Passos
-. Se o mokutil não estiver instalado, execute o seguinte comando:
+. Se `mokutil` não estiver instalado, execute o seguinte comando:
 +
 `yum install mokutil`
 
-. Para determinar se o UEFI Secure Boot está ativado no seu sistema, execute o seguinte comando:
+. Verifique se o UEFI Secure Boot está ativado no seu sistema:
 +
 `mokutil --sb-state`
 
 +
-Os resultados mostram se o UEFI Secure Boot está ativado neste sistema.
+Os resultados indicam se o UEFI Secure Boot está ativado neste sistema.
+
++
+[NOTE]
+====
+** Você é solicitado a criar uma senha que você deve armazenar em um local seguro. Você precisará dessa senha para ativar a chave no Gerenciador de Inicialização UEFI.
+** O ONTAP Mediator 1.2.0 e versões anteriores não suportam este modo.
+
+
+====
+. Adicione a chave pública à lista MOK:
++
+`mokutil --import /opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/scst_module_key.der`
 
 +
 
-NOTE: O ONTAP Mediator 1.2.0 e as versões anteriores não suportam este modo.
+NOTE: Você pode deixar a chave privada em seu local padrão ou movê-la para um local seguro. No entanto, a chave pública deve ser mantida em seu local existente para uso pelo Gerenciador de Inicialização. Para obter mais informações, consulte o seguinte arquivo de assinatura README.module:
 
++
+`[root@hostname ~]# ls /opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/
+README.module-signing  scst_module_key.der  scst_module_key.priv`
+
+. Reinicie o host e use o Gerenciador de Inicialização UEFI do dispositivo para aprovar o novo MOK. Você precisará da senha fornecida para o `mokutil` passo 2.
 
 
 

@@ -2,9 +2,9 @@
 sidebar: sidebar 
 permalink: authentication/oauth2-authorization.html 
 keywords: scopes, self-contained scopes, active directory, ldap, rest role, local users, groups 
-summary: Existem várias opções disponíveis para personalizar a autorização do cliente ONTAP. As decisões de autorização são, em última análise, baseadas nas funções REST do ONTAP contidas ou derivadas dos tokens de acesso. 
+summary: A implementação do ONTAP OAuth 2,0 foi projetada para ser flexível e robusta, fornecendo os recursos necessários para proteger seu ambiente ONTAP. Existem várias opções de configuração mutuamente exclusivas disponíveis. As decisões de autorização são, em última análise, baseadas nas funções REST do ONTAP contidas ou derivadas dos tokens de acesso OAuth 2,0. 
 ---
-= Opções para autorização do cliente ONTAP
+= Visão geral e opções para autorização de cliente ONTAP
 :hardbreaks:
 :allow-uri-read: 
 :nofooter: 
@@ -14,33 +14,24 @@ summary: Existem várias opções disponíveis para personalizar a autorização
 
 
 [role="lead"]
-Existem várias opções disponíveis para personalizar a autorização do cliente ONTAP. As decisões de autorização são, em última análise, baseadas nas funções REST do ONTAP contidas ou derivadas dos tokens de acesso.
+A implementação do ONTAP OAuth 2,0 foi projetada para ser flexível e robusta, fornecendo os recursos necessários para proteger seu ambiente ONTAP. Existem várias opções de configuração mutuamente exclusivas disponíveis. As decisões de autorização são, em última análise, baseadas nas funções REST do ONTAP contidas ou derivadas dos tokens de acesso OAuth 2,0.
 
 
 CAUTION: Você só pode usar link:../authentication/overview-oauth2.html#selected-terminology["Funções REST do ONTAP"] ao configurar a autorização para o OAuth 2,0. As funções tradicionais anteriores do ONTAP não são suportadas.
 
-
-
-== Introdução
-
-A implementação do OAuth 2,0 no ONTAP foi projetada para ser flexível e robusta, fornecendo as opções necessárias para proteger o ambiente ONTAP. Em alto nível, existem três categorias principais de configuração para definir a autorização do cliente ONTAP. Essas opções de configuração são mutuamente exclusivas.
-
-O ONTAP aplica a opção mais apropriada com base na sua configuração. link:../authentication/oauth2-authorization.html#how-ontap-determines-access["Como o ONTAP determina o acesso"]Consulte para obter mais informações sobre como o ONTAP processa suas definições de configuração para tomar decisões de acesso.
+O ONTAP aplica a única opção de autorização mais adequada com base na sua configuração. link:../authentication/oauth2-determine-access.html["Como o ONTAP determina o acesso"]Consulte para obter mais informações sobre como o ONTAP toma decisões de acesso ao cliente.
 
 .Escopos auto-contidos OAuth 2,0
-Esses escopos contêm uma ou mais funções REST personalizadas, cada uma encapsulada em uma única cadeia de carateres. Eles são independentes das definições de função do ONTAP. Você precisa definir essas strings de escopo em seu servidor de autorização.
+Esses escopos contêm uma ou mais funções REST personalizadas, cada uma encapsulada em uma única cadeia no token de acesso. Eles são independentes das definições de função do ONTAP. Você precisa configurar as strings de escopo em seu servidor de autorização. Consulte link:../authentication/oauth2-sc-scopes.html["Escopos OAuth 2,0 independentes"] para obter mais informações.
 
-.Usuários e funções REST específicas do ONTAP local
-Com base na sua configuração, as definições de identidade ONTAP locais podem ser usadas para tomar decisões de acesso. As opções incluem:
+.Funções REST do ONTAP local
+Uma única função REST nomeada, seja builtin ou personalizado, pode ser usada. A sintaxe do escopo para uma função nomeada é *ONTAP-role-* com codificação URL-ONTAP-role-name>. Por exemplo, se a função ONTAP for `admin` a string Escopo será `ontap-role-admin`.
 
-* Função REST com nome único
-* Corresponder o nome de utilizador a um utilizador ONTAP local
+.Usuários
+O nome de usuário no token de acesso definido com acesso ao aplicativo "http" pode ser usado. Um usuário é testado na seguinte ordem com base no método de autenticação definido: Senha, domínio (ative Directory), nsswitch (LDAP).
 
-
-A sintaxe do escopo para uma função nomeada é *ONTAP-role-* com codificação URL-ONTAP-role-name>. Por exemplo, se a função for "admin", a cadeia de escopo será "ONTAP-role-admin".
-
-.Grupos do ative Directory ou LDAP
-Se as definições locais do ONTAP forem examinadas, mas não for possível tomar nenhuma decisão de acesso, os grupos do ative Directory ("domínio") ou LDAP ("nsswitch") serão usados. As informações do grupo podem ser especificadas de duas maneiras:
+.Grupos
+Os servidores de autorização podem ser configurados para usar grupos ONTAP para autorização. Se as definições locais do ONTAP forem examinadas, mas não for possível tomar nenhuma decisão de acesso, os grupos do ative Directory ("domínio") ou LDAP ("nsswitch") serão usados. As informações do grupo podem ser especificadas de duas maneiras:
 
 * OAuth 2,0 string de escopo
 +
@@ -52,162 +43,4 @@ Isso é destinado a tokens de acesso emitidos pelo ADFS usando o fluxo propriet�
 
 
 
-
-
-== Escopos OAuth 2,0 independentes
-
-Escopos auto-contidos são strings transportadas no token de acesso. Cada uma é uma definição completa de função personalizada e inclui tudo o que a ONTAP precisa para tomar uma decisão de acesso. O escopo é separado e distinto de qualquer uma das funções REST definidas no próprio ONTAP.
-
-
-
-=== Formato da cadeia de escopo
-
-Em um nível base, o escopo é representado como uma cadeia contígua e composto por seis valores separados por dois pontos. Os parâmetros usados na cadeia de escopo são descritos abaixo.
-
-
-
-==== ONTAP literal
-
-O escopo deve começar com o valor literal `ontap` em minúsculas. Isso identifica o escopo como específico do ONTAP.
-
-
-
-==== Cluster
-
-Isso define a que cluster ONTAP o escopo se aplica. Os valores podem incluir:
-
-* UUID do cluster
-+
-Identifica um único cluster.
-
-* Asterisco (***)
-+
-Indica que o escopo se aplica a todos os clusters.
-
-
-
-Você pode usar o comando ONTAP CLI `cluster identity show` para exibir o UUID do cluster. Se não for especificado, o escopo se aplica a todos os clusters.
-
-
-
-==== Função
-
-O nome do papel RESTANTE contido no escopo auto-contido. Esse valor não é examinado pelo ONTAP nem correspondido a nenhuma função REST existente definida como ONTAP. O nome é utilizado para registar.
-
-
-
-==== Nível de acesso
-
-Esse valor indica o nível de acesso aplicado ao aplicativo cliente ao usar o endpoint da API no escopo. Existem seis valores possíveis, conforme descrito na tabela abaixo.
-
-[cols="25,75"]
-|===
-| Nível de acesso | Descrição 
-
-
-| nenhum | Nega todo o acesso ao endpoint especificado. 
-
-
-| readonly | Permite apenas acesso de leitura utilizando O GET. 
-
-
-| read_create | Permite o acesso de leitura, bem como a criação de novas instâncias de recursos usando POST. 
-
-
-| read_modify | Permite acesso de leitura, bem como a capacidade de atualizar os recursos existentes USANDO PATCH. 
-
-
-| read_create_modify | Permite todo o acesso, exceto apagar. As operações permitidas incluem GET (read), POST (Create) e PATCH (update). 
-
-
-| tudo | Permite acesso total. 
-|===
-
-
-==== SVM
-
-O nome da SVM no cluster ao qual o escopo se aplica. Use o valor *** (asterisco) para indicar todos os SVMs.
-
-
-CAUTION: Esta funcionalidade não é totalmente suportada com o ONTAP 9.14,1. Você pode ignorar o parâmetro SVM e usar um asterisco como um marcador de posição. Revise o https://library.netapp.com/ecm/ecm_download_file/ECMLP2492508["Notas de versão do ONTAP"^] para verificar se há suporte futuro à SVM.
-
-
-
-==== URI DA API REST
-
-O caminho completo ou parcial para um recurso ou conjunto de recursos relacionados. A string deve começar com `/api`. Se você não especificar um valor, o escopo se aplica a todos os endpoints da API no cluster do ONTAP.
-
-
-
-=== Exemplos de escopo
-
-Alguns exemplos de escopos auto-contidos são apresentados abaixo.
-
-ONTAP:*:joes-role:read_create_modify:*:/api/cluster:: Fornece ao usuário atribuído essa função de leitura, criação e modificação do acesso ao `/cluster` endpoint.
-
-
-
-
-=== Ferramenta administrativa CLI
-
-Para tornar a administração dos escopos auto-contidos mais fácil e menos propensa a erros, o ONTAP fornece o comando CLI `security oauth2 scope` para gerar strings de escopo com base em seus parâmetros de entrada.
-
-O comando `security oauth2 scope` tem dois casos de uso com base na sua entrada:
-
-* Parâmetros CLI para string de escopo
-+
-Você pode usar esta versão do comando para gerar uma string de escopo com base nos parâmetros de entrada.
-
-* String de escopo para parâmetros CLI
-+
-Você pode usar esta versão do comando para gerar os parâmetros do comando com base na cadeia de carateres de escopo de entrada.
-
-
-
-.Exemplo
-O exemplo a seguir gera uma string de escopo com a saída incluída após o exemplo de comando abaixo. A definição se aplica a todos os clusters.
-
-[listing]
-----
-security oauth2 scope cli-to-scope -role joes-role -access readonly -api /api/cluster
-----
-`ontap:*:joes-role:readonly:*:/api/cluster`
-
-
-
-== Como o ONTAP determina o acesso
-
-Para projetar e implementar adequadamente o OAuth 2,0, você precisa entender como sua configuração de autorização é usada pelo ONTAP para tomar decisões de acesso para os clientes.
-
-.Passo 1: Escopos auto-contidos
-Se o token de acesso contiver quaisquer escopos auto-contidos, o ONTAP examina esses escopos primeiro. Se não existirem escopos auto-suficientes, avance para o passo 2.
-
-Com um ou mais escopos independentes presentes, o ONTAP aplica cada escopo até que uma decisão explícita de *PERMITIR* ou *NEGAR* possa ser tomada. Se uma decisão explícita for tomada, o processamento termina.
-
-Se o ONTAP não conseguir tomar uma decisão de acesso explícito, avance para o passo 2.
-
-.Passo 2: Verifique o sinalizador de funções locais
-ONTAP examina o valor da bandeira `use-local-roles-if-present`. O valor deste sinalizador é definido separadamente para cada servidor de autorização definido como ONTAP.
-
-* Se o valor for `true`, avance para o passo 3.
-* Se o valor estiver `false` a processar termina e o acesso for negado.
-
-
-.Passo 3: Nomeado ONTAP REST role
-Se o token de acesso contiver uma FUNÇÃO REST nomeada, o ONTAP usará a função para tomar a decisão de acesso. Isso sempre resulta em uma decisão *ALLOW* ou *DENY* e o processamento termina.
-
-Se não houver nenhuma função REST nomeada ou a função não for encontrada, continue para a etapa 4.
-
-.Passo 4: Usuários locais do ONTAP
-Extraia o nome de usuário do token de acesso e tente combiná-lo com um usuário local do ONTAP.
-
-Se um usuário local do ONTAP for correspondido, o ONTAP usará a função definida para que o usuário tome uma decisão de acesso. Isso sempre resulta em uma decisão e processamento *ALLOW* ou *DENY* termina.
-
-Se um usuário local do ONTAP não for correspondido ou se não houver nome de usuário no token de acesso, continue para a etapa 5.
-
-.Etapa 5: Mapeamento de grupo para função
-Extraia o grupo do token de acesso e tente combiná-lo com um grupo. Os grupos são definidos usando o ative Directory ou um servidor LDAP equivalente.
-
-Se houver uma correspondência de grupo, o ONTAP usará a função definida para o grupo tomar uma decisão de acesso. Isso sempre resulta em uma decisão e processamento *ALLOW* ou *DENY* termina.
-
-Se não houver correspondência de grupo ou se não houver nenhum grupo no token de acesso, o acesso será negado e o processamento será concluído.
+Consulte link:../authentication/oauth2-groups.html["Trabalhar com grupos"] para obter mais informações.

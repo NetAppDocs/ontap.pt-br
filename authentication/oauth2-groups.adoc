@@ -1,0 +1,190 @@
+---
+sidebar: sidebar 
+permalink: authentication/oauth2-groups.html 
+keywords: oauth 2.0, oauth2, identity mapping, group uuid, group name, group mapping, external roles, role mapping 
+summary: O ONTAP fornece várias opções para configurar grupos com base no servidor de autorização. Os grupos podem então ser mapeados para funções que são usadas pelo ONTAP para determinar o acesso. 
+---
+= Trabalhar com grupos
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+O ONTAP fornece várias opções para configurar grupos com base no servidor de autorização. Os grupos podem então ser mapeados para funções que são usadas pelo ONTAP para determinar o acesso.
+
+
+
+== Como os grupos são identificados
+
+Quando você configura um grupo em um servidor de autorização, ele é identificado e transportado em um token de acesso OAuth 2,0 usando um nome ou UUID. Você precisa estar ciente de como o servidor de autorização lida com grupos antes de configurar o ONTAP.
+
+
+NOTE: Se vários grupos forem incluídos em um token de acesso, o ONTAP tentará usar cada um até que haja uma correspondência.
+
+
+
+=== Nomes de grupos
+
+Muitos servidores de autorização identificam e representam grupos usando um nome. Aqui está um fragmento de um token de acesso JSON gerado pelo Serviço de Federação do ative Directory (ADFS) contendo vários grupos. Consulte <<Gerenciar grupos com nomes>> para obter mais informações.
+
+[listing]
+----
+  ...
+  "sub": "User1_TestDev@NICAD5.COM",
+  "group": [
+    "NICAD5\\Domain Users",
+    "NICAD5\\Development Group",
+    "NICAD5\\Production Group"
+  ],
+  "apptype": "Confidential",
+  "appid": "3bff3b2b-8e40-44ba-7c11-d73c3b76e3e8",
+  ...
+----
+
+
+=== UUUIDs de grupo
+
+Alguns servidores de autorização identificam e representam grupos usando um UUID. Aqui está um fragmento de um token de acesso JSON gerado pelo Microsoft Entra ID contendo vários grupos. Consulte <<Gerenciar grupos com UUIDs>> para obter mais informações.
+
+[listing]
+----
+  ...
+  "appid": "4aff4b4b-8e40-44ba-7c11-d73c3b76e3d7",
+  "appidacr": "1",
+  "groups": [
+    "8ea4c5b0-bcad-4e66-8f1e-cd395474a448",
+    "a8558fc2-a1b2-4cb7-cc41-59bd831840cc"],
+  "name": "admin007 with group membership",
+  ...
+----
+
+
+== Gerenciar grupos com nomes
+
+Se o servidor de autorização usar nomes para identificar grupos, você precisa garantir que cada grupo esteja definido como ONTAP. Dependendo do seu ambiente de segurança, talvez você já tenha o grupo definido.
+
+Aqui está um exemplo de comando CLI definindo um grupo para ONTAP. Observe que está usando um grupo nomeado do token de acesso de amostra. Você precisa estar no nível de privilégio ONTAP *admin* para emitir o comando.
+
+.Exemplo
+[listing]
+----
+security login create -user-or-group-name "NICAD5\\Domain Users" -application http -authentication-method domain -role admin
+----
+
+NOTE: Você também pode configurar esse recurso usando a API REST do ONTAP. Consulte https://docs.netapp.com/us-en/ontap-automation/["Automação da ONTAP"^] para obter mais informações.
+
+
+
+== Gerenciar grupos com UUIDs
+
+Se o servidor de autorização representar grupos usando valores UUID, você precisará executar uma configuração de duas etapas antes de usar um grupo. A partir do ONTAP 9.16,1, dois recursos de mapeamento estão disponíveis e foram testados com o Microsoft Entra ID. Você precisa estar no nível de privilégio ONTAP *admin* para emitir os comandos CLI.
+
+
+NOTE: Você também pode configurar esses recursos usando a API REST do ONTAP. Consulte o https://docs.netapp.com/us-en/ontap-automation/["Automação da ONTAP"^] site de documentação para obter mais informações.
+
+.Informações relacionadas
+* https://docs.netapp.com/us-en/ontap-cli/["Comandos CLI do ONTAP"^]
+
+
+
+
+=== Mapear um UUID de grupo para um nome de grupo
+
+Se você estiver usando um servidor de autorização que representa grupos usando valores UUID, será necessário mapear os UUIDs do grupo para nomes de grupos. As principais operações da CLI do ONTAP são descritas abaixo.
+
+
+
+==== Criar
+
+Você pode definir uma nova configuração de mapeamento de grupo com o `security login group create` comando. O UUID e o nome do grupo devem corresponder à configuração no servidor de autorização.
+
+.Parâmetros
+Os parâmetros usados para criar um mapeamento de grupo são descritos abaixo.
+
+[cols="30,70"]
+|===
+| Parâmetro | Descrição 
+
+
+| `vserver` | Opcionalmente, especifica o nome do SVM (vserver) ao qual o grupo está associado. Se omitido, o grupo está associado ao cluster ONTAP. 
+
+
+| `name` | O nome exclusivo do grupo que o ONTAP usará. 
+
+
+| `type` | Este valor indica o provedor de identidade do qual o grupo se origina. 
+
+
+| `uuid` | Especifica o identificador universalmente exclusivo do grupo, conforme fornecido pelo servidor de autorização. 
+|===
+Aqui está um exemplo de comando CLI definindo um grupo para ONTAP. Observe que está usando um grupo UUID do token de acesso de amostra.
+
+.Exemplo
+[listing]
+----
+security login group create -vserver ontap-cls-1 -name IAM_Dev -type entra -uuid 8ea4c5b0-bcad-4e66-8f1e-cd395474a448
+----
+Depois de criar o grupo, um identificador inteiro exclusivo somente leitura é gerado para o grupo.
+
+
+
+==== Operações CLI adicionais
+
+O comando suporta várias operações adicionais, incluindo:
+
+* Mostrar
+* Modificar
+* Eliminar
+
+
+Você pode usar a `show` opção para recuperar o ID de grupo exclusivo gerado para um grupo. Consulte a documentação de referência dos comandos ONTAP para obter mais informações.
+
+
+
+=== Mapear um UUID de grupo para uma função
+
+Se você estiver usando um servidor de autorização que representa grupos usando valores UUID, você poderá mapear o grupo para uma função. As principais operações da CLI do ONTAP são descritas abaixo. Além disso, você precisa estar no nível de privilégio ONTAP *admin* para emitir os comandos.
+
+
+NOTE: Você precisa primeiro <<Mapear um UUID de grupo para um nome de grupo>> e recuperar o ID inteiro exclusivo gerado para o grupo. Você precisará do ID para mapear o grupo para uma função.
+
+
+
+==== Criar
+
+Você pode definir um novo mapeamento de função com o `security login group role-mapping create` comando.
+
+.Parâmetros
+Os parâmetros usados para mapear um grupo para uma função são descritos abaixo.
+
+[cols="30,70"]
+|===
+| Parâmetro | Descrição 
+
+
+| `group-id` | Especifica o ID exclusivo gerado para o grupo usando o comando `security login group create`. 
+
+
+| `role` | O nome da função ONTAP para o qual o grupo é mapeado. 
+|===
+.Exemplo
+[listing]
+----
+security login group role-mapping create -group-id 1 -role admin
+----
+
+
+==== Operações CLI adicionais
+
+O comando suporta várias operações adicionais, incluindo:
+
+* Mostrar
+* Modificar
+* Eliminar
+
+
+Consulte a documentação de referência dos comandos ONTAP para obter mais informações.

@@ -1,0 +1,255 @@
+---
+permalink: s3-config/cors-integration.html 
+sidebar: sidebar 
+keywords: cors, cross-origin resource sharing, domain, same origin, s3, s3 api, buckets, nas 
+summary: 'A partir do ONTAP 9.16,1, você pode acessar com segurança seus buckets do S3 usando um navegador da Web. O acesso é fornecido no ONTAP através de uma implementação da recomendação de segurança de partilha de recursos entre origens (CORS).' 
+---
+= Integração de compartilhamento de recursos entre origens (CORS) com o ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.16,1, você pode configurar o compartilhamento de recursos entre origens (CORS) para permitir que aplicativos da Web clientes de diferentes domínios acessem seus buckets do ONTAP. Isso fornece acesso seguro aos objetos bucket usando um navegador da Web.
+
+CORS é uma estrutura construída em HTTP que permite que scripts definidos em uma página da Web acessem recursos em um servidor em um domínio diferente. O framework é usado para ignorar com segurança a política _same-origin_, que é uma base inicial para a segurança da web. Os principais conceitos e terminologia são descritos abaixo.
+
+.Origem
+Uma origem define com precisão a localização e a identidade de um recurso. É representado como uma combinação dos seguintes valores:
+
+* Esquema URI (protocolo)
+* Nome de host (nome de domínio ou endereço IP)
+* Número da porta
+
+
+Aqui está um exemplo simples de uma origem: `https://www.mycompany.com:8001`. Quando uma origem é usada com o CORS, ele identifica o cliente que faz a solicitação.
+
+.Política da mesma origem
+A política de mesma origem (SOP) é um conceito de segurança e restrição aplicados a scripts baseados em navegador. A política permite que scripts carregados inicialmente de uma página da Web acessem dados em outra página, desde que ambas as páginas estejam na mesma origem. Esta limitação impede que scripts maliciosos acessem dados nas páginas de uma origem diferente.
+
+.Casos comuns de uso de CORS
+Existem vários casos de uso geral para CORS. A maioria envolve instâncias bem definidas de acesso entre domínios, como solicitações AJAX, carregamento de fontes, folhas de estilo e scripts, bem como autenticação entre domínios. O CORS também pode ser implementado como parte de um aplicativo de página única (SPA).
+
+.Cabeçalhos HTTP
+O CORS é implementado usando cabeçalhos que são inseridos nas solicitações e respostas HTTP. Por exemplo, existem vários cabeçalhos de resposta que implementam o controle de acesso e indicam quais operações, incluindo métodos e cabeçalhos, são permitidas. A presença do cabeçalho _origin_ em uma solicitação HTTP o define como uma solicitação de domínio cruzado. O valor de origem é usado pelo servidor CORS para localizar uma configuração CORS válida.
+
+.Solicitação HTTP preflight
+Esta é uma solicitação opcional para determinar inicialmente se um servidor suporta CORS, incluindo os métodos e cabeçalhos específicos. Com base na resposta, a solicitação do CORS pode ser concluída ou não.
+
+.Buckets do ONTAP
+Um bucket é um contentor de objetos armazenados e acessados com base em um namespace bem definido. Existem dois tipos de buckets do ONTAP:
+
+* Buckets do nas acessíveis pelos protocolos nas e S3
+* Buckets do S3 que só são acessíveis através do protocolo S3
+
+
+
+
+== Implementação do CORS em ONTAP
+
+O CORS é ativado por padrão com o ONTAP 9.16,1 e versões posteriores. Você precisa configurar o CORS em cada SVM onde ele estará ativo.
+
+
+NOTE: Não há opção administrativa para desativar o CORS para um cluster ONTAP. No entanto, você pode efetivamente desativá-lo não definindo nenhuma regra ou excluindo todas as regras existentes.
+
+
+
+=== Possíveis casos de uso
+
+A implementação do ONTAP CORS permite várias topologias possíveis para acesso a recursos entre domínios, incluindo:
+
+* Buckets do ONTAP S3 (no mesmo ou diferente SVM ou cluster)
+* Buckets do ONTAP nas (no mesmo ou diferente SVM ou cluster)
+* Buckets do ONTAP S3 e nas (no mesmo ou diferente SVM ou cluster)
+* Buckets do ONTAP e buckets externos de fornecedor
+* Baldes em diferentes fusos horários
+
+
+
+
+=== Vista de alto nível
+
+O seguinte ilustra em alto nível como o CORS permite o acesso aos buckets do ONTAP S3.
+
+image:s3-cors.png["Usando CORS para acessar buckets do S3"]
+
+
+
+=== Definindo regras CORS
+
+Você precisa definir regras CORS no ONTAP para ativar e usar o recurso.
+
+
+
+==== Ações de configuração
+
+Há três ações principais de regra de configuração suportadas no ONTAP:
+
+* Mostrar
+* Criar
+* Eliminar
+
+
+Uma regra CORS definida no ONTAP tem várias propriedades, incluindo o SVM e bucket, bem como as origens, métodos e cabeçalhos permitidos.
+
+
+
+==== Opções de administração
+
+Você tem várias opções disponíveis ao administrar o CORS no cluster do ONTAP.
+
+.Interface de linha de comando ONTAP
+Você pode configurar o CORS usando a interface de linha de comando. Consulte <<Administrando CORS usando a CLI>> para obter mais informações.
+
+.API REST do ONTAP
+Você pode configurar o CORS usando a API REST do ONTAP. Não foram adicionados novos endpoints para suportar o recurso CORS. Em vez disso, você pode usar o seguinte endpoint existente:
+
+`/api/protocols/s3/services/{svm.uuid}/buckets/{bucket.uuid}`
+
+Consulte o https://docs.netapp.com/us-en/ontap-automation/["Automação da ONTAP"^] site de documentação para obter mais informações.
+
+.S3 API
+Você pode usar a API S3 para criar e excluir uma configuração CORS em um bucket do ONTAP. Um administrador de cliente S3 requer Privileges suficiente, incluindo:
+
+* Acesso ou credenciais de chave secreta
+* Política configurada no bucket para permitir acesso através do s3api
+
+
+
+
+=== Atualizando e revertendo
+
+Se você planeja usar o CORS para acessar os buckets do ONTAP S3, você deve estar ciente de vários problemas administrativos.
+
+.A atualizar
+O recurso CORS é suportado quando todos os nós são atualizados para 9.16.1. Em clusters de modo misto, o recurso só estará disponível quando a versão de cluster efetiva (ECV) for 9.16.1 ou posterior.
+
+.Reverter
+Do ponto de vista do usuário, toda a configuração do CORS deve ser removida antes que a reversão do cluster possa prosseguir. Internamente, a operação excluirá todas as bases de dados CORS. Você será solicitado a executar um comando para limpar e reverter essas estruturas de dados.
+
+
+
+== Administrando CORS usando a CLI
+
+Você pode usar a CLI do ONTAP para administrar regras do CORS. As operações principais são descritas abaixo. Você precisa estar no nível de privilégio ONTAP *admin* para emitir os comandos CORS.
+
+
+
+=== Criar
+
+Você pode definir uma regra CORS usando o `vserver object-store-server bucket cors-rule create` comando.
+
+.Parâmetros
+Os parâmetros usados para criar uma regra são descritos abaixo.
+
+[cols="30,70"]
+|===
+| Parâmetro | Descrição 
+
+
+ a| 
+`vserver`
+ a| 
+Especifica o nome do SVM (vserver) que hospeda o bucket do servidor de armazenamento de objetos onde a regra é criada.
+
+
+
+ a| 
+`bucket`
+ a| 
+O nome do bucket no servidor de armazenamento de objetos para o qual a regra é criada.
+
+
+
+ a| 
+`index`
+ a| 
+Um parâmetro opcional que indica o índice do bucket do servidor de armazenamento de objetos onde a regra é criada.
+
+
+
+ a| 
+`rule id`
+ a| 
+Um identificador exclusivo para a regra de bucket do servidor de armazenamento de objetos.
+
+
+
+ a| 
+`allowed-origins`
+ a| 
+Uma lista das origens das quais os pedidos de origem cruzada são autorizados a ter origem.
+
+
+
+ a| 
+`allowed-methods`
+ a| 
+Uma lista dos métodos HTTP permitidos em uma solicitação de origem cruzada.
+
+
+
+ a| 
+`allowed-headers`
+ a| 
+Uma lista dos métodos HTTP permitidos nas solicitações de origem cruzada.
+
+
+
+ a| 
+`expose-headers`
+ a| 
+Uma lista dos cabeçalhos extras envia nas respostas do CORS que os clientes podem acessar de seus aplicativos.
+
+
+
+ a| 
+`max-age-in-seconds`
+ a| 
+Um parâmetro opcional especificando a quantidade de tempo que seu navegador deve armazenar em cache uma resposta de pré-voo para um recurso específico.
+
+|===
+.Exemplo
+[listing]
+----
+vserver object-store-server bucket cors-rule create -vserver vs1 -bucket bucket1 -allowed-origins www.myexample.com -allowed-methods GET,DELETE
+----
+
+
+=== Mostrar
+
+Você pode usar o comando `vserver object-store-server bucket cors-rule show` para exibir uma lista das regras atuais e seu conteúdo.
+
+
+NOTE: Incluir o parâmetro `-instance` expande os dados apresentados para cada uma das regras. Você também pode especificar quais campos deseja.
+
+.Exemplo
+[listing]
+----
+server object-store-server bucket cors-rule show -instance
+----
+
+
+=== Eliminar
+
+Você pode usar o comando delete para remover uma instância de uma regra CORS. Você precisa do `index` valor da regra e, portanto, esta operação é executada em duas etapas:
+
+. Emita um `show` comando para exibir a regra e recuperar seu índice.
+. Emita a exclusão usando o valor do índice.
+
+
+.Exemplo
+[listing]
+----
+vserver object-store-server bucket cors-rule delete -vserver vs1 -bucket bucket1 -index 1
+----
+
+
+=== Modificar
+
+Não há nenhum comando CLI disponível para modificar uma regra CORS existente. Para modificar uma regra, você precisa fazer o seguinte:
+
+. Exclua a regra existente.
+. Crie uma nova regra com as opções desejadas.
+

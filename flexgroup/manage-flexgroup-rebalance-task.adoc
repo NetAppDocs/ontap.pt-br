@@ -4,7 +4,7 @@ sidebar: sidebar
 keywords: enable, storage, rebalance, modify, stop, status, flexgroup, volume 
 summary: A partir do ONTAP 9.12,1, você pode rebalancear volumes FlexGroup movendo arquivos de um componente em um FlexGroup para outro componente sem interrupções. 
 ---
-= Rebalancear os volumes FlexGroup
+= Rebalanceie volumes do FlexGroup com a movimentação de arquivos
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
@@ -23,6 +23,8 @@ Você deve estar ciente de que o rebalanceamento do FlexGroup degrada o desempen
 O rebalanceamento está disponível somente quando todos os nós do cluster estiverem executando o ONTAP 9.12,1 ou versões posteriores. Você deve habilitar a funcionalidade de dados granulares em qualquer volume do FlexGroup que execute a operação de rebalanceamento. Depois que essa funcionalidade estiver ativada, você não poderá reverter para o ONTAP 9.11,1 e versões anteriores, a menos que você exclua esse volume ou restauração de uma cópia Snapshot criada antes que a configuração fosse ativada.
 
 A partir do ONTAP 9.14,1, o ONTAP apresenta um algoritmo para mover arquivos em volumes com dados granulares ativados sem interação do usuário, sem interrupções e proativamente. O algoritmo opera em cenários muito específicos e direcionados para aliviar gargalos de desempenho. Os cenários em que esse algoritmo pode agir incluem carga de gravação muito pesada em um conjunto específico de arquivos em um nó no cluster ou um arquivo em crescimento contínuo em um diretório pai muito quente.
+
+A partir do ONTAP 9.16,1, você também pode habilitar link:enable-adv-capacity-flexgroup-task.html["balanceamento de capacidade avançado"]a redistribuir dados de um arquivo grande entre os volumes membros do FlexGroup.
 
 
 
@@ -95,6 +97,10 @@ Você deve ter habilitado a `granular-data` opção no volume FlexGroup antes de
 * Quando você cria o volume FlexGroup usando o `volume create` comando
 * Modificando um volume FlexGroup existente para ativar a configuração usando o `volume modify` comando
 * Definindo-o automaticamente quando o rebalanceamento do FlexGroup é iniciado usando o `volume rebalance` comando
++
+
+NOTE: Se você estiver usando o ONTAP 9.16,1 ou posterior e link:enable-adv-capacity-flexgroup-task.html["Balanceamento de capacidade avançado do FlexGroup"] estiver habilitado usando a `granular-data advanced` opção na CLI do ONTAP ou usando o Gerenciador de sistema, o rebalanceamento do FlexGroup também será ativado.
+
 
 
 .Passos
@@ -118,7 +124,12 @@ NOTE: A opção *Rebalancamento* só está disponível quando o status FlexGroup
 --
 .CLI
 --
-. Iniciar o reequilíbrio automático: `volume rebalance start -vserver _SVM_name_ -volume _volume_name_`
+. Iniciar o reequilíbrio automático:
++
+[source, cli]
+----
+volume rebalance start -vserver <SVM name> -volume <volume name>
+----
 +
 Opcionalmente, você pode especificar as seguintes opções:
 
@@ -178,7 +189,12 @@ NOTE: A opção *Rebalancamento* só está disponível quando o status FlexGroup
 --
 .CLI
 --
-. Modificar o reequilíbrio automático: `volume rebalance modify -vserver _SVM_name_ -volume _volume_name_`
+. Modificar o reequilíbrio automático:
++
+[source, cli]
+----
+volume rebalance modify -vserver <SVM name> -volume <volume name>
+----
 +
 Pode especificar uma ou mais das seguintes opções:
 
@@ -225,7 +241,12 @@ Depois que o rebalanceamento do FlexGroup estiver ativado ou programado, você p
 --
 .CLI
 --
-. Parar o reequilíbrio do FlexGroup: `volume rebalance stop -vserver _SVM_name_ -volume _volume_name_`
+. Parar o reequilíbrio do FlexGroup:
++
+[source, cli]
+----
+volume rebalance stop -vserver <SVM name> -volume <volume name>
+----
 
 
 --
@@ -249,7 +270,12 @@ Você pode exibir o status de uma operação de rebalancear a FlexGroup, a confi
 --
 .CLI
 --
-. Veja o status de uma operação de rebalanceamento do FlexGroup: `volume rebalance show`
+. Veja o status de uma operação de rebalanceamento do FlexGroup:
++
+[source, cli]
+----
+volume rebalance show
+----
 +
 Exemplo de estado de rebalanceamento:
 

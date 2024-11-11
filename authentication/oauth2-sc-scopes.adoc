@@ -1,0 +1,132 @@
+---
+sidebar: sidebar 
+permalink: authentication/oauth2-sc-scopes.html 
+keywords: self-contained scopes, scopes 
+summary: Escopos auto-contidos são strings transportadas no token de acesso. Cada uma é uma definição completa de função personalizada e inclui tudo o que a ONTAP precisa para tomar uma decisão de acesso. O escopo é separado e distinto de qualquer uma das funções REST definidas no próprio ONTAP. 
+---
+= Escopos OAuth 2,0 independentes
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+Escopos auto-contidos são strings transportadas no token de acesso. Cada uma é uma definição completa de função personalizada e inclui tudo o que a ONTAP precisa para tomar uma decisão de acesso. O escopo é separado e distinto de qualquer uma das funções REST definidas no próprio ONTAP.
+
+
+
+== Formato da cadeia de escopo
+
+Em um nível base, o escopo é representado como uma cadeia contígua e composto por seis valores separados por dois pontos. Os parâmetros usados na cadeia de escopo são descritos abaixo.
+
+
+
+=== ONTAP literal
+
+O escopo deve começar com o valor literal `ontap` em minúsculas. Isso identifica o escopo como específico do ONTAP.
+
+
+
+=== Cluster
+
+Isso define a que cluster ONTAP o escopo se aplica. Os valores podem incluir:
+
+* UUID do cluster
++
+Identifica um único cluster.
+
+* Asterisco (***)
++
+Indica que o escopo se aplica a todos os clusters.
+
+
+
+Você pode usar o comando ONTAP CLI `cluster identity show` para exibir o UUID do cluster. Se não for especificado, o escopo se aplica a todos os clusters.
+
+
+
+=== Função
+
+O nome do papel RESTANTE contido no escopo auto-contido. Esse valor não é examinado pelo ONTAP nem correspondido a nenhuma função REST existente definida como ONTAP. O nome é utilizado para registar.
+
+
+
+=== Nível de acesso
+
+Esse valor indica o nível de acesso aplicado ao aplicativo cliente ao usar o endpoint da API no escopo. Existem seis valores possíveis, conforme descrito na tabela abaixo.
+
+[cols="25,75"]
+|===
+| Nível de acesso | Descrição 
+
+
+| nenhum | Nega todo o acesso ao endpoint especificado. 
+
+
+| readonly | Permite apenas acesso de leitura utilizando O GET. 
+
+
+| read_create | Permite o acesso de leitura, bem como a criação de novas instâncias de recursos usando POST. 
+
+
+| read_modify | Permite acesso de leitura, bem como a capacidade de atualizar os recursos existentes USANDO PATCH. 
+
+
+| read_create_modify | Permite todo o acesso, exceto apagar. As operações permitidas incluem GET (read), POST (Create) e PATCH (update). 
+
+
+| tudo | Permite acesso total. 
+|===
+
+
+=== SVM
+
+O nome da SVM no cluster ao qual o escopo se aplica. Use o valor *** (asterisco) para indicar todos os SVMs.
+
+
+CAUTION: Esta funcionalidade não é totalmente suportada com o ONTAP 9.14,1. Você pode ignorar o parâmetro SVM e usar um asterisco como um marcador de posição. Revise o https://library.netapp.com/ecm/ecm_download_file/ECMLP2492508["Notas de versão do ONTAP"^] para verificar se há suporte futuro à SVM.
+
+
+
+=== URI DA API REST
+
+O caminho completo ou parcial para um recurso ou conjunto de recursos relacionados. A string deve começar com `/api`. Se você não especificar um valor, o escopo se aplica a todos os endpoints da API no cluster do ONTAP.
+
+
+
+== Exemplos de escopo
+
+Alguns exemplos de escopos auto-contidos são apresentados abaixo.
+
+ONTAP:*:joes-role:read_create_modify:*:/api/cluster:: Fornece ao usuário atribuído essa função de leitura, criação e modificação do acesso ao `/cluster` endpoint.
+
+
+
+
+== Ferramenta administrativa CLI
+
+Para tornar a administração dos escopos auto-contidos mais fácil e menos propensa a erros, o ONTAP fornece o comando CLI `security oauth2 scope` para gerar strings de escopo com base em seus parâmetros de entrada.
+
+O comando `security oauth2 scope` tem dois casos de uso com base na sua entrada:
+
+* Parâmetros CLI para string de escopo
++
+Você pode usar esta versão do comando para gerar uma string de escopo com base nos parâmetros de entrada.
+
+* String de escopo para parâmetros CLI
++
+Você pode usar esta versão do comando para gerar os parâmetros do comando com base na cadeia de carateres de escopo de entrada.
+
+
+
+.Exemplo
+O exemplo a seguir gera uma string de escopo com a saída incluída após o exemplo de comando abaixo. A definição se aplica a todos os clusters.
+
+[listing]
+----
+security oauth2 scope cli-to-scope -role joes-role -access readonly -api /api/cluster
+----
+`ontap:*:joes-role:readonly:*:/api/cluster`

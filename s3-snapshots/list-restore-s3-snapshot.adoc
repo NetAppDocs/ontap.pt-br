@@ -1,0 +1,100 @@
+---
+sidebar: sidebar 
+permalink: s3-snapshots/list-restore-s3-snapshot.html 
+keywords: s3 snapshots, list, restore, browse S3 snapshots 
+summary: O recurso de snapshot do ONTAP S3 permite exibir, navegar e restaurar o conteúdo de snapshot do S3 para seus buckets de clientes do S3. 
+---
+= Visualizar e restaurar snapshots S3
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+O recurso de snapshot do ONTAP S3 permite exibir e navegar o conteúdo de snapshot do S3 para seus buckets de clientes do S3. Além disso, você pode restaurar um único objeto, um conjunto de objetos ou um bucket inteiro em um cliente S3 a partir de um snapshot S3.
+
+.Antes de começar
+Para visualizar, navegar e restaurar instantâneos do ONTAP S3 nos seus buckets, os instantâneos devem ter sido criados e o bucket base do S3 deve estar acessível a você por meio do cliente de protocolo S3.
+
+
+
+== Liste e e visualize instantâneos S3D.
+
+Você pode visualizar os detalhes do snapshot do S3, compará-los e identificar erros. Usando a CLI do ONTAP, você pode listar todos os snapshots criados nos buckets do S3.
+
+.Passos
+. Listar S3 instantâneos:
++
+[listing]
+----
+vserver object-store-server bucket snapshot show
+----
++
+É possível visualizar os nomes dos snapshots, as VMs de storage, os buckets, o tempo de criação e `instance-uuid` os snapshots do S3 criados para todos os buckets no cluster.
+
+. Você também pode especificar um nome de bucket para exibir os nomes, o tempo de criação e `instance-uuid` todos os snapshots S3 criados para esse bucket específico.
++
+[listing]
+----
+vserver object-store-server bucket snapshot show -vserver <svm_name> -bucket <bucket_name>
+----
+
+
+
+
+== PESQUISE conteúdo de instantâneos S3
+
+Se você notar falhas ou problemas no seu ambiente, poderá navegar pelo conteúdo dos snapshots do bucket do S3 para identificar os erros. Você também pode navegar nos snapshots S3 para determinar o conteúdo livre de erros a ser restaurado.
+
+Os snapshots S3 são apresentados como buckets de snapshot para os clientes S3. O nome do bucket do instantâneo é formatado como `<base_bucket_name>-s3snap-<snapshot_name>`. Você pode ver todos os buckets de snapshot em uma VM de storage usando a `ListBuckets` operação da API S3.
+
+O bucket do snapshot S3 herda as políticas de acesso do bucket base e dá suporte apenas a operações somente leitura. Se você tiver permissões para acessar o bucket base, também poderá executar operações de API S3D somente leitura no bucket do snapshot S3, como `HeadObject` `GetObject` , , `GetObjectTagging` `ListObjects` , , , `ListObjectVersions`, `GetObjectAcl`, e `CopyObject`.
+
+
+NOTE: A `CopyObject` operação é suportada em um bucket de instantâneos do S3 somente se for uma cópia instantânea do bucket de origem, e não se for o destino de armazenamento do snapshot.
+
+Para obter mais informações sobre essas operações, link:../s3-config/ontap-s3-supported-actions-reference.html["Ações compatíveis com o ONTAP S3"]consulte .
+
+
+
+== Restaure o conteúdo de snapshots S3
+
+Você pode executar uma operação de restauração em um cliente S3 para recuperar um único objeto, um conjunto de objetos ou um bucket inteiro copiando o conteúdo de um bucket de snapshot para o bucket original ou diferente. Você pode procurar instantâneos para determinar qual conteúdo de snapshot você deve copiar.
+
+Você restaura todo o bucket, objetos com um prefixo ou um único objeto usando o `aws s3 cp` comando.
+
+.Passos
+. Tire um instantâneo do balde base S3.
++
+[listing]
+----
+vserver object-store-server bucket snapshot create -vserver <svm_name> -bucket <base_bucket_name> -snapshot <snapshot_name>
+----
+. Restaure o bucket da base usando o snapshot:
++
+** Restaure um balde inteiro. Use o nome do bucket do instantâneo no formato `<base_bucket_name>-s3snap-<snapshot_name>`.
++
+[listing]
+----
+aws --endpoint http://<IP> s3 cp s3://<snapshot-bucket-name> s3://<base-bucket>  --recursive
+----
+** Restaure objetos em um diretório com o prefixo `dir1`:
++
+[listing]
+----
+aws --endpoint http://<IP> s3 cp s3://<snapshot-bucket-name>/dir1 s3://<base_bucket_name>/dir1 --recursive
+----
+** Restaurar um único objeto chamado `web.py`:
++
+[listing]
+----
+aws --endpoint http://<IP> s3 cp s3:// <snapshot-bucket-name>/web.py s3://<base_bucket_name>/web.py
+----
+
+
+
