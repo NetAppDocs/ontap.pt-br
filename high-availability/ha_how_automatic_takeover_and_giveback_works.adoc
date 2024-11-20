@@ -20,7 +20,7 @@ Por padrão, se um nó no par de HA ficar em pânico, reinicializa ou pára, o n
 
 As aquisições automáticas também podem ocorrer se um dos nós não responder.
 
-A giveback automática ocorre por padrão. Se você preferir controlar o impactos da giveback nos clientes, você pode desativar a giveback automática e usar o `storage failover modify -auto-giveback false -node <node>` comando. Antes de executar o giveback automático (independentemente do que o acionou), o nó do parceiro espera por uma quantidade fixa de tempo, conforme controlado pelo `-delay- seconds` parâmetro `storage failover modify` do comando. O atraso padrão é de 600 segundos. Ao atrasar a giveback, o processo resulta em duas breves interrupções: Uma durante a aquisição e outra durante a giveback.
+A giveback automática ocorre por padrão. Se você preferir controlar o impactos da giveback nos clientes, você pode desativar a giveback automática e usar o `storage failover modify -auto-giveback false -node <node>` comando. Antes de executar o giveback automático (independentemente do que o acionou), o nó do parceiro espera por uma quantidade fixa de tempo, conforme controlado pelo `-delay- seconds` parâmetro `storage failover modify` do comando. O atraso padrão é de 600 segundos.
 
 Este processo evita uma interrupção única e prolongada que inclui o tempo necessário para:
 
@@ -45,18 +45,18 @@ As etapas a seguir ocorrem durante o processo de aquisição:
 . Se o takeover negociado for iniciado pelo usuário, os dados agregados serão movidos do nó do parceiro para o nó que está realizando o takeover. Uma breve interrupção ocorre quando o proprietário atual de cada agregado (exceto o agregado raiz) muda para o nó de aquisição. Essa interrupção é mais breve do que uma interrupção que ocorre durante uma aquisição sem realocação agregada.
 +
 
-NOTE: Um takover negociado durante o pânico não pode ocorrer no caso de um pânico. Uma aquisição pode resultar de uma falha não associada a um pânico. Uma falha é sentida quando a comunicação é perdida entre um nó e seu parceiro, também chamada de perda de batimento cardíaco. Se um takeover ocorrer por causa de uma falha, a interrupção pode ser maior porque o nó do parceiro precisa de tempo para detectar a perda de batimento cardíaco.
+NOTE: Uma aquisição negociada durante o pânico não pode ocorrer em caso de pânico. Uma aquisição pode resultar de uma falha não associada a um pânico. Uma falha é sentida quando a comunicação é perdida entre um nó e seu parceiro, também chamada de perda de batimento cardíaco. Se um takeover ocorrer por causa de uma falha, a interrupção pode ser maior porque o nó do parceiro precisa de tempo para detectar a perda de batimento cardíaco.
 
 +
-** Você pode monitorar o progresso usando o `storage failover show‑takeover` comando.
-** Você pode evitar a realocação agregada durante essa instância de aquisição usando o `‑bypass‑optimization` parâmetro com o `storage failover takeover` comando.
+** Você pode monitorar o progresso usando o `storage failover show-takeover` comando.
+** Você pode evitar a realocação agregada durante essa instância de aquisição usando o `-bypass-optimization` parâmetro com o `storage failover takeover` comando.
 +
 Os agregados são relocados em série durante operações de aquisição planejadas para reduzir a interrupção do cliente. Se a realocação de agregados for ignorada, uma interrupção mais longa do cliente ocorrerá durante eventos de aquisição planejados.
 
 
 
 . Se o takeover iniciado pelo usuário for um takeover negociado, o nó de destino será desligado graciosamente, seguido do takeover do agregado raiz do nó de destino e de quaisquer agregados que não tenham sido relocados na primeira etapa.
-. As LIFs de dados (interfaces lógicas) migram do nó de destino para o nó de aquisição ou para qualquer outro nó no cluster com base em regras de failover de LIF. Você pode evitar a migração de LIF usando o `‑skip‑lif-migration` parâmetro com o `storage failover takeover` comando. No caso de uma aquisição iniciada pelo usuário, os LIFs de dados são migrados antes do início da aquisição de storage. Em caso de pânico ou falha, dependendo da sua configuração, os LIFs de dados podem ser migrados com o armazenamento ou após a conclusão da aquisição.
+. As LIFs de dados (interfaces lógicas) migram do nó de destino para o nó de aquisição ou para qualquer outro nó no cluster com base em regras de failover de LIF. Você pode evitar a migração de LIF usando o `-skip-lif-migration` parâmetro com o `storage failover takeover` comando. No caso de uma aquisição iniciada pelo usuário, os LIFs de dados são migrados antes do início da aquisição de storage. Em caso de pânico ou falha, dependendo da sua configuração, os LIFs de dados podem ser migrados com o armazenamento ou após a conclusão da aquisição.
 . As sessões SMB existentes são desconetadas quando ocorre a aquisição.
 +
 
@@ -127,8 +127,8 @@ As atualizações em segundo plano do firmware do disco afetarão as operações
 
 A lista a seguir descreve como as atualizações de firmware de disco em segundo plano afetam a aquisição, a giveback e a realocação de agregados:
 
-* Se ocorrer uma atualização de firmware de disco em segundo plano em um disco em qualquer nó, as operações de aquisição iniciadas manualmente serão atrasadas até que a atualização de firmware de disco seja concluída nesse disco. Se a atualização de firmware do disco em segundo plano demorar mais de 120 segundos, as operações de aquisição são abortadas e têm de ser reiniciadas manualmente após a conclusão da atualização do firmware do disco. Se o controle tiver sido iniciado com o `‑bypass‑optimization` parâmetro do `storage failover takeover` comando definido como `true`, a atualização de firmware do disco em segundo plano que ocorre no nó de destino não afetará o controle.
-* Se uma atualização de firmware de disco em segundo plano estiver ocorrendo em um disco no nó de origem (ou aquisição) e o controle tiver sido iniciado manualmente com o `‑options` parâmetro do `storage failover takeover` comando definido como `immediate`, as operações de aquisição serão iniciadas imediatamente.
+* Se ocorrer uma atualização de firmware de disco em segundo plano em um disco em qualquer nó, as operações de aquisição iniciadas manualmente serão atrasadas até que a atualização de firmware de disco seja concluída nesse disco. Se a atualização de firmware do disco em segundo plano demorar mais de 120 segundos, as operações de aquisição são abortadas e têm de ser reiniciadas manualmente após a conclusão da atualização do firmware do disco. Se o controle tiver sido iniciado com o `-bypass-optimization` parâmetro do `storage failover takeover` comando definido como `true`, a atualização de firmware do disco em segundo plano que ocorre no nó de destino não afetará o controle.
+* Se uma atualização de firmware de disco em segundo plano estiver ocorrendo em um disco no nó de origem (ou aquisição) e o controle tiver sido iniciado manualmente com o `-options` parâmetro do `storage failover takeover` comando definido como `immediate`, as operações de aquisição serão iniciadas imediatamente.
 * Se uma atualização de firmware de disco em segundo plano estiver ocorrendo em um disco em um nó e ela entrar em pânico, o controle do nó em pânico começará imediatamente.
 * Se uma atualização de firmware de disco em segundo plano estiver ocorrendo em um disco em qualquer nó, a giveback dos agregados de dados será adiada até que a atualização de firmware de disco seja concluída nesse disco.
 * Se a atualização de firmware do disco em segundo plano demorar mais de 120 segundos, as operações de giveback são abortadas e têm de ser reiniciadas manualmente após a conclusão da atualização do firmware do disco.
