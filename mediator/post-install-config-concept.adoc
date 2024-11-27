@@ -21,9 +21,9 @@ Depois que o serviço do Mediador ONTAP for instalado e executado, tarefas de co
 
 == Configurar as políticas de segurança do ONTAP Mediator
 
-O servidor Mediador ONTAP suporta várias configurações de segurança configuráveis. Os valores padrão para todas as configurações são fornecidos em um arquivo low_space_threshold_mib: 10read-only:
+O servidor Mediador ONTAP suporta várias configurações de segurança configuráveis. Os valores padrão para todas as configurações são fornecidos em um `low_space_threshold_mib: 10` arquivo somente leitura:
 
-`/opt/netapp/lib/ontap_mediator/server_config/ontap_mediator.user_config.yaml`
+`/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator.user_config.yaml`
 
 Todos os valores colocados no `ontap_mediator.user_config.yaml` substituirão os valores padrão e serão mantidos em todas as atualizações do ONTAP Mediator.
 
@@ -35,40 +35,93 @@ Depois de modificar `ontap_mediator.user_config.yaml`, reinicie o serviço ONTAP
 
 == Modifique os atributos do Mediador ONTAP
 
-Os seguintes atributos podem ser configurados:
+Os atributos do Mediador ONTAP descritos nesta seção podem ser modificados se necessário.
 
 
-NOTE: Outros valores predefinidos no `ontap_mediator.config.yaml` não devem ser modificados.
+NOTE: Outros valores padrão no `ontap_mediator.config.yaml` não devem ser alterados porque os valores modificados não são mantidos durante as atualizações do ONTAP Mediator.
 
-* *Configurações usadas para instalar certificados SSL de terceiros como substitutos dos certificados autoassinados padrão*
-+
-....
-cert_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.crt'
-key_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.key'
-ca_cert_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.crt'
-ca_key_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.key'
-ca_serial_path: '/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.srl'
-cert_valid_days: '1095'                   # Used to set the expiration on client certs to 3 years
-x509_passin_pwd: 'pass:ontap'             # passphrase for the signed client cert
-....
-* * Configurações que fornecem proteção contra ataques de adivinhação de senha de força bruta*
-+
-Para ativar a funcionalidade, defina um valor para `window_seconds` e. `retry_limit`
+Você modifica os atributos do Mediador do ONTAP copiando as variáveis necessárias `ontap_mediator.user_config.yaml` para o arquivo para substituir as configurações padrão.
 
-+
+
+
+=== Instale certificados SSL de terceiros
+
+Se você precisar substituir os certificados autoassinados padrão por certificados SSL de terceiros, modifique determinados atributos nos seguintes arquivos:
+
+* `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator.config.yaml`
+* `/opt/netapp/lib/ontap_mediator/uwsgi/ontap_mediator.ini`
+
+
+As variáveis nesses arquivos são usadas para controlar os arquivos de certificado usados pelo serviço do Mediador ONTAP.
+
+As variáveis padrão listadas na tabela a seguir são incluídas no `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator.config.yaml` arquivo.
+
+[cols="2*"]
+|===
+| Variável | Caminho 
+
+
+| `cert_path` | `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.crt` 
+
+
+| `key_path` | `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.key` 
+
+
+| `ca_cert_path` | `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.crt` 
+
+
+| `ca_key_path` | `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.key` 
+
+
+| `ca_serial_path` | `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.srl` 
+
+
+| `cert_valid_days` | `1095` 
+
+
+| `x509_passin_pwd` | `pass:ontap` 
+|===
+* `cert_valid_days` é usado para definir a expiração dos certificados de cliente. O valor máximo é de três anos (1095 dias).
+* `x509_passin_pwd` é a senha para o certificado de cliente assinado.
+
+
+As variáveis padrão listadas na tabela a seguir são incluídas no `/opt/netapp/lib/ontap_mediator/uwsgi/ontap_mediator.ini` arquivo.
+
+[cols="2*"]
+|===
+| Variável | Caminho 
+
+
+| `mediator_cert` | `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.crt` 
+
+
+| `mediator_key` | `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ontap_mediator_server.key` 
+
+
+| `ca_cert_path` | `/opt/netapp/lib/ontap_mediator/ontap_mediator/server_config/ca.crt` 
+|===
+Se você modificar esses atributos, reinicie o serviço do ONTAP Mediator para aplicar as alterações. Para obter instruções detalhadas sobre como substituir certificados padrão por certificados de terceiros, link:../mediator/manage-task.html#replace-self-signed-certificates-with-trusted-third-party-certificates["Substitua certificados autoassinados por certificados de terceiros confiáveis"]consulte .
+
+
+
+=== Proteção contra ataque por senha
+
+As configurações a seguir fornecem proteção contra ataques de adivinhação de senha de força bruta.
+
+Para ativar a funcionalidade, defina um valor para a `window_seconds` e a `retry_limit`.
+
 Exemplos:
 
-+
 --
-** Forneça uma janela de 5 minutos para suposições e, em seguida, redefina a contagem para zero falhas:
+* Forneça uma janela de 5 minutos para suposições e, em seguida, redefina a contagem para zero falhas:
 +
 `authentication_lock_window_seconds: 300`
 
-** Bloqueie a conta se ocorrerem cinco falhas dentro do período de tempo da janela:
+* Bloqueie a conta se ocorrerem cinco falhas dentro do período de tempo da janela:
 +
 `authentication_retry_limit: 5`
 
-** Reduza o impactos de ataques de adivinhação de senha de força bruta definindo um atraso que ocorre antes de rejeitar cada tentativa, o que retarda os ataques.
+* Reduza o impactos de ataques de adivinhação de senha de força bruta definindo um atraso que ocorre antes de rejeitar cada tentativa, o que retarda os ataques.
 +
 `authentication_failure_delay_seconds: 5`
 
@@ -81,8 +134,12 @@ authentication_retry_limit: null          # number of retries to allow before lo
 
 
 --
-* *Campos que controlam as regras de complexidade de senha da conta de usuário da API do ONTAP Mediator*
-+
+
+
+=== Regras de complexidade de senha
+
+Os campos a seguir controlam as regras de complexidade de senha da conta de usuário da API do ONTAP Mediator.
+
 ....
 password_min_length: 8
 
@@ -96,45 +153,44 @@ password_special_chars: 1      # min. non-letter, non-digit
 
 password_nonletter_chars: 2    # min. non-letter characters (digits, specials, anything)
 ....
-* * Definição que controla o espaço livre necessário no `/opt/netapp/lib/ontap_mediator` disco.*
-+
+
+
+=== Controle do espaço livre
+
+Existem definições que controlam o espaço livre necessário no `/opt/netapp/lib/ontap_mediator` disco.
+
 Se o espaço for inferior ao limite definido, o serviço emitirá um evento de aviso.
 
-+
 ....
 low_space_threshold_mib: 10
 ....
-* * Definição que controla RESERVE_LOG_space.*
-+
-Por padrão, o servidor do Mediador ONTAP cria um espaço em disco separado para os logs. O instalador cria um novo arquivo de tamanho fixo com um total de 700 MB de espaço em disco para ser usado explicitamente para o Registro do Mediator.
 
-+
+
+=== Controle do espaço de Registro de reserva
+
+O RESERVE_LOG_SPACE é controlado por configurações específicas. Por padrão, a instalação do servidor Mediador do ONTAP cria um espaço em disco separado para os logs. O instalador cria um novo arquivo de tamanho fixo com um total de 700 MB de espaço em disco para ser usado explicitamente para o Registro do Mediator.
+
 Para desativar esse recurso e usar o espaço em disco padrão, execute as seguintes etapas:
 
-+
 --
-.. Altere o valor de RESERVE_LOG_SPACE de "'1" para "'0" no seguinte arquivo:
+. Altere o valor de RESERVE_LOG_SPACE de 1 para 0 no seguinte arquivo:
 +
 `/opt/netapp/lib/ontap_mediator/tools/mediator_env`
 
-.. Reinicie o Mediator:
+. Reinicie o Mediator:
 +
-... `cat /opt/netapp/lib/ontap_mediator/tools/mediator_env | grep "RESERVE_LOG_SPACE"`
+.. `cat /opt/netapp/lib/ontap_mediator/tools/mediator_env | grep "RESERVE_LOG_SPACE"`
 +
 ....
 RESERVE_LOG_SPACE=0
 ....
-... `systemctl restart ontap_mediator`
+.. `systemctl restart ontap_mediator`
 
 
 
 
 --
-+
-Para reativar o recurso, altere o valor de ""0"" para ""1"" e reinicie o Mediador.
+Para reativar a funcionalidade, altere o valor de 0 para 1 e reinicie o Mediador.
 
-+
 
 NOTE: Alternar entre espaços de disco não limpa logs existentes. Todos os logs anteriores são copiados e movidos para o espaço em disco atual depois de alternar e reiniciar o Mediator.
-
-
