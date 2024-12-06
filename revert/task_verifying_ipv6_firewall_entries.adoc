@@ -4,7 +4,7 @@ sidebar: sidebar
 keywords: revert, reverting, reversion, ipv6, firewall, entries, verify 
 summary: Uma reversão de qualquer versão do ONTAP 9 pode resultar em entradas de firewall padrão IPv6 ausentes para alguns serviços em políticas de firewall. Você precisa verificar se as entradas de firewall necessárias foram restauradas para o sistema. 
 ---
-= Verifique IPv6 entradas de firewall
+= Verifique IPv6 entradas de firewall após uma reversão do ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
@@ -13,7 +13,13 @@ summary: Uma reversão de qualquer versão do ONTAP 9 pode resultar em entradas 
 [role="lead"]
 Uma reversão de qualquer versão do ONTAP 9 pode resultar em entradas de firewall padrão IPv6 ausentes para alguns serviços em políticas de firewall. Você precisa verificar se as entradas de firewall necessárias foram restauradas para o sistema.
 
-. Verifique se todas as políticas de firewall estão corretas comparando-as com as políticas padrão: `system services firewall policy show`
+.Passos
+. Verifique se todas as políticas de firewall estão corretas comparando-as com as políticas padrão:
++
+[source, cli]
+----
+system services firewall policy show
+----
 +
 O exemplo a seguir mostra as políticas padrão:
 
@@ -44,18 +50,16 @@ data
 .
 .
 ----
-. Adicione manualmente quaisquer entradas padrão de firewall IPv6 ausentes criando uma nova política de firewall: `system services firewall policy create`
+. Adicione manualmente quaisquer entradas padrão de firewall IPv6 ausentes criando uma nova política de firewall:
 +
-[listing]
+[source, cli]
 ----
-cluster1::*> system services firewall policy create -policy newIPv6
--service ssh -action allow -ip-list ::/0
+system services firewall policy create -policy <policy_name> -service ssh -action allow -ip-list <ip_list>
 ----
-. Aplique a nova política ao LIF para permitir o acesso a um serviço de rede: `network interface modify`
+. Aplique a nova política ao LIF para permitir o acesso a um serviço de rede:
 +
-[listing]
+[source, cli]
 ----
-cluster1::*> network interface modify -vserver VS1 -lif LIF1
--firewall-policy newIPv6
+network interface modify -vserve <svm_name> -lif <lif_name> -firewall-policy <policy_name>
 ----
 

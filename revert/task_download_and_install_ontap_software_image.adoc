@@ -11,71 +11,73 @@ summary: Você deve primeiro baixar o software ONTAP; então você pode instalá
 
 
 [role="lead"]
-Primeiro, você deve baixar o software ONTAP a partir do site de suporte da NetApp; depois, você pode instalá-lo.
+Antes de reverter o software ONTAP atual, você deve baixar a versão de software de destino no site de suporte da NetApp e instalá-la.
 
 
 
-== Transfira a imagem do software
+== Transfira a imagem do software ONTAP
 
-Para fazer o downgrade ou reverter do ONTAP 9.4 e posterior, você pode copiar a imagem do software ONTAP do site de suporte da NetApp para uma pasta local. Para um downgrade ou reverter para o ONTAP 9.3 ou anterior, você deve copiar a imagem do software ONTAP para um servidor HTTP ou FTP em sua rede.
+As imagens de software são específicas para modelos de plataforma. Tem de obter a imagem correta para o cluster. Imagens de software, informações sobre a versão do firmware e o firmware mais recente para o modelo da sua plataforma estão disponíveis no site de suporte da NetApp. As imagens de software incluem a versão mais recente do firmware do sistema que estava disponível quando uma determinada versão do ONTAP foi lançada.
 
-Você deve observar as seguintes informações importantes:
 
-* As imagens de software são específicas para modelos de plataforma.
+NOTE: Se estiver a reverter um sistema com encriptação de volume NetApp a partir do ONTAP 9,5 ou posterior, tem de transferir a imagem do software ONTAP para países não restritos, que inclui encriptação de volume NetApp. Se você usar a imagem do software ONTAP para países restritos para reverter um sistema com criptografia de volume NetApp, o sistema fica em pânico e você perde o acesso aos volumes.
+
+.Passos
+. Localize o software ONTAP de destino na link:http://mysupport.netapp.com/NOW/cgi-bin/software["Transferências de software"^] área do site de suporte da NetApp.
+. Copie a imagem do software (por exemplo, 97_q_image.tgz) do site de suporte da NetApp
 +
-Tem de obter a imagem correta para o cluster. Imagens de software, informações sobre a versão do firmware e o firmware mais recente para o modelo da sua plataforma estão disponíveis no site de suporte da NetApp.
+Você pode copiar a imagem para o diretório no servidor HTTP ou servidor FTP do qual a imagem será servida ou para uma pasta local.
 
-* As imagens de software incluem a versão mais recente do firmware do sistema que estava disponível quando uma determinada versão do ONTAP foi lançada.
-* Se você estiver fazendo o downgrade de um sistema com criptografia de volume do NetApp a partir do ONTAP 9.5 ou posterior, baixe a imagem do software ONTAP para países não restritos, que inclui criptografia de volume do NetApp.
+
+
+
+
+== Instale a imagem do software ONTAP
+
+Depois de fazer o download da imagem do software ONTAP de destino a partir do site de suporte do NetApp, instale-a nos nós do cluster.
+
+.Passos
+. Defina o nível de privilégio como avançado:
 +
-Se você usar a imagem do software ONTAP para países restritos para fazer downgrade ou reverter um sistema com criptografia de volume NetApp, o sistema fica em pânico e você perde o acesso aos volumes.
-
-+
-.. Localize o software ONTAP de destino na link:http://mysupport.netapp.com/NOW/cgi-bin/software["Transferências de software"^] área do site de suporte da NetApp.
-.. Copie a imagem do software.
-+
-*** Para o ONTAP 9.3 ou anterior, copie a imagem do software (por exemplo, 93_q_image.tgz) do site de suporte da NetApp para o diretório no servidor HTTP ou servidor FTP a partir do qual a imagem será servida.
-*** Para o ONTAP 9.4 ou posterior, copie a imagem do software (por exemplo, 97_q_image.tgz) do site de suporte da NetApp para o diretório no servidor HTTP ou servidor FTP a partir do qual a imagem será servida ou para uma pasta local.
-
-
-
-
-
-
-
-
-== Instale a imagem do software
-
-Você deve instalar a imagem de software de destino nos nós do cluster.
-
-* Se você estiver fazendo downgrade ou revertendo um sistema com criptografia de volume NetApp do ONTAP 9.5 ou posterior, você deve ter baixado a imagem do software ONTAP para países não restritos, que inclui criptografia de volume NetApp.
-+
-Se você usar a imagem do software ONTAP para países restritos para fazer downgrade ou reverter um sistema com criptografia de volume NetApp, o sistema fica em pânico e você perde o acesso aos volumes.
-
-+
-.. Defina o nível de privilégio como avançado, inserindo *y* quando solicitado a continuar: `set -privilege advanced`
+[source, cli]
+----
+set -privilege advanced
+----
 +
 (`*>`É apresentado o aviso avançado ).
 
-.. Instale a imagem de software nos nós.
+. Digite `y` para continuar quando solicitado .
+. Instale a imagem do software:
 +
-Este comando faz o download e instala a imagem do software em todos os nós simultaneamente. Para baixar e instalar a imagem em cada nó, um de cada vez, não especifique o parâmetro -background.
-
+** Para configurações padrão ou uma configuração de MetroCluster de dois nós, digite o seguinte comando:
 +
-*** Se você estiver baixando ou revertendo uma configuração não MetroCluster ou uma configuração MetroCluster de dois nós:``system node image update -node * -package location -replace-package true -setdefault true -background true``
+[source, cli]
+----
+system node image update -node * -package location -replace-package true -setdefault true -background true
+----
 +
-Este comando usa uma consulta estendida para alterar a imagem do software de destino, que é instalada como imagem alternativa, para ser a imagem padrão para o nó.
+Este comando faz o download e instala a imagem do software em todos os nós simultaneamente. Para baixar e instalar a imagem em cada nó, uma de cada vez, não especifique o `-background` parâmetro. Este comando também usa uma consulta estendida para alterar a imagem do software de destino, que é instalada como imagem alternativa, para ser a imagem padrão para o nó.
 
-*** Se você estiver baixando ou revertendo uma configuração de MetroCluster de quatro ou oito nós, deverá emitir o seguinte comando em ambos os clusters: `system node image update -node * -package location -replace-package true true -background true -setdefault false`
+** Para uma configuração de MetroCluster de quatro ou oito nós, digite o seguinte comando em ambos os clusters:
 +
-Este comando usa uma consulta estendida para alterar a imagem do software de destino, que é instalada como a imagem alternativa em cada nó.
-
-
-
-.. Digite `y` para continuar quando solicitado.
-.. Verifique se a imagem do software foi baixada e instalada em cada nó: `system node image show-update-progress -node *`
+[source, cli]
+----
+system node image update -node * -package location -replace-package true true -background true -setdefault false
+----
 +
-Este comando exibe o status atual do download e instalação da imagem do software. Você deve continuar a executar este comando até que todos os nós relatem um Status de execução de sair e um Status de saída de sucesso.
+Este comando faz o download e instala a imagem do software em todos os nós simultaneamente. Para baixar e instalar a imagem em cada nó, uma de cada vez, não especifique o `-background` parâmetro. Este comando também usa uma consulta estendida para alterar a imagem do software de destino, que é instalada como a imagem alternativa em cada nó.
+
+
+
+. Digite `y` para continuar quando solicitado.
+. Verifique se a imagem do software foi baixada e instalada em cada nó:
++
+[source, cli]
+----
+system node image show-update-progress -node *
+----
++
+Este comando exibe o status atual do download e instalação da imagem do software. Você deve continuar a executar este comando até que todos os nós relatem um *Status de execução* de "sair" e um *Status de saída* de "sucesso".
 
 +
 O comando de atualização da imagem do nó do sistema pode falhar e apresentar mensagens de erro ou aviso. Depois de resolver quaisquer erros ou avisos, você pode executar o comando novamente.
@@ -101,6 +103,4 @@ Status of most recent operation:
         Exit Message:   After a clean shutdown, image2 will be set as the default boot image on node1.
 2 entries were acted on.
 ----
-
-
 

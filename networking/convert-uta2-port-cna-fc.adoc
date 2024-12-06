@@ -1,0 +1,87 @@
+---
+permalink: networking/convert-uta2-port-cna-fc.html 
+sidebar: sidebar 
+keywords: change, uta2, port, cna mode, fc mode 
+summary: Altere a personalidade UTA2 do modo CNA para o modo FC quando você precisar alterar o meio físico que coneta a porta à sua rede ou para suportar os iniciadores e o destino FC. 
+---
+= Esconda o porto UTA2 em ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Pode converter a porta UTA2 do modo de adaptador de rede convergente (CNA) para o modo Fibre Channel (FC) ou vice-versa.
+
+Você deve alterar a personalidade UTA2 do modo CNA para o modo FC quando precisar alterar o meio físico que coneta a porta à sua rede ou para suportar os iniciadores e o destino FC.
+
+[role="tabbed-block"]
+====
+.Do modo CNA para o modo FC
+--
+.Passos
+. Coloque o adaptador offline:
++
+[source, cli]
+----
+network fcp adapter modify -node <node_name> -adapter <adapter_name> -status-admin down
+----
+. Alterar o modo de porta:
++
+[source, cli]
+----
+ucadmin modify -node <node_name> -adapter <adapter_name> -mode fcp
+----
+. Reinicie o nó e, em seguida, coloque o adaptador online:
++
+[source, cli]
+----
+network fcp adapter modify -node <node_name> -adapter <adapter_name> -status-admin up
+----
+. Notifique seu administrador ou gerenciador de VIF para excluir ou remover a porta, conforme aplicável:
++
+** Se a porta for usada como uma porta inicial de um LIF, for um membro de um grupo de interfaces (ifgrp) ou hosts VLANs, então um administrador deve fazer o seguinte:
++
+*** Mova os LIFs, remova a porta do ifgrp ou exclua as VLANs, respetivamente.
+*** Exclua manualmente a porta executando o `network port delete` comando. Se o `network port delete` comando falhar, o administrador deve resolver os erros e, em seguida, executar o comando novamente.
+
+
+** Se a porta não for usada como porta inicial de um LIF, não for membro de um ifgrp e não hospedar VLANs, o gerenciador de VIF deve remover a porta de seus Registros no momento da reinicialização. Se o gerenciador de VIF não remover a porta, o administrador deve removê-la manualmente após a reinicialização usando o `network port delete` comando.
+
+
+. Verifique se você tem o SFP correto instalado:
++
+[source, cli]
+----
+network fcp adapter show -instance -node -adapter
+----
++
+Para CNA, você deve usar um SFP Ethernet 10Gb. Para FC, você deve usar um SFP de 8 GB ou um SFP de 16 GB antes de alterar a configuração no nó.
+
+
+
+--
+.Do modo FC para o modo CNA
+--
+.Passos
+. Coloque o adaptador offline:
++
+[source, cli]
+----
+network fcp adapter modify -node <node_name> -adapter <adapter_name> -status-admin down
+----
+. Alterar o modo de porta:
++
+[source, cli]
+----
+ucadmin modify -node <node_name> -adapter <adapter_name> -mode cna
+----
+. Reinicie o nó
+. Verifique se você tem o SFP correto instalado.
++
+Para CNA, você deve usar um SFP Ethernet 10Gb.
+
+
+
+--
+====

@@ -1,0 +1,35 @@
+---
+permalink: revert/disable-in-band-authentication.html 
+sidebar: sidebar 
+keywords: manage, nvme, secure, authentication, tcp, dh-hmac-hcap, chap, disable, in-band, in band 
+summary: Se estiver a reverter a partir do ONTAP 9.12.1, tem de desativar a autenticação na banda antes de reverter. 
+---
+= Desative a autenticação NVMe na banda antes de reverter a partir do ONTAP 9.12.1
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Se você estiver executando o protocolo NVMe, desative a autenticação na banda antes de reverter o cluster do ONTAP 9.12.1. Se a autenticação na banda usando DH-HMAC-CHAP não estiver desativada, a reversão falhará.
+
+.Passos
+. Remova o host do subsistema para desativar a autenticação DH-HMAC-CHAP:
++
+[source, cli]
+----
+vserver nvme subsystem host remove -vserver <svm_name> -subsystem <subsystem> -host-nqn <host_nqn>
+----
+. Verifique se o protocolo de autenticação DH-HMAC-CHAP foi removido do host:
++
+[source, cli]
+----
+vserver nvme subsystem host show
+----
+. Adicione o host de volta ao subsistema sem autenticação:
++
+[source, cli]
+----
+vserver nvme subsystem host add vserver <svm_name> -subsystem <subsystem> -host-nqn <host_nqn>
+----
+

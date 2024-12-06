@@ -4,78 +4,52 @@ sidebar: sidebar
 keywords: ontap, revert, reverting, revision, plan, planning, pre-checks 
 summary: Dependendo do seu ambiente, você precisa considerar certos fatores antes de iniciar sua reversão. 
 ---
-= Verificações de pré-reversão
+= Pré-reverter tarefas necessárias para a sua versão do ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-Dependendo do seu ambiente, você precisa considerar certos fatores antes de reverter. Comece revisando a tabela abaixo para ver quais considerações especiais você precisa considerar.
+Dependendo da versão do ONTAP, talvez seja necessário executar tarefas preparatórias adicionais antes de iniciar o processo de reversão.
 
 [cols="2*"]
 |===
-| Pergunte a si mesmo... | Se a sua resposta for *sim*, então faça isso... 
+| Se você está revertendo de ... | Faça o seguinte antes de iniciar o processo de reversão... 
 
 
-| Meu cluster está executando o SnapMirror?  a| 
-* link:concept_consideration_for_reverting_systems_with_snapmirror_synchronous_relationships.html["Considerações de revisão para reverter sistemas com relações síncronas SnapMirror"]
-* link:concept_reversion_requirements_for_snapmirror_and_snapvault_relationships.html["Reveja os requisitos de reversão para relacionamentos SnapMirror e SnapVault"]
+| Qualquer versão do ONTAP 9  a| 
+* link:terminate-smb-sessions.html["Encerrar sessões SMB que não estão continuamente disponíveis"].
+* link:concept_reversion_requirements_for_snapmirror_and_snapvault_relationships.html["Reveja os requisitos de reversão para relacionamentos SnapMirror e SnapVault"].
+* link:task_reverting_systems_with_deduplicated_volumes.html["Verifique se os volumes desduplicados têm espaço livre suficiente"].
+* link:task_preparing_snapshot_copies_before_reverting.html["Preparar instantâneos"].
+* link:task_setting_autocommit_periods_for_snaplock_volumes_before_reverting.html["Defina o período de confirmação automática para volumes SnapLock como horas"].
+* Se tiver uma configuração do MetroCluster, link:task_disable_asuo.html["desativar switchover não planejado automático"].
 
 
 
 
-| Meu cluster está executando o SnapLock? | link:task_setting_autocommit_periods_for_snaplock_volumes_before_reverting.html["Definir períodos de confirmação automática"] 
+| ONTAP 9.16,1  a| 
+* Se você tiver o TLS configurado para conexões NVMe/TCP, link:task-disable-tls-nvme-host.html["Desative a configuração TLS nos hosts NVMe"].
+* Se o monitoramento de desempenho de qtree estendido estiver ativado, link:disable-extended-qtree-performance-monitoring.html["desative-o."].
+* Se você estiver usando CORS para acessar seus buckets do ONTAP S3, link:remove-cors-configuration.html["Extrair a configuração CORS"].
 
 
-| Tenho volumes FlexClone divididos? | link:task_reverting_the_physical_block_sharing_in_split_flexclone_volumes.html["Inverter o compartilhamento de blocos físicos"] 
 
 
-| Tenho o FlexGroup volumes? | link:task_disabling_qtrees_in_flexgroup_volumes_before_reverting.html["Desativar a funcionalidade de qtree"] 
+| ONTAP 9.14,1 | Se você tiver ativado o entroncamento para conexões de cliente, link:remove-nfs-trunking-task.html["Desative o entroncamento em qualquer servidor NFSv4,1"]. 
 
 
-| Tenho servidores CIFS no modo de grupo de trabalho? | link:task_identifying_and_moving_cifs_servers_in_workgroup_mode.html["Mover ou excluir servidores CIFS no modo de grupo de trabalho"] 
+| ONTAP 9.12,1  a| 
+* Se você configurou o acesso de cliente S3 para dados nas, link:remove-nas-bucket-task.html["Retire a configuração do balde nas S3."]
+* Se você estiver executando o protocolo NVMe e tiver configurado a autenticação na banda, link:disable-in-band-authentication.html["desativar a autenticação na banda"].
+* Se tiver uma configuração do MetroCluster, link:task-disable-ipsec.html["Desativar IPsec"].
 
 
-| Tenho volumes desduplicados? | link:task_reverting_systems_with_deduplicated_volumes.html["Verifique se o volume contém espaço livre suficiente"] 
 
 
-| Tenho cópias snapshot? | link:task_preparing_snapshot_copies_before_reverting.html["Preparar cópias snapshot"] 
+| ONTAP 9.11,1 | Se você configurou o Autonomous ransomware Protection (ARP), link:anti-ransomware-license-task.html["Verifique o licenciamento ARP"]. 
 
 
-| Estou voltando para o ONTAP 8,3.x? | link:identify-user-sha2-hash-user-accounts.html["Identificar contas de usuário que usam a função hash SHA-2"] 
-
-
-| A proteção contra ransomware está configurada para ONTAP 9.11,1 ou posterior? | link:anti-ransomware-license-task.html["Verifique o licenciamento anti-ransomware"] 
-
-
-| O acesso multiprotocolo S3 está configurado para ONTAP 9.12,1 ou posterior? | link:remove-nas-bucket-task.html["Remova a configuração do balde nas S3"] 
-
-
-| O entroncamento de sessão NFSv4,1 está configurado para ONTAP 9.14,1 ou posterior? | link:remove-nfs-trunking-task.html["Remova a configuração do entroncamento de sessão NFSv4,1"] 
-
-
-| O canal seguro TLS está configurado para hosts NVMe para ONTAP 9.16,1 ou posterior? | link:task-disable-tls-nvme-host.html["Remova o TLS da configuração de host NVMe"] 
-
-
-| O monitoramento de desempenho estendido de qtree está sendo usado? | link:../volumes/qtrees-partition-your-volumes-concept.html["Qtrees e particionamento de ONTAP FlexVol volume"] 
-
-
-| A partilha de recursos entre origens (CORS) está configurada? | link:../s3-config/cors-integration.html["Integração CORS com ONTAP"] 
-|===
-
-
-== Verificações de pré-reversão do MetroCluster
-
-Dependendo da configuração do MetroCluster, você precisa considerar certos fatores antes de reverter. Comece revisando a tabela abaixo para ver quais considerações especiais você precisa considerar.
-
-[cols="2*"]
-|===
-| Pergunte a si mesmo... | Se a sua resposta for *sim*, então faça isso... 
-
-
-| Tenho uma configuração de MetroCluster de dois ou quatro nós? | link:task_disable_asuo.html["Desativar switchover não planejado automático"] 
-
-
-| Tenho uma configuração MetroCluster IP ou Fabric-attached de quatro ou oito nós executando o ONTAP 9.12,1 ou posterior? | link:task-disable-ipsec.html["Desativar IPsec"] 
+| ONTAP 9,6 | Se você tiver relações síncronas do SnapMirrorlink:concept_consideration_for_reverting_systems_with_snapmirror_synchronous_relationships.html["prepare os relacionamentos para reverter"], . 
 |===

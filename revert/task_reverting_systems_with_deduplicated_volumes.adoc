@@ -4,46 +4,74 @@ sidebar: sidebar
 keywords: ontap, revert, reverting, reversion, systems, deduplication, deduplicated, volumes 
 summary: Antes de reverter a partir de qualquer versão do ONTAP 9, você deve garantir que os volumes contenham espaço livre suficiente para a operação de reversão. 
 ---
-= Verifique se os volumes deduplicados têm espaço livre suficiente antes de reverter
+= Verifique o espaço livre para volumes desduplicados antes de reverter o ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-Antes de reverter a partir de qualquer versão do ONTAP 9, você deve garantir que os volumes contenham espaço livre suficiente para a operação de reversão.
+Antes de reverter um cluster do ONTAP a partir de qualquer versão do ONTAP 9, é necessário garantir que os volumes contenham espaço livre suficiente para a operação de reversão.
 
 O volume deve ter espaço suficiente para acomodar as economias que foram obtidas através da deteção em linha de blocos de zeros. Consulte o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Software/ONTAP_OS/How_to_see_space_savings_from_deduplication%2C_compression%2C_and_compaction_in_ONTAP_9["Como ver economia de espaço com deduplicação, compressão e compactação no ONTAP 9"].
 
 Se você ativou a deduplicação e a compactação de dados em um volume que deseja reverter, então você deve reverter a compactação de dados antes de reverter a deduplicação.
 
-. Use o comando volume Efficiency show com a opção -fields para ver o progresso das operações de eficiência que estão sendo executadas nos volumes.
+.Passos
+. Veja o progresso das operações de eficiência que estão sendo executadas nos volumes:
 +
-O comando a seguir exibe o andamento das operações de eficiência: `volume efficiency show -fields vserver,volume,progress`
-
-. Use o comando volume Efficiency stop com a opção -all para parar todas as operações de deduplicação ativas e enfileiradas.
+[source, cli]
+----
+volume efficiency show -fields vserver,volume,progress
+----
+. Parar todas as operações de deduplicação ativas e enfileiradas:
 +
-O comando a seguir pára todas as operações de deduplicação ativas e enfileiradas no volume VolA: `volume efficiency stop -vserver vs1 -volume VolA -all`
-
-. Use o comando SET -Privilege Advanced para fazer login no nível avançado de privilégio.
-. Use o comando revert-to de eficiência de volume com a opção -version para reduzir os metadados de eficiência de um volume para uma versão específica do ONTAP.
+[source, cli]
+----
+volume efficiency stop -vserver <svm_name> -volume <volume_name> -all
+----
+. Defina o nível de privilégio como avançado:
 +
-O seguinte comando reverte os metadados de eficiência no volume VolA para ONTAP 9.x: `volume efficiency revert-to -vserver vs1 -volume VolA -version 9.x`
+[source, cli]
+----
+set -privilege advanced
+----
+. Faça o downgrade dos metadados de eficiência de um volume para a versão de destino do ONTAP:
++
+[source, cli]
+----
+volume efficiency revert-to -vserver <svm_name> -volume <volume_name> -version <version>
+----
++
+O exemplo a seguir reverte os metadados de eficiência no volume VolA para ONTAP 9.x.
 
++
+[listing]
+----
+volume efficiency revert-to -vserver vs1 -volume VolA -version 9.x
+----
 +
 
 NOTE: O comando revert-to de eficiência de volume reverte volumes que estão presentes no nó em que este comando é executado. Este comando não reverte volumes entre nós.
 
-. Use o comando show de eficiência de volume com a opção -op-status para monitorar o progresso do downgrade.
+. Monitorize o progresso do downgrade:
 +
-O comando a seguir monitora e exibe o status do downgrade: `volume efficiency show -vserver vs1 -op-status Downgrading`
-
-. Se a reversão não for bem-sucedida, use o comando volume Efficiency show com a opção -instance para ver por que a reversão falhou.
+[source, cli]
+----
+volume efficiency show -vserver <svm_name> -op-status Downgrading
+----
+. Se a reversão não for bem-sucedida, exiba a instância para ver por que a reversão falhou.
 +
-O comando a seguir exibe informações detalhadas sobre todos os campos: `volume efficiency show -vserver vs1 -volume vol1 - instance`
-
-. Depois que a operação Reverter estiver concluída, retorne ao nível de privilégio admin: `set -privilege admin`
+[source, cli]
+----
+volume efficiency show -vserver <svm_name> -volume <volume_name> - instance
+----
+. Depois que a operação Reverter estiver concluída, retorne ao nível de privilégio admin:
 +
-link:../volumes/index.html["Gerenciamento de storage lógico"]
+[source, cli]
+----
+set -privilege admin
+----
 
 
+Saiba mais link:../volumes/index.html["Gerenciamento de storage lógico"]sobre o .

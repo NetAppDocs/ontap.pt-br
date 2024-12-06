@@ -4,18 +4,24 @@ sidebar: sidebar
 keywords: ontap, revert, reverting, reversion, downgrade, downgrading, enable, enabling, lifs, home, ports 
 summary: Durante uma reinicialização, alguns LIFs podem ter sido migrados para suas portas de failover atribuídas. Depois de reverter um cluster, você deve habilitar e reverter quaisquer LIFs que não estejam em suas portas iniciais. 
 ---
-= Ative e reverta LIFs para portas iniciais após uma reversão
+= Ative e reverta LIFs para portas iniciais após uma reversão do ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-Durante uma reinicialização, alguns LIFs podem ter sido migrados para suas portas de failover atribuídas. Depois de reverter um cluster, você deve habilitar e reverter quaisquer LIFs que não estejam em suas portas iniciais.
+Durante uma reinicialização, alguns LIFs podem ter sido migrados para suas portas de failover atribuídas. Depois de reverter um cluster do ONTAP, você deve habilitar e reverter quaisquer LIFs que não estejam em suas portas iniciais.
 
 O comando de reversão da interface de rede reverte um LIF que não está atualmente em sua porta inicial de volta para sua porta inicial, desde que a porta inicial esteja operacional. A porta inicial de um LIF é especificada quando o LIF é criado; você pode determinar a porta inicial de um LIF usando o comando show de interface de rede.
 
-. Apresentar o estado de todas as LIFs: `network interface show`
+.Passos
+. Apresentar o estado de todas as LIFs:
++
+[source, cli]
+----
+network interface show
+----
 +
 Este exemplo exibe o status de todas as LIFs de uma máquina virtual de storage (SVM).
 
@@ -40,24 +46,24 @@ vs0
 +
 Se algum LIFs for exibido com um status Admin de Status de Down ou com um status home de false, continue com a próxima etapa.
 
-. Ativar os LIFs de dados: `network interface modify {-role data} -status-admin up`
+. Ativar os LIFs de dados:
 +
-[listing]
+[source, cli]
 ----
-cluster1::> network interface modify {-role data} -status-admin up
-8 entries were modified.
+network interface modify {-role data} -status-admin up
 ----
-. Reverter LIFs para suas portas domésticas: `network interface revert *`
+. Reverter LIFs para suas portas domésticas:
 +
-Este comando reverte todos os LIFs de volta para suas portas residenciais.
-
+[source, cli]
+----
+network interface revert *
+----
+. Verifique se todos os LIFs estão em suas portas residenciais:
 +
-[listing]
+[source, cli]
 ----
-cluster1::> network interface revert *
-8 entries were acted on.
+network interface show
 ----
-. Verifique se todos os LIFs estão em suas portas residenciais: `network interface show`
 +
 Este exemplo mostra que todos os LIFs para SVM vs0 estão em suas portas domésticas.
 
