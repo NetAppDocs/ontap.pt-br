@@ -1,0 +1,35 @@
+---
+permalink: fabricpool/throttle-puts-task.html 
+sidebar: sidebar 
+keywords: throttle, fabricpool, fabric pool, tiering, put, rate, limit 
+summary: A regulagem DA COLOCAÇÃO permite que os administradores de storage definam um limite superior na taxa de colocação máxima por nó. 
+---
+= O acelerador FabricPool coloca
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Como administrador de storage, você pode usar o CONTROLE DE COLOCAÇÃO para definir um limite superior na taxa de colocação máxima por nó.
+
+A OTIMIZAÇÃO DE PUT é útil quando os recursos de rede ou o endpoint do armazenamento de objetos são limitados a recursos. Embora raras, restrições de recursos podem ocorrer com armazenamentos de objetos com baixo consumo de energia ou durante os primeiros dias de uso do FabricPool, quando TB ou PB de dados inativos começam a ficar em camadas.
+
+A regulagem DA COLOCAÇÃO é por nó. O limite mínimo DE PUT-rate-limit é de 8MBMB/s. Definir o put-rate-limit para um valor inferior a 8MB MB/s resultará em taxa de transferência de 8MB MB/s nesse nó. Vários nós, em categorias simultâneas, podem consumir mais largura de banda e potencialmente saturar um link de rede com capacidade extremamente limitada.
+
+[NOTE]
+====
+As operações do FabricPool PUT não competem por recursos com outras aplicações. As operações do FabricPool PUT são colocadas automaticamente em uma prioridade menor ("intimidadas") por aplicativos clientes e outras cargas de trabalho do ONTAP, como o SnapMirror. O uso de regulagem DE COLOCAÇÃO `put-rate-limit` pode ser útil para reduzir o tráfego de rede associado à disposição em camadas do FabricPool, mas não tem relação com o tráfego de ONTAP simultâneo.
+
+====
+.Antes de começar
+É necessário um nível de privilégio avançado.
+
+.Passos
+. O FabricPool do acelerador COLOCA as operações usando a CLI do ONTAP:
++
+[source, cli]
+----
+storage aggregate object-store put-rate-limit modify -node <name> -default <true|false> -putrate-bytes-limit <integer>[KB|MB|GB|TB|PB]
+----
+

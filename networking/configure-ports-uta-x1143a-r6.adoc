@@ -1,0 +1,45 @@
+---
+permalink: networking/configure-ports-uta-x1143a-r6.html 
+sidebar: sidebar 
+keywords: configure, ports 
+summary: 'Para configurar o adaptador de destino unificado (X1143A-R6), você deve configurar as duas portas adjacentes no mesmo chip no mesmo modo de personalidade.' 
+---
+= Configure as portas UTA X1143A-R6 para o seu sistema ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Por padrão, o adaptador de destino unificado X1143A-R6 é configurado no modo de destino FC, mas você pode configurar suas portas como portas Ethernet de 10 GB e FCoE (CNA) ou como portas de iniciador FC de 16 GB ou de destino. Isso requer adaptadores SFP diferentes.
+
+Quando configurados para Ethernet e FCoE, os adaptadores X1143A-R6 suportam NIC concorrente e tráfego de destino FCoE na mesma porta de 10 GBE. Quando configurado para FC, cada par de duas portas que compartilha o mesmo ASIC pode ser configurado individualmente para o modo de iniciador FC ou destino. Isso significa que um único adaptador X1143A-R6 pode oferecer suporte ao modo de destino FC em um par de duas portas e no modo iniciador FC em outro par de duas portas. Os pares de portas ligados ao mesmo ASIC têm de ser configurados no mesmo modo.
+
+No modo FC, o adaptador X1143A-R6 se comporta como qualquer dispositivo FC existente com velocidades de até 16 Gbps. No modo CNA, você pode usar o adaptador X1143A-R6 para NIC concorrente e compartilhamento de tráfego FCoE na mesma porta de 10 GbE. O modo CNA só suporta o modo de destino FC para a função FCoE.
+
+Para configurar o adaptador de destino unificado (X1143A-R6), você deve configurar as duas portas adjacentes no mesmo chip no mesmo modo de personalidade.
+
+.Passos
+. Veja a configuração da porta:
++
+[source, cli]
+----
+system hardware unified-connect show
+----
+. Configure as portas conforme necessário para Fibre Channel (FC) ou adaptador de rede convergente (CNA):
++
+[source, cli]
+----
+system node hardware unified-connect modify -node <node_name> -adapter <adapter_name> -mode {fcp|cna}
+----
+. Conete os cabos apropriados para FC ou Ethernet de 10 GB.
+. Verifique se você tem o SFP correto instalado:
++
+[source, cli]
+----
+network fcp adapter show -instance -node -adapter
+----
++
+Para CNA, você deve usar um SFP Ethernet 10Gb. Para FC, você deve usar um SFP de 8 GB ou um SFP de 16 GB, com base na malha FC conetada.
+
+

@@ -1,0 +1,135 @@
+---
+permalink: fabricpool/fabricpool-object-deletion.html 
+sidebar: sidebar 
+keywords: fabricpool, fabric pool, tiering, delete, defrag, unreclaimed, threshold 
+summary: O FabricPool exclui objetos depois que uma determinada porcentagem dos blocos no objeto não são mais referenciados pelo ONTAP. 
+---
+= Eliminação e desfragmentação de objetos FabricPool
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O FabricPool não exclui blocos de armazenamentos de objetos anexados. Em vez disso, o FabricPool exclui objetos após uma determinada porcentagem dos blocos no objeto não serem mais referenciados pelo ONTAP.
+
+Por exemplo, há 1.024 4KB blocos em um objeto 4MB dispostos em camadas no Amazon S3. Desfragmentação e exclusão não ocorrem até que menos de 205 4KB blocos (20% de 1.024) estejam sendo referenciados pelo ONTAP. Quando blocos suficientes (1.024) têm zero referências, seus objetos 4MB originais são excluídos e um novo objeto é criado.
+
+Você pode personalizar a porcentagem de limite de espaço não recuperado e configurá-la para diferentes níveis padrão para diferentes armazenamentos de objetos. As predefinições são:
+
+|===
+
+
+| Armazenamento de objetos | ONTAP 9 .3 e anteriores | ONTAP 9,4 a 9,7 | ONTAP 9 F.8 e mais tarde | Cloud Volumes ONTAP 
+
+
+ a| 
+Amazon S3
+ a| 
+0%
+ a| 
+20%
+ a| 
+20%
+ a| 
+30%
+
+
+
+ a| 
+Google Cloud Storage
+ a| 
+n/a.
+ a| 
+12%
+ a| 
+20%
+ a| 
+35%
+
+
+
+ a| 
+Storage Blob do Microsoft Azure
+ a| 
+n/a.
+ a| 
+15%
+ a| 
+25%
+ a| 
+35%
+
+
+
+ a| 
+NetApp ONTAP S3
+ a| 
+n/a.
+ a| 
+n/a.
+ a| 
+40%
+ a| 
+n/a.
+
+
+
+ a| 
+NetApp StorageGRID
+ a| 
+0%
+ a| 
+40%
+ a| 
+40%
+ a| 
+n/a.
+
+|===
+
+
+== Limite de espaço não recuperado
+
+Alterar as configurações padrão de limite de espaço não recuperado aumentará ou diminuirá a quantidade aceita de fragmentação de objetos. Reduzir a fragmentação reduzirá a quantidade de capacidade física usada pela camada de nuvem em detrimento de recursos adicionais de armazenamento de objetos (leituras e gravações).
+
+
+
+=== Redução do limiar
+
+Para evitar despesas adicionais, considere reduzir os limites de espaço não recuperado ao usar esquemas de preços de armazenamento de objetos que reduzem o custo de storage, mas aumentam o custo das leituras. Os exemplos incluem o Amazon's Standard-IA e o armazenamento Blob do Azure Cool.
+
+Por exemplo, a disposição em camadas de um volume de projetos de 10 anos que tenha sido economizado por razões legais pode ser mais barata ao usar um esquema de preços como Standard-IA ou Cool do que seria ao usar esquemas de preços padrão. Embora as leituras sejam mais caras para esse volume, incluindo leituras exigidas pela desfragmentação de objetos, é improvável que ocorram com frequência.
+
+
+
+=== O limite aumenta
+
+Como alternativa, considere aumentar os limites de espaço não recuperado se a fragmentação de objeto causar significativamente mais capacidade de armazenamento de objetos a ser usada do que o necessário para os dados referenciados pelo ONTAP. Por exemplo, usar um limite de espaço não recuperado de 20% em um cenário pior, em que todos os objetos estão igualmente fragmentados na extensão máxima permitida significa que é possível que 80% da capacidade total na camada de nuvem não seja referenciada pelo ONTAP. Por exemplo:
+
+O 2TB referenciado pelo ONTAP e o 8TB não referenciado pelo ONTAP representa a capacidade total de 10TB TB usada pela camada de nuvem.
+
+Nessa situação, pode ser vantajoso aumentar o limite de espaço não recuperado ou aumentar o volume de dias mínimos de resfriamento para reduzir a capacidade usada por blocos não referenciados.
+
+[NOTE]
+====
+À medida que os objetos são desfragmentados e tornam o armazenamento mais eficiente, os arquivos subjacentes podem se tornar mais fragmentados à medida que os blocos referenciados são gravados em objetos novos e mais eficientes. Por esse motivo, o aumento significativo do limite de espaço não recuperado resulta em objetos com maior eficiência de storage, mas possivelmente reduz o desempenho de leitura sequencial.
+
+====
+
+
+== Altere o limite de espaço não recuperado
+
+Você pode personalizar a porcentagem de limite de espaço não recuperado para diferentes armazenamentos de objetos.
+
+.Antes de começar
+É necessário um nível de privilégio avançado.
+
+.Passos
+. Para alterar o limite de espaço não recuperado padrão, personalize e execute o seguinte comando:
++
+[source, cli]
+----
+storage aggregate object-store modify -aggregate <name> -object-store-name <name> -unreclaimedspace-threshold <%> (0%-99%)
+----
+
