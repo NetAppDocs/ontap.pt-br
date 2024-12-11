@@ -1,7 +1,7 @@
 ---
 permalink: fabricpool/object-tagging-user-created-custom-tags-task.html 
 sidebar: sidebar 
-keywords: object, tagging, user-created, custom tags, fabricpool, fabric pool, sort 
+keywords: object, tagging, user-created, custom tags, fabricpool, fabric pool, sort, fabricpool sorting, fabricpool data 
 summary: A partir do ONTAP 9.8, o FabricPool oferece suporte à marcação de objetos usando tags personalizadas criadas pelo usuário para permitir classificar e classificar objetos para facilitar o gerenciamento. Se você for um usuário com o nível de privilégio de administrador, poderá criar novas tags de objeto e modificar, excluir e exibir tags existentes. 
 ---
 = Marcação de objetos usando tags personalizadas criadas pelo usuário
@@ -12,3 +12,173 @@ summary: A partir do ONTAP 9.8, o FabricPool oferece suporte à marcação de ob
 
 [role="lead"]
 A partir do ONTAP 9.8, o FabricPool oferece suporte à marcação de objetos usando tags personalizadas criadas pelo usuário para permitir classificar e classificar objetos para facilitar o gerenciamento. Se você for um usuário com o nível de privilégio de administrador, poderá criar novas tags de objeto e modificar, excluir e exibir tags existentes.
+
+
+
+== Atribua uma nova tag durante a criação de volume
+
+Você pode criar uma nova tag de objeto quando quiser atribuir uma ou mais tags a novos objetos dispostos em camadas a partir de um novo volume criado. Você pode usar tags para ajudar a classificar e classificar objetos em categorias para facilitar o gerenciamento de dados. A partir do ONTAP 9.8, você pode usar o Gerenciador do sistema para criar tags de objeto.
+
+.Sobre esta tarefa
+Você pode definir tags apenas em volumes FabricPool anexados ao StorageGRID. Essas tags são mantidas durante uma movimentação de volume.
+
+* É permitido um máximo de 4 etiquetas por volume.
+* Na CLI, cada tag de objeto deve ser um par de chave-valor separado por um sinal igual.
+* Na CLI, várias tags devem ser separadas por uma vírgula.
+* Cada valor de tag pode conter um máximo de 127 carateres.
+* Cada tecla de tag deve começar com um caractere alfabético ou um sublinhado.
++
+As teclas devem conter apenas carateres alfanuméricos e sublinhados, e o número máximo de carateres permitido é 127.
+
+
+
+Você pode atribuir tags de objeto com o Gerenciador de sistema do ONTAP ou a CLI do ONTAP.
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *Storage > Tiers*.
+. Localize uma camada de storage com volumes que você deseja etiquetar.
+. Clique na guia *volumes*.
+. Localize o volume que você deseja marcar e na coluna *Tags de objeto* selecione *clique para inserir tags*.
+. Introduza uma chave e um valor.
+. Clique em *aplicar*.
+
+
+--
+.CLI
+--
+. Use o `volume create` comando com a `-tiering-object-tags` opção para criar um novo volume com as tags especificadas. Você pode especificar várias tags em pares separados por vírgulas:
++
+[listing]
+----
+volume create [ -vserver <vserver name> ] -volume <volume_name> -tiering-object-tags <key1=value1> [,<key2=value2>,<key3=value3>,<key4=value4> ]
+----
++
+O exemplo a seguir cria um volume chamado fp_volume1 com três tags de objeto.
+
++
+[listing]
+----
+vol create -volume fp_volume1 -vserver vs0 -tiering-object-tags project=fabricpool,type=abc,content=data
+----
+
+
+--
+====
+
+
+== Modificar uma etiqueta existente
+
+Você pode alterar o nome de uma tag, substituir tags em objetos existentes no armazenamento de objetos ou adicionar uma tag diferente a novos objetos que você planeja adicionar mais tarde.
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *Storage > Tiers*.
+. Localize uma camada de storage com volumes que contêm tags que você deseja modificar.
+. Clique na guia *volumes*.
+. Localize o volume com as tags que deseja modificar e, na coluna *Tags de objeto*, clique no nome da tag.
+. Modifique a tag.
+. Clique em *aplicar*.
+
+
+--
+.CLI
+--
+. Use o `volume modify` comando com a `-tiering-object-tags` opção para modificar uma tag existente.
++
+[listing]
+----
+volume modify [ -vserver <vserver name> ] -volume <volume_name> -tiering-object-tags <key1=value1> [ ,<key2=value2>,
+<key3=value3>,<key4=value4> ]
+----
++
+O exemplo a seguir altera o nome da tag existente
+
++
+[listing]
+----
+vol create -volume fp_volume1 -vserver vs0 -tiering-object-tags project=fabricpool,type=xyz,content=data
+----
+
+
+--
+====
+
+
+== Excluir uma tag
+
+Você pode excluir tags de objeto quando não quiser mais defini-las em um volume ou em objetos no armazenamento de objetos.
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Navegue até *Storage > Tiers*.
+. Localize um nível de storage com volumes que contêm tags que você deseja excluir.
+. Clique na guia *volumes*.
+. Localize o volume com as tags que você deseja excluir e, na coluna *Tags de objeto*, clique no nome da tag.
+. Para excluir a tag, clique no ícone da lixeira.
+. Clique em *aplicar*.
+
+
+--
+.CLI
+--
+. Use o `volume modify` comando com a `-tiering-object-tags` opção seguida de um valor vazio (`""`) para excluir uma tag existente.
++
+O exemplo a seguir exclui as tags existentes no fp_volume1.
+
++
+[listing]
+----
+vol modify -volume fp_volume1 -vserver vs0 -tiering-object-tags ""
+----
+
+
+--
+====
+
+
+== Exibir tags existentes em um volume
+
+Você pode exibir as tags existentes em um volume para ver quais tags estão disponíveis antes de anexar novas tags à lista.
+
+.Passos
+. Use o `volume show` comando com a `tiering-object-tags` opção para exibir tags existentes em um volume.
++
+[listing]
+----
+volume show [ -vserver <vserver name> ] -volume <volume_name> -fields tiering-object-tags
+----
+
+
+
+
+== Verifique o status da marcação de objetos em volumes FabricPool
+
+Você pode verificar se a marcação está concluída em um ou mais volumes do FabricPool.
+
+.Passos
+. Use o `vol show` comando com a `-fields needs-object-retagging` opção para ver se a marcação está em andamento, se ela foi concluída ou se a marcação não está definida.
++
+[listing]
+----
+vol show -fields needs-object-retagging  [ -instance | -volume <volume name>]
+----
++
+É apresentado um dos seguintes valores:
+
++
+** `true`: o scanner de marcação de objetos ainda não foi executado ou precisa ser executado novamente para esse volume
+** `false`: o scanner de marcação de objetos concluiu a marcação para este volume
+** `+<->+`: o scanner de marcação de objetos não se aplica a este volume. Isso acontece para volumes que não residem no FabricPools.
+
+
+

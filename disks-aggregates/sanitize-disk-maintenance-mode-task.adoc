@@ -49,35 +49,35 @@ Depois de algumas informações serem exibidas, o prompt do modo de manutenção
 NOTE: O comando para desparticionar um disco só está disponível no nível de diag e só deve ser executado sob supervisão de suporte NetApp. É altamente recomendável que você entre em Contato com o suporte da NetApp antes de prosseguir. Você também pode consultar o artigo da base de dados de Conhecimento link:https://kb.netapp.com/Advice_and_Troubleshooting/Data_Storage_Systems/FAS_Systems/How_to_unpartition_a_spare_drive_in_ONTAP["Como desparticionar uma unidade sobressalente no ONTAP"^]
 
 +
-`disk unpartition _disk_name_`
+`disk unpartition <disk_name>`
 
 . Higienizar os discos especificados:
 +
-`disk sanitize start [-p _pattern1_|-r [-p _pattern2_|-r [-p _pattern3_|-r]]] [-c _cycle_count_] _disk_list_`
+`disk sanitize start [-p <pattern1>|-r [-p <pattern2>|-r [-p <pattern3>|-r]]] [-c <cycle_count>] <disk_list>`
 
 +
 
 NOTE: Não desligue a alimentação do nó, interrompa a conectividade do storage ou remova os discos de destino durante a limpeza. Se a limpeza for interrompida durante a fase de formatação, a fase de formatação deve ser reiniciada e pode ser concluída antes que os discos sejam higienizados e prontos para serem devolvidos ao pool sobressalente. Se você precisar abortar o processo de sanitização, você pode fazê-lo usando o `disk sanitize abort` comando. Se os discos especificados estiverem passando pela fase de formatação da sanitização, o cancelamento não ocorrerá até que a fase esteja concluída.
 
 +
- `-p` `_pattern1_` `-p` `_pattern2_` `-p` `_pattern3_` especifica um ciclo de um a três padrões de substituição de bytes hexadecimais definidos pelo usuário que podem ser aplicados sucessivamente aos discos que estão sendo higienizados. O padrão padrão padrão é três passagens, usando 0x55 para a primeira passagem, 0xaa para a segunda passagem e 0x3c para a terceira passagem.
+ `-p` `<pattern1>` `-p` `<pattern2>` `-p` `<pattern3>` especifica um ciclo de um a três padrões de substituição de bytes hexadecimais definidos pelo usuário que podem ser aplicados sucessivamente aos discos que estão sendo higienizados. O padrão padrão padrão é três passagens, usando 0x55 para a primeira passagem, 0xaa para a segunda passagem e 0x3c para a terceira passagem.
 
 +
 `-r` substitui uma substituição padronizada por uma substituição aleatória para qualquer ou todos os passes.
 
 +
-`-c` `_cycle_count_` especifica o número de vezes que os padrões de substituição especificados são aplicados. O valor padrão é um ciclo. O valor máximo é de sete ciclos.
+`-c` `<cycle_count>` especifica o número de vezes que os padrões de substituição especificados são aplicados. O valor padrão é um ciclo. O valor máximo é de sete ciclos.
 
 +
-`_disk_list_` Especifica uma lista separada por espaço das IDs dos discos sobressalentes a serem higienizados.
+`<disk_list>` Especifica uma lista separada por espaço das IDs dos discos sobressalentes a serem higienizados.
 
 . Se desejar, verifique o estado do processo de sanitização de disco:
 +
-`disk sanitize status [_disk_list_]`
+`disk sanitize status [<disk_list>]`
 
 . Depois que o processo de sanitização estiver concluído, retorne os discos ao status de reserva para cada disco:
 +
-`disk sanitize release _disk_name_`
+`disk sanitize release <disk_name>`
 
 . Sair do modo de manutenção.
 
@@ -86,7 +86,7 @@ NOTE: Não desligue a alimentação do nó, interrompa a conectividade do storag
 .Higienize um disco com os comandos e n.o 8220;nodeshell& n.o 8221; (todas as versões do ONTAP 9)
 [%collapsible]
 ====
-Para todas as versões do ONTAP 9, quando a sanitização de disco é ativada usando comandos nodeshell, alguns comandos ONTAP de baixo nível são desativados. Depois que a sanitização de disco estiver ativada em um nó, ela não poderá ser desativada.
+Depois que o recurso de sanitização de disco é ativado usando comandos nodeshell em um nó, ele não pode ser desativado.
 
 .Antes de começar
 * Os discos devem ser discos sobressalentes; eles devem ser de propriedade de um nó, mas não usados em um nível local (agregado).
@@ -112,11 +112,11 @@ NOTE: O comando para desparticionar um disco só está disponível no nível de 
 
 --
 +
-`disk unpartition _disk_name_`
+`disk unpartition <disk_name>`
 
 . Introduza o nodeshell para o nó que possui os discos que pretende higienizar:
 +
-`system node run -node _node_name_`
+`system node run -node <node_name>`
 
 . Ativar sanitização de disco:
 +
@@ -131,34 +131,34 @@ Você é solicitado a confirmar o comando porque ele é irreversível.
 
 . Higienizar os discos especificados:
 +
-`disk sanitize start [-p pattern1|-r [-p pattern2|-r [-p pattern3|-r]]] [-c cycle_count] disk_list`
+`disk sanitize start [-p <pattern1>|-r [-p <pattern2>|-r [-p <pattern3>|-r]]] [-c <cycle_count>] <disk_list>`
 
 +
 
 NOTE: Não desligue a alimentação do nó, interrompa a conectividade do storage ou remova os discos de destino durante a limpeza. Se a limpeza for interrompida durante a fase de formatação, a fase de formatação deve ser reiniciada e pode ser concluída antes que os discos sejam higienizados e prontos para serem devolvidos ao pool sobressalente. Se você precisar abortar o processo de sanitização, você pode fazê-lo usando o comando Disk Sanitize abort. Se os discos especificados estiverem passando pela fase de formatação da sanitização, o cancelamento não ocorrerá até que a fase esteja concluída.
 
 +
-`-p pattern1 -p pattern2 -p pattern3` especifica um ciclo de um a três padrões de substituição de bytes hexadecimais definidos pelo usuário que podem ser aplicados sucessivamente aos discos que estão sendo higienizados. O padrão padrão padrão é três passagens, usando 0x55 para a primeira passagem, 0xaa para a segunda passagem e 0x3c para a terceira passagem.
+`-p <pattern1> -p <pattern2> -p <pattern3>` especifica um ciclo de um a três padrões de substituição de bytes hexadecimais definidos pelo usuário que podem ser aplicados sucessivamente aos discos que estão sendo higienizados. O padrão padrão padrão é três passagens, usando 0x55 para a primeira passagem, 0xaa para a segunda passagem e 0x3c para a terceira passagem.
 
 +
 `-r` substitui uma substituição padronizada por uma substituição aleatória para qualquer ou todos os passes.
 
 +
-`-c cycle_count` especifica o número de vezes que os padrões de substituição especificados são aplicados.
+`-c <cycle_count>` especifica o número de vezes que os padrões de substituição especificados são aplicados.
 
 +
 O valor padrão é um ciclo. O valor máximo é de sete ciclos.
 
 +
-`disk_list` Especifica uma lista separada por espaço das IDs dos discos sobressalentes a serem higienizados.
+`<disk_list>` Especifica uma lista separada por espaço das IDs dos discos sobressalentes a serem higienizados.
 
 . Se pretender verificar o estado do processo de sanitização de disco:
 +
-`disk sanitize status [disk_list]`
+`disk sanitize status [<disk_list>]`
 
 . Depois de concluir o processo de sanitização, devolva os discos ao estado de reserva:
 +
-`disk sanitize release _disk_name_`
+`disk sanitize release <disk_name>`
 
 . Retornar ao nível de privilégio de administrador nodeshell:
 +
@@ -192,11 +192,11 @@ Execute as seguintes etapas:
 
 .. Atribua os discos higienizados não atribuídos ao nó apropriado para cada disco:
 +
-`storage disk assign -disk _disk_name_ -owner _node_name_`
+`storage disk assign -disk <disk_name> -owner <node_name>`
 
 .. Retorne os discos ao status de reserva para cada disco:
 +
-`storage disk unfail -disk _disk_name_ -s -q`
+`storage disk unfail -disk <disk_name> -s -q`
 
 .. Voltar ao modo administrativo:
 +
