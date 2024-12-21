@@ -1,0 +1,32 @@
+---
+permalink: flexcache-writeback/faq-flexcache-write-back.html 
+sidebar: sidebar 
+keywords: tr-4743, flexcache writeback, flexcache write-back, flexcache, write-back, write back, faq, frequently asked questions, ontap tr, netapp tr 
+summary: Perguntas frequentes sobre o FlexCache write-back 
+---
+= Perguntas frequentes sobre o ONTAP FlexCache write-back
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Este FAQ pode ajudar se você está procurando uma resposta rápida para uma pergunta.
+
+.Eu quero usar write-back. Qual versão do ONTAP eu preciso para executar?
+Tanto o cache quanto a origem devem estar executando o ONTAP 9.15.1 ou posterior. É recomendado *_fortemente_* que você execute a versão P mais recente. A engenharia está constantemente melhorando o desempenho e a funcionalidade de caches habilitados para write-back.
+
+.Os clientes que acessam a origem podem ter um efeito sobre os clientes que acessam o cache habilitado para write-back?
+Sim. A origem tem igual direito aos dados como qualquer um dos caches. Se uma operação for executada em um arquivo que exija que o arquivo seja despejado do cache ou uma delegação de bloqueio/dados seja revogada, o cliente no cache pode ver um atraso acessando o arquivo.
+
+.Posso aplicar QoS a FlexCaches habilitadas para gravação?
+Sim. Cada cache e a origem podem ter políticas de QoS independentes aplicadas. Isso não terá efeito direto em qualquer tráfego iniciado de back-back entre clusters. Indiretamente, você pode reduzir o tráfego de retorno de gravação entre clusters limitando o tráfego front-end no cache habilitado para write-back.
+
+.O nas multiprotocolo é suportado em FlexCaches habilitados para write-back?
+Sim. Multi-protocolo é totalmente suportado em FlexCaches com write-back habilitado. Atualmente, NFSv4,2 e S3 não são suportados pelo FlexCache operando no modo write-around ou write-back.
+
+.Os fluxos de dados alternativos SMB são compatíveis com FlexCaches habilitados para gravação?
+Fluxos de dados alternativos (ANÚNCIOS) SMB são compatíveis, mas não são acelerados com o write-back. A gravação para os ANÚNCIOS é encaminhada para a origem, incorrendo na penalidade da latência da WAN. A gravação também expulsa o arquivo principal do qual OS ANÚNCIOS fazem parte do cache.
+
+.Posso alternar um cache entre o modo write-around e write-back depois que ele é criado?
+Sim. Tudo o que você precisa fazer é alternar a `is-writeback-enabled` bandeira no link:../FlexCache-writeback/FlexCache-writeback-enable-task.html[`flexcache modify` command].

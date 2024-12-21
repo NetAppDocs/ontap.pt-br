@@ -4,7 +4,7 @@ sidebar: sidebar
 keywords: tr-4743, flexcache writeback, flexcache write-back, use cases, workloads, technical report, netapp tr, ontap tr 
 summary: Estes são os perfis de escrita mais adequados para um FlexCache habilitado para gravação. Você deve testar seu workload para ver se o back-back ou a gravação fornecem a melhor performance. 
 ---
-= Casos de uso de FlexCache writeback
+= Casos de uso de retorno de gravação do ONTAP FlexCache
 :allow-uri-read: 
 
 
@@ -21,17 +21,19 @@ NOTE: Write-back não é um substituto para write-around. Embora o write-back se
 .Tamanho do ficheiro
 O tamanho do arquivo é menos importante do que o número de gravações emitidas entre o `OPEN` e `CLOSE` chamadas para um arquivo. Arquivos pequenos têm, inerentemente, `WRITE` menos chamadas, tornando-os menos ideais para write-back. Arquivos grandes podem ter mais gravações entre `OPEN` e `CLOSE` chamadas, mas isso não é garantido.
 
+Consulte link:../flexcache-writeback/flexcache-write-back-guidelines.html["Diretrizes de reescrita do FlexCache"]a página para obter as recomendações mais recentes sobre o tamanho máximo do arquivo.
+
 .Tamanho da gravação
-Ao escrever de um cliente, outras chamadas nas são envolvidas além de chamadas de gravação:
+Ao gravar de um cliente, outras chamadas nas modificadas são envolvidas além de chamadas de gravação. Estes incluem, mas não estão limitados a:
 
 * `CREATE`
 * `OPEN`
 * `CLOSE`
-* `READDIR/READDIRPLUS`
-*  `SETATTR`: `SETATTR` as chamadas que apenas modificam `mtime`, `atime` ou `ctime` são processadas no cache.
+* `SETATTR`
+* `SET_INFO`
 
 
-Essas chamadas devem ser processadas na origem e desencadear uma gravação de qualquer dado sujo acumulado no cache habilitado para write-back para o arquivo que está sendo operado. O IO para o arquivo será silenciado até que o write-back esteja concluído.
+`SETATTR` e `SET_INFO` as chamadas que definem `mtime`, `atime`, , `ctime` `owner` , `group` ou `size` são processadas no cache. O resto dessas chamadas deve ser processado na origem e acionar uma gravação de qualquer dado sujo acumulado no cache habilitado para write-back para o arquivo que está sendo operado. O IO para o arquivo será silenciado até que o write-back esteja concluído.
 
 Saber que essas chamadas devem atravessar a WAN ajuda você a identificar cargas de trabalho adequadas para back-back. Geralmente, quanto mais gravações que podem ser feitas entre `OPEN` e `CLOSE` chamadas sem que uma das outras chamadas listadas acima seja emitida, melhor será o ganho de desempenho de retorno de gravação.
 
@@ -48,7 +50,7 @@ Quando um arquivo acumula dados sujos em um cache, o cache grava os dados de vol
 
 == Considerações sobre latência
 
-Quando o FlexCache opera no modo write-back, torna-se mais benéfico para os clientes nas à medida que a latência aumenta. No entanto, há um ponto em que a sobrecarga do write-back supera as vantagens obtidas em ambientes de baixa latência. Em alguns testes de NetApp, os benefícios de writeback começaram em torno de uma latência mínima entre cache e origem do 8ms. Essa latência varia de acordo com o workload, portanto, teste para saber seu ponto de retorno dos benefícios.
+Quando o FlexCache opera no modo write-back, torna-se mais benéfico para os clientes nas à medida que a latência aumenta. No entanto, há um ponto em que a sobrecarga do write-back supera as vantagens obtidas em ambientes de baixa latência. Em alguns testes do NetApp, os benefícios de write-back começaram em torno de uma latência mínima entre cache e origem do 8ms. Essa latência varia de acordo com o workload, portanto, teste para saber o ponto de retorno do workload.
 
 O gráfico a seguir mostra o ponto de retorno para write-back em testes de laboratório do NetApp. O `x` eixo é o tamanho do arquivo e o `y` eixo é o tempo decorrido. O teste utilizou NFSv3, montagem com um `rsize` e `wsize` de 256KB e 64ms de latência WAN. Este teste foi realizado usando uma pequena instância do ONTAP Select para o cache e origem, e uma única operação de escrita em thread. Seus resultados podem variar.
 

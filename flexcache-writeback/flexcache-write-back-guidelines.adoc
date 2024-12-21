@@ -1,0 +1,40 @@
+---
+permalink: flexcache-writeback/flexcache-write-back-guidelines.html 
+sidebar: sidebar 
+keywords: tr-4743, flexcache writeback, flexcache write-back, flexcache, write-back, write back, guidelines, best practices, performance, ontap tr, netapp tr 
+summary: Siga estas diretrizes para garantir o desempenho ideal ao usar o FlexCache write-back. 
+---
+= Diretrizes de reescrita do ONTAP FlexCache
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O FlexCache write-back envolve muitas interações complexas entre a origem e caches. Para um desempenho ideal, você deve garantir que seu ambiente siga estas diretrizes. Estas diretrizes baseiam-se na versão principal mais recente do ONTAP (ONTAP 9.15.1.) disponível no momento da criação de conteúdo.
+
+**PRÁTICA recomendada:** Teste sua carga de trabalho de produção em um ambiente não-produção. Isso é ainda mais importante se você estiver implementando o FlexCache write-back fora dessas diretrizes.
+
+As seguintes diretrizes são bem testadas internamente na NetApp. É *_fortemente_* recomendado que você fique dentro deles. Se não o fizer, poderá ocorrer um comportamento inesperado.
+
+* Melhorias significativas para o FlexCache write-back foram introduzidas no ONTAP 9.15.1P5. É *_fortemente_* aconselhado que você execute a versão recomendada atual após 9.15.1P5 nos clusters origem e cache.
+* Em sua iteração atual, os caches write-back do FlexCache devem ser configurados com um único constituinte para todo o volume FlexCache. FlexCaches multiconstitutivos pode resultar em despejos indesejados de dados do cache.
+* O teste foi executado para arquivos menores que 100GB e tempos de ida e volta da WAN entre o cache e a origem não superiores a 100ms. Quaisquer cargas de trabalho fora desses limites podem resultar em caraterísticas de desempenho inesperadas.
+* A gravação em fluxos de dados alternativos SMB faz com que o arquivo principal seja despejado do cache. Todos os dados sujos para o arquivo principal precisam ser lavados para a origem antes que qualquer outra operação possa ocorrer nesse arquivo. O fluxo de dados alternativo também é encaminhado para a origem.
+* Renomear um arquivo faz com que o arquivo seja despejado do cache. Todos os dados sujos para o arquivo precisam ser lavados para a origem antes que qualquer outra operação possa ocorrer nesse arquivo.
+* Neste momento, os únicos atributos que podem ser alterados ou definidos em um arquivo no volume FlexCache habilitado para gravação são:
++
+** Carimbos de data/hora
+** Bits de modo
+** ACLs do NT
+** Proprietário
+** Grupo
+** Tamanho
++
+Quaisquer outros atributos que sejam alterados ou definidos são encaminhados para o Origin, o que pode resultar na remoção do arquivo do cache. Se você precisar que outros atributos sejam alterados ou definidos no cache, peça à equipe da sua conta para abrir um PVR.
+
+
+
+* Os instantâneos tirados na origem causam a recuperação de todos os dados sujos pendentes de cada cache habilitado para gravação associada a esse volume de origem. Isso pode exigir várias tentativas da operação se houver uma atividade significativa de retorno de gravação em andamento, já que os despejos desses arquivos sujos podem levar algum tempo.
+* A origem deve permanecer abaixo de 80% cheio. Os volumes de cache não recebem delegações de bloqueio exclusivo se não houver pelo menos 20% de espaço restante no volume de origem. As chamadas para um cache habilitado para write-back são encaminhadas para a origem nesta situação. Isso ajuda a evitar a falta de espaço na origem, o que resultaria em deixar dados sujos órfãos em um cache habilitado para write-back.
+
