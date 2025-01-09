@@ -20,7 +20,7 @@ A partir do ONTAP 9.15,1, você pode converter entre os tipos de proteção de s
 
 == Converter em um relacionamento ativo-ativo simétrico
 
-Você pode converter uma relação de sincronização ativa do SnapMirror com a proteção aysnasonic para usar ativo/ativo simétrico.
+Você pode converter uma relação de sincronização ativa do SnapMirror com proteção assíncrona para usar ativo-ativo simétrico.
 
 .Antes de começar
 * Ambos os clusters devem estar executando o ONTAP 9.15,1 ou posterior.
@@ -91,11 +91,11 @@ Você pode converter uma relação de sincronização ativa do SnapMirror com a 
 .Passos para uma configuração uniforme
 . Modifique a política SnapMirror de `AutomatedFailover` para `AutomatedFailoverDuplex`:
 +
-`snapmirror modify -destination-path _destination_path_ -policy AutomatedFailoverDuplex`
+`snapmirror modify -destination-path <destination_path> -policy AutomatedFailoverDuplex`
 
 . A modificação da política aciona uma ressincronização. Aguarde até que a ressincronização seja concluída e confirme que a relação é `Insync`:
 +
-`snapmirror show -destination-path _destination_path_`
+`snapmirror show -destination-path <destination_path>`
 
 . Se os hosts existentes forem locais, o cluster primário, adicione o host ao segundo cluster e estabeleça conetividade com o respetivo acesso a cada cluster.
 . No site secundário, exclua os mapas LUN nos grupos associados aos hosts remotos.
@@ -104,11 +104,11 @@ Você pode converter uma relação de sincronização ativa do SnapMirror com a 
 NOTE: Certifique-se de que o grupo não contenha mapas para LUNs não replicados.
 
 +
-`SiteB::> lun mapping delete -vserver _svm_name_ -igroup _igroup_ -path <>`
+`SiteB::> lun mapping delete -vserver <svm_name> -igroup <igroup> -path <>`
 
 . No local principal, modifique a configuração do iniciador para os hosts existentes para definir o caminho proximal para os iniciadores no cluster local.
 +
-`SiteA::> igroup initiator add-proximal-vserver -vserver _svm_name_ -initiator _host_ -proximal-vserver _server_`
+`SiteA::> igroup initiator add-proximal-vserver -vserver <svm_name> -initiator <host> -proximal-vserver <server>`
 
 . Adicione um novo grupo e iniciador para os novos hosts e defina a proximidade do host para a afinidade do host para seu site local. Replicação do igroup para replicar a configuração e inverter a localidade do host no cluster remoto.
 +
@@ -124,11 +124,11 @@ SiteA::> igroup initiator add-proximal-vserver -vserver vsA -initiator host2 -pr
 .Passos para uma configuração não uniforme
 . Modifique a política SnapMirror de `AutomatedFailover` para `AutomatedFailoverDuplex`:
 +
-`snapmirror modify -destination-path _destination_path_ -policy AutomatedFailoverDuplex`
+`snapmirror modify -destination-path <destination_path> -policy AutomatedFailoverDuplex`
 
 . A modificação da política aciona uma ressincronização. Aguarde até que a ressincronização seja concluída e confirme que a relação é `Insync`:
 +
-`snapmirror show -destination-path _destination_path_`
+`snapmirror show -destination-path <destination_path>`
 
 . Se os hosts existentes forem locais para o cluster primário, adicione o host ao segundo cluster e estabeleça conetividade com o respetivo acesso a cada cluster.
 . No site secundário, exclua os mapas LUN nos grupos associados aos hosts remotos.
@@ -137,18 +137,18 @@ SiteA::> igroup initiator add-proximal-vserver -vserver vsA -initiator host2 -pr
 NOTE: Certifique-se de que o grupo não contenha mapas para LUNs não replicados.
 
 +
-`SiteB::> lun mapping delete -vserver _svm_name_ -igroup _igroup_ -path <>`
+`SiteB::> lun mapping delete -vserver <svm_name> -igroup <igroup> -path <>`
 
 . No local principal, modifique a configuração do iniciador para os hosts existentes para definir o caminho proximal para os iniciadores no cluster local.
 +
-`SiteA::> igroup initiator add-proximal-vserver -vserver _Svm_name_ -initiator _host_ -proximal-vserver _server_`
+`SiteA::> igroup initiator add-proximal-vserver -vserver <svm_name> -initiator <host> -proximal-vserver <server>`
 
 . No site secundário, adicione um novo grupo e iniciador para os novos hosts e defina a proximidade do host para a afinidade do host para seu site local. Mapeie os LUNs para o grupo.
 +
 ``
-SiteB::> igroup create -vserver _svm_name_ -igroup _igroup_name_
-SiteB::> igroup add -vserver _svm_name_ -igroup  _igroup_name_ -initiator _host_name_
-SiteB::> lun mapping create -igroup  _igroup_name_ -path _path_name_
+SiteB::> igroup create -vserver <svm_name> -igroup <igroup>
+SiteB::> igroup add -vserver <svm_name> -igroup  <igroup> -initiator <host_name>
+SiteB::> lun mapping create -igroup  <igroup> -path <path_name>
 ``
 
 . Descubra os caminhos nos hosts e verifique se os hosts têm um caminho Ativo/otimizado para o LUN de armazenamento a partir do cluster preferido
@@ -165,30 +165,30 @@ Se você configurou a proteção ativa/ativa simétrica, você pode converter a 
 
 .Passos
 . Mova todos os workloads de VM para o host local para o cluster de origem.
-. Remova a configuração do igrop para os hosts que não estão gerenciando as instâncias da VM e modifique a configuração do igrop para encerrar a replicação do igrop.
+. Remova a configuração do grupo para os hosts que não gerenciam as instâncias da VM, em seguida, modifique a configuração do grupo para encerrar a replicação do grupo.
 +
-`code`
+`igroup modify -vserver <svm_name> -igroup <igroup> -replication-peer -`
 
 . No local secundário, desmapeie os LUNs.
 +
-`SiteB::> lun mapping delete -vserver _svm_name_ -igroup _igroup_name_ -path <>`
+`SiteB::> lun mapping delete -vserver <svm_name> -igroup <igroup> -path <>`
 
 . No site secundário, exclua a relação ativo-ativo simétrica.
 +
-`SiteB::> snapmirror delete -destination-path _destination_path_`
+`SiteB::> snapmirror delete -destination-path <destination_path>`
 
 . No local principal, libere o relacionamento ativo-ativo simétrico.
-`SiteA::> snapmirror release -destination-path _destination_path_ -relationship-info-only true`
-. A partir do site secundário, crie uma relação com o mesmo conjunto de volumes com a `AutomatedFailover` política de ressincronizar a relação.
+`SiteA::> snapmirror release -destination-path <destination_path> -relationship-info-only true`
+. A partir do site secundário, crie uma relação com o mesmo conjunto de volumes com a `AutomatedFailover` política para ressincronizar a relação.
 +
 ``
-SiteB::> snapmirror create -source-path _source_path_ -destination-path _destination_path_ -cg-item-mappings _source:@destination_ -policy AutomatedFailover
-SiteB::> snapmirror resync -destination-path vs1:/cg/cg1_dst
+SiteB::> snapmirror create -source-path <source_path> -destination-path <destination_path> -cg-item-mappings <source:@destination> -policy AutomatedFailover
+SiteB::> snapmirror resync -destination-path vs1:/cg/cg1_dst -policy <policy_type>
 ``
 
 +
 
-NOTE: O grupo de consistência no site secundário precisa link:../consistency-groups/delete-task.html["a eliminar"] antes de recriar a relação. Os volumes de link:https://kb.netapp.com/onprem/ontap/dp/SnapMirror/How_to_change_a_volume_type_from_RW_to_DP["Tem de ser convertido para o tipo DP"^]destino .
+NOTE: O grupo de consistência no site secundário precisa link:../consistency-groups/delete-task.html["a eliminar"] antes de recriar a relação. Os volumes de link:https://kb.netapp.com/onprem/ontap/dp/SnapMirror/How_to_change_a_volume_type_from_RW_to_DP["Tem de ser convertido para o tipo DP"^]destino . Para converter os volumes para DP, execute o `snapmirror resync` comando com uma não-`AutomatedFailover` política: `MirrorAndVault` `MirrorAllSnapshots` , Ou `Sync`.
 
 . Confirme se o estado do espelho de relacionamento é `Snapmirrored` o Status do relacionamento é `Insync`.
 +

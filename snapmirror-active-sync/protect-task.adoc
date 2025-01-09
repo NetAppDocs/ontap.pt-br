@@ -151,19 +151,21 @@ Você pode estabelecer proteção simétrica usando o Gerenciador do sistema ou 
 .Passos para uma configuração uniforme
 . Crie uma nova relação do SnapMirror agrupando todos os volumes na aplicação. Certifique-se de designar a `AutomatedFailOverDuplex` política para estabelecer replicação de sincronização bidirecional.
 +
-`snapmirror create -source-path _source_path_ -destination-path _destination_path_ -cg-item-mappings _source_volume:@destination_volume_ -policy AutomatedFailOverDuplex`
+`snapmirror create -source-path <source_path> -destination-path <destination_path> -cg-item-mappings <source_volume:@destination_volume> -policy AutomatedFailOverDuplex`
 
+. Inicialize a relação SnapMirror:
+`snapmirror initialize -destination-path <destination-consistency-group>`
 . Confirme se a operação foi bem-sucedida, aguardando que o `Mirrored State` mostre como `SnapMirrored` e `Relationship Status` as `Insync`.
 +
-`snapmirror show -destination-path _destination_path_`
+`snapmirror show -destination-path <destination_path>`
 
 . No seu host, configure a conectividade de host com acesso a cada cluster de acordo com suas necessidades.
 . Estabeleça a configuração do grupo. Defina os caminhos preferidos para iniciadores no cluster local. Especifique a opção para replicar a configuração para a afinidade inversa do cluster de pares.
 +
-`SiteA::> igroup create -vserver _svm_name_  -os-type _os_type_ -igroup _igroup_name_ -replication-peer _peer_svm_name_ -initiator _host_`
+`SiteA::> igroup create -vserver <svm_name> -os-type <os_type> -igroup <igroup_name> -replication-peer <peer_svm_name> -initiator <host>`
 
 +
-`SiteA::> igroup add -vserver _svm_name_ -igroup _igroup_name_ -os-type _os_type_ -initiator _host_`
+`SiteA::> igroup add -vserver <svm_name> -igroup <igroup_name> -os-type <os_type> -initiator <host>`
 
 . A partir do host, descubra os caminhos e verifique se os hosts têm um caminho ativo/otimizado para o LUN de storage a partir do cluster preferido.
 . Implante o aplicativo e distribua as cargas de trabalho da VM entre clusters para alcançar o balanceamento de carga necessário.
@@ -172,21 +174,23 @@ Você pode estabelecer proteção simétrica usando o Gerenciador do sistema ou 
 .Passos para uma configuração não uniforme
 . Crie uma nova relação do SnapMirror agrupando todos os volumes na aplicação. Certifique-se de designar a política "AutomatedFailOverDuplex" para estabelecer replicação de sincronização bidirecional.
 +
-`snapmirror create -source-path _source_path_ -destination-path _destination_path_ -cg-item-mappings _source_volume:@destination_volume_ -policy AutomatedFailOverDuplex`
+`snapmirror create -source-path <source_path> -destination-path <destination_path> -cg-item-mappings <source_volume:@destination_volume> -policy AutomatedFailOverDuplex`
 
+. Inicialize a relação SnapMirror:
+`snapmirror initialize -destination-path <destination-consistency-group>`
 . Confirme se a operação foi bem-sucedida, aguardando que o `Mirrored State` mostre como `SnapMirrored` e `Relationship Status` as `Insync`.
 +
-`snapmirror show -destination-path _destination_path_`
+`snapmirror show -destination-path <destination_path>`
 
 . No seu host, configure a conectividade de host com acesso a cada cluster de acordo com suas necessidades.
 . Estabeleça as configurações do igrupo nos clusters de origem e destino.
 +
 `# primary site
-SiteA::> igroup create -vserver _svm_name_ -igroup _igroup_name_ -initiator _host_1_name_`
+SiteA::> igroup create -vserver <svm_name> -igroup <igroup_name> -initiator <host_1_name_>`
 
 +
 `# secondary site
-SiteB::> igroup create -vserver _svm_name_ -igroup _igroup_name_ -initiator _host_2_name_`
+SiteB::> igroup create -vserver <svm_name> -igroup <igroup_name> -initiator <host_2_name>`
 
 . A partir do host, descubra os caminhos e verifique se os hosts têm um caminho ativo/otimizado para o LUN de storage a partir do cluster preferido.
 . Implante o aplicativo e distribua as cargas de trabalho da VM entre clusters para alcançar o balanceamento de carga necessário.
