@@ -17,20 +17,41 @@ O NFS sobre RDMA requer configuração de NIC para o sistema cliente e plataform
 
 == Configuração da plataforma de storage
 
-Um adaptador RDMA X1148 precisa ser instalado no servidor. Se você estiver usando uma configuração de HA, precisará ter um adaptador X1148 correspondente no parceiro de failover para que o serviço RDMA possa continuar durante o failover. A NIC deve ser compatível com ROCE.
+Para obter informações sobre o suporte RNIC de destino, consulte o https://hwu.netapp.com/["NetApp Hardware Universe"^].
 
-A partir do ONTAP 9.10,1, você pode visualizar uma lista de protocolos de descarga RDMA com o comando:
-`network port show -rdma-protocols roce`
+Se você estiver usando uma configuração de alta disponibilidade (HA), ambos os nós devem usar o mesmo RNIC para suportar failover RDMA. A NIC deve ser compatível com RoCE.
+
+* A partir do ONTAP 9.10.1, você pode visualizar uma lista de protocolos de descarga RDMA com o comando:
++
+[source, cli]
+----
+network port show -rdma-protocols roce
+----
+* A partir do ONTAP 9.16.1, recomenda-se o uso do controle de fluxo de prioridade (PFC). Configure o PFC usando o `network port modify` comando:
++
+[source, cli]
+----
+network port modify -node <nodename> -port <portname> -flowcontrol-admin pfc -pfc-queues-admin 3
+----
+* Antes do ONTAP 9.16.1, recomenda-se a utilização do controlo de fluxo global predefinido (GFC). Se a configuração de controle de fluxo tiver sido alterada, configure o GFC usando o `network port modify` comando:
++
+[source, cli]
+----
+network port modify -node <nodename> -port <portname> -flowcontrol-admin full
+----
+
 
 
 
 == Configuração do sistema cliente
 
-Os clientes devem estar usando placas NIC compatíveis com RDMA Mellanox (por exemplo, X1148) e software de rede Mellanox OFED. Consulte a documentação do Mellanox para ver os modelos e versões compatíveis. Embora o cliente e o servidor possam ser conetados diretamente, o uso de switches é recomendado devido ao melhor desempenho de failover com um switch.
+Para obter informações sobre sistemas operacionais cliente compatíveis para NFS sobre RDMA, consulte o https://imt.netapp.com/matrix/["Matriz de interoperabilidade NetApp (IMT)"^]. Para RNICs compatíveis com RoCE v2, consulte a respetiva documentação do fornecedor RNIC.
 
-O cliente, o servidor, todos os switches e todas as portas nos switches devem ser configurados usando Jumbo Frames. Certifique-se também de que o controle de fluxo de prioridade está em vigor em quaisquer switches.
+Embora o cliente e o servidor possam ser conetados diretamente, o uso de switches é recomendado para melhorar o desempenho do failover.
 
-Depois que essa configuração for confirmada, você poderá montar o NFS.
+O cliente, o servidor, todos os switches e todas as portas nos switches devem ser configurados usando quadros jumbo. A configuração de controle de fluxo nos clientes e switches deve corresponder à configuração de controle de fluxo do ONTAP. A partir do ONTAP 9.16.1, é prática recomendada ativar e configurar o controle de fluxo de prioridade no ONTAP, nos switches e nos clientes. Antes do ONTAP 9.16.1, recomenda-se a utilização de controlo de fluxo global.
+
+Depois que essa configuração for confirmada, você poderá montar a exportação NFS usando RDMA.
 
 [role="tabbed-block"]
 ====
@@ -52,24 +73,24 @@ Ao adicionar interfaces de rede, você terá a opção de selecionar *usar porta
 --
 . Verifique se o acesso RDMA está ativado no servidor NFS com o comando:
 +
-`vserver nfs show-vserver _SVM_name_`
+`vserver nfs show-vserver <SVM_name>`
 
 +
 Por padrão, `-rdma` deve estar habilitado. Se não estiver, ative o acesso RDMA no servidor NFS:
 
 +
-`vserver nfs modify -vserver _SVM_name_ -rdma enabled`
+`vserver nfs modify -vserver <SVM_name> -rdma enabled`
 
 . Monte o cliente via NFSv4,0 através de RDMA:
 +
 .. A entrada para o parâmetro proto depende da versão do protocolo IP do servidor. Se for IPv4, use `proto=rdma`. Se for IPv6, use `proto=rdma6`.
 .. Especifique a porta de destino NFS como `port=20049` em vez da porta padrão 2049:
 +
-`mount -o vers=4,minorversion=0,proto=rdma,port=20049 _Server_IP_address_:/_volume_path_ _mount_point_`
+`mount -o vers=4,minorversion=0,proto=rdma,port=20049 <Server_IP_address>:/<volume_path> <mount_point>`
 
 
 
-. *OPCIONAL*: Se você precisar desmontar o cliente, execute o comando `unmount _mount_path_`
+. *OPCIONAL*: Se você precisar desmontar o cliente, execute o comando `unmount <mount_path>`
 
 
 --

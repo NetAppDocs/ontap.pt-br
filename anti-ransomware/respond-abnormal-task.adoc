@@ -2,26 +2,28 @@
 sidebar: sidebar 
 permalink: anti-ransomware/respond-abnormal-task.html 
 keywords: abnormal activity, data entropy, unusual file extensions, potential ransomware attack, false positive, ransomware attack, abnormal activity notification, ransomware alert, detected abnormal volume, suspected file types, attack report, anti-ransomware attack, ransomware ems 
-summary: Saiba mais sobre como responder às notificações ARP para entender se um ataque de ransomware está em andamento. 
+summary: Saiba como sobre as notificações ARP no ONTAP e determine se um ataque de ransomware está ocorrendo e como responder. 
 ---
 = Responder a atividades anormais
-:hardbreaks:
-:toclevels: 1
 :allow-uri-read: 
-:toclevels: 1
-:nofooter: 
 :icons: font
-:linkattrs: 
 :imagesdir: ../media/
 
 
 [role="lead"]
-Quando o Autonomous ransomware Protection (ARP) deteta atividade anormal em um volume protegido, ele emite um aviso. Você deve avaliar a notificação para determinar se a atividade é aceitável (falso positivo) ou se um ataque parece mal-intencionado.
+Quando o Autonomous ransomware Protection (ARP) deteta atividade anormal em um volume protegido, ele emite um aviso. Você deve avaliar a notificação para determinar se a atividade é aceitável (falso positivo) ou se um ataque parece mal-intencionado. Depois de categorizar o ataque, você pode limpar o aviso e avisos sobre arquivos suspeitos.
+
+Quando o ONTAP deteta uma anomalia, também cria link:index.html#threat-assessment-and-arp-snapshots["Um instantâneo ARP"] o volume para criar o melhor ponto de recuperação. Os instantâneos ARP são retidos por dois a cinco dias por padrão.
+
+Quando você categoriza um ataque, esses snapshots ARP são excluídos instantaneamente (ONTAP 9.15.1 e anteriores) ou retidos por um período abreviado iniciado pela operação de categorização (ONTAP 9.16.1 e posterior).
+
+
+NOTE: A partir do ONTAP 9.11.1, você pode modificar o xref:modify-automatic-snapshot-options-task.html[definições de retenção] para instantâneos ARP.
 
 .Sobre esta tarefa
 ARP exibe uma lista de arquivos suspeitos quando deteta qualquer combinação de alta entropia de dados, atividade de volume anormal com criptografia de dados e extensões de arquivos incomuns.
 
-Quando o aviso for emitido, responda designando a atividade do ficheiro de duas formas:
+Quando o aviso ARP for emitido, responda designando a atividade do arquivo de duas maneiras:
 
 * *Falso positivo*
 +
@@ -44,7 +46,7 @@ NOTE: Se você restaurar um volume inteiro, não há avisos para limpar.
 O ARP deve estar em execução no modo ativo.
 
 .Passos
-Você pode usar o Gerenciador de sistema ou a CLI do ONTAP para responder a uma tarefa anormal.
+Use o Gerenciador de sistema ou a CLI do ONTAP para responder a atividades anormais.
 
 [role="tabbed-block"]
 ====
@@ -54,13 +56,12 @@ Você pode usar o Gerenciador de sistema ou a CLI do ONTAP para responder a uma 
 +
 Os avisos são exibidos no painel *Visão geral* do menu *Eventos*.
 
-. Quando for apresentada uma mensagem "Detected abnormal volume activity" (atividade de volume anormal detetada), visualize os ficheiros suspeitos.
+. Quando for apresentada uma mensagem sobre a deteção de atividade de volume anormal, consulte os tipos de ficheiro suspeitos.
 +
-Na guia *Segurança*, selecione *Exibir tipos de arquivo suspeitos*.
+Na guia *Segurança*, selecione a opção para revisar os tipos de arquivo suspeitos.
 
 . Na caixa de diálogo *tipos de arquivo suspeitos*, examine cada tipo de arquivo e marque-o como "Falso positivo" ou "ataque de potencial ransomware".
-
-
++
 [cols="25,75"]
 |===
 
@@ -68,23 +69,42 @@ Na guia *Segurança*, selecione *Exibir tipos de arquivo suspeitos*.
 | Se selecionou este valor... | Tome esta ação... 
 
 
-| Falso positivo  a| 
-Selecione *Update* e *Clear Suspect File Types* para gravar sua decisão e retomar o monitoramento ARP normal.
-
+ a| 
+Falso positivo
+ a| 
+.. Selecione *Update* e *Clear Suspect File Types* para gravar sua decisão.
++
 
 NOTE: A partir do ONTAP 9.13,1, se você estiver usando o MAV para proteger suas configurações ARP, a operação clara suspeita solicitará que você obtenha a aprovação de um ou mais administradores adicionais. link:../multi-admin-verify/request-operation-task.html["A aprovação deve ser recebida de todos os administradores"] Associado ao grupo de aprovação MAV ou à operação falhará.
 
++
+Esta ação limpa avisos sobre ficheiros suspeitos. Em seguida, o ARP retoma a monitorização normal do volume. Para o ONTAP 9.15.1 e versões anteriores, depois de limpar os tipos de arquivo suspeitos, os snapshots ARP são excluídos automaticamente. Para ARP/AI no ONTAP 9.16.1 e posterior, os snapshots ARP são excluídos automaticamente após um período de retenção abreviado acionado pela operação de categorização.
 
 
-| Potencial ataque de ransomware | Responda ao ataque e restaure os dados protegidos. Em seguida, selecione *Update* e *Clear Suspect File Types* para gravar sua decisão e retomar o monitoramento ARP normal. Não há tipos de arquivo suspeitos para limpar se você restaurou um volume inteiro. 
+
+
+
+ a| 
+Potencial ataque de ransomware
+ a| 
+.. Responder ao ataque e link:recover-data-task.html["restaurar dados protegidos"].
+.. Selecione *Update* e *Clear Suspect File Types* para gravar sua decisão e retomar o monitoramento ARP normal.
+
+
+Esta ação limpa o relatório de ataque. Não há avisos de tipo de arquivo suspeitos para limpar se você restaurou um volume inteiro. Para o ONTAP 9.15.1 e versões anteriores, depois de restaurar um volume, os instantâneos ARP são automaticamente excluídos. Para ARP/AI no ONTAP 9.16.1 e posterior, os snapshots ARP são excluídos automaticamente após um período de retenção abreviado acionado pela operação de categorização.
+
 |===
+
+
 --
 .CLI
 --
 . Quando receber uma notificação de um ataque de ransomware suspeito, verifique a hora e a gravidade do ataque:
 +
-`security anti-ransomware volume show -vserver _svm_name_ -volume _vol_name_`
-
+[source, cli]
+----
+security anti-ransomware volume show -vserver <svm_name> -volume <vol_name>
+----
 +
 Saída da amostra:
 
@@ -101,55 +121,76 @@ Number of Attacks: 1
 Você também pode verificar mensagens EMS:
 
 +
-`event log show -message-name callhome.arw.activity.seen`
-
+[source, cli]
+----
+event log show -message-name callhome.arw.activity.seen
+----
 . Gere um relatório de ataque e anote o local de saída:
 +
-`security anti-ransomware volume attack generate-report -volume _vol_name_ -dest-path _file_location_/`
+[source, cli]
+----
+security anti-ransomware volume attack generate-report -vserver <svm_name> -volume <vol_name> -dest-path <[svm_name:]vol_name/[sub-dir-name]>`
+----
++
+Exemplo de comando:
 
++
+[listing]
+----
+security anti-ransomware volume attack generate-report -vserver vs0 -volume vol1 -dest-path vs0:vol1
+----
 +
 Saída da amostra:
 
 +
-`Report "report_file_vs0_vol1_14-09-2021_01-21-08" available at path "vs0:vol1/"`
-
+[listing]
+----
+Report "report_file_vs0_vol1_14-09-2021_01-21-08" available at path "vs0:vol1/"
+----
 . Exibir o relatório em um sistema de cliente admin. Por exemplo:
 +
 ....
-[root@rhel8 mnt]# cat report_file_vs0_vol1_14-09-2021_01-21-08
-
-19  "9/14/2021 01:03:23"   test_dir_1/test_file_1.jpg.lckd
-20  "9/14/2021 01:03:46"   test_dir_2/test_file_2.jpg.lckd
-21  "9/14/2021 01:03:46"   test_dir_3/test_file_3.png.lckd`
+cat report_file_vs0_vol1_14-09-2021_01-21-08
 ....
 . Execute uma das seguintes ações com base na avaliação das extensões de arquivo:
 +
 ** Falso positivo
 +
-Digite o seguinte comando para Registrar sua decisão, adicionando a nova extensão à lista dos permitidos, e retomar o monitoramento normal anti-ransomware:
-`anti-ransomware volume attack clear-suspect -vserver _svm_name_ -volume _vol_name_ [_extension identifiers_] -false-positive true`
+Execute o seguinte comando para Registrar sua decisão, adicionando a nova extensão à lista dos permitidos e retomar o monitoramento normal Autonomous ransomware Protection:
 
 +
-Use um dos seguintes parâmetros para identificar as extensões:
-`[-seq-no _integer_]` Número de sequência do arquivo na lista suspeita.
-`[-extension _text_, … ]` Extensões de arquivo
-`[-start-time _date_time_ -end-time _date_time_]` começando e terminando tempos para o intervalo de arquivos a ser limpo, no formulário "MM/DD/AAAA HH:MM:SS".
+[source, cli]
+----
+anti-ransomware volume attack clear-suspect -vserver <svm_name> -volume <vol_name> [<extension identifiers>] -false-positive true
+----
++
+Use o seguinte parâmetro opcional para identificar apenas extensões específicas como falsos positivos:
+
++
+*** `[-extension <text>, … ]`: Extensões de ficheiro
++
+ `clear-suspect`Esta operação limpa avisos sobre ficheiros suspeitos. Em seguida, o ARP retoma a monitorização normal do volume. Para o ONTAP 9.15.1 e versões anteriores, depois de limpar os tipos de arquivo suspeitos, os snapshots ARP são excluídos automaticamente. Para ARP/AI no ONTAP 9.16.1 e posterior, os snapshots ARP são excluídos automaticamente após um período de retenção abreviado acionado pela operação de categorização.
+
+
 
 ** Possível ataque de ransomware
 +
-Responder ao ataque e link:../anti-ransomware/recover-data-task.html["Recupere dados do instantâneo de backup criado pelo ARP"]. Depois que os dados forem recuperados, digite o seguinte comando para Registrar sua decisão e retomar o monitoramento ARP normal:
+Responder ao ataque e link:../anti-ransomware/recover-data-task.html["Recupere dados do instantâneo de backup criado pelo ARP"]. Depois que os dados forem recuperados, execute o seguinte comando para Registrar sua decisão e retomar o monitoramento ARP normal:
 
 +
-`anti-ransomware volume attack clear-suspect -vserver _svm_name_ -volume _vol_name_ [_extension identifiers_] -false-positive false`
+[source, cli]
+----
+anti-ransomware volume attack clear-suspect -vserver <svm_name> -volume <vol_name> [<extension identifiers>] -false-positive false
+----
++
+Use o seguinte parâmetro opcional para identificar apenas extensões específicas como possíveis ransomware:
 
 +
-Use um dos seguintes parâmetros para identificar as extensões:
-`[-seq-no _integer_]` Número de sequência do arquivo na lista suspeita
-`[-extension _text_, … ]` extensão de arquivo
-`[-start-time _date_time_ -end-time _date_time_]` horários de início e término para o intervalo de arquivos a ser limpo, no formulário "MM/DD/AAAA HH:MM:SS".
-
+*** `[-extension <text>, … ]`: Extensão do ficheiro
 +
-Não há tipos de arquivo suspeitos para limpar se você restaurou um volume inteiro. O instantâneo de backup criado pelo ARP será removido e o relatório de ataque será limpo.
+ `clear-suspect`Esta operação limpa o relatório de ataque. Não há avisos de tipo de arquivo suspeitos para limpar se você restaurou um volume inteiro. Para o ONTAP 9.15.1 e versões anteriores, depois de restaurar um volume, os instantâneos ARP são automaticamente excluídos. Para ARP/AI no ONTAP 9.16.1 e posterior, os snapshots ARP são excluídos automaticamente após um período de retenção abreviado acionado pela operação de categorização.
+
+
 
 
 
@@ -157,12 +198,16 @@ Não há tipos de arquivo suspeitos para limpar se você restaurou um volume int
 +
 .. Mostrar o pedido:
 +
-`security multi-admin-verify request show`
-
+[source, cli]
+----
+security multi-admin-verify request show
+----
 .. Aprovar a solicitação para retomar o monitoramento normal anti-ransomware:
 +
-`security multi-admin-verify request approve -index[_number returned from show request_]`
-
+[source, cli]
+----
+security multi-admin-verify request approve -index[<number returned from show request>]
+----
 +
 A resposta para o último aprovador do grupo indica que o volume foi modificado e um falso positivo é registrado.
 
@@ -170,12 +215,15 @@ A resposta para o último aprovador do grupo indica que o volume foi modificado 
 
 . Se você estiver usando MAV e for um aprovador de grupo MAV, também poderá rejeitar uma solicitação clara e suspeita:
 +
-`security multi-admin-verify request veto -index[_number returned from show request_]`
-
+[source, cli]
+----
+security multi-admin-verify request veto -index[<number returned from show request>]
+----
 
 
 --
 ====
-.Mais informações
+.Informações relacionadas
 * link:https://kb.netapp.com/onprem%2Fontap%2Fda%2FNAS%2FUnderstanding_Autonomous_Ransomware_Protection_attacks_and_the_Autonomous_Ransomware_Protection_snapshot#["KB: Entendendo os ataques Autonomous ransomware Protection e o snapshot Autonomous ransomware Protection"^].
+* link:modify-automatic-snapshot-options-task.html["Modificar opções de instantâneos automáticos"].
 
