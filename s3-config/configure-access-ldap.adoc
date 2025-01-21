@@ -93,7 +93,9 @@ NOTE: O cliente S3 pode pedir uma chave secreta. Na ausência de uma chave secre
 
 === Autenticação de recursos para o ative Directory para usuários sem UID e GID
 
-Se o nasgroup especificado na declaração bucket-policy ou os usuários que fazem parte do nasgroup não tiverem UID e GID definidos, as pesquisas falharão quando esses atributos não forem encontrados.
+Se o nasgroup especificado na declaração bucket-policy ou os usuários que fazem parte do nasgroup não tiverem UID e GID definidos, as pesquisas falharão quando esses atributos não forem encontrados. O ative Directory usa SID, não UID. Se as entradas SID não puderem ser mapeadas para UID, os dados necessários precisarão ser trazidos para o ONTAP.
+
+Para isso, use link:../authentication/enable-ad-users-groups-access-cluster-svm-task.html["diretório ativo do svm criar"] o SVM para que possa se autenticar com o ative Directory e obter as informações de usuário e grupo necessárias.
 
 Para evitar falhas de pesquisa, o NetApp recomenda o uso de domínios confiáveis para autorização de recursos no formato UPN: Nasgroup/group@trusted_domain.com
 
@@ -107,3 +109,5 @@ Use o `s3/services/<svm_uuid>/users` endpoint com usuários especificados no for
 ----
 $curl -siku FQDN\\user:<user_name> -X POST https://<LIF_IP_Address>/api/protocols/s3/services/<SVM_UUID>/users -d {"comment":"<S3_user_name>", "name":<user[@fqdn](https://github.com/fqdn)>,"<key_time_to_live>":"PT6H3M"}'
 ----
+
+NOTE: Direcione a API para o LIF de gerenciamento de cluster, não para o LIF de dados da SVM.
