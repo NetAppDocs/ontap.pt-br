@@ -31,10 +31,27 @@ A tabela a seguir captura como `autosize-mode` os parâmetros afetam o cálculo 
 |===
 .Antes de começar
 * Você deve ser um administrador de cluster para definir um limite de SVM.
-* Os limites de storage não podem ser configurados para qualquer SVM que contenha volumes de proteção de dados, volumes em uma relação do SnapMirror ou em uma configuração do MetroCluster.
+* A partir do ONTAP 9.16.1, os limites de storage podem ser configurados para SVMs que contêm volumes de proteção de dados, incluindo os seguintes tipos de proteção de dados:
++
+** Volumes FlexVol em DR assíncrona, sem cascata
+** Volumes FlexVol em recuperação de desastres síncrona (políticas de sincronização e sincronização estrita)
+** link:../data-protection/restore-volume-snapvault-backup-task.html["Restaurar"]
+
+
+* Os limites de armazenamento para SVMs são _não_ suportados para as seguintes configurações:
++
+** Relacionamentos do SnapMirror Vault
+** Sincronização ativa do SnapMirror
+** FlexGroups
+** Grupos de consistência
+** SVM DR
+** Cascatas
+** MetroCluster
+
+
 * Ao migrar um SVM, a fonte SVM não pode ter um limite de storage habilitado. Para concluir a operação de migração, desative o limite de armazenamento na origem e, em seguida, conclua a migração.
 * A capacidade do SVM é diferente xref:../volumes/quotas-concept.html[quotas]de . As quotas não podem exceder o tamanho máximo.
-* Você não pode definir um limite de storage quando outras operações estiverem em andamento no SVM. Use o `job show vservser _svm_name_` comando para ver os trabalhos existentes. Tente executar o comando novamente quando quaisquer trabalhos tiverem sido concluídos.
+* Você não pode definir um limite de storage quando outras operações estiverem em andamento no SVM. Use o `job show vservser <svm_name>` comando para ver os trabalhos existentes. Tente executar o comando novamente quando quaisquer trabalhos tiverem sido concluídos.
 
 
 
@@ -76,18 +93,18 @@ Fornecer um tamanho máximo de capacidade para o SVM.
 .Passos
 . Crie o SVM. Para definir um limite de armazenamento, forneça um `storage-limit` valor. Para definir um alerta de limite para o limite de armazenamento, forneça um valor percentual para `-storage-limit-threshold-alert`o .
 +
-`vserver create -vserver _vserver_name_ -aggregate _aggregate_name_ -rootvolume _root_volume_name_ -rootvolume-security-style {unix|ntfs|mixed} -storage-limit _value_ [GiB|TIB] -storage-limit-threshold-alert _percentage_ [-ipspace IPspace_name] [-language <language>] [-snapshot-policy _snapshot_policy_name_] [-quota-policy _quota_policy_name_] [-comment _comment_]`
+`vserver create -vserver <vserver_name> -aggregate <aggregate_name> -rootvolume <root_volume_name> -rootvolume-security-style {unix|ntfs|mixed} -storage-limit <value> [GiB|TIB] -storage-limit-threshold-alert <percentage> [-ipspace IPspace_name] [-language <language>] [-snapshot-policy <snapshot_policy_name>] [-quota-policy <quota_policy_name>] [-comment <comment>]`
 
 +
 Se você não fornecer o valor limite, por padrão, um alerta será acionado quando o SVM tiver 90% de capacidade. Para desativar o alerta de limite, forneça um valor de zero.
 
 . Confirme se o SVM foi criado com sucesso:
 +
-`vserver show -vserver _vserver_name_`
+`vserver show -vserver <vserver_name>`
 
 . Se você deseja desativar o limite de armazenamento, modifique o parâmetro SVM com `-storage-limit` zero:
 +
-`vserver modify -vserver _vserver_name_ -storage-limit 0`
+`vserver modify -vserver <vserver_name> -storage-limit 0`
 
 
 
@@ -121,14 +138,14 @@ Se desejar desativar o limite de capacidade, desmarque a caixa seguinte *Ativar 
 .Passos
 . No cluster que hospeda o SVM, emita o `vserver modify` comando. Forneça um valor numérico para `-storage-limit` e um valor percentual para `-storage-limit-threshold-alert`.
 +
-`vserver modify -vserver _vserver_name_ -storage-limit _value_ [GiB|TIB] -storage-limit-threshold-alert _percentage_`
+`vserver modify -vserver <vserver_name> -storage-limit <value> [GiB|TIB] -storage-limit-threshold-alert <percentage>`
 
 +
-Se você não fornecer o valor limite, terá um alerta padrão com 90% de capacidade. Para desativar o alerta de limite, forneça um valor de zero.
+Se você não fornecer um valor limite, terá um alerta padrão com 90% de capacidade. Para desativar o alerta de limite, forneça um valor de zero.
 
 . Se você deseja desativar o limite de armazenamento, modifique o SVM com `-storage-limit` definido como zero:
 +
-`vserver modify -vserver _vserver_name_ -storage-limit 0`
+`vserver modify -vserver <vserver_name> -storage-limit 0`
 
 
 

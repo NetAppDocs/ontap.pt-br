@@ -35,14 +35,14 @@ Outros pontos a considerar:
 
 O ONTAP Mediator é instalado em um terceiro domínio de falha, distinto dos dois clusters ONTAP. Seu papel principal é atuar como uma testemunha passiva das cópias de sincronização ativa do SnapMirror. No caso de uma partição de rede ou indisponibilidade de uma cópia, o SnapMirror SnapMirror ative Sync usa o Mediator para determinar qual cópia continua a servir e/S, enquanto descontinua a e/S na outra cópia. Existem três componentes principais nesta configuração:
 
-* Cluster ONTAP primário que hospeda o CG primário de sincronização ativa do SnapMirror
-* Cluster ONTAP secundário que hospeda o CG espelhado
+* Cluster ONTAP primário que hospeda o grupo de consistência primária de sincronização ativa do SnapMirror
+* Cluster secundário do ONTAP que hospeda o grupo de consistência de espelho
 * ONTAP Mediador
 
 
 O Mediador ONTAP desempenha um papel crucial nas configurações de sincronização ativa do SnapMirror como testemunha de quórum passivo, garantindo a manutenção do quórum e facilitando o acesso aos dados durante falhas. Ele atua como um proxy ping para controladores para determinar a vivacidade dos controladores peer. Embora o Mediator não acione ativamente as operações de comutação, ele fornece uma função vital, permitindo que o nó sobrevivente verifique o status de seu parceiro durante problemas de comunicação de rede. Em seu papel como testemunha de quórum, o Mediador ONTAP fornece um caminho alternativo (servindo efetivamente como proxy) para o cluster de pares.
 
-Além disso, permite que os clusters obtenham essas informações como parte do processo de quórum. Ele utiliza o LIF de gerenciamento de nós e o LIF de gerenciamento de clusters para fins de comunicação. Ele estabelece conexões redundantes através de vários caminhos para diferenciar entre falha do local e falha do InterSwitch Link (ISL). Quando um cluster perde a conexão com o software Mediador ONTAP e todos os seus nós devido a um evento, ele é considerado não alcançável. Isso aciona um alerta e permite o failover automatizado para o Mirror Consistency Group (CG) no local secundário, garantindo e/S ininterrupto para o cliente. O caminho dos dados de replicação depende de um mecanismo de heartbeat, e se uma falha de rede ou evento persistir além de um determinado período, pode resultar em falhas de heartbeat, fazendo com que a relação fique fora de sincronia. No entanto, a presença de caminhos redundantes, como failover de LIF para outra porta, pode sustentar o batimento cardíaco e evitar tais interrupções.
+Além disso, permite que os clusters obtenham essas informações como parte do processo de quórum. Ele utiliza o LIF de gerenciamento de nós e o LIF de gerenciamento de clusters para fins de comunicação. Ele estabelece conexões redundantes através de vários caminhos para diferenciar entre falha do local e falha do InterSwitch Link (ISL). Quando um cluster perde a conexão com o software Mediador ONTAP e todos os seus nós devido a um evento, ele é considerado não alcançável. Isso aciona um alerta e permite o failover automatizado para o grupo de consistência de espelho no local secundário, garantindo e/S ininterrupto para o cliente. O caminho dos dados de replicação depende de um mecanismo de heartbeat, e se uma falha de rede ou evento persistir além de um determinado período, pode resultar em falhas de heartbeat, fazendo com que a relação fique fora de sincronia. No entanto, a presença de caminhos redundantes, como failover de LIF para outra porta, pode sustentar o batimento cardíaco e evitar tais interrupções.
 
 Para resumir, o Mediador ONTAP é usado para os seguintes fins:
 
@@ -77,7 +77,7 @@ O SnapMirror active Sync oferece soluções assimétricas e simétricas.
 
 Em _configurações assimétricas_, a cópia de armazenamento primário expõe um caminho otimizado para ativos e serve ativamente e/S do cliente O local secundário usa um caminho remoto para e/S Os caminhos de storage do local secundário são considerados ativos-não-otimizados. O acesso ao LUN de gravação é maximizado a partir do site secundário.
 
-Em _configurações ativas/ativas simétricas_, os caminhos otimizados para ativos são expostos em ambos os locais, são específicos do host e são configuráveis, o que significa que os hosts de ambos os lados podem acessar o storage local para e/S ativa
+Em _configurações ativas/ativas simétricas_, os caminhos otimizados para ativos são expostos em ambos os locais, são específicos do host e são configuráveis, o que significa que os hosts de ambos os lados podem acessar o storage local para e/S ativa A partir do ONTAP 9.16.1, o ativo-ativo simétrico é compatível com clusters com até quatro nós.
 
 image:snapmirror-active-sync-symmetric.png["Configuração ativa simétrica"]
 

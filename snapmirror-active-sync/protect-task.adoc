@@ -102,6 +102,16 @@ Você pode estabelecer proteção simétrica usando o Gerenciador do sistema ou 
 .Antes de começar
 * Ambos os clusters devem estar executando o ONTAP 9.15,1 ou posterior.
 * Configurações ativo-ativo simétricas exigem a `AutomatedFailoverDuplex` política de proteção. Como alternativa, você pode xref:../data-protection/create-custom-replication-policy-concept.html[Crie uma política de SnapMirror personalizada] fornecer o `-type` is `automated-failover-duplex`.
+* No ONTAP 9.15.1, o ativo-ativo simétrico é compatível apenas com clusters de 2 nós.
+* A partir do ONTAP 9.16.1 GA, o SnapMirror active Sync é compatível com configurações ativo-ativo simétricas em clusters de quatro nós.
++
+** Para utilizar a sincronização ativa do SnapMirror num cluster de quatro nós, tem de estar a executar o ONTAP 9.16.1 GA ou posterior.
+** Antes de implantar uma configuração de quatro nós, você deve xref:../peering/create-cluster-relationship-93-later-task.adoc[crie um relacionamento de pares de cluster].
+** Revise o xref:limits-reference.adoc[limites] para clusters de quatro nós.
+** Se você reverter para um cluster de dois nós, será necessário remover as relações de sincronização ativa do SnapMirror do cluster antes de reverter.
+** Você pode usar a configuração de quatro nós para atualizar o storage e os controladores. Esse processo não causa interrupções e expande o cluster enquanto move volumes para os novos nós. Para obter mais informações, link:upgrade-revert-task.html#refresh-a-cluster["atualizar um cluster"]consulte .
+
+
 
 
 .Passos
@@ -114,7 +124,7 @@ Você pode estabelecer proteção simétrica usando o Gerenciador do sistema ou 
 +
 .. Ao criar o grupo de consistência, especifique iniciadores de host para criar grupos.
 .. Marque a caixa de seleção para **Ativar SnapMirror** e escolha a `AutomatedFailoverDuplex` política.
-.. Na caixa de diálogo exibida, marque a caixa de seleção **Replique grupos de iniciadores** para replicar grupos de iniciadores. Em **Editar configurações proximais**, defina SVMs proximais para seus hosts.
+.. Na caixa de diálogo exibida, marque a caixa de seleção **Replique grupos de iniciadores** para replicar grupos de iniciadores. Em **Editar configurações de proximidade**, defina SVMs proximais para seus hosts.
 .. Selecione **Guardar**.
 
 
@@ -133,7 +143,7 @@ Você pode estabelecer proteção simétrica usando o Gerenciador do sistema ou 
 .. Navegue até **hosts** > **grupos de iniciadores SAN**.
 .. Selecione ** Adicionar ** para criar um novo grupo.
 .. Forneça um ** Nome**, selecione **sistema operacional anfitrião** e, em seguida, escolha **Membros do Grupo Iniciador**.
-.. Selecione **Guardar**.
+.. Selecione **Salvar** para inicializar o relacionamento.
 
 
 . Mapeie o novo grupo para os LUNs de destino.
@@ -160,12 +170,20 @@ Você pode estabelecer proteção simétrica usando o Gerenciador do sistema ou 
 `snapmirror show -destination-path <destination_path>`
 
 . No seu host, configure a conectividade de host com acesso a cada cluster de acordo com suas necessidades.
-. Estabeleça a configuração do grupo. Defina os caminhos preferidos para iniciadores no cluster local. Especifique a opção para replicar a configuração para a afinidade inversa do cluster de pares.
+. Estabeleça a configuração do grupo. Defina os caminhos preferidos para iniciadores no cluster local. Especifique a opção para replicar a configuração para o cluster de pares para afinidade inversa.
 +
-`SiteA::> igroup create -vserver <svm_name> -os-type <os_type> -igroup <igroup_name> -replication-peer <peer_svm_name> -initiator <host>`
+`SiteA::> igroup create -vserver <svm_name> -ostype <os_type> -igroup <igroup_name> -replication-peer <peer_svm_name> -initiator <host>`
 
 +
-`SiteA::> igroup add -vserver <svm_name> -igroup <igroup_name> -os-type <os_type> -initiator <host>`
+
+NOTE: A partir do ONTAP 9.16.1, use o `-proximal-vserver local` parâmetro neste comando.
+
++
+`SiteA::> igroup add -vserver <svm_name> -igroup <igroup_name> -ostype <os_type> -initiator <host>`
+
++
+
+NOTE: A partir do ONTAP 9.16.1, use o `-proximal-vserver peer` parâmetro neste comando.
 
 . A partir do host, descubra os caminhos e verifique se os hosts têm um caminho ativo/otimizado para o LUN de storage a partir do cluster preferido.
 . Implante o aplicativo e distribua as cargas de trabalho da VM entre clusters para alcançar o balanceamento de carga necessário.
