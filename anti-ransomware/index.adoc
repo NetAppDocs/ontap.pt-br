@@ -24,8 +24,8 @@ A partir do ONTAP 9.10,1, o recurso Autonomous ransomware Protection (ARP) usa a
 
 A partir do ONTAP 9.16,1, o ARP melhora a resiliência cibernética adotando um modelo de aprendizado de máquina para análise anti-ransomware que deteta formas de ransomware em constante evolução com 99% de precisão. O modelo de aprendizado de máquina do ARP é pré-treinado em um grande conjunto de dados de arquivos antes e depois de um ataque simulado de ransomware. Esse treinamento intensivo em recursos é feito fora do ONTAP, mas o aprendizado desse treinamento é usado para o modelo dentro do ONTAP.
 
-.Transição imediata para o modo ativo para ARP/AI com volumes FlexVol
-Com os volumes ARP/AI e FlexVol, não <<Aprendizagem e modos ativos,período de aprendizagem>>há . O ARP/AI começa no modo ativo imediatamente após a instalação ou atualização para o 9,16. Depois de atualizar o cluster para o ONTAP 9.16,1, o ARP/AI será automaticamente ativado para volumes FlexVol existentes e novos se o ARP já estiver ativado para esses volumes.
+.Transição imediata para proteção ativa para ARP/AI com volumes FlexVol
+Com os volumes ARP/AI e FlexVol, não <<Aprendizagem e modos ativos,período de aprendizagem>>há . O ARP/AI é ativado e ativo imediatamente após a instalação ou atualização para o 9,16. Depois de atualizar o cluster para o ONTAP 9.16,1, o ARP/AI será automaticamente ativado para volumes FlexVol existentes e novos se o ARP já estiver ativado para esses volumes.
 
 link:enable-arp-ai-with-au.html["Saiba mais sobre como ativar o ARP/AI"]
 
@@ -106,11 +106,14 @@ NOTE: Nenhum sistema de prevenção ou detecção de ransomware pode garantir co
 
 == Aprendizagem e modos ativos
 
-ARP tem dois modos:
+Para todos os ARP em execução com ONTAP 9.10.1 a 9.15.1 e ARP usados para volumes FlexGroup com ONTAP 9.16.1, o ARP tem dois modos:
 
 * *Modo de aprendizagem* (ou modo "funcionamento a seco")
 * *Modo ativo* (ou modo "ativado")
 
+
+
+NOTE: Com o ARP/AI a partir do ONTAP 9.16,1, não há período de aprendizado quando o ARP é usado com volumes FlexVol. O ARP/AI em volumes FlexVol é ativado e ativo imediatamente após a instalação ou atualização para o 9.16.1. Se você estiver usando ONTAP 9.16,1 e ARP com volumes FlexGroup, um período de aprendizado ainda será necessário antes da transição para o modo ativo.
 
 .Modo de aprendizagem
 Para todos os ARP em execução com ONTAP 9.10,1 a 9.15.1 e ARP usados para volumes FlexGroup com ONTAP 9.16,1, quando você ativa o ARP, ele é executado em _modo de aprendizagem_. No modo de aprendizagem, o sistema ONTAP desenvolve um perfil de alerta baseado nas áreas analíticas: Entropia, tipos de extensão de arquivo e IOPS de arquivos. Depois de executar o ARP no modo de aprendizado por tempo suficiente para avaliar as caraterísticas da carga de trabalho, você pode alternar para o modo ativo e começar a proteger seus dados.
@@ -121,9 +124,7 @@ Recomenda-se que você deixe o ARP no modo de aprendizado por 30 dias. A partir 
 TIP: O comando `security anti-ransomware volume workload-behavior show` mostra extensões de arquivo que foram detetadas no volume. Se você executar esse comando no início do modo de aprendizado e ele mostrar uma representação precisa dos tipos de arquivo, você não deve usar esses dados como base para mover para o modo ativo, já que o ONTAP ainda está coletando outras métricas.
 
 .Modo ativo
-Para ARP em execução com ONTAP 9.10,1 a 9.15.1, o ARP muda para _ative mode_ após o intervalo de aprendizagem ideal ser concluído. Com o ARP/AI a partir do ONTAP 9.16,1, não há período de aprendizado quando o ARP é usado com volumes FlexVol. O ARP/AI nos volumes FlexVol começa no modo ativo imediatamente após a instalação ou atualização para o 9.16.1. Se você estiver usando ONTAP 9.16,1 e ARP com volumes FlexGroup, um período de aprendizado ainda será necessário antes da transição para o modo ativo.
-
-Depois que o ARP mudou para o modo ativo, o ONTAP cria instantâneos ARP para proteger os dados se uma ameaça for detetada.
+Para ARP em execução com ONTAP 9.10,1 a 9.15.1, o ARP muda para _ative mode_ após o intervalo de aprendizagem ideal ser concluído. Depois que o ARP mudou para o modo ativo, o ONTAP cria instantâneos ARP para proteger os dados se uma ameaça for detetada.
 
 No modo ativo, se uma extensão de arquivo for sinalizada como anormal, você deve avaliar o alerta. Você pode agir no alerta para proteger seus dados ou você pode marcar o alerta como um falso positivo. Marcar um alerta como falso positivo atualiza o perfil de alerta. Por exemplo, se o alerta for acionado por uma nova extensão de arquivo e você marcar o alerta como um falso positivo, você não receberá um alerta na próxima vez que essa extensão de arquivo for observada.
 
@@ -134,7 +135,7 @@ NOTE: A partir de ONTAP 9.11,1, você pode personalizar os parâmetros de deteç
 
 == Avaliação de ameaças e instantâneos ARP
 
-No modo ativo, o ARP avalia a probabilidade de ameaça com base nos dados de entrada medidos em relação às análises aprendidas. Uma medição é atribuída quando o ARP deteta uma ameaça:
+Quando ativo e não no modo de aprendizagem, o ARP avalia a probabilidade de ameaça com base nos dados de entrada medidos em relação às análises aprendidas. Uma medição é atribuída quando o ARP deteta uma ameaça:
 
 * *Low*: A deteção mais precoce de uma anomalia no volume (por exemplo, uma nova extensão de arquivo é observada no volume). Este nível de deteção só está disponível em versões anteriores ao ONTAP 9.16,1 que não têm ARP/AI.
 * *Moderado*: Vários arquivos com a mesma extensão de arquivo nunca visto-antes são observados.
@@ -147,9 +148,9 @@ No modo ativo, o ARP avalia a probabilidade de ameaça com base nos dados de ent
 
 Em uma situação de baixa ameaça, o ONTAP deteta uma anormalidade e cria um instantâneo do volume para criar o melhor ponto de recuperação. O ONTAP prepende o nome do instantâneo ARP `Anti-ransomware-backup` para torná-lo facilmente identificável; por exemplo `Anti_ransomware_backup.2022-12-20_1248`, .
 
-A ameaça aumenta para moderar depois que o ONTAP executa um relatório de análise determinando se a anormalidade corresponde a um perfil de ransomware. As ameaças que permanecem no nível baixo são registradas e visíveis na seção **Eventos** do System Manager. Quando a probabilidade de ataque é moderada, o ONTAP gera uma notificação EMS, solicitando que você avalie a ameaça. O ONTAP não envia alertas sobre baixas ameaças, no entanto, começando com ONTAP 9.14,1, você pode xref:manage-parameters-task.html#modify-alerts[modificar definições de alertas]. Para obter mais informações, xref:respond-abnormal-task.html[Responder a atividades anormais]consulte .
+A ameaça aumenta para moderar depois que o ONTAP executa um relatório de análise determinando se a anormalidade corresponde a um perfil de ransomware. Quando a probabilidade de ataque é moderada, o ONTAP gera uma notificação EMS, solicitando que você avalie a ameaça. O ONTAP não envia alertas sobre baixas ameaças, no entanto, começando com ONTAP 9.14,1, você pode xref:manage-parameters-task.html#modify-alerts[modificar definições de alertas]. Para obter mais informações, xref:respond-abnormal-task.html[Responder a atividades anormais]consulte .
 
-Você pode visualizar informações sobre uma ameaça, independentemente do nível, na seção *Eventos* do System Manager ou com o `security anti-ransomware volume show` comando.
+Você pode visualizar informações sobre ameaças moderadas na seção *Eventos* do System Manager ou com o `security anti-ransomware volume show` comando. Os eventos de baixa ameaça também podem ser visualizados usando o `security anti-ransomware volume show` comando em versões anteriores ao ONTAP 9.16.1 que não têm ARP/AI.
 
 Instantâneos ARP individuais são retidos por dois dias. Se houver vários instantâneos ARP, eles serão retidos por cinco dias por padrão. A partir do ONTAP 9.11,1, você pode modificar as configurações de retenção. Para obter mais informações, xref:modify-automatic-shapshot-options-task.html[Modificar opções para instantâneos]consulte .
 
