@@ -13,24 +13,28 @@ summary: Os clientes Linux e VMware que oferecem suporte ao entroncamento podem 
 [role="lead"]
 Os clientes Linux e VMware que oferecem suporte ao entroncamento podem montar volumes ou compartilhamentos de dados de um servidor ONTAP NFSv4,1 habilitado para entroncamento.
 
-Ao inserir comandos de montagem nos clientes, você deve inserir endereços IP para cada LIF no grupo de entroncamento.
-
 Saiba mais link:index.html#supported-clients["clientes suportados"]sobre .
 
 [role="tabbed-block"]
 ====
 .Requisitos do cliente Linux
 --
-Se você estiver usando o ONTAP 9.16.1 ou posterior e o Red Hat Enterprise Linux versão 8,7 ou posterior (para RHEL 8) ou 9,2 ou posterior (para RHEL 9) como cliente Linux, apenas um ponto de montagem é necessário para o grupo de entroncamento. Monte o volume exportado com este comando, utilizando a `trunkdiscovery` opção:
+Se você estiver usando o ONTAP 9.16.1 ou posterior e o Red Hat Enterprise Linux versão 8,7 ou posterior (para RHEL 8) ou 9,2 ou posterior (para RHEL 9) como cliente Linux, apenas um ponto de montagem é necessário para o grupo de entroncamento. Monte os volumes exportados com este comando, usando a `trunkdiscovery` opção:
 
-`mount <lif1_ip>:<volume> </mnt/test1> -o trunkdiscovery,vers=4.1`
+[source, cli]
+----
+mount <lif_ip>:<volume_name> </mount_path> -o trunkdiscovery,vers=4.1
+----
+Caso contrário, um ponto de montagem separado é necessário para cada conexão no grupo de entroncamento. Monte o volume exportado com comandos semelhantes aos seguintes, utilizando a `max_connect` opção:
 
-Caso contrário, um ponto de montagem separado é necessário para cada conexão no grupo de entroncamento. Monte o volume exportado com comandos semelhantes aos seguintes:
-
-`mount <lif1_ip>:<volume> </mnt/test1> -o vers=4.1,max_connect=16`
-
-`mount <lif2_ip>:<volume> </mnt/test2> -o vers=4.1,max_connect=16`
-
+[source, cli]
+----
+mount <lif1_ip>:<volume_name> </mount_path1> -o vers=4.1,max_connect=16
+----
+[source, cli]
+----
+mount <lif2_ip>:<volume_name> </mount_path2> -o vers=4.1,max_connect=16
+----
 O (`vers`valor da versão ) deve ser `4.1` ou posterior.
 
 O `max_connect` valor corresponde ao número de conexões no grupo de entroncamento.

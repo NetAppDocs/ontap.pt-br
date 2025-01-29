@@ -2,7 +2,7 @@
 permalink: data-protection/vault-archive-snapmirror-technology-concept.html 
 sidebar: sidebar 
 keywords: vault, archiving, snapmirror, technology 
-summary: As políticas do SnapMirror Vault substituem a tecnologia SnapVault no ONTAP 9.3 e posterior. Você usa uma política de cofre do SnapMirror para replicação de cópia Snapshot de disco para disco para conformidade com padrões e outros fins relacionados à governança. Em contraste com uma relação do SnapMirror, em que o destino geralmente contém apenas as cópias Snapshot atualmente no volume de origem, um destino do Vault normalmente retém cópias Snapshot pontuais criadas por um período muito mais longo. 
+summary: As políticas do SnapMirror Vault substituem a tecnologia SnapVault no ONTAP 9.3 e posterior. Você usa uma política de Vault do SnapMirror para replicação de snapshot de disco para disco para conformidade com padrões e outros fins relacionados à governança. Em contraste com uma relação SnapMirror, na qual o destino geralmente contém apenas os snapshots atualmente no volume de origem, um destino do Vault normalmente retém snapshots pontuais criados por um período muito mais longo. 
 ---
 = Arquivamento de cofre usando a tecnologia SnapMirror
 :allow-uri-read: 
@@ -11,9 +11,9 @@ summary: As políticas do SnapMirror Vault substituem a tecnologia SnapVault no 
 
 
 [role="lead"]
-As políticas do SnapMirror Vault substituem a tecnologia SnapVault no ONTAP 9.3 e posterior. Você usa uma política de cofre do SnapMirror para replicação de cópia Snapshot de disco para disco para conformidade com padrões e outros fins relacionados à governança. Em contraste com uma relação do SnapMirror, em que o destino geralmente contém apenas as cópias Snapshot atualmente no volume de origem, um destino do Vault normalmente retém cópias Snapshot pontuais criadas por um período muito mais longo.
+As políticas do SnapMirror Vault substituem a tecnologia SnapVault no ONTAP 9.3 e posterior. Você usa uma política de Vault do SnapMirror para replicação de snapshot de disco para disco para conformidade com padrões e outros fins relacionados à governança. Em contraste com uma relação SnapMirror, na qual o destino geralmente contém apenas os snapshots atualmente no volume de origem, um destino do Vault normalmente retém snapshots pontuais criados por um período muito mais longo.
 
-Por exemplo, você pode manter cópias Snapshot mensais de seus dados em um período de 20 anos, para cumprir com as regulamentações contábeis governamentais dos seus negócios. Como não há necessidade de fornecer dados do armazenamento do Vault, você pode usar discos mais lentos e menos caros no sistema de destino.
+Você pode querer manter snapshots mensais de seus dados em um período de 20 anos, por exemplo, para cumprir com os regulamentos de contabilidade do governo para sua empresa. Como não há necessidade de fornecer dados do armazenamento do Vault, você pode usar discos mais lentos e menos caros no sistema de destino.
 
 A figura abaixo ilustra as relações de proteção de dados do SnapMirror Vault.
 
@@ -25,18 +25,18 @@ image:snapvault-data-protection.gif["Relação de proteção de dados do SnapMir
 
 A política SnapMirror para o relacionamento define o conteúdo da linha de base e quaisquer atualizações.
 
-Uma transferência de linha de base sob a política de Vault padrão `XDPDefault` faz uma cópia Snapshot do volume de origem e, em seguida, transfere essa cópia e os dados bloqueiam as referências ao volume de destino. Diferentemente dos relacionamentos do SnapMirror, um backup de Vault não inclui cópias Snapshot mais antigas na linha de base.
+Uma transferência de linha de base sob a política de Vault padrão `XDPDefault` faz um instantâneo do volume de origem e, em seguida, transfere essa cópia e os dados a bloqueia referências ao volume de destino. Ao contrário das relações do SnapMirror, um backup do Vault não inclui snapshots mais antigos na linha de base.
 
 
 
 == Como os relacionamentos de proteção de dados do Vault são atualizados
 
-As atualizações são assíncronas, seguindo a programação configurada. As regras definidas na política de relacionamento identificam quais novas cópias snapshot devem incluir nas atualizações e quantas cópias devem ser mantidas. Os rótulos definidos na política ("em quarto lugar", por exemplo) devem corresponder a um ou mais rótulos definidos na política de captura instantânea na origem. Caso contrário, a replicação falha.
+As atualizações são assíncronas, seguindo a programação configurada. As regras definidas na política para o relacionamento identificam quais novos snapshots devem ser incluídos nas atualizações e quantas cópias devem ser mantidas. Os rótulos definidos na política ("em terceiro lugar", por exemplo) devem corresponder a um ou mais rótulos definidos na política de snapshot na origem. Caso contrário, a replicação falha.
 
-Em cada atualização sob `XDPDefault` a política, o SnapMirror transfere cópias Snapshot feitas desde a última atualização, desde que tenham rótulos que correspondam aos rótulos definidos nas regras da política. Na saída a seguir do `snapmirror policy show` comando para a `XDPDefault` política, observe o seguinte:
+Em cada atualização sob `XDPDefault` a política, o SnapMirror transfere instantâneos que foram feitos desde a última atualização, desde que tenham rótulos correspondentes aos rótulos definidos nas regras da política. Na saída a seguir do `snapmirror policy show` comando para a `XDPDefault` política, observe o seguinte:
 
-* `Create Snapshot` É falso, indicando que `XDPDefault` não cria uma cópia Snapshot quando o SnapMirror atualiza a relação.
-* `XDPDefault` Tem regras "diárias" e "semanais", indicando que todas as cópias Snapshot com rótulos correspondentes na origem são transferidas quando o SnapMirror atualiza o relacionamento.
+* `Create Snapshot` É falso, indicando que `XDPDefault` não cria um instantâneo quando o SnapMirror atualiza o relacionamento.
+* `XDPDefault` Tem regras "diárias" e "semanais", indicando que todos os instantâneos com rótulos correspondentes na fonte são transferidos quando o SnapMirror atualiza a relação.
 
 
 [listing]

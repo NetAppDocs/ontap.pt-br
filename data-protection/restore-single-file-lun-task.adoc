@@ -2,7 +2,7 @@
 permalink: data-protection/restore-single-file-lun-task.html 
 sidebar: sidebar 
 keywords: restore, single file, lun, nvme, namespace, snapmirror, destination, snapshot, copy, snap mirror, baseline, 
-summary: É possível restaurar um único arquivo, LUN, um conjunto de arquivos ou LUNs de uma cópia Snapshot ou um namespace NVMe a partir de um volume de destino do SnapMirror. A partir do ONTAP 9.7, você também pode restaurar namespaces NVMe a partir de um destino síncrono SnapMirror. Pode restaurar ficheiros para o volume de origem original ou para um volume diferente. 
+summary: É possível restaurar um único arquivo, LUN, um conjunto de arquivos ou LUNs de um snapshot ou um namespace NVMe a partir de um volume de destino do SnapMirror. A partir do ONTAP 9.7, você também pode restaurar namespaces NVMe a partir de um destino síncrono SnapMirror. Pode restaurar ficheiros para o volume de origem original ou para um volume diferente. 
 ---
 = Restaure um único namespace de arquivo, LUN ou NVMe a partir de um destino do SnapMirror com o ONTAP
 :allow-uri-read: 
@@ -11,7 +11,7 @@ summary: É possível restaurar um único arquivo, LUN, um conjunto de arquivos 
 
 
 [role="lead"]
-É possível restaurar um único arquivo, LUN, um conjunto de arquivos ou LUNs de uma cópia Snapshot ou um namespace NVMe a partir de um volume de destino do SnapMirror. A partir do ONTAP 9.7, você também pode restaurar namespaces NVMe a partir de um destino síncrono SnapMirror. Pode restaurar ficheiros para o volume de origem original ou para um volume diferente.
+É possível restaurar um único arquivo, LUN, um conjunto de arquivos ou LUNs de um snapshot ou um namespace NVMe a partir de um volume de destino do SnapMirror. A partir do ONTAP 9.7, você também pode restaurar namespaces NVMe a partir de um destino síncrono SnapMirror. Pode restaurar ficheiros para o volume de origem original ou para um volume diferente.
 
 .O que você vai precisar
 Para restaurar um arquivo ou LUN de um destino síncrono SnapMirror (suportado a partir do ONTAP 9.5), primeiro você deve excluir e liberar a relação.
@@ -19,12 +19,12 @@ Para restaurar um arquivo ou LUN de um destino síncrono SnapMirror (suportado a
 .Sobre esta tarefa
 O volume para o qual você está restaurando arquivos ou LUNs (o volume de destino) deve ser um volume de leitura e gravação:
 
-* O SnapMirror executa uma _restauração incremental_ se os volumes de origem e destino tiverem uma cópia Snapshot comum (como é normalmente o caso quando você está restaurando para o volume de origem original).
-* Caso contrário, o SnapMirror executa uma _restauração de linha de base_, na qual a cópia Snapshot especificada e todos os blocos de dados que ele faz referência são transferidos para o volume de destino.
+* O SnapMirror executa uma _restauração incremental_ se os volumes de origem e destino tiverem um instantâneo comum (como é normalmente o caso quando você está restaurando para o volume de origem original).
+* Caso contrário, o SnapMirror executa uma _restauração de linha de base_, na qual o instantâneo especificado e todos os blocos de dados que ele faz referência são transferidos para o volume de destino.
 
 
 .Passos
-. Listar as cópias Snapshot no volume de destino:
+. Listar os instantâneos no volume de destino:
 +
 `volume snapshot show -vserver <SVM> -volume volume`
 
@@ -32,7 +32,7 @@ O volume para o qual você está restaurando arquivos ou LUNs (o volume de desti
 Saiba mais sobre `volume snapshot show` o link:https://docs.netapp.com/us-en/ontap-cli/volume-snapshot-show.html["Referência do comando ONTAP"^]na .
 
 +
-O exemplo a seguir mostra as cópias Snapshot `vserverB:secondary1` no destino:
+O exemplo a seguir mostra os instantâneos no `vserverB:secondary1` destino:
 
 +
 [listing]
@@ -52,7 +52,7 @@ vserverB    secondary1  hourly.2013-01-25_0005  valid   224KB     0%    0%
 
 7 entries were displayed.
 ----
-. Restaure um único arquivo ou LUN ou um conjunto de arquivos ou LUNs de uma cópia Snapshot em um volume de destino do SnapMirror:
+. Restaure um único arquivo ou LUN ou um conjunto de arquivos ou LUNs de um snapshot em um volume de destino do SnapMirror:
 +
 `snapmirror restore -source-path <SVM:volume>|<cluster://SVM/volume>, ... -destination-path <SVM:volume>|<cluster://SVM/volume>, ... -source-snapshot snapshot -file-list <source_file_path,@destination_file_path>`
 
@@ -66,7 +66,7 @@ Você deve executar esse comando a partir do SVM de destino ou do cluster de des
 
 ====
 +
-O comando a seguir restaura os `file1` arquivos e `file2` da cópia Snapshot `daily.2013-01-25_0010` no volume de destino original `secondary1` , para o mesmo local no sistema de arquivos ativo do volume de origem original `primary1` :
+O comando a seguir restaura os `file1` arquivos e `file2` do instantâneo `daily.2013-01-25_0010` no volume de destino original `secondary1` para o mesmo local no sistema de arquivos ativo do volume de origem original `primary1` :
 
 +
 [listing]
@@ -77,7 +77,7 @@ cluster_dst::> snapmirror restore -source-path vserverB:secondary1 -destination-
 [Job 3479] Job is queued: snapmirror restore for the relationship with destination vserverA:primary1
 ----
 +
-O comando a seguir restaura os `file1` arquivos e `file2` da cópia Snapshot `daily.2013-01-25_0010` no volume de destino original `secondary1` para um local diferente no sistema de arquivos ativo do volume de origem original `primary1` .
+O comando a seguir restaura os `file1` arquivos e `file2` do instantâneo `daily.2013-01-25_0010` no volume de destino original `secondary1` para um local diferente no sistema de arquivos ativo do volume de origem original `primary1` .
 
 +
 O caminho do arquivo de destino começa com o símbolo at seguido pelo caminho do arquivo a partir da raiz do volume de origem original. Neste exemplo, `file1` é restaurado para `/dir1/file1.new` e file2 é restaurado para `/dir2.new/file2` ON `primary1`:
@@ -91,7 +91,7 @@ cluster_dst::> snapmirror restore -source-path vserverB:secondary1 -destination-
 [Job 3479] Job is queued: snapmirror restore for the relationship with destination vserverA:primary1
 ----
 +
-O comando a seguir restaura os `file1` arquivos e `file3` da cópia Snapshot `daily.2013-01-25_0010` no volume de destino original `secondary1` , para diferentes locais no sistema de arquivos ativo do volume de origem original `primary1` e restaura `file2` de `snap1` para o mesmo local no sistema de arquivos ativo `primary1` do .
+O comando a seguir restaura os `file1` arquivos e `file3` do instantâneo `daily.2013-01-25_0010` no volume de destino original `secondary1` para diferentes locais no sistema de arquivos ativo do volume de origem original `primary1` e restaura `file2` de `snap1` para o mesmo local no sistema de arquivos ativo `primary1` do .
 
 +
 Neste exemplo, o arquivo `file1` é restaurado para `/dir1/file1.new` e `file3` é restaurado para `/dir3.new/file3`:

@@ -14,12 +14,12 @@ summary: Se um ou mais LUNs em um volume precisarem ser restaurados a partir de 
 Se um ou mais LUNs em um volume precisarem ser restaurados a partir de um backup do SnapVault, você poderá restaurar todo o volume. A restauração do volume afeta todos os LUNs no volume.
 
 .O que você vai precisar
-A relação do SnapVault deve ser inicializada e o volume secundário do SnapVault deve conter uma cópia Snapshot apropriada para ser restaurada.
+A relação SnapVault deve ser inicializada e o volume secundário SnapVault deve conter um instantâneo apropriado para restaurar.
 
 .Sobre esta tarefa
-Restaurar um volume inteiro retorna o volume ao estado em que estava quando a cópia Snapshot foi feita. Se um LUN foi adicionado ao volume após a cópia Snapshot, esse LUN será removido durante o processo de restauração.
+Restaurar um volume inteiro retorna o volume para o estado em que estava quando o instantâneo foi feito. Se um LUN foi adicionado ao volume após o instantâneo, esse LUN é removido durante o processo de restauração.
 
-Depois de restaurar o volume, os LUNs permanecem mapeados para os grupos para os quais foram mapeados pouco antes da restauração. O mapeamento LUN pode ser diferente do mapeamento no momento da cópia Snapshot. Reservas persistentes nas LUNs dos clusters de host são retidas.
+Depois de restaurar o volume, os LUNs permanecem mapeados para os grupos para os quais foram mapeados pouco antes da restauração. O mapeamento LUN pode ser diferente do mapeamento no momento do instantâneo. Reservas persistentes nas LUNs dos clusters de host são retidas.
 
 .Passos
 . Pare a e/S para todos os LUNs no volume.
@@ -37,7 +37,7 @@ vserverA:srcvolA
                         Snapmirrored
                                 Idle       -         true    -
 ----
-. Execute o `volume snapshot show` comando para identificar a cópia Snapshot da qual você deseja restaurar.
+. Execute o `volume snapshot show` comando para identificar o instantâneo a partir do qual deseja restaurar.
 +
 [listing]
 ----
@@ -51,7 +51,7 @@ vserverB
                  snap1.2013-02-10_0015 valid  112KB     0%    0%
                  snap2.2013-02-11_0010  valid  164KB     0%    0%
 ----
-. Execute o `snapmirror restore` comando e especifique a `-source-snapshot` opção para especificar a cópia Snapshot a ser usada.
+. Execute o `snapmirror restore` comando e especifique a `-source-snapshot` opção para especificar o instantâneo a ser usado.
 +
 O destino especificado para a restauração é o volume original para o qual você está restaurando.
 
@@ -74,7 +74,7 @@ Do you want to continue? {y|n}: y
 
 == Restaurar um volume a partir de uma cópia de segurança do SnapVault
 
-No exemplo a seguir, o LUN chamado LUN_D foi adicionado ao volume depois que a cópia Snapshot foi criada. Depois de restaurar todo o volume da cópia Snapshot, lun_D não aparece mais.
+No exemplo a seguir, o LUN chamado LUN_D foi adicionado ao volume depois que o snapshot foi criado. Depois de restaurar todo o volume do instantâneo, lun_D não aparece mais.
 
 Na `lun show` saída do comando, você pode ver os LUNs no volume primário srcvolA e as cópias somente leitura desses LUNs no volume secundário do SnapVault dstvolB. Não há cópia de lun_D no backup do SnapVault.
 
@@ -97,7 +97,7 @@ cluster::>snapmirror restore -destination-path vserverA:srcvolA
   -source-path vserverB:dstvolB
   -source-snapshot daily.2013-02-10_0010
 
-Warning: All data newer than Snapshot copy hourly.2013-02-11_1205
+Warning: All data newer than snapshot hourly.2013-02-11_1205
 on volume vserverA:src_volA will be deleted.
 Do you want to continue? {y|n}: y
 [Job 98] Job is queued: snapmirror restore from source

@@ -20,7 +20,7 @@ O rebalanceamento do FlexGroup ajuda a redistribuir a capacidade quando os deseq
 Você deve estar ciente de que o rebalanceamento do FlexGroup degrada o desempenho do sistema quando um grande número de arquivos é movido como parte de um único evento de rebalanceamento ou sobre vários eventos de rebalanceamento devido à criação de inodes de várias partes. Cada arquivo movido como parte de um evento de rebalanceamento tem 2 inodes de várias partes associadas a esse arquivo. Quanto maior o número de arquivos com inodes multipartes como uma porcentagem do número total de arquivos em um FlexGroup, maior o impactos no desempenho. Certos casos de uso, como uma conversão de FlexVol para FlexGroup, podem resultar em uma quantidade significativa de criação de inodes em várias partes.
 
 ====
-O rebalanceamento está disponível somente quando todos os nós do cluster estiverem executando o ONTAP 9.12,1 ou versões posteriores. Você deve habilitar a funcionalidade de dados granulares em qualquer volume do FlexGroup que execute a operação de rebalanceamento. Depois que essa funcionalidade estiver ativada, você não poderá reverter para o ONTAP 9.11,1 e versões anteriores, a menos que você exclua esse volume ou restauração de uma cópia Snapshot criada antes que a configuração fosse ativada.
+O rebalanceamento está disponível somente quando todos os nós do cluster estiverem executando o ONTAP 9.12,1 ou versões posteriores. Você deve habilitar a funcionalidade de dados granulares em qualquer volume do FlexGroup que execute a operação de rebalanceamento. Depois que essa funcionalidade estiver ativada, você não poderá reverter para o ONTAP 9.11.1 e versões anteriores, a menos que você exclua esse volume ou restauração de um instantâneo criado antes da configuração ser ativada.
 
 A partir do ONTAP 9.14,1, o ONTAP apresenta um algoritmo para mover arquivos em volumes com dados granulares ativados sem interação do usuário, sem interrupções e proativamente. O algoritmo opera em cenários muito específicos e direcionados para aliviar gargalos de desempenho. Os cenários em que esse algoritmo pode agir incluem carga de gravação muito pesada em um conjunto específico de arquivos em um nó no cluster ou um arquivo em crescimento contínuo em um diretório pai muito quente.
 
@@ -43,15 +43,15 @@ O rebalanceamento com o recurso de rebalanceamento automático do FlexGroup pode
 +
 A seleção de arquivos para rebalanceamento automático é baseada em blocos salvos. O tamanho mínimo de arquivo considerado para rebalanceamento é de 100 MB por padrão (pode ser configurado tão baixo quanto 20 MB usando o parâmetro min-file-size mostrado abaixo) e o tamanho máximo do arquivo é de 100 GB.
 
-* Arquivos nas cópias Snapshot
+* Ficheiros em instantâneos
 +
-Você pode configurar o rebalanceamento do FlexGroup para considerar apenas os arquivos a serem movidos que não estão presentes atualmente em nenhuma cópia Snapshot. Quando o rebalanceamento é iniciado, uma notificação é exibida se uma operação de cópia Snapshot for agendada a qualquer momento durante uma operação de rebalanceamento.
+Você pode configurar o rebalanceamento do FlexGroup para considerar apenas os arquivos a serem movidos que não estão presentes atualmente em nenhum snapshot. Quando o rebalanceamento é iniciado, uma notificação é exibida se uma operação de snapshot é agendada a qualquer momento durante uma operação de rebalanceamento.
 
 +
-As cópias snapshot ficam restritas se um arquivo estiver sendo movido e estiver passando por enquadramento no destino. Uma operação de restauração de cópia Snapshot não é permitida enquanto o rebalanceamento de arquivos estiver em andamento.
+Os instantâneos são restritos se um arquivo estiver sendo movido e estiver passando por enquadramento no destino. Não é permitida uma operação de restauração de instantâneos enquanto o rebalanceamento de arquivos estiver em andamento.
 
 +
-Qualquer cópia Snapshot criada após a `granular-data` opção ser ativada não pode ser replicada para um sistema que executa o ONTAP 9.11,1 e versões anteriores porque o ONTAP 9.11,1 e versões anteriores não suportam inodes de várias partes.
+Qualquer instantâneo criado após a `granular-data` opção estar ativada não pode ser replicado para um sistema que executa o ONTAP 9.11.1 e versões anteriores, porque o ONTAP 9.11.1 e versões anteriores não suportam inodes de várias partes.
 
 * Operações da SnapMirror
 +
@@ -59,11 +59,11 @@ O rebalanceamento do FlexGroup deve ocorrer entre operações SnapMirror agendad
 
 * Eficiência de storage de compressão baseada em arquivo
 +
-Com a eficiência de storage de compactação baseado em arquivo, o arquivo é descompactado antes de ser movido para o destino. Assim, a economia de compactação será perdida. A economia de compressão é recuperada depois que um scanner de fundo iniciado manualmente é executado no volume FlexGroup após o rebalanceamento. No entanto, se qualquer arquivo estiver associado a uma cópia Snapshot em qualquer volume, o arquivo será ignorado para compactação.
+Com a eficiência de storage de compactação baseado em arquivo, o arquivo é descompactado antes de ser movido para o destino. Assim, a economia de compactação será perdida. A economia de compressão é recuperada depois que um scanner de fundo iniciado manualmente é executado no volume FlexGroup após o rebalanceamento. No entanto, se qualquer arquivo estiver associado a um snapshot em qualquer volume, o arquivo será ignorado para compactação.
 
 * Deduplicação
 +
-Mover arquivos desduplicados pode causar maior uso geral do volume FlexGroup. Durante o rebalanceamento de arquivos, apenas blocos exclusivos são movidos para o destino, liberando essa capacidade na origem. Os blocos compartilhados permanecem na origem e são copiados para o destino. Embora isso alcance o objetivo de reduzir a capacidade usada em um componente de origem quase completa, ele também pode levar ao aumento do uso geral no volume FlexGroup devido a cópias de blocos compartilhados nos novos destinos. Isso também é possível quando os arquivos que fazem parte de uma cópia Snapshot são movidos. A economia de espaço não será totalmente reconhecida até que o agendamento de cópia Snapshot seja reciclado e não haja mais cópias dos arquivos nas cópias Snapshot.
+Mover arquivos desduplicados pode causar maior uso geral do volume FlexGroup. Durante o rebalanceamento de arquivos, apenas blocos exclusivos são movidos para o destino, liberando essa capacidade na origem. Os blocos compartilhados permanecem na origem e são copiados para o destino. Embora isso alcance o objetivo de reduzir a capacidade usada em um componente de origem quase completa, ele também pode levar ao aumento do uso geral no volume FlexGroup devido a cópias de blocos compartilhados nos novos destinos. Isso também é possível quando os arquivos que fazem parte de um snapshot são movidos. A economia de espaço não é totalmente reconhecida até que a programação de instantâneos seja reciclada e não haja mais cópias dos arquivos em snapshots.
 
 * Volumes FlexClone
 +
@@ -152,7 +152,7 @@ Tamanho mínimo do ficheiro [<integer>[KB|MB|GB|TB|PB]]]
 [-start-time <mm/dd/yyyy-00:00:00>] Agendar rebalanceamento data e hora de início
 
 +
-[-exclude-snapshots] excluem arquivos presos em cópias Snapshot
+[-exclude-snapshots] excluem arquivos presos em snapshots
 
 +
 Exemplo:
@@ -170,7 +170,7 @@ volume rebalance start -vserver vs0 -volume fg1
 
 == Modificar as configurações de rebalancear do FlexGroup
 
-Você pode alterar uma configuração de rebalanceamento do FlexGroup para atualizar o limite de desequilíbrio, o número de arquivos simultâneos move o tamanho mínimo do arquivo, o tempo de execução máximo e para incluir ou excluir cópias Snapshot. As opções para modificar seu cronograma de rebalanceamento do FlexGroup estão disponíveis a partir do ONTAP 9.13,1.
+Você pode alterar uma configuração de rebalanceamento do FlexGroup para atualizar o limite de desequilíbrio, o número de arquivos simultâneos move o tamanho mínimo do arquivo, o tempo de execução máximo e para incluir ou excluir snapshots. As opções para modificar seu cronograma de rebalanceamento do FlexGroup estão disponíveis a partir do ONTAP 9.13,1.
 
 [role="tabbed-block"]
 ====
@@ -217,7 +217,7 @@ Tamanho mínimo do ficheiro [<integer>[KB|MB|GB|TB|PB]]]
 [-start-time <mm/dd/yyyy-00:00:00>] Agendar rebalanceamento data e hora de início
 
 +
-[-exclude-snapshots] excluem arquivos presos em cópias Snapshot
+[-exclude-snapshots] excluem arquivos presos em snapshots
 
 
 
@@ -341,7 +341,7 @@ Exemplo de detalhes da instância de rebalancear:
     Minimum Imbalance Threshold per Constituent: 5%
     Maximum Concurrent File Moves per Constituent: 25
     Minimum File Size: 4KB
-    Exclude Files Stuck in Snapshot Copies: true
+    Exclude Files Stuck in snapshots: true
 ----
 
 

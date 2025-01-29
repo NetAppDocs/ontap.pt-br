@@ -157,24 +157,49 @@ A tabela a seguir mostra os sistemas operacionais suportados para cada versão d
 ====
 
 
-== Registre uma chave de segurança quando o UEFI Secure Boot estiver ativado
+== Instale o ONTAP Mediator quando a Inicialização segura UEFI estiver ativada
 
+O ONTAP Mediator pode ser instalado em um sistema com ou sem a Inicialização segura UEFI ativada.
+
+.Sobre esta tarefa
+Você pode optar por desativar a Inicialização segura UEFI antes de instalar o ONTAP Mediator se não for necessário ou se você estiver solucionando problemas de instalação do ONTAP Mediator. Desative a opção UEFI Secure Boot nas configurações da máquina.
+
+[NOTE]
+====
+Consulte as instruções específicas do sistema para obter informações mais detalhadas sobre como desativar o arranque seguro UEFI.
+
+====
 Para instalar o Mediador ONTAP com inicialização segura UEFI ativada, você deve Registrar uma chave de segurança antes que o serviço possa ser iniciado. A chave é gerada durante a etapa de compilação da instalação do SCST e salva como um par de chaves público-privado em sua máquina. Use o `mokutil` utilitário para adicionar a chave pública como uma chave de proprietário de máquina (MOK) ao firmware UEFI, permitindo que o sistema confie e carregue o módulo assinado. Salve a `mokutil` senha em um local seguro, pois isso é necessário ao reiniciar seu sistema para ativar o MOK.
 
-Para determinar se o sistema está habilitado para UEFI e o Secure Boot está ativado, execute as seguintes etapas:
-
 .Passos
-. Se `mokutil` não estiver instalado, execute o seguinte comando:
-+
-`yum install mokutil`
-
-. Verifique se o UEFI Secure Boot está ativado no seu sistema:
+. [[STEP_1_uefi]]Verifique se o UEFI Secure Boot está ativado no seu sistema:
 +
 `mokutil --sb-state`
 
 +
 Os resultados indicam se o UEFI Secure Boot está ativado neste sistema.
 
++
+[cols="40,60"]
+|===
+
+
+| Se... | Ir para... 
+
+
+ a| 
+A inicialização segura UEFI está ativada
+ a| 
+
+
+
+
+ a| 
+A inicialização segura UEFI está desativada
+ a| 
+link:upgrade-host-os-mediator-task.html["Atualize o sistema operacional host e, em seguida, o Mediador ONTAP"]
+
+|===
 +
 [NOTE]
 ====
@@ -183,6 +208,10 @@ Os resultados indicam se o UEFI Secure Boot está ativado neste sistema.
 
 
 ====
+. [[step_2_uefi]]se o `mokutil` utilitário não estiver instalado, execute o seguinte comando:
++
+`yum install mokutil`
+
 . Adicione a chave pública à lista MOK:
 +
 `mokutil --import /opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/scst_module_key.der`
@@ -195,16 +224,5 @@ NOTE: Você pode deixar a chave privada em seu local padrão ou movê-la para um
 `[root@hostname ~]# ls /opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/
 README.module-signing  scst_module_key.der  scst_module_key.priv`
 
-. Reinicie o host e use o Gerenciador de Inicialização UEFI do dispositivo para aprovar o novo MOK. Você precisará da senha fornecida para o `mokutil` passo 2.
-
-
-
-
-== Desative o arranque seguro UEFI
-
-Você também pode optar por desativar a Inicialização segura UEFI antes de instalar o ONTAP Mediator.
-
-.Passos
-. Nas configurações do BIOS da máquina física, desative a opção "UEFI Secure Boot".
-. Nas configurações da VMware para a VM, desative a opção "Início seguro" para o vSphere 6.x ou a opção "Inicialização segura" para o vSphere 7.x.
+. Reinicie o host e use o Gerenciador de Inicialização UEFI do dispositivo para aprovar o novo MOK. Você precisará da senha fornecida para o `mokutil` utilitário no <<step_1_uefi,O passo em que você verifica se UEFI Secure Boot está ativado no seu sistema>>.
 

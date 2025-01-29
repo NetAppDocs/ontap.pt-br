@@ -13,8 +13,6 @@ summary: Para converter conexões de cliente não truncadas em conexões truncad
 [role="lead"]
 Para converter conexões de cliente não truncadas em conexões truncadas, as montagens existentes nos clientes Linux e VMware devem ser desmontadas e remontadas usando informações sobre LIFs.
 
-Ao inserir comandos de montagem nos clientes, você deve inserir endereços IP para cada LIF no grupo de entroncamento.
-
 Saiba mais link:index.html#supported-clients["clientes suportados"]sobre .
 
 
@@ -24,17 +22,25 @@ NOTE: A desinstalação de clientes VMware causa interrupções em todas as VMs 
 ====
 .Requisitos do cliente Linux
 --
-Um ponto de montagem separado é necessário para cada conexão no grupo de entroncamento.
+Se você estiver usando o ONTAP 9.16.1 ou posterior e o Red Hat Enterprise Linux versão 8,7 ou posterior (para RHEL 8) ou 9,2 ou posterior (para RHEL 9) como cliente Linux, apenas um ponto de montagem é necessário para o grupo de entroncamento. Monte os volumes exportados com este comando, usando a `trunkdiscovery` opção:
 
-Monte os volumes exportados com comandos semelhantes aos seguintes:
+[source, cli]
+----
+mount <lif_ip>:<volume_name> </mount_path> -o trunkdiscovery,vers=4.1
+----
+Caso contrário, um ponto de montagem separado é necessário para cada conexão no grupo de entroncamento. Monte os volumes exportados com comandos semelhantes aos seguintes, usando a `max_connect` opção:
 
-`mount lif1_ip:/vol-test /mnt/test1 -o vers=4.1,max_connect=2`
+[source, cli]
+----
+mount <lif1_ip>:<volume_name> </mount_path1> -o vers=4.1,max_connect=16
+----
+[source, cli]
+----
+mount <lif2_ip>:<volume_name> </mount_path2> -o vers=4.1,max_connect=16
+----
+O (`vers`valor da versão ) deve ser `4.1` ou posterior.
 
-`mount lif2_ip:/vol-test /mnt/test2 -o vers=4.1,max_connect=2`
-
-O `vers` valor deve ser `4.1` ou posterior.
-
-O `max_connect` valor deve corresponder ao número de conexões no grupo de entroncamento.
+O `max_connect` valor corresponde ao número de conexões no grupo de entroncamento.
 
 --
 .Requisitos do cliente VMware

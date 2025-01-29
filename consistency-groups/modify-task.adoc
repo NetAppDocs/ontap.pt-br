@@ -30,9 +30,9 @@ A partir do ONTAP 9.12,1, você pode adicionar volumes a um grupo de consistênc
 +
 A partir do ONTAP 9.13,1, essa funcionalidade é suportada no Gerenciador de sistemas.
 
-* Ao expandir um grupo de consistência, as cópias Snapshot do grupo de consistência capturado antes da modificação serão consideradas parciais. Qualquer operação de restauração com base nessa cópia Snapshot refletirá o grupo de consistência no momento do snapshot.
+* Ao expandir um grupo de consistência, os instantâneos do grupo de consistência capturados antes da modificação serão considerados parciais. Qualquer operação de restauração baseada nesse snapshot refletirá o grupo de consistência no momento do snapshot.
 * Se você estiver usando ONTAP 9.10,1 até 9.11.1, não poderá modificar um grupo de consistência. Para alterar a configuração de um grupo de consistência no ONTAP 9.10,1 ou 9.11.1, você deve excluir o grupo de consistência e criar um novo grupo de consistência com os volumes que deseja incluir.
-* A partir do ONTAP 9.14,1, é possível replicar snapshots granular de volume para o cluster de destino usando o SnapMirror assíncrono. Ao expandir um grupo de consistência usando o SnapMirror assíncrono, os snapshots granulares de volume só são replicados depois de expandir o grupo de consistência quando a política SnapMirror é EspelrorAll ou EspelrorAndVault. Somente snapshots granulares em volume mais recentes que o grupo de consistência de linha de base Snapshot são replicados.
+* A partir do ONTAP 9.14.1, é possível replicar snapshots granular de volume para o cluster de destino usando o SnapMirror assíncrono. Ao expandir um grupo de consistência usando o SnapMirror assíncrono, os snapshots granulares de volume só são replicados depois de expandir o grupo de consistência quando a política SnapMirror é EspelrorAll ou EspelrorAndVault. Somente os snapshots granulares em volume mais recentes do que o snapshot do grupo de consistência da linha de base são replicados.
 * Se você adicionar volumes a um grupo de consistência em uma relação de recuperação de desastres da SVM (compatível a partir de ONTAP 9.14,1), será necessário atualizar a relação de recuperação de desastres da SVM do cluster de destino após a expansão do grupo de consistência. Para obter mais informações, xref:../data-protection/update-replication-relationship-manual-task.html[Atualizar uma relação de replicação manualmente]consulte .
 
 
@@ -109,7 +109,7 @@ Os volumes removidos de um grupo de consistência não são excluídos. Eles per
 .Sobre esta tarefa
 * Não é possível remover volumes de um grupo de consistência em uma relação de recuperação de desastres do SnapMirror active Sync ou SVM. Primeiro, você deve excluir a relação de sincronização ativa do SnapMirror para modificar o grupo de consistência e, em seguida, restabelecer a relação.
 * Se um grupo de consistência não tiver volumes após a operação de remoção, o grupo de consistência será excluído.
-* Quando um volume é removido de um grupo de consistência, os instantâneos existentes do grupo de consistência permanecem, mas são considerados inválidos. Os instantâneos existentes não podem ser usados para restaurar o conteúdo do grupo de consistência. Snapshots granulares em volume permanecem válidos.
+* Quando um volume é removido de um grupo de consistência, os instantâneos existentes do grupo de consistência permanecem, mas são considerados inválidos. Os instantâneos existentes não podem ser usados para restaurar o conteúdo do grupo de consistência. Os snapshots granulares em volume permanecem válidos.
 * Se você excluir um volume do cluster, ele será removido automaticamente do grupo de consistência.
 * Para alterar a configuração de um grupo de consistência no ONTAP 9.10,1 ou 9.11.1, você deve excluir o grupo de consistência e criar um novo grupo de consistência com os volumes de membros desejados.
 * A exclusão de um volume do cluster removerá automaticamente o grupo de consistência.
@@ -126,7 +126,7 @@ A partir do ONTAP 9.12,1, você pode executar esta operação com o Gerenciador 
 . Selecione o grupo de consistência único ou filho que deseja modificar.
 . No menu *volumes*, marque as caixas de seleção ao lado dos volumes individuais que deseja remover do grupo consistência.
 . Selecione *Remover volumes do grupo de consistência*.
-. Confirme se você entende que a remoção dos volumes fará com que todas as cópias Snapshot do grupo de consistência se tornem inválidas e selecione *Remover*.
+. Confirme se você entende que remover os volumes fará com que todos os instantâneos do grupo de consistência se tornem inválidos e selecione *Remover*.
 
 
 --
@@ -160,7 +160,7 @@ A partir do ONTAP 9.13,1, é possível mover volumes entre grupos de consistênc
 .Sobre esta tarefa
 * Você só pode mover volumes entre grupos de consistência aninhados no mesmo grupo de consistência pai.
 * Os instantâneos de grupos de consistência existentes tornam-se inválidos e não são mais acessíveis como instantâneos de grupos de consistência. Instantâneos de volume individuais permanecem válidos.
-* As cópias snapshot do grupo de consistência pai permanecem válidas.
+* Os instantâneos do grupo de consistência pai permanecem válidos.
 * Se você mover todos os volumes para fora de um grupo de consistência filho, esse grupo de consistência será excluído.
 * As modificações a um grupo de consistência devem respeitar xref:limits.html[limites do grupo de consistência]o .
 
@@ -197,7 +197,7 @@ A partir do ONTAP 9.14,1, é possível mover volumes entre grupos de consistênc
 .Mover volumes para um novo grupo de consistência filho
 . O comando a seguir cria um novo grupo de consistência filho que contém os volumes designados.
 +
-Ao criar o novo grupo de consistência, você designará novas políticas de snapshot, QoS e disposição em camadas.
+Ao criar o novo grupo de consistência, você designará novas políticas de snapshot, QoS e disposição em categorias.
 
 +
 `consistency-group volume reassign -vserver _SVM_name_ -consistency-group _source_child_consistency_group_ -parent-consistency-group _parent_consistency_group_ -volume _volumes_ -new-consistency-group _consistency_group_name_ [-snapshot-policy _policy_ -qos-policy _policy_ -tiering-policy _policy_]`
