@@ -138,3 +138,20 @@ Ao criar novos buckets, você pode controlar o acesso criando usuários e grupos
 * link:../s3-config/create-s3-user-task.html["Criar um usuário S3 (CLI)"]
 * link:../s3-config/create-modify-groups-task.html["Criar ou modificar S3 grupos (CLI)"]
 
+
+
+
+== Use o bloqueio de objetos S3 e o controle de versão com o SnapMirror S3
+
+Você pode usar o SnapMirror S3 em buckets do ONTAP habilitados para bloqueio de objetos e controle de versão, com algumas considerações:
+
+* Para replicar um bucket de origem com o Object Lock ativado, o bucket de destino também deve ter o Object Lock ativado. Além disso, tanto a origem quanto o destino devem ter o controle de versão habilitado. Isso evita problemas ao espelhar exclusões ao bucket de destino quando ambos os buckets têm políticas de retenção padrão diferentes.
+* S3 o SnapMirror não replica versões históricas de objetos. Apenas a versão atual de um objeto é replicada.
+
+
+Quando objetos bloqueados por objetos são espelhados em um intervalo de destino, eles mantêm seu tempo de retenção original. Se os objetos desbloqueados forem replicados, eles adotarão o período de retenção padrão do intervalo de destino. Por exemplo:
+
+* O bucket A tem um período de retenção padrão de 30 dias e o bucket B tem um período de retenção padrão de 60 dias. Os objetos replicados do balde A para o balde B manterão o seu período de retenção de 30 dias, mesmo que seja inferior ao período de retenção predefinido do balde B.
+* O período A não tem um período de retenção predefinido e o período B tem um período de retenção predefinido de 60 dias. Quando os objetos desbloqueados são replicados do balde A para o balde B, eles adotarão o período de retenção de 60 dias. Se um objeto for bloqueado manualmente no balde A, ele manterá seu período de retenção original quando replicado para o balde B.
+* O intervalo A tem um período de retenção predefinido de 30 dias e o período B não tem um período de retenção predefinido. Os objetos replicados do bucket A para o bucket B manterão seu período de retenção de 30 dias.
+
