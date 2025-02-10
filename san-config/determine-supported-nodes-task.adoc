@@ -4,30 +4,87 @@ sidebar: sidebar
 keywords: determine, number, supported, nodes, san configurations 
 summary: O número de nós por cluster com suporte do ONTAP varia de acordo com a versão do ONTAP, os modelos de controlador de storage no cluster e o protocolo dos nós do cluster. 
 ---
-= Determine o número de nós suportados para configurações SAN
+= Determine o máximo de nós suportados e hosts SAN por cluster ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-O número de nós por cluster com suporte do ONTAP varia de acordo com a versão do ONTAP, os modelos de controlador de storage no cluster e o protocolo dos nós do cluster.
+O número de nós com suporte por cluster varia de acordo com a versão do ONTAP, os modelos de controladora e o protocolo dos nós de cluster. O número máximo de hosts SAN que podem ser conetados a um cluster também varia de acordo com sua configuração específica.
 
-.Sobre esta tarefa
+
+
+== Determine o máximo de nós suportados por cluster
+
 Se qualquer nó no cluster estiver configurado para FC, FC-NVMe, FCoE ou iSCSI, esse cluster estará limitado aos limites de nó SAN. Os limites de nó baseados nos controladores do cluster são listados em _Hardware Universe_.
 
 .Passos
 . Vá para https://hwu.netapp.com["NetApp Hardware Universe"^].
-. Clique em *plataformas* no canto superior esquerdo (ao lado do botão *Home*) e selecione o tipo de plataforma.
-. Marque a caixa de seleção ao lado de sua versão do ONTAP.
+. No canto superior esquerdo, ao lado de *Home*, selecione *Platforms*; em seguida, selecione o tipo de plataforma.
+. Selecione sua versão do ONTAP.
 +
 Uma nova coluna é exibida para você escolher suas plataformas.
 
-. Marque as caixas de seleção ao lado das plataformas usadas em sua solução.
-. Desmarque a caixa de seleção *Selecionar tudo* na coluna *escolha suas especificações*.
-. Marque a caixa de seleção *máximo de nós por cluster (nas/SAN)*.
+. Selecione as plataformas usadas em sua solução.
+. Em *escolha suas Especificações*, desmarque *Selecionar tudo*.
+. Selecione *máximo de nós por cluster (nas/SAN)*.
 . Clique em *Mostrar resultados*.
 
 
-.Informações relacionadas
-https://hwu.netapp.com["NetApp Hardware Universe"^]
+.Resultados
+O máximo de nós por cluster para as plataformas selecionadas é exibido.
+
+
+
+== Determine se o cluster pode oferecer suporte a mais hosts FC
+
+Para configurações FC e FC-NVMe, use o número de nexos de iniciador-destino (ITNs) no sistema para determinar se é possível adicionar mais hosts ao cluster.
+
+Uma ITN representa um caminho desde o iniciador do host até o destino do sistema de armazenamento. O número máximo de ITNs por nó nas configurações FC e FC-NVMe é de 2.048. Se você estiver abaixo do número máximo de ITNs, poderá continuar a adicionar hosts ao cluster.
+
+Para determinar o número de ITNs usados no cluster, execute as etapas a seguir para cada nó no cluster.
+
+.Passos
+. Identifique todas as LIFs em um determinado nó.
+. Execute o seguinte comando para cada LIF no nó:
++
+[source, cli]
+----
+fcp initiator show -fields wwpn, lif
+----
++
+O número de entradas exibidas na parte inferior da saída do comando representa o número de ITNs para esse LIF.
+
+. Registre o número de ITNs exibidos para cada LIF.
+. Adicione o número de ITNs para cada LIF em cada nó do cluster.
++
+Esse total representa o número de ITNs em seu cluster.
+
+
+
+
+
+== Determine se o cluster pode suportar mais hosts iSCSI
+
+O número de hosts que podem ser conetados diretamente a um nó ou que podem ser conetados por meio de um ou mais switches depende do número de portas Ethernet disponíveis. O número de portas Ethernet disponíveis é determinado pelo modelo do controlador e pelo número e tipo de adaptadores instalados no controlador. O número de portas Ethernet suportadas para controladores e adaptadores está disponível em _Hardware Universe_.
+
+Para todas as configurações de cluster de vários nós, você deve determinar o número de sessões iSCSI por nó para saber se você pode adicionar mais hosts ao cluster. Desde que o cluster esteja abaixo do número máximo de sessões iSCSI por nó, você pode continuar a adicionar hosts ao cluster. O número máximo de sessões iSCSI por nó varia de acordo com os tipos de controladores no cluster.
+
+.Passos
+. Identifique todos os grupos de portal de destino no nó.
+. Verifique o número de sessões iSCSI para cada grupo de portal de destino no nó:
++
+[source, cli]
+----
+iscsi session show -tpgroup _tpgroup_
+----
++
+O número de entradas exibidas na parte inferior da saída do comando representa o número de sessões iSCSI para esse grupo de portal de destino.
+
+. Registe o número de sessões iSCSI apresentadas para cada grupo de portal de destino.
+. Adicione o número de sessões iSCSI para cada grupo de portal de destino no nó.
++
+O total representa o número de sessões iSCSI no nó.
+
+

@@ -4,15 +4,45 @@ sidebar: sidebar
 keywords: host, support, multipathing 
 summary: 'O ONTAP sempre usa o Acesso lógico de Unidade assimétrica (ALUA) para caminhos FC e iSCSI. Use configurações de host compatíveis com ALUA para protocolos FC e iSCSI.' 
 ---
-= Suporte de host para visão geral de multipathing
+= Suporte ONTAP para multipathing de host SAN
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-O ONTAP sempre usa o Acesso lógico de Unidade assimétrica (ALUA) para caminhos FC e iSCSI. Use configurações de host compatíveis com ALUA para protocolos FC e iSCSI.
+O ONTAP usa o software ALUA (Asymmetric Logical Unit Access) para multipathing com hosts FC e iSCSI.
 
-A partir do par de HA multipath ONTAP 9.5, o failover/giveback é compatível com configurações NVMe usando o acesso de namespace assíncrono (ANA). No ONTAP 9.4, o NVMe só oferece suporte a um caminho do host para o destino. O host de aplicações precisa gerenciar o failover de caminho para seu parceiro de alta disponibilidade (HA).
+A partir do par de alta disponibilidade (HA) multipath ONTAP 9,5, failover/giveback é compatível com hosts NVMe que usam ANA (Acesso assíncrono a namespace (ANA). No ONTAP 9,4, o NVMe oferece suporte a apenas um caminho do host para o destino. Assim, o host de aplicações precisa gerenciar o failover de caminho para seu parceiro de HA.
+
+O software multipathing é necessário no seu host SAN se ele puder acessar um namespace LUN ou NVMe em mais de um caminho. Ele apresenta um único disco ao sistema operacional para todos os caminhos para um namespace LUN ou NVMe. Sem ele, o sistema operacional poderia tratar cada caminho como um disco separado, levando à corrupção de dados.
+
+Sua solução é considerada como tendo vários caminhos se você tiver qualquer um dos seguintes:
+
+* Uma única porta de iniciador no host que é anexada a várias LIFs SAN no SVM
+* Várias portas de iniciador anexando a um único LIF de SAN no SVM
+* Várias portas de iniciador anexadas a várias LIFs SAN no SVM
+
+
+O software multipathing, também conhecido como software MPIO (multipath I/o), é recomendado em configurações de HA. Além do mapa LUN seletivo, também é recomendável usar o zoneamento de switch FC ou portsets para limitar os caminhos usados para acessar LUNs.
 
 Para obter informações sobre quais configurações de host específicas suportam ALUA ou ANA, consulte https://mysupport.netapp.com/matrix["Ferramenta de Matriz de interoperabilidade do NetApp"^] e https://docs.netapp.com/us-en/ontap-sanhost/index.html["Configuração do host SAN ONTAP"] para o sistema operacional do seu host.
+
+
+
+== Número recomendado de caminhos do host para nós no cluster
+
+Você não deve exceder mais de oito caminhos do host para cada nó do cluster. Você também não deve exceder o número total de caminhos que podem ser suportados para o sistema operacional do host e o multipathing usado no host.
+
+Você deve ter no mínimo dois caminhos por LUN conetando-se a cada nó de relatório por meio da link:../san-admin/selective-lun-map-concept.html["Mapa LUN seletivo (SLM)"]utilização da máquina virtual de storage (SVM) no cluster. Isso elimina pontos únicos de falha e permite que o sistema sobreviva a falhas de componentes.
+
+Se você tiver quatro ou mais nós no cluster ou mais de quatro portas de destino sendo usadas pelas SVMs em qualquer um de seus nós, use os métodos a seguir para limitar o número de caminhos que podem ser usados para acessar LUNs em seus nós, de modo que você não exceda o máximo recomendado de oito caminhos.
+
+* SLM
++
+O SLM reduz o número de caminhos do host para o LUN para apenas caminhos no nó proprietário do LUN e do parceiro de HA do nó proprietário. O SLM está ativado por predefinição.
+
+* link:../san-admin/limit-lun-access-portsets-igroups-concept.html["Portsets para iSCSI"]
+* Mapeamentos do grupo FC de seu host
+* Zoneamento do switch FC
+
