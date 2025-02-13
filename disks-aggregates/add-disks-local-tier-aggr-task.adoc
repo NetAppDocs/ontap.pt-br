@@ -22,20 +22,13 @@ summary: 'É possível adicionar discos a um nível local (agregado) para que el
 ====
 .Gerenciador de sistemas (ONTAP 9.8 e posterior)
 --
-*Use o Gerenciador do sistema para adicionar capacidade (ONTAP 9.8 e posterior)*
 
-É possível adicionar capacidade a um nível local adicionando discos de capacidade.
-
-
-NOTE: A partir do ONTAP 9.12,1, você pode usar o Gerenciador de sistema para visualizar a capacidade comprometida de um nível local e determinar se a capacidade adicional é necessária para o nível local. link:../concept_capacity_measurements_in_sm.html["Monitorar a capacidade no System Manager"]Consulte .
-
-.Sobre esta tarefa
-Você só executa essa tarefa se tiver instalado o ONTAP 9.8 ou posterior. Se você instalou uma versão anterior do ONTAP, consulte a guia (ou seção) rotulada "Gerenciador do sistema (ONTAP 9.7 e anterior)".
+NOTE: A partir do ONTAP 9.12,1, você pode usar o Gerenciador de sistema para visualizar a capacidade comprometida de um nível local e determinar se a capacidade adicional é necessária para o nível local. link:../concepts/capacity-measurements-in-sm-concept.html["Monitorar a capacidade no System Manager"]Consulte .
 
 .Passos
-. Clique em *armazenamento > camadas*.
-. Clique image:icon_kabob.gif["Ícone de opções do menu"] ao lado do nome do nível local ao qual você deseja adicionar capacidade.
-. Clique em *Adicionar capacidade*.
+. Selecione *armazenamento > camadas*.
+. image:icon_kabob.gif["Ícone de opções do menu"]Selecione ao lado do nome do nível local ao qual você deseja adicionar capacidade.
+. Selecione *Adicionar capacidade*.
 +
 
 NOTE: Se não houver discos sobressalentes que você possa adicionar, a opção *Adicionar capacidade* não será exibida e você não poderá aumentar a capacidade do nível local.
@@ -53,7 +46,7 @@ NOTE: Se não houver discos sobressalentes que você possa adicionar, a opção 
 ONTAP 9.8, 9,9 ou 9.10.1
  a| 
 .. Se o nó contiver várias camadas de storage, selecione o número de discos que deseja adicionar ao nível local. Caso contrário, se o nó contiver apenas uma camada de storage, a capacidade adicional será estimada automaticamente.
-.. Clique em *Add*.
+.. Selecione *Adicionar*.
 
 
 
@@ -63,7 +56,7 @@ Começando com ONTAP 9.11,1
  a| 
 .. Selecione o tipo de disco e o número de discos.
 .. Se quiser adicionar discos a um novo grupo RAID, marque a caixa de seleção. A alocação RAID é exibida.
-.. Clique em *Salvar*.
+.. Selecione *Guardar*.
 
 
 |===
@@ -74,36 +67,27 @@ Começando com ONTAP 9.11,1
 --
 .Gerenciador do sistema (ONTAP 9.7 e anteriores)
 --
-*Use o Gerenciador do sistema para adicionar capacidade (ONTAP 9.7 e anterior)*
-
-Você pode adicionar capacidade a um nível local (agregado) adicionando discos de capacidade.
-
-.Sobre esta tarefa
-Você só executa essa tarefa se tiver instalado o ONTAP 9.7 ou anterior. Se você instalou o ONTAP 9.8 ou posterior, <<increase-cap-98-later,Use o Gerenciador do sistema para adicionar capacidade (ONTAP 9.8 ou posterior)>>consulte .
-
 .Passos
-. (Apenas para o ONTAP 9.7) clique em *(retornar à versão clássica)*.
-. Clique em *hardware e diagnóstico > agregados*.
-. Selecione o agregado ao qual deseja adicionar discos de capacidade e clique em *ações > Adicionar capacidade*.
+. (Apenas para ONTAP 9,7) selecione *(voltar à versão clássica)*.
+. Selecione *hardware e diagnóstico > agregados*.
+. Selecione o agregado ao qual deseja adicionar discos de capacidade e selecione *ações > Adicionar capacidade*.
 +
 
 NOTE: Você deve adicionar discos com o mesmo tamanho que os outros discos no agregado.
 
-. (Apenas para ONTAP 9.7) clique em *mudar para a nova experiência*.
-. Clique em *armazenamento > camadas* para verificar o tamanho do novo agregado.
+. (Apenas para ONTAP 9,7) selecione *mudar para a nova experiência*.
+. Selecione *armazenamento > camadas* para verificar o tamanho do novo agregado.
 
 
 --
 .CLI
 --
-*Use a CLI para adicionar capacidade*
-
-O procedimento para adicionar discos particionados a um agregado é semelhante ao procedimento para adicionar discos não particionados.
-
-.O que você vai precisar
+.Antes de começar
 Você deve saber qual é o tamanho do grupo RAID para o agregado ao qual está adicionando o armazenamento.
 
 .Sobre esta tarefa
+Este procedimento para adicionar discos particionados a um agregado é semelhante ao procedimento para adicionar discos não particionados.
+
 Ao expandir um agregado, você deve estar ciente de se você está adicionando partição ou discos não particionados ao agregado. Quando você adiciona unidades não particionadas a um agregado existente, o tamanho dos grupos RAID existentes é herdado pelo novo grupo RAID, que pode afetar o número de discos de paridade necessários. Se um disco não particionado for adicionado a um grupo RAID composto por discos particionados, o novo disco será particionado, deixando uma partição sobressalente não utilizada.
 
 Ao provisionar partições, você deve garantir que não saia do nó sem uma unidade com ambas as partições como sobressalente. Se o fizer, e o nó sofrer uma interrupção no controlador, informações valiosas sobre o problema (o arquivo principal) podem não estar disponíveis para fornecer ao suporte técnico.
@@ -139,8 +123,10 @@ Original Owner: cl1-s2
 ----
 . Mostrar os grupos RAID atuais para o agregado:
 +
-`storage aggregate show-status _aggr_name_`
-
+[source, cli]
+----
+storage aggregate show-status <aggr_name>
+----
 +
 [listing]
 ----
@@ -162,8 +148,10 @@ Owner Node: cl1-s2
 ----
 . Simule a adição do armazenamento ao agregado:
 +
-`storage aggregate add-disks -aggregate _aggr_name_ -diskcount _number_of_disks_or_partitions_ -simulate true`
-
+[source, cli]
+----
+storage aggregate add-disks -aggregate <aggr_name> -diskcount <number_of_disks_or_partitions> -simulate true
+----
 +
 Você pode ver o resultado da adição de storage sem realmente provisionar nenhum storage. Se algum aviso for exibido a partir do comando simulado, você pode ajustar o comando e repetir a simulação.
 
@@ -191,8 +179,10 @@ Aggregate capacity available for volume use would be increased by 1.83TB.
 ----
 . Adicione o armazenamento ao agregado:
 +
-`storage aggregate add-disks -aggregate _aggr_name_ -raidgroup new -diskcount _number_of_disks_or_partitions_`
-
+[source, cli]
+----
+storage aggregate add-disks -aggregate <aggr_name> -raidgroup new -diskcount <number_of_disks_or_partitions>
+----
 +
 Ao criar um agregado de Flash Pool, se você estiver adicionando discos com uma soma de verificação diferente do agregado ou se estiver adicionando discos a um agregado de checksum misto, você deverá usar o `-checksumstyle` parâmetro.
 
@@ -209,8 +199,10 @@ cl1-s2::> storage aggregate add-disks -aggregate data_1 -raidgroup new -diskcoun
 ----
 . Verifique se o armazenamento foi adicionado com sucesso:
 +
-`storage aggregate show-status -aggregate _aggr_name_`
-
+[source, cli]
+----
+storage aggregate show-status -aggregate <aggr_name>
+----
 +
 [listing]
 ----
@@ -237,8 +229,10 @@ Owner Node: cl1-s2
 ----
 . Verifique se o nó ainda tem pelo menos uma unidade com a partição raiz e a partição de dados como sobressalente:
 +
-`storage aggregate show-spare-disks -original-owner _node_name_`
-
+[source, cli]
+----
+storage aggregate show-spare-disks -original-owner <node_name>
+----
 +
 [listing]
 ----
