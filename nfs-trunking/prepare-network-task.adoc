@@ -2,7 +2,7 @@
 permalink: nfs-trunking/prepare-network-task.html 
 sidebar: sidebar 
 keywords: NFS, servers, network, prepare, NFS trunking, LIF, trunking group, NIC 
-summary: Para aproveitar o entroncamento NFSv4,1, os LIFs em um grupo de entroncamento devem residir no mesmo nó e ter portas iniciais no mesmo nó. . 
+summary: Para aproveitar o entroncamento NFSv4,1, os LIFs em um grupo de entroncamento devem residir no mesmo nó e ter portas iniciais no mesmo nó. 
 ---
 = Prepare sua rede para o entroncamento de NFS do ONTAP
 :allow-uri-read: 
@@ -14,33 +14,35 @@ Para aproveitar o entroncamento NFSv4,1, os LIFs em um grupo de entroncamento de
 .Sobre esta tarefa
 Um mapeamento individual de LIFs e NICs produz o maior ganho de desempenho, mas não é necessário para habilitar o entroncamento. Ter pelo menos duas NICs instaladas pode oferecer um benefício de desempenho, mas não é necessário.
 
-Você pode ter vários grupos de failover, mas o grupo de failover para o entroncamento deve incluir apenas os LIFS no grupo de entroncamento.
+Todos os LIFs no grupo de entroncamento devem pertencer ao mesmo grupo de failover. Observe que quando os LIFs são configurados em um grupo de failover no mesmo nó, um failover de controladora nesse nó pode fazer com que os LIFs fiquem offline. Se as LIFs não estiverem configuradas em um grupo de failover no mesmo nó e fizer failover para outro nó, o entroncamento não funcionará mais.
 
 Você deve ajustar o grupo de failover do entroncamento sempre que adicionar ou remover conexões (e NICs subjacentes) de um grupo de failover.
 
 .Antes de começar
-* Você deve saber os nomes das portas associadas às placas de rede se quiser criar um grupo de failover.
+* Você deve saber os nomes das portas associadas às placas de rede para criar um grupo de failover.
 * Todas as portas devem estar no mesmo nó.
 
 
 .Passos
 . Verifique os nomes e o status das portas de rede que você planeja usar:
 +
-`network port status`
-
+[source, cli]
+----
+network port show
+----
 . Crie o grupo failover:
 +
-`network interface failover-groups create -vserver _svm_name_ -failover-group _failover_group_name_ -targets _ports_list_`
+`network interface failover-groups create -vserver <svm_name> -failover-group <failover_group_name> -targets <ports_list>`
 
 +
 
 NOTE: Não é um requisito ter um grupo de failover, mas é altamente recomendável.
 
 +
-** `_svm_name_` É o nome do SVM que contém o servidor NFS.
-** `_ports_list_` é a lista de portas que serão adicionadas ao grupo failover.
+** `<svm_name>` É o nome do SVM que contém o servidor NFS.
+** `<ports_list>` é a lista de portas que serão adicionadas ao grupo failover.
 +
-As portas são adicionadas no formato _node_name:port_number_, por exemplo, node1:e0c.
+As portas são adicionadas no formato `<node_name>:<port_number>`, por exemplo `node1:e0c`: .
 
 +
 O comando a seguir cria o grupo de failover FG3 para SVM VS1 e adiciona três portas:
@@ -55,7 +57,7 @@ Saiba mais sobre link:../networking/configure_failover_groups_and_policies_for_l
 
 . Se necessário, crie LIFs para membros do grupo de entroncamento:
 +
-`network interface create -vserver _svm_name_ -lif _lif_name_ -home-node _node_name_ -home-port _port_name_ -address _IP_address_ -netmask _IP_address_ [-service-policy _policy_] [-auto-revert {true|false}]`
+`network interface create -vserver <svm_name> -lif <lif_name> -home-node <node_name> -home-port <port_name> -address <IP_address> -netmask <IP_address> [-service-policy <policy>] [-auto-revert <true|false>]`
 
 +
 ** `-home-node` - O nó para o qual o LIF retorna quando o comando de reversão de interface de rede é executado no LIF.
@@ -74,7 +76,7 @@ Repita esta etapa para cada LIF no grupo de entroncamento.
 O comando a seguir cria `lif-A` para o SVM `vs1`, na porta `e0c` do nó `cluster1_01`:
 
 +
-`network interface create -vserver vs1 -lif lif-A -service-policy *???* -home-node cluster1_01 -home-port e0c -address 192.0.2.0`
+`network interface create -vserver vs1 -lif lif-A -service-policy default-intercluster -home-node cluster1_01 -home-port e0c -address 192.0.2.0`
 
 +
 Saiba mais sobre link:../networking/create_lifs.html["Criação de LIF."]
@@ -83,8 +85,10 @@ Saiba mais sobre link:../networking/create_lifs.html["Criação de LIF."]
 
 . Verifique se os LIFs foram criados:
 +
-`network interface show`
-
+[source, cli]
+----
+network interface show
+----
 . Verifique se o endereço IP configurado está acessível:
 +
 [cols="25,75"]
