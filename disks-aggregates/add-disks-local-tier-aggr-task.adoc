@@ -2,9 +2,9 @@
 permalink: disks-aggregates/add-disks-local-tier-aggr-task.html 
 sidebar: sidebar 
 keywords: add, expand, aggregate, add drives, add disks, add capacity, local tier, add disks to local tier, add disks to aggregate, increase storage, increase aggregate size, local tier, capacity, disk, expand storage, add drives, add disks, add capacity 
-summary: 'É possível adicionar discos a um nível local (agregado) para que ele possa fornecer mais storage aos volumes associados.' 
+summary: É possível adicionar discos a um nível local para que ele possa fornecer mais storage aos volumes associados. 
 ---
-= Adicionar capacidade a um nível local (adicionar discos a um agregado)
+= Adicionar capacidade a um nível local no ONTAP
 :hardbreaks:
 :toclevels: 1
 :allow-uri-read: 
@@ -16,7 +16,10 @@ summary: 'É possível adicionar discos a um nível local (agregado) para que el
 
 
 [role="lead"]
-É possível adicionar discos a um nível local (agregado) para que ele possa fornecer mais storage aos volumes associados.
+É possível adicionar discos a um nível local para que ele possa fornecer mais storage aos volumes associados.
+
+
+NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para descrever um nível _local_. Independentemente da sua versão do ONTAP, a CLI do ONTAP usa o termo _agregado_. Para saber mais sobre os níveis locais, link:../disks-aggregates/index.html["Discos e camadas locais"]consulte .
 
 [role="tabbed-block"]
 ====
@@ -70,30 +73,30 @@ Começando com ONTAP 9.11,1
 .Passos
 . (Apenas para ONTAP 9,7) selecione *(voltar à versão clássica)*.
 . Selecione *hardware e diagnóstico > agregados*.
-. Selecione o agregado ao qual deseja adicionar discos de capacidade e selecione *ações > Adicionar capacidade*.
+. Selecione o nível local ao qual deseja adicionar discos de capacidade e selecione *ações > Adicionar capacidade*.
 +
 
-NOTE: Você deve adicionar discos com o mesmo tamanho que os outros discos no agregado.
+NOTE: Você deve adicionar discos com o mesmo tamanho que os outros discos no nível local.
 
 . (Apenas para ONTAP 9,7) selecione *mudar para a nova experiência*.
-. Selecione *armazenamento > camadas* para verificar o tamanho do novo agregado.
+. Selecione *armazenamento > camadas* para verificar o tamanho do novo nível local.
 
 
 --
 .CLI
 --
 .Antes de começar
-Você deve saber qual é o tamanho do grupo RAID para o agregado ao qual está adicionando o armazenamento.
+Você deve saber qual é o tamanho do grupo RAID para o nível local ao qual você está adicionando o storage.
 
 .Sobre esta tarefa
-Este procedimento para adicionar discos particionados a um agregado é semelhante ao procedimento para adicionar discos não particionados.
+Este procedimento para adicionar discos particionados a um nível local é semelhante ao procedimento para adicionar discos não particionados.
 
-Ao expandir um agregado, você deve estar ciente de se você está adicionando partição ou discos não particionados ao agregado. Quando você adiciona unidades não particionadas a um agregado existente, o tamanho dos grupos RAID existentes é herdado pelo novo grupo RAID, que pode afetar o número de discos de paridade necessários. Se um disco não particionado for adicionado a um grupo RAID composto por discos particionados, o novo disco será particionado, deixando uma partição sobressalente não utilizada.
+Ao expandir um nível local, você deve estar ciente de se você está adicionando partição ou discos não particionados ao nível local. Quando você adiciona unidades não particionadas a um nível local existente, o tamanho dos grupos RAID existentes é herdado pelo novo grupo RAID, que pode afetar o número de discos de paridade necessários. Se um disco não particionado for adicionado a um grupo RAID composto por discos particionados, o novo disco será particionado, deixando uma partição sobressalente não utilizada.
 
 Ao provisionar partições, você deve garantir que não saia do nó sem uma unidade com ambas as partições como sobressalente. Se o fizer, e o nó sofrer uma interrupção no controlador, informações valiosas sobre o problema (o arquivo principal) podem não estar disponíveis para fornecer ao suporte técnico.
 
 .Passos
-. Mostrar o armazenamento de reposição disponível no sistema que possui o agregado:
+. Mostrar o storage sobressalente disponível no sistema proprietário do nível local:
 +
 `storage aggregate show-spare-disks -original-owner _node_name_`
 
@@ -121,7 +124,7 @@ Original Owner: cl1-s2
  1.0.10                      BSAS    7200 block                0B  73.89GB  828.0GB zeroed
 2 entries were displayed.
 ----
-. Mostrar os grupos RAID atuais para o agregado:
+. Mostrar os grupos RAID atuais para o nível local:
 +
 [source, cli]
 ----
@@ -184,13 +187,13 @@ Aggregate capacity available for volume use would be increased by 1.83TB.
 storage aggregate add-disks -aggregate <aggr_name> -raidgroup new -diskcount <number_of_disks_or_partitions>
 ----
 +
-Ao criar um agregado de Flash Pool, se você estiver adicionando discos com uma soma de verificação diferente do agregado ou se estiver adicionando discos a um agregado de checksum misto, você deverá usar o `-checksumstyle` parâmetro.
+Ao criar um nível local do Flash Pool, se você estiver adicionando discos com um checksum diferente do nível local ou se estiver adicionando discos a um nível local de checksum misto, use o `-checksumstyle` parâmetro.
 
 +
-Se você estiver adicionando discos a um agregado do Flash Pool, use o `-disktype` parâmetro para especificar o tipo de disco.
+Se você estiver adicionando discos a um nível local do Flash Pool, use o `-disktype` parâmetro para especificar o tipo de disco.
 
 +
-Você pode usar o `-disksize` parâmetro para especificar um tamanho dos discos a serem adicionados. Somente os discos com aproximadamente o tamanho especificado são selecionados para adição ao agregado.
+Você pode usar o `-disksize` parâmetro para especificar um tamanho dos discos a serem adicionados. Somente os discos com aproximadamente o tamanho especificado são selecionados para adição ao nível local.
 
 +
 [listing]

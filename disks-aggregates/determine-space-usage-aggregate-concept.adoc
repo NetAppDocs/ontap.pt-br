@@ -2,26 +2,29 @@
 permalink: disks-aggregates/determine-space-usage-aggregate-concept.html 
 sidebar: sidebar 
 keywords: space, usage, aggregate, local tier, volume 
-summary: 'É possível visualizar quanto espaço é usado por todos os volumes em uma ou mais camadas locais (agregados) para que você possa tomar medidas para liberar mais espaço.' 
+summary: É possível ver quanto espaço é usado por todos os volumes em uma ou mais camadas locais para que você possa tomar medidas para liberar mais espaço. 
 ---
-= Determinar o uso de espaço em um nível local (agregado)
+= Determinar o uso de espaço em um nível local do ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-É possível visualizar quanto espaço é usado por todos os volumes em uma ou mais camadas locais (agregados) para que você possa tomar medidas para liberar mais espaço.
+É possível ver quanto espaço é usado por todos os volumes em uma ou mais camadas locais para que você possa tomar medidas para liberar mais espaço.
 
-O WAFL reserva uma porcentagem do espaço total em disco para metadados e performance de nível agregado. O espaço usado para manter os volumes no agregado sai da reserva WAFL e não pode ser alterado.
 
-Em agregados menores que 30 TB, o WAFL reserva 10% do espaço total em disco para metadados e performance de nível agregado.
+NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para descrever um nível _local_. Independentemente da sua versão do ONTAP, a CLI do ONTAP usa o termo _agregado_. Para saber mais sobre os níveis locais, link:../disks-aggregates/index.html["Discos e camadas locais"]consulte .
 
-A partir do ONTAP 9.12,1, em agregados com 30 TB ou mais, a quantidade de espaço em disco reservado para metadados e performance de nível agregado é reduzida, resultando em 5% mais espaço utilizável em agregados. A disponibilidade dessa economia de espaço varia de acordo com sua plataforma e versão do ONTAP.
+O WAFL reserva uma porcentagem do espaço total em disco para metadados e performance de nível de categoria local. O espaço usado para manter os volumes no nível local sai da reserva do WAFL e não pode ser alterado.
+
+Em camadas locais menores que 30 TB, o WAFL reserva 10% do espaço total em disco para metadados e performance de nível local.
+
+A partir do ONTAP 9.12.1, em camadas locais de 30 TB ou mais, a quantidade de espaço em disco reservado para metadados e performance de nível de camada local é reduzida, resultando em 5% mais espaço utilizável nos níveis locais. A disponibilidade dessa economia de espaço varia de acordo com sua plataforma e versão do ONTAP.
 
 [cols="30,30,40"]
 |===
-| Espaço em disco reservado pela ONTAP em agregados 30 TB ou mais | Aplica-se a plataformas | Em versões ONTAP 
+| Espaço em disco reservado pelo ONTAP nas camadas locais de 30 TB ou superior | Aplica-se a plataformas | Em versões ONTAP 
 
 
 | 5% | Todas as plataformas AFF e FAS | ONTAP 9.14,1 e posterior 
@@ -32,42 +35,42 @@ A partir do ONTAP 9.12,1, em agregados com 30 TB ou mais, a quantidade de espaç
 
 | 10% | Todas as plataformas | ONTAP 9.11,1 e posterior 
 |===
-É possível exibir o uso do espaço por todos os volumes em um ou mais agregados com o `aggregate show-space` comando. Isso ajuda você a ver quais volumes estão consumindo mais espaço em seus agregados contendo, para que você possa tomar ações para liberar mais espaço.
+É possível exibir o uso do espaço por todos os volumes em uma ou mais camadas locais com o `aggregate show-space` comando. Isso ajuda você a ver quais volumes estão consumindo mais espaço em seus níveis que contêm locais para que você possa tomar medidas para liberar mais espaço.
 
-O espaço usado em um agregado é diretamente afetado pelo espaço usado nos volumes do FlexVol que ele contém. As medidas que você toma para aumentar o espaço em um volume também afetam o espaço no agregado.
+O espaço usado em um nível local é diretamente afetado pelo espaço usado nos volumes do FlexVol que ele contém. As medidas que você toma para aumentar o espaço em um volume também afetam o espaço no nível local.
 
 
-NOTE: A partir do ONTAP 9.15,1, dois novos contadores de metadados estão disponíveis. Juntamente com as alterações em vários contadores existentes, você pode obter uma visão mais clara da quantidade de dados do usuário alocados. Consulte link:../volumes/determine-space-usage-volume-aggregate-concept.html["Determinar o uso de espaço em um volume ou agregado"] para obter mais informações.
+NOTE: A partir do ONTAP 9.15,1, dois novos contadores de metadados estão disponíveis. Juntamente com as alterações em vários contadores existentes, você pode obter uma visão mais clara da quantidade de dados do usuário alocados. Consulte link:../volumes/determine-space-usage-volume-aggregate-concept.html["Determine o uso de espaço em um volume ou nível local"] para obter mais informações.
 
 As seguintes linhas estão incluídas na `aggregate show-space` saída do comando:
 
 * *Pegadas de volume*
 +
-O total de todas as pegadas de volume dentro do agregado. Ele inclui todo o espaço que é usado ou reservado por todos os dados e metadados de todos os volumes no agregado que contém.
+O total de todas as pegadas de volume dentro da camada local. Ele inclui todo o espaço usado ou reservado por todos os dados e metadados de todos os volumes na camada local que contém.
 
 * *Agregar metadados*
 +
-Os metadados totais do sistema de arquivos exigidos pelo agregado, como bitmaps de alocação e arquivos de inode.
+Os metadados totais do sistema de arquivos exigidos pelo nível local, como bitmaps de alocação e arquivos de inode.
 
 * *Reserva Snapshot*
 +
-A quantidade de espaço reservado para snapshots agregados, com base no tamanho do volume. Ele é considerado espaço usado e não está disponível para volume ou agregar dados ou metadados.
+A quantidade de espaço reservado para snapshots de nível local, com base no tamanho do volume. Ele é considerado espaço usado e não está disponível para metadados ou dados de nível local ou volume.
 
 * *Reserva Snapshot inutilizável*
 +
-A quantidade de espaço originalmente alocada para reserva de snapshot agregada que não está disponível para snapshots agregados porque está sendo usada por volumes associados ao agregado. Pode ocorrer apenas para agregados com uma reserva de snapshot de agregado que não seja zero.
+A quantidade de espaço originalmente alocada para reserva de snapshot de nível local que não está disponível para snapshots de nível local porque está sendo usada por volumes associados ao nível local. Só pode ocorrer em camadas locais com uma reserva de snapshot de nível local diferente de zero.
 
 * *Total utilizado*
 +
-A soma de todo o espaço usado ou reservado no agregado por volumes, metadados ou snapshots.
+A soma de todo o espaço usado ou reservado no nível local por volumes, metadados ou snapshots.
 
 * *Total físico utilizado*
 +
-A quantidade de espaço que está sendo usada para dados agora (em vez de ser reservada para uso futuro). Inclui espaço usado por snapshots agregados.
+A quantidade de espaço que está sendo usada para dados agora (em vez de ser reservada para uso futuro). Inclui espaço usado por snapshots de nível local.
 
 
 
-O exemplo a seguir mostra a `aggregate show-space` saída do comando para um agregado cuja reserva de snapshot é de 5%. Se a reserva de instantâneos fosse 0, a linha não seria exibida.
+O exemplo a seguir mostra a `aggregate show-space` saída do comando para um nível local cuja reserva de snapshot é de 5%. Se a reserva de instantâneos fosse 0, a linha não seria exibida.
 
 ....
 cluster1::> storage aggregate show-space

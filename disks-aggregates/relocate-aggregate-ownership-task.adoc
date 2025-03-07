@@ -2,20 +2,23 @@
 permalink: disks-aggregates/relocate-aggregate-ownership-task.html 
 sidebar: sidebar 
 keywords: relocate, aggregate, ownership, local tier 
-summary: 'Você pode alterar a propriedade de um nível local (agregado) apenas entre os nós de um par de HA.' 
+summary: Você pode alterar a propriedade de um nível local apenas entre os nós de um par de HA. 
 ---
-= Realocar a propriedade de um nível local (agregado) dentro de um par de HA
+= Realocar a propriedade de um nível local do ONTAP dentro de um par de HA
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-É possível alterar a propriedade de camadas locais (agregados) entre os nós de um par de HA sem interromper o serviço das camadas locais.
+É possível alterar a propriedade de camadas locais entre os nós em um par de HA sem interromper o serviço das camadas locais.
+
+
+NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para descrever um nível _local_. Independentemente da sua versão do ONTAP, a CLI do ONTAP usa o termo _agregado_. Para saber mais sobre os níveis locais, link:../disks-aggregates/index.html["Discos e camadas locais"]consulte .
 
 Ambos os nós em um par de HA estão fisicamente conectados aos discos ou LUNs de array do outro. Cada LUN de disco ou array pertence a um dos nós.
 
-A propriedade de todos os discos ou LUNs de array em um nível local (agregado) muda temporariamente de um nó para o outro quando ocorre um takeover. No entanto, as operações de realocação de camadas locais também podem alterar permanentemente a propriedade (por exemplo, se feito para balanceamento de carga). A propriedade muda sem processos de cópia de dados ou movimentação física dos discos ou LUNs de array.
+A propriedade de todos os discos ou LUNs de array em um nível local muda temporariamente de um nó para o outro quando ocorre uma takeover. No entanto, as operações de realocação de camadas locais também podem alterar permanentemente a propriedade (por exemplo, se feito para balanceamento de carga). A propriedade muda sem processos de cópia de dados ou movimentação física dos discos ou LUNs de array.
 
 .Sobre esta tarefa
 * Como os limites de contagem de volume são validados programaticamente durante as operações de realocação de nível local, não é necessário verificar isso manualmente.
@@ -40,17 +43,17 @@ Essas operações podem incluir o seguinte:
 
 * Se você tiver uma configuração do MetroCluster, não deve iniciar a realocação de nível local enquanto as operações de recuperação de desastres (_switchover_, _curando_ ou _switchback_) estiverem em andamento.
 * Se você tiver uma configuração do MetroCluster e iniciar a realocação de nível local em um nível local comutado, a operação poderá falhar porque excederá a contagem de limite de volume do parceiro de DR.
-* Você não deve iniciar a realocação de nível local em agregados que estejam corrompidos ou em manutenção.
+* Você não deve iniciar a realocação de nível local em camadas locais corrompidas ou sujeitas a manutenção.
 * Antes de iniciar a realocação do nível local, você deve salvar todos os despejos principais nos nós de origem e destino.
 
 
 .Passos
-. Visualize os agregados no nó para confirmar quais agregados devem ser movidos e garantir que estejam on-line e em boas condições:
+. Veja as camadas locais no nó para confirmar quais camadas locais devem ser movidas e garantir que estejam on-line e em boas condições:
 +
 `storage aggregate show -node _source-node_`
 
 +
-O comando a seguir mostra seis agregados nos quatro nós no cluster. Todos os agregados estão online. O node1 e o Node3 formam um par de HA e o Node2 e o Node4 formam um par de HA.
+O comando a seguir mostra seis níveis locais nos quatro nós do cluster. Todos os níveis locais estão online. O node1 e o Node3 formam um par de HA e o Node2 e o Node4 formam um par de HA.
 
 +
 [listing]
@@ -72,12 +75,12 @@ aggr_5     239.0GB   239.0GB    0% online       4 node4  raid_dp,
                                                          normal
 6 entries were displayed.
 ----
-. Emita o comando para iniciar a realocação agregada:
+. Execute o comando para iniciar a realocação do nível local:
 +
 `storage aggregate relocation start -aggregate-list _aggregate-1_, _aggregate-2_... -node _source-node_ -destination _destination-node_`
 
 +
-O comando a seguir move os agregados aggr_1 e aggr_2 de Node1 para Node3. Node3 é parceiro HA da Node1. Os agregados só podem ser movidos dentro do par de HA.
+O comando a seguir move o nível local aggr_1 e aggr_2 de Node1 para Node3. Node3 é parceiro HA da Node1. As camadas locais podem ser movidas apenas dentro do par de HA.
 
 +
 [listing]
@@ -86,12 +89,12 @@ cluster::> storage aggregate relocation start -aggregate-list aggr_1, aggr_2 -no
 Run the storage aggregate relocation show command to check relocation status.
 node1::storage aggregate>
 ----
-. Monitore o progresso da realocação agregada com o `storage aggregate relocation show` comando:
+. Monitore o progresso da realocação de nível local com o `storage aggregate relocation show` comando:
 +
 `storage aggregate relocation show -node _source-node_`
 
 +
-O comando a seguir mostra o progresso dos agregados que estão sendo movidos para Node3:
+O comando a seguir mostra o andamento dos níveis locais que estão sendo movidos para Node3:
 
 +
 [listing]
@@ -106,6 +109,6 @@ node1
 node1::storage aggregate>
 ----
 +
-Quando a realocação estiver concluída, a saída deste comando mostra cada agregado com um status de relocação de "Concluído".
+Quando a realocação estiver concluída, a saída deste comando mostra cada nível local com um status de relocação de "Concluído".
 
 

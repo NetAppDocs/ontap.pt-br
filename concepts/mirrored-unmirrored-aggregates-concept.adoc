@@ -2,50 +2,53 @@
 permalink: concepts/mirrored-unmirrored-aggregates-concept.html 
 sidebar: sidebar 
 keywords: mirrored, unmirrored, aggregate, local tier, plex, syncmirror, dparity, raid group 
-summary: 'O ONTAP tem um recurso opcional chamado _SyncMirror_ que você pode usar para espelhar sincronamente dados de nível local (agregado) em cópias, ou _plexes_, armazenados em diferentes grupos RAID. Os plexes garantem contra a perda de dados se mais discos falharem do que o tipo RAID protege contra, ou se houver perda de conetividade com discos do grupo RAID.' 
+summary: O ONTAP tem um recurso opcional chamado _SyncMirror_ que você pode usar para espelhar sincronamente dados de nível local em cópias ou _plexes_, armazenados em diferentes grupos RAID. Os plexes garantem contra a perda de dados se mais discos falharem do que o tipo RAID protege contra, ou se houver perda de conetividade com discos do grupo RAID. 
 ---
-= Camadas locais espelhadas e sem espelhamento (agregados)
+= Camadas locais espelhadas e sem espelhamento
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-O ONTAP tem um recurso opcional chamado _SyncMirror_ que você pode usar para espelhar sincronamente dados de nível local (agregado) em cópias, ou _plexes_, armazenados em diferentes grupos RAID. Os plexes garantem contra a perda de dados se mais discos falharem do que o tipo RAID protege contra, ou se houver perda de conetividade com discos do grupo RAID.
+Você pode usar o ONTAP _SyncMirror_ para espelhar sincronamente dados de nível local em cópias, ou _plexes_, armazenados em diferentes grupos RAID. Os plexes garantem contra a perda de dados se mais discos falharem do que o tipo RAID protege contra, ou se houver perda de conetividade com discos do grupo RAID.
 
-Quando você cria um nível local com o System Manager ou usando a CLI, você pode especificar que o nível local é espelhado ou sem espelhamento.
+Ao criar um nível local com o System Manager, você pode especificar se o nível local é espelhado ou sem espelhamento.
+
+
+NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para descrever um nível _local_. Independentemente da sua versão do ONTAP, a CLI do ONTAP usa o termo _agregado_. Para saber mais sobre os níveis locais, link:../disks-aggregates/index.html["Discos e camadas locais"]consulte .
 
 
 
-== Como os agregados (camadas locais sem espelhamento) funcionam
+== Como os níveis locais sem espelhamento funcionam
 
-Se você não especificar que as camadas locais são espelhadas, elas serão criadas como camadas locais sem espelhamento (agregados). Os níveis locais não espelhados têm apenas um _Plex_ (uma cópia de seus dados), que contém todos os grupos RAID pertencentes a esse nível local.
+Se você não especificar que as camadas locais são espelhadas, elas serão criadas como sem espelhamento. Os níveis locais não espelhados têm apenas um _Plex_ (uma cópia de seus dados), que contém todos os grupos RAID pertencentes a esse nível local.
 
-O diagrama a seguir mostra um nível local sem espelhamento composto de discos, com seu único Plex. O nível local tem quatro grupos RAID: rg0, RG1, RG2 e rg3. Cada grupo RAID tem seis discos de dados, um disco de paridade e um disco de paridade (paridade dupla). Todos os discos usados pelo nível local vêm do mesmo pool, "'pool0".
+O diagrama a seguir mostra um nível local sem espelhamento composto de discos, agrupados em um Plex. O nível local tem quatro grupos RAID: rg0, RG1, RG2 e rg3. Cada grupo RAID tem seis discos de dados, um disco de paridade e um disco de paridade (paridade dupla). Todos os discos usados pelo nível local vêm do mesmo pool, "'pool0".
 
 image:drw-plexum-scrn-en-noscale.gif["Camada local não espelhada composta por discos com um Plex"]
 
-O diagrama a seguir mostra um nível local sem espelhamento com LUNs de array, com um Plex. Ele tem dois grupos RAID, rg0 e RG1. Todos os LUNs de array usados pelo nível local vêm do mesmo pool, "'pool0"".
+O diagrama a seguir mostra um nível local sem espelhamento com LUNs de array, agrupados em um Plex. Ele tem dois grupos RAID, rg0 e RG1. Todos os LUNs de array usados pelo nível local vêm do mesmo pool, "'pool0"".
 
 image:unmirrored-aggregate-with-array-luns.gif["Camada local não espelhada composta por LUNs de array com seu único Plex"]
 
 
 
-== Como funcionam os agregados (camadas locais espelhadas)
+== Como funcionam os níveis locais espelhados
 
-Agregados espelhados têm dois _plexes_ (cópias de seus dados), que usam a funcionalidade SyncMirror para duplicar os dados para fornecer redundância.
+Os níveis locais espelhados têm dois _plexes_ (cópias de seus dados), que usam a funcionalidade SyncMirror para duplicar os dados para fornecer redundância.
 
-Ao criar um nível local, você pode especificar que ele é um nível local espelhado. Além disso, você pode adicionar um segundo Plex a um nível local sem espelhamento existente para torná-lo um nível espelhado. Utilizando a funcionalidade SyncMirror, o ONTAP copia os dados no Plex original (plex0) para o novo Plex (plex1). Os plexos são separados fisicamente (cada Plex tem seus próprios grupos RAID e seu próprio pool), e os plexos são atualizados simultaneamente.
+Ao criar um nível local, você pode especificar que ele é espelhado. Além disso, você pode adicionar um segundo Plex a um nível local sem espelhamento existente para torná-lo um nível espelhado. Usando o SyncMirror, o ONTAP copia os dados no Plex original (plex0) para o novo Plex (plex1). Os plexos são separados fisicamente (cada Plex tem seus próprios grupos RAID e seu próprio pool), e os plexos são atualizados simultaneamente.
 
-Essa configuração oferece proteção adicional contra a perda de dados se mais discos falharem do que o nível RAID do agregado protege contra ou se houver perda de conetividade, porque o Plex não afetado continua fornecendo dados enquanto você corrige a causa da falha. Depois que o Plex que teve um problema é corrigido, os dois plexos ressincronizam e restabelecem a relação do espelho.
+Essa configuração oferece proteção adicional contra a perda de dados se mais discos falharem do que o nível RAID do nível local protege contra ou se houver perda de conetividade, porque o Plex não afetado continua fornecendo dados enquanto você corrige a causa da falha. Depois que o Plex que teve um problema é corrigido, os dois plexos ressincronizam e restabelecem a relação do espelho.
 
-Os discos e LUNs de array no sistema são divididos em dois pools: "'pool0'" e "'pool1". Plex0 obtém seu armazenamento de pool0GB e plex1GB recebe seu armazenamento de pool1GB.
+Os discos e LUNs do array no sistema são divididos em dois pools: `pool0` E `pool1`. Plex0 obtém seu armazenamento de pool0GB e plex1GB recebe seu armazenamento de pool1GB.
 
-O diagrama a seguir mostra um nível local composto por discos com a funcionalidade SyncMirror ativada e implementada. Um segundo Plex foi criado para o nível local, ""plex1"". Os dados em plex1 são uma cópia dos dados em plex0 e os grupos RAID também são idênticos. Os 32 discos sobressalentes são alocados para pool0 ou pool1 usando 16 discos para cada pool.
+O diagrama a seguir mostra um nível local composto por discos com SyncMirror ativado e implementado. Um segundo Plex foi criado para o nível local, `plex1`. Os dados em plex1 são uma cópia dos dados em plex0 e os grupos RAID também são idênticos. Os 32 discos sobressalentes são alocados para pool0 ou pool1 usando 16 discos para cada pool.
 
 image:drw-plexm-scrn-en-noscale.gif["Camada local composta por discos com funcionalidade SyncMirror"]
 
-O diagrama a seguir mostra um nível local composto por LUNs de array com a funcionalidade SyncMirror ativada e implementada. Um segundo Plex foi criado para o nível local, ""plex1"". Plex1 é uma cópia do plex0 e os grupos RAID também são idênticos.
+O diagrama a seguir mostra um nível local composto por LUNs de array com a funcionalidade SyncMirror ativada e implementada. Um segundo Plex foi criado para o nível local, `plex1`. Plex1 é uma cópia do plex0 e os grupos RAID também são idênticos.
 
 image:mirrored-aggregate-with-array-luns.gif["Camada local composta por LUNs de array com funcionalidade SyncMirror"]
 

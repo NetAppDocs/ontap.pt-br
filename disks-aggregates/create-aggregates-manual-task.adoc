@@ -2,19 +2,22 @@
 permalink: disks-aggregates/create-aggregates-manual-task.html 
 sidebar: sidebar 
 keywords: ontap 9, create, aggregates, manually, manual, add, local tier 
-summary: 'Se você não quiser adicionar um nível local (criar um agregado) usando as recomendações de práticas recomendadas do ONTAP, execute o processo manualmente.' 
+summary: Se você não quiser adicionar um nível local usando as recomendações de práticas recomendadas do ONTAP, execute o processo manualmente. 
 ---
-= Adicionar camadas locais (criar agregados) manualmente
+= Adicione camadas locais manualmente no ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-Se você não quiser adicionar um nível local (criar um agregado) usando as recomendações de práticas recomendadas do ONTAP, execute o processo manualmente.
+Se você não quiser adicionar um nível local usando as recomendações de práticas recomendadas do ONTAP, execute o processo manualmente.
+
+
+NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para descrever um nível _local_. Independentemente da sua versão do ONTAP, a CLI do ONTAP usa o termo _agregado_. Para saber mais sobre os níveis locais, link:../disks-aggregates/index.html["Discos e camadas locais"]consulte .
 
 .Antes de começar
-Os discos devem ser de propriedade de um nó antes que possam ser usados em um nível local (agregado). Se o cluster não estiver configurado para usar atribuição automática de propriedade de disco, você deverá link:manual-assign-disks-ownership-prep-task.html["atribuir propriedade manualmente"].
+Os discos devem ser de propriedade de um nó antes que possam ser usados em um nível local. Se o cluster não estiver configurado para usar atribuição automática de propriedade de disco, você deverá link:manual-assign-disks-ownership-prep-task.html["atribuir propriedade manualmente"].
 
 Saiba mais sobre os comandos descritos neste procedimento no link:https://docs.netapp.com/us-en/ontap-cli/["Referência do comando ONTAP"^].
 
@@ -63,41 +66,41 @@ A página *Adicionar nível local* exibe os campos que você usa para configurar
 --
 .CLI
 --
-Antes de criar agregados manualmente, você deve revisar as opções de configuração de disco e simular a criação.
+Antes de criar camadas locais manualmente, você deve revisar as opções de configuração de disco e simular a criação.
 
 Em seguida, você pode emitir o `storage aggregate create` comando e verificar os resultados.
 
 .Antes de começar
-Você deve ter determinado o número de discos e o número de discos hot spare necessários no agregado.
+Você deve ter determinado o número de discos e o número de discos hot spare necessários no nível local.
 
 .Sobre esta tarefa
 Se o particionamento de dados-raiz estiver ativado e você tiver 24 unidades de estado sólido (SSDs) ou menos em sua configuração, é recomendável que suas partições de dados sejam atribuídas a diferentes nós.
 
-O procedimento para criar agregados em sistemas com particionamento de dados raiz e particionamento de dados raiz ativado é o mesmo que o procedimento para criar agregados em sistemas que utilizam discos não particionados. Se o particionamento de dados raiz estiver ativado no seu sistema, você deve usar o número de partições de disco para a `-diskcount` opção. Para o particionamento root-data-data, a `-diskcount` opção especifica a contagem de discos a serem usados.
+O procedimento para criar camadas locais em sistemas com particionamento de dados raiz e particionamento de dados raiz ativado é o mesmo que o procedimento para criar camadas locais em sistemas que usam discos não particionados. Se o particionamento de dados raiz estiver ativado no seu sistema, você deve usar o número de partições de disco para a `-diskcount` opção. Para o particionamento root-data-data, a `-diskcount` opção especifica a contagem de discos a serem usados.
 
 
-NOTE: Ao criar vários agregados para uso com FlexGroups, os agregados devem ter o tamanho mais próximo possível.
+NOTE: Ao criar vários níveis locais para uso com FlexGroups, os níveis locais devem ter o tamanho mais próximo possível.
 
-Saiba mais sobre `storage aggregate create` opções e requisitos de criação agregados no link:https://docs.netapp.com/us-en/ontap-cli/storage-aggregate-create.html["Referência do comando ONTAP"^].
+Saiba mais sobre `storage aggregate create` as opções e requisitos de criação de níveis locais no link:https://docs.netapp.com/us-en/ontap-cli/storage-aggregate-create.html["Referência do comando ONTAP"^].
 
 .Passos
-. Veja a lista de partições de disco sobressalente para verificar se você tem o suficiente para criar seu agregado:
+. Veja a lista de partições de disco sobressalente para verificar se você tem o suficiente para criar seu nível local:
 +
 `storage aggregate show-spare-disks -original-owner _node_name_`
 
 +
 As partições de dados são exibidas em `Local Data Usable`. Uma partição raiz não pode ser usada como sobressalente.
 
-. Simule a criação do agregado:
+. Simule a criação do nível local:
 +
 `storage aggregate create -aggregate _aggregate_name_ -node _node_name_ -raidtype raid_dp -diskcount _number_of_disks_or_partitions_ -simulate true`
 
 . Se algum aviso for exibido no comando simulado, ajuste o comando e repita a simulação.
-. Criar o agregado:
+. Crie o nível local:
 +
 `storage aggregate create -aggregate _aggr_name_ -node _node_name_ -raidtype raid_dp -diskcount _number_of_disks_or_partitions_`
 
-. Exiba o agregado para verificar se ele foi criado:
+. Exiba o nível local para verificar se ele foi criado:
 +
 `storage aggregate show-status _aggregate_name_`
 
