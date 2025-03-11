@@ -2,7 +2,7 @@
 permalink: system-admin/configure-saml-authentication-task.html 
 sidebar: sidebar 
 keywords: tdp, ldap, identity, provider, saml, security, assertion, markup, lanaguage, active, directory, disable, authentication, idp, active directory, troubleshoot, repair 
-summary: 'A partir do ONTAP 9.3, você pode configurar a autenticação de linguagem de marcação de asserção de Segurança (SAML) para serviços da Web. Quando a autenticação SAML é configurada e ativada, os usuários são autenticados por um Provedor de identidade (IDP) externo em vez dos provedores de serviços de diretório, como o ative Directory e o LDAP. Quando a autenticação SAML está desativada, os provedores de serviços de diretório configurados, como o ative Directory e o LDAP, são usados para autenticação.' 
+summary: 'A partir do ONTAP 9.3, você pode configurar a autenticação de linguagem de marcação de asserção de Segurança (SAML) para serviços da Web.' 
 ---
 = Configurar a autenticação SAML
 :allow-uri-read: 
@@ -11,7 +11,7 @@ summary: 'A partir do ONTAP 9.3, você pode configurar a autenticação de lingu
 
 
 [role="lead"]
-A partir do ONTAP 9.3, você pode configurar a autenticação de linguagem de marcação de asserção de Segurança (SAML) para serviços da Web. Quando a autenticação SAML é configurada e ativada, os usuários são autenticados por um Provedor de identidade (IDP) externo em vez dos provedores de serviços de diretório, como o ative Directory e o LDAP.
+A partir do ONTAP 9.3, você pode configurar a autenticação de linguagem de marcação de asserção de Segurança (SAML) para serviços da Web. Quando a autenticação SAML é configurada e ativada, os usuários são autenticados por um Provedor de identidade (IDP) externo em vez dos provedores de serviços de diretório, como o ative Directory e o LDAP. Quando a autenticação SAML está desativada, os provedores de serviços de diretório configurados, como o ative Directory e o LDAP, são usados para autenticação
 
 
 
@@ -89,7 +89,7 @@ Execute as seguintes etapas, dependendo do ambiente:
 --
 . Crie uma configuração SAML para que o ONTAP possa acessar os metadados do IDP:
 +
-`*security saml-sp create -idp-uri _idp_uri_ -sp-host _ontap_host_name_*`
+`security saml-sp create -idp-uri <idp_uri> -sp-host <ontap_host_name>`
 
 +
 `idp_uri` É o endereço FTP ou HTTP do host IDP de onde os metadados IDP podem ser baixados.
@@ -122,15 +122,24 @@ Para obter mais informações sobre como configurar o IDP, consulte a documenta�
 
 . Ativar configuração SAML:
 +
-`*security saml-sp modify -is-enabled true*`
+`security saml-sp modify -is-enabled true`
 
 +
 Qualquer usuário existente que acesse o `http` aplicativo ou `ontapi` é configurado automaticamente para autenticação SAML.
 
 . Se você quiser criar usuários para o `http` aplicativo ou `ontapi` depois que o SAML for configurado, especifique SAML como o método de autenticação para os novos usuários.
 +
-.. Criar um método de login para novos usuários com autenticação SAML
-`*security login create -user-or-group-name _user_name_ -application [http | ontapi] -authentication-method saml -vserver _svm_name_*`
+.. Crie um método de login para novos usuários com autenticação SAML:
++
+
+NOTE: O `user_name` valor é sensível a maiúsculas e minúsculas. Inclua apenas o nome de usuário e não inclua nenhuma parte do domínio.
+
++
+`security login create -user-or-group-name <user_name> -application [http | ontapi] -authentication-method saml -vserver <svm_name>`
+
++
+Exemplo:
+
 +
 [listing]
 ----
@@ -138,10 +147,13 @@ cluster_12::> security login create -user-or-group-name admin1 -application http
 ----
 .. Verifique se a entrada do usuário foi criada:
 +
-`*security login show*`
+`security login show`
 
 +
-[listing]
+Exemplo:
+
++
+[listing, subs="+quotes"]
 ----
 cluster_12::> security login show
 
@@ -159,7 +171,7 @@ admin          service-processor
                            password      admin            no     none
 admin          ssh         password      admin            no     none
 admin1         http        password      backup           no     none
-**admin1       http        saml          backup           -      none**
+**admin1         http        saml          backup           -      none**
 ----
 
 
@@ -190,11 +202,11 @@ Execute as seguintes etapas, dependendo do ambiente:
 --
 . Desativar autenticação SAML:
 +
-`*security saml-sp modify -is-enabled false*`
+`security saml-sp modify -is-enabled false`
 
 . Se você não quiser mais usar a autenticação SAML ou se quiser modificar o IDP, exclua a configuração SAML:
 +
-`*security saml-sp delete*`
+`security saml-sp delete`
 
 
 
@@ -212,11 +224,14 @@ Quando você configura a autenticação SAML, o ONTAP aplica a configuração SA
 .Passos
 . Inicie sessão no nível de privilégio avançado:
 +
-`*set -privilege advanced*`
+`set -privilege advanced`
 
 . Identificar o nó no qual a configuração SAML falhou:
 +
-`*security saml-sp status show -instance*`
+`security saml-sp status show -instance`
+
++
+Exemplo:
 
 +
 [listing]
@@ -242,7 +257,10 @@ SAML Service Provider Enabled: false
 ----
 . Repare a configuração SAML no nó com falha:
 +
-`*security saml-sp repair -node _node_name_*`
+`security saml-sp repair -node <node_name>`
+
++
+Exemplo:
 
 +
 [listing]
@@ -260,15 +278,18 @@ O servidor web é reiniciado e quaisquer conexões HTTP ou HTTPS ativas são int
 
 . Verifique se o SAML está configurado com êxito em todos os nós:
 +
-`*security saml-sp status show -instance*`
+`security saml-sp status show -instance`
 
 +
-[listing]
+Exemplo:
+
++
+[listing, subs="+quotes"]
 ----
 cluster_12::*> security saml-sp status show -instance
 
                          Node: node1
-                Update Status: config-success
+                Update Status: **config-success**
                Database Epoch: 9
    Database Transaction Count: 997
                    Error Text:

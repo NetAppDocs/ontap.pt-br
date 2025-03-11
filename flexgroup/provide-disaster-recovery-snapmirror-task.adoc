@@ -2,54 +2,40 @@
 permalink: flexgroup/provide-disaster-recovery-snapmirror-task.html 
 sidebar: sidebar 
 keywords: data, protection, workflow, flexgroup, volumes, snapmirror, snap mirror, disaster recovery, dr, unified, relationship 
-summary: 'Você pode criar relacionamentos de recuperação de desastres (DR) do SnapMirror para o FlexGroup volumes. A partir do ONTAP 9.3, você também pode fazer backup e restaurar volumes do FlexGroup com a tecnologia SnapVault. Além disso, você pode criar um relacionamento de proteção de dados unificado que usa o mesmo destino para backup e recuperação de desastres.' 
+summary: 'Você pode criar relacionamentos de recuperação de desastres (DR) do SnapMirror para o FlexGroup volumes. Você também pode fazer backup e restaurar volumes do FlexGroup usando a tecnologia SnapVault e criar uma relação de proteção de dados unificada que usa o mesmo destino para backup e recuperação de desastres.' 
 ---
-= Fluxo de trabalho de proteção de dados para FlexGroup volumes
+= Resumo do fluxo de trabalho de proteção de dados do FlexGroup volumes
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-Você pode criar relacionamentos de recuperação de desastres (DR) do SnapMirror para o FlexGroup volumes. A partir do ONTAP 9.3, você também pode fazer backup e restaurar volumes do FlexGroup com a tecnologia SnapVault. Além disso, você pode criar um relacionamento de proteção de dados unificado que usa o mesmo destino para backup e recuperação de desastres.
-
-O fluxo de trabalho de proteção de dados consiste em verificar os relacionamentos entre cluster e colegas SVM, criar um volume de destino, criar um cronograma de trabalho, especificar uma política, criar um relacionamento de proteção de dados e inicializar o relacionamento.
-
-image:flexgroups-data-protection-workflow.gif["FlexGroup volume Disater recuperar fluxo de trabalho de preparação"]
+Você pode criar relacionamentos de recuperação de desastres (DR) do SnapMirror para o FlexGroup volumes. Você também pode fazer backup e restaurar volumes do FlexGroup usando a tecnologia SnapVault e criar uma relação de proteção de dados unificada que usa o mesmo destino para backup e recuperação de desastres.
 
 .Sobre esta tarefa
-O tipo de relação do SnapMirror é sempre `XDP` para volumes do FlexGroup. O tipo de proteção de dados fornecido por um relacionamento do SnapMirror é determinado pela política de replicação que você usa. Você pode usar a política padrão ou uma política personalizada do tipo necessário para o relacionamento de replicação que deseja criar. A tabela a seguir mostra os tipos de política padrão e os tipos de política personalizada compatíveis para diferentes tipos de relacionamentos de proteção de dados.
+O tipo de relação do SnapMirror é sempre `XDP` para volumes do FlexGroup. O tipo de proteção de dados fornecido por um relacionamento do SnapMirror é determinado pela política de replicação que você usa. Você pode usar a política padrão ou uma política personalizada do tipo necessário para o relacionamento de replicação que deseja criar.
 
-|===
+.image:https://raw.githubusercontent.com/NetAppDocs/common/main/media/number-1.png["1"] Faça peer nos clusters e SVMs
+[role="quick-margin-para"]
+Se os clusters e os SVMs ainda não estiverem peered, crie o link:../peering/create-cluster-relationship-93-later-task.html["pares de cluster"] e o link:../peering/create-intercluster-svm-peer-relationship-93-later-task.html["Colegas do SVM"].
+
+.image:https://raw.githubusercontent.com/NetAppDocs/common/main/media/number-2.png["2"] Criar uma agenda de trabalhos
+[role="quick-margin-para"]
+Você deve link:../data-protection/create-replication-job-schedule-task.html["criar uma agenda de trabalhos"]determinar quando as atualizações do SnapMirror ocorrerão.
+
+.image:https://raw.githubusercontent.com/NetAppDocs/common/main/media/number-3.png["3"] Dependendo do tipo de proteção de dados, siga um destes caminhos:
+[role="quick-margin-list"]
+* *Se SnapMirror DR:*
++
+link:create-snapmirror-relationship-task.html["Crie uma relação SnapMirror."] Ao criar a relação, você pode selecionar a política padrão `MirrorAllSnapshots` ou uma política personalizada do tipo `async-mirror`.
+
+* *Se o SnapMirror Vault:*
++
+link:create-snapvault-relationship-task.html["Crie uma relação de cofre do SnapMirror."] Ao criar a relação, você pode selecionar a política padrão `XDPDefault` ou uma política personalizada do tipo `vault`.
+
+* *Se for unificada proteção de dados:*
++
+link:create-unified-data-protection-relationship-task.html["Criar um relacionamento unificado de proteção de dados."] Ao criar a relação, você pode selecionar a política padrão `MirrorAndVault` ou uma política personalizada do tipo `mirror-vault`.
 
 
-| Tipo de relação | Política padrão | Tipo de política personalizada 
-
-
- a| 
-SnapMirror DR
- a| 
-MirrorAllinstantâneos
- a| 
-espelho assíncrono
-
-
-
- a| 
-Backup SnapVault
- a| 
-XDPDefat
- a| 
-cofre
-
-
-
- a| 
-Proteção de dados unificada
- a| 
-MirrorAndVault
- a| 
-espelho-cofre
-
-|===
-A política MirrorLatest não é suportada com volumes FlexGroup.
