@@ -1,0 +1,108 @@
+---
+permalink: flexcache-hot-spot/flexcache-hotspot-remediation-ontap-config.html 
+sidebar: sidebar 
+keywords: tr, hotspot, FlexCache, HDFA, configuration, ONTAP 
+summary: Configurar o HDFA e as LIFs de dados para aproveitar os benefícios do uso do armazenamento em cache sem clusters 
+---
+= Configurar HDFAs e LIFs de dados no ONTAP
+:allow-uri-read: 
+
+
+[role="lead"]
+Você precisará configurar o HDFA e os LIFs de dados adequadamente para obter os benefícios dessa solução de remediação de hotspot. Essa solução usa o armazenamento em cache sem brilho com a origem e o HDFA no mesmo cluster.
+
+Seguem-se duas configurações de amostra HDFA:
+
+* HDFA entre 2x2x2 e SVM
+* HDFA intra-SVM 4x1x4
+
+
+.Sobre esta tarefa
+Execute essa configuração avançada usando a CLI do ONTAP. Há duas configurações que você deve usar no `flexcache create` comando, e uma configuração que você deve certificar-se de que não está configurada:
+
+* `-aggr-list`: Forneça um agregado ou uma lista de agregados que residem no nó ou subconjunto de nós aos quais você deseja restringir o HDF.
+* `-aggr-list-multiplier`: Determine quantos constituintes serão criados por agregado listado na `aggr-list` opção. Se você tiver dois agregados listados e definir esse valor como `2`, você acabará com quatro constituintes. A NetApp recomenda até 8 constituintes por agregado, mas 16 também é suficiente.
+* `-auto-provision-as`: Se você sair da guia, a CLI tentará preencher automaticamente e definir o valor como `flexgroup`. Certifique-se de que não está configurado. Se aparecer, exclua-o.
+
+
+
+
+== Crie uma configuração HDFA entre 2x2x2 e SVM
+
+. Para auxiliar na configuração de um HDFA 2x2x2 inter-SVM, conforme mostrado na Figura 1, complete uma folha de preparação.
++
+.Figura 1: Layout HDFA inter-SVM 2x2
+image:flexcache-hotspot-hdfa-2x2x2-inter-svm-hdfa.png["Figura 1: Layout HDFA inter-SVM 2x2"]
+
++
+[cols="1,1,1,1,1,1"]
+|===
+| SVM | Nós por HDF | Agregados | Componentes por nó | Caminho de junção | IPs de LIF de dados 
+
+
+| svm1 | node1, node2 | aggr1, aggr2 | 2 | /hotspot | 192.168.0.11,192.168.0.12 
+
+
+| svm2 | node3, node4 | aggr3, aggr4 | 2 | /hotspot | 192.168.0.13,192.168.0.14 
+|===
+. Crie o HDFS. Execute o seguinte comando duas vezes, uma para cada linha na folha de preparação. Certifique-se de ajustar os `vserver` valores e `aggr-list` para a segunda iteração.
++
+[listing]
+----
+cache::> flexcache create -vserver svm1 -volume hotspot -aggr-list aggr1,aggr2 -aggr-list-multiplier 2 -origin-volume <origin_vol> -origin-vserver <origin_svm> -size <size> -junction-path /hotspot
+----
+. Crie os LIFs de dados. Execute o comando quatro vezes, criando duas LIFs de dados por SVM nos nós listados na folha de preparação. Certifique-se de ajustar os valores adequadamente para cada iteração.
++
+[listing]
+----
+cache::> net int create -vserver svm1 -home-port e0a -home-node node1 -address 192.168.0.11 -netmask-length 24
+----
++
+.O que vem a seguir
+Agora você precisa configurar seus clientes para utilizar o HDFA adequadamente. link:flexcache-hotspot-remediation-client-config.html["configuração do cliente"]Consulte .
+
+
+
+
+
+== Crie um HDFA intra-SVM 4x1x4
+
+. Para ajudar na configuração de um HDFA inter-SVM 4x1x4, conforme mostrado na figura 2, preencha uma folha de preparação.
++
+.Figura 2: Layout HDFA intra-SVM 4x1x4
+image:flexcache-hotspot-hdfa-4x1x4-intra-svm-hdfa.png["Figura 2: Layout HDFA intra-SVM 4x1x4"]
+
++
+[cols="1,1,1,1,1,1"]
+|===
+| SVM | Nós por HDF | Agregados | Componentes por nó | Caminho de junção | IPs de LIF de dados 
+
+
+| svm1 | node1 | aggr1 | 4 | /hotspot1 | 192.168.0.11 
+
+
+| svm1 | node2 | aggr2 | 4 | /hotspot2 | 192.168.0.12 
+
+
+| svm1 | node3 | aggr3 | 4 | /hotspot3 | 192.168.0.13 
+
+
+| svm1 | node4 | aggr4 | 4 | /hotspot4 | 192.168.0.14 
+|===
+. Crie o HDFS. Execute o seguinte comando quatro vezes, uma vez para cada linha na folha de preparação. Certifique-se de ajustar os `aggr-list` valores e `junction-path` para cada iteração.
++
+[listing]
+----
+cache::> flexcache create -vserver svm1 -volume hotspot1 -aggr-list aggr1 -aggr-list-multiplier 4 -origin-volume <origin_vol> -origin-vserver <origin_svm> -size <size> -junction-path /hotspot1
+----
+. Crie os LIFs de dados. Execute o comando quatro vezes, criando um total de quatro LIFs de dados no SVM. Deve haver um LIF de dados por nó. Certifique-se de ajustar os valores adequadamente para cada iteração.
++
+[listing]
+----
+cache::> net int create -vserver svm1 -home-port e0a -home-node node1 -address 192.168.0.11 -netmask-length 24
+----
++
+.O que vem a seguir
+Agora você precisa configurar seus clientes para utilizar o HDFA adequadamente. link:flexcache-hotspot-remediation-client-config.html["configuração do cliente"]Consulte .
+
+

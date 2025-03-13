@@ -1,0 +1,74 @@
+---
+permalink: flexcache-hot-spot/flexcache-hotspot-remediation-client-config.html 
+sidebar: sidebar 
+keywords: tr, hotspot, hot-spot, flexcache, hdfa, client configuration 
+summary: Para corrigir hotspotting, o cliente precisa ser configurado corretamente para fazer sua parte na prevenção do gargalo da CPU. 
+---
+= Configurar clientes para distribuir conexões ONTAP nas
+:allow-uri-read: 
+
+
+[role="lead"]
+Para corrigir hotspotting, configure o cliente adequadamente para fazer sua parte na prevenção do gargalo da CPU.
+
+
+
+== Configuração de cliente Linux
+
+Se você escolheu uma implantação Intra-SVM ou InterSVM HDFA, você deve usar `autofs` no Linux para garantir que os clientes estejam balanceando a carga entre os diferentes HDFS. A `autofs` configuração será diferente para entre e intra-SVM.
+
+.Antes de começar
+Você precisará `autofs` e as dependências apropriadas instaladas. Para obter ajuda com isso, consulte a documentação do Linux.
+
+.Sobre esta tarefa
+As etapas descritas usarão um arquivo de exemplo `/etc/auto_master` com a seguinte entrada:
+
+[listing]
+----
+/flexcache auto_hotspot
+----
+Isso se configura `autofs` para procurar um arquivo chamado `auto_hotspot` no `/etc` diretório sempre que um processo tentar acessar o `/flexcache` diretório. O conteúdo do `auto_hotspot` arquivo ditará qual servidor NFS e caminho de junção a serem montados dentro do `/flexcache` diretório. Os exemplos descritos são configurações diferentes para o `auto_hotspot` arquivo.
+
+
+
+=== Configuração de autofs HDFA intra-SVM
+
+No exemplo a seguir, criaremos um `autofs` mapa para o diagrama em <<Figure-1,figura 1>>. Como cada cache tem o mesmo caminho de junção e o nome do host `cache` tem quatro Registros DNS A, precisamos apenas de uma linha:
+
+[listing]
+----
+hotspot cache:/hotspot
+----
+Esta linha simples fará com que o cliente NFS faça uma pesquisa DNS para hostname `cache`. O DNS é configurado para retornar os IPs de uma forma round-robin. Isso resultará em uma distribuição uniforme de conexões nas front-end. Depois que o cliente receber o IP, ele montará o caminho de junção `/hotspot` em `/flexcache/hotspot`. Ele pode ser conetado ao SVM1, SVM2, SVM3 ou SVM4, mas o SVM específico não importa.
+
+.Figura 1: HDFA inter-SVM 2x2
+image:flexcache-hotspot-hdfa-2x2x2-inter-svm-hdfa.png["Figura 1: 2x2x2 HDFA"]
+
+
+
+=== Configuração de autofs HDFA intra-SVM
+
+No exemplo a seguir, criaremos um `autofs` mapa para o diagrama em <<Figure-2,figura 2>>. Precisamos garantir que os clientes NFS montem os IPs que fazem parte da implantação do caminho de junção HDF. Em outras palavras, não queremos montar `/hotspot1` com nada além do IP 192.168.0.11. Para fazer isso, podemos listar todos os quatro pares de caminho de junção/IP para um local de montagem `auto_hotspot` no mapa.
+
+
+NOTE: A barra invertida (`\`) no exemplo a seguir continua a entrada para a próxima linha, facilitando a leitura.
+
+[listing]
+----
+hotspot     cache1:/hostspot1 \
+            cache2:/hostspot2 \
+            cache3:/hostspot3 \
+            cache4:/hostspot4
+----
+Quando o cliente tentar acessar `/flexcache/hotspot`, `autofs` fará uma pesquisa direta para todos os quatro nomes de host. Supondo que todos os quatro IPs estejam na mesma sub-rede que o cliente ou em uma sub-rede diferente, `autofs` emitirá um ping NFS NULL para cada IP.
+
+Este ping NULL requer que o pacote seja processado pelo serviço NFS da ONTAP, mas não requer nenhum acesso ao disco. O primeiro ping a retornar será o IP e o caminho de junção `autofs` escolhe montar.
+
+.Figura 2: HDFA intra-SVM 4x1x4
+image:flexcache-hotspot-hdfa-4x1x4-intra-svm-hdfa.png["Figura 2: S4x1x4 HDFA intra-SVM"]
+
+
+
+== Configuração de cliente Windows
+
+Com clientes Windows, você deve usar um HDFA intra-SVM. Para o balanceamento de carga entre os diferentes HDFS no SVM, você deve adicionar um nome de compartilhamento exclusivo a cada HDF. Depois disso, siga as etapas em link:https://learn.microsoft.com/en-us/windows-server/storage/dfs-namespaces/create-a-dfs-namespace["Documentação da Microsoft"^]para implementar vários destinos DFS para a mesma pasta.

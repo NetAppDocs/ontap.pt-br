@@ -1,0 +1,73 @@
+---
+permalink: flexcache-hot-spot/flexcache-hotspot-remediation-architecture.html 
+sidebar: sidebar 
+keywords: hotspot, FlexCache, hdfa, problem, solution, ONTAP 
+summary: Saiba como a arquitetura com FlexCache de alta densidade ajuda a remediação de pontos de acesso. 
+---
+= Arquitetar uma solução de remediação de hotspot ONTAP FlexCache
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Para remediar o hotspotting, explore as causas subjacentes dos gargalos, por que o FlexCache com provisionamento automático não é suficiente e os detalhes técnicos necessários para arquitetar de forma eficaz uma solução FlexCache. Ao entender e implementar HDFAs (high-density FlexCache Arrays), você pode otimizar a performance e eliminar gargalos em seus workloads de alta demanda.
+
+
+
+== Compreender o gargalo
+
+O seguinte <<Figure-1,imagem>> mostra um cenário típico de hotspotting de arquivo único. O volume é um FlexGroup com um único componente por nó e o arquivo reside no nó 1.
+
+Se você distribuir todas as conexões de rede dos clientes nas entre nós diferentes no cluster, você ainda poderá colocar o gargalo na CPU que atende a afinidade de volume onde o arquivo quente reside. Você também introduz o tráfego de rede do cluster (tráfego leste-oeste) às chamadas provenientes de clientes conetados a nós que não sejam onde o arquivo reside. A sobrecarga de tráfego leste-oeste geralmente é pequena, mas para cargas de trabalho de computação de alto desempenho cada bit conta.
+
+.Figura 1: Cenário de hotspot de arquivo único do FlexGroup
+image:flexcache-hotspot-hdfa-flexgroup.png["Figura 1: Cenário de hotspot de arquivo único do FlexGroup"]
+
+
+
+== Por que um FlexCache auto-provisionado não é a resposta
+
+Para remediar hotspotting, elimine o gargalo da CPU e, de preferência, o tráfego leste-oeste também. O FlexCache pode ajudar se estiver configurado corretamente.
+
+No exemplo a seguir, o FlexCache é provisionado automaticamente com o Gerenciador de sistema, o BlueXP  ou os argumentos da CLI padrão. <<Figure-1,Figura 1>> E<<Figure-2,figura 2>>, no início, aparecem o mesmo: Ambos são contentores nas de quatro nós, um único componente. A única diferença é que o contêiner nas da figura 1 é um FlexGroup, e o contêiner nas da figura 2 é um FlexCache. Cada figura representa o mesmo gargalo: A CPU do nó 1 para a afinidade de volume que atende o acesso ao arquivo quente e o tráfego leste-oeste que contribui para a latência. Um FlexCache com provisionamento automático não eliminou o gargalo.
+
+.Figura 2: Cenário de FlexCache provisionado automaticamente
+image:flexcache-hotspot-hdfa-1x4x1.png["Figura 2: Cenário de FlexCache provisionado automaticamente"]
+
+
+
+== Anatomia de um FlexCache
+
+Para arquitetar de forma eficaz um FlexCache para correção de hotspot, você precisa entender alguns detalhes técnicos sobre o FlexCache.
+
+FlexCache é sempre um FlexGroup esparso. Um FlexGroup é composto por vários FlexVols. Esses FlexVols são chamados de componentes FlexGroup. Em um layout FlexGroup padrão, há um ou mais constituintes por nó no cluster. Os constituintes são "costurados juntos" sob uma camada de abstração e apresentados ao cliente como um único grande recipiente nas. Quando um arquivo é gravado em um FlexGroup, a heurística de ingestão determina em qual constituinte o arquivo será armazenado. Pode ser um constituinte contendo a conexão nas do cliente ou pode ser um nó diferente. A localização é irrelevante porque tudo opera sob a camada de abstração e é invisível para o cliente.
+
+Vamos aplicar esta compreensão do FlexGroup ao FlexCache. Como o FlexCache é construído em um FlexGroup, por padrão, você tem um único FlexCache que tem constituintes em todos os nós do cluster, como descrito em <<Figure-1,figura 1>>. Na maioria dos casos, isso é uma ótima coisa. Você está utilizando todos os recursos do cluster.
+
+No entanto, para corrigir arquivos quentes, isso não é ideal por causa dos dois gargalos: CPU para um único arquivo e tráfego leste-oeste. Se você criar um FlexCache com constituintes em cada nó para um arquivo hot, esse arquivo ainda residirá em apenas um dos constituintes. Isso significa que há uma CPU para atender todo o acesso ao arquivo hot. Você também deseja limitar a quantidade de tráfego leste-oeste necessário para alcançar o arquivo quente.
+
+A solução é uma matriz de FlexCaches de alta densidade.
+
+
+
+== Anatomia de um FlexCache de alta densidade
+
+Um FlexCache de alta densidade (HDF) terá componentes em apenas alguns nós como os requisitos de capacidade para os dados armazenados em cache permitem. O objetivo é fazer com que seu cache fique ativo em um único nó. Se os requisitos de capacidade impossibilitarem isso, você poderá ter componentes em apenas alguns nós.
+
+Por exemplo, um cluster de 24 nós pode ter três FlexCaches de alta densidade:
+
+* Um que abrange os nós de 1 a 8
+* Um segundo que abrange os nós de 9 a 16
+* Um terço que abrange os nós de 17 a 24
+
+
+Esses três HDFS constituiriam um array FlexCache de alta densidade (HDFA). Se os arquivos forem distribuídos uniformemente em cada HDF, você terá uma chance de uma em oito de que o arquivo solicitado pelo cliente reside local para a conexão nas front-end. Se você tiver 12 HDFS que abrangem apenas dois nós cada, você tem 50% de chance de o arquivo ser local. Se você pode reduzir o HDF para um único nó e criar 24 deles, você tem a garantia de que o arquivo é local.
+
+Essa configuração eliminará todo o tráfego leste-oeste e, o mais importante, fornecerá 24 CPUs/afinidades de volume para acessar o arquivo hot.
+
+.O que se segue?
+link:flexcache-hotspot-remediation-hdfa-examples.html["Decida qual a densidade do array do FlexCache"]
+
+.Informações relacionadas
+link:../volume-admin/index.html["Documentação sobre FlexGroup e TRs"]

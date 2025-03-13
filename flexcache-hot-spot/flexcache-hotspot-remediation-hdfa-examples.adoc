@@ -1,0 +1,38 @@
+---
+permalink: flexcache-hot-spot/flexcache-hotspot-remediation-hdfa-examples.html 
+sidebar: sidebar 
+keywords: tr, hotspot, hot-spot, flexcache, hdfa, compare, examples 
+summary: Decida qual a densidade do array do FlexCache e entenda como ele pode ajudar a corrigir o hotspotting. 
+---
+= Determine a densidade do ONTAP FlexCache
+:allow-uri-read: 
+
+
+[role="lead"]
+Sua primeira decisão de design de remediação de hotspot é descobrir a densidade do FlexCache. Os exemplos a seguir são clusters de quatro nós. Suponha que a contagem de arquivos seja distribuída uniformemente entre todos os constituintes em cada HDF. Suponha também uma distribuição uniforme de conexões nas frontend em todos os nós.
+
+Embora esses exemplos não sejam as únicas configurações que você pode usar, você deve entender o princípio de design orientador para fazer o máximo de HDFS que seus requisitos de espaço e recursos disponíveis permitirem.
+
+
+NOTE: HDFAs são representados usando a seguinte sintaxe: `HDFs per HDFA x nodes per HDF x constituents per node per HDF`
+
+
+
+== Configuração 2x2x2 HDFA
+
+<<Figure-1,Figura 1>> É um exemplo de uma configuração HDFA 2x2: Dois HDFS, cada um abrangendo dois nós e cada nó contendo dois volumes constituintes. Neste exemplo, cada cliente tem 50% de chance de ter acesso direto ao arquivo hot. Dois dos quatro clientes têm tráfego leste-oeste. É importante ressaltar que agora existem dois HDFS, o que significa dois caches distintos do arquivo hot. Agora há duas CPUs/afinidades de volume que atendem o acesso ao arquivo hot.
+
+.Figura 1: Configuração 2x2x2 HDFA
+image:flexcache-hotspot-hdfa-2x2x2.png["Figura 1: Configuração 2x2x2 HDFA"]
+
+
+
+== Configuração 4x1x4 HDFA
+
+<<Figure-2,Figura 2>> representa uma configuração ideal. É um exemplo de uma configuração HDFA 4x1x4: Quatro HDFS, cada um contido em um único nó e cada nó contendo quatro constituintes. Neste exemplo, cada cliente tem a garantia de ter acesso direto a um cache do arquivo hot. Como há quatro arquivos armazenados em cache em quatro nós diferentes, quatro CPUs diferentes/afinidades de volume ajudam a atender o acesso ao arquivo hot. Além disso, há zero tráfego leste-oeste gerado.
+
+.Figura 2: Configuração 4x1x4 HDFA
+image:flexcache-hotspot-hdfa-4x1x4.png["Figura 2: 4x1x4 HDFA"]
+
+.O que vem a seguir
+Depois de decidir o quão denso você quer fazer seu HDFS, você deve tomar outra decisão de design se você estiver acessando o HDFS com link:flexcache-hotspot-remediation-intra-inter-svm-hdfa.html["HDFAs inter-SVM e HDFAs intra-SVM"]o NFS com .
