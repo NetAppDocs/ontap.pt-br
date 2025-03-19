@@ -25,7 +25,9 @@ O campo atime-update é desativado por padrão em volumes FlexCache existentes e
 
 == Antes de começar
 
-Todos os volumes do FlexCache devem estar executando o ONTAP 9.11,1 ou posterior.
+* Todos os volumes do FlexCache devem estar executando o ONTAP 9.11,1 ou posterior.
+* Tem de utilizar o `advanced` modo de privilégio.
+
 
 
 
@@ -36,9 +38,13 @@ A configuração `-atime-update-period` para 86400 segundos não permite mais de
 Definir `-atime-update-period` como 0 envia mensagens para a origem para cada acesso de leitura. A origem então informa cada volume de FlexCache que o tempo está desatualizado, o que afeta o desempenho.
 
 .Passos
+. Defina o modo de privilégio para `advanced`:
++
+`set -privilege advanced`
+
 . Ative as atualizações de tempo de acesso aos ficheiros e defina a frequência de atualização:
 +
-`volume modify -volume vol_name -vserver _SVM_name_ -atime-update true -atime-update-period _seconds_`
+`volume modify -volume vol_name -vserver <SVM name> -atime-update true -atime-update-period <seconds>`
 
 +
 O exemplo a seguir ativa `-atime-update` e define `-atime-update-period` para 86400 segundos ou 24 horas:
@@ -60,4 +66,10 @@ vserver volume         atime-update atime-update-period
 ------- -------------- ------------ -------------------
 vs2_c1  cache1_origin1 true         86400
 ----
+. Uma vez `-atime-update` ativado, você pode especificar se os arquivos em um volume FlexCache podem ser limpos automaticamente:
++
+`volume flexcache config modify -vserver <SVM name> -volume <volume_name> -is-atime-scrub-enabled <true|false>`
 
+
+
+Para obter informações adicionais sobre o `-is-atime-scrub-enabled` parâmetro, consulte link:https://docs.netapp.com/us-en/ontap-cli/volume-flexcache-config-modify.html#parameters["Referência do comando ONTAP"^].

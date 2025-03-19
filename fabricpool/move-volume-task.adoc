@@ -1,10 +1,10 @@
 ---
 permalink: fabricpool/move-volume-task.html 
 sidebar: sidebar 
-keywords: moving, volume, fabricpool, fabric pool, tiering, policy, policies, block, capacity, cold data, 
+keywords: aggregate, local tier, moving, volume, fabricpool, fabric pool, tiering, policy, policies, block, capacity, cold data, 
 summary: Quando você move um volume para o FabricPool, você tem a opção de especificar ou alterar a política de disposição em camadas do volume com a movimentação. A partir do ONTAP 9.8, quando você move um volume não FabricPool com relatórios de dados inativos ativados, o FabricPool usa um mapa de calor para ler blocos direcionáveis e move dados inativos para a camada de capacidade no destino do FabricPool. 
 ---
-= Mover um volume para um agregado ONTAP habilitado para FabricPool
+= Mover um volume para um nível local ONTAP habilitado para FabricPool
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
@@ -13,13 +13,16 @@ summary: Quando você move um volume para o FabricPool, você tem a opção de e
 [role="lead"]
 Quando você move um volume para o FabricPool, você tem a opção de especificar ou alterar a política de disposição em camadas do volume com a movimentação. A partir do ONTAP 9.8, quando você move um volume não FabricPool com relatórios de dados inativos ativados, o FabricPool usa um mapa de calor para ler blocos direcionáveis e move dados inativos para a camada de capacidade no destino do FabricPool.
 
-.O que você vai precisar
+
+NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para descrever um nível _local_. Independentemente da sua versão do ONTAP, a CLI do ONTAP usa o termo _agregado_. Para saber mais sobre os níveis locais, link:../disks-aggregates/index.html["Discos e camadas locais"]consulte .
+
+.Antes de começar
 Você deve entender como mudar a política de disposição em camadas pode afetar o tempo necessário para que os dados fiquem inativos e sejam movidos para a categoria de nuvem.
 
 link:tiering-policies-concept.html#what-happens-to-the-tiering-policy-when-you-move-a-volume["O que acontece com a política de disposição em camadas quando você move um volume"]
 
 .Sobre esta tarefa
-Se um volume que não é FabricPool tiver a geração de relatórios de dados inativos ativada, quando você move um volume com política de disposição em categorias `auto` ou `snapshot-only` para um FabricPool, o FabricPool lê os blocos direcionáveis de temperatura de um arquivo de mapa de calor e usa essa temperatura para mover os dados inativos diretamente para a camada de capacidade no destino do FabricPool.
+Se um volume que não é FabricPool tiver a geração de relatórios de dados inativos ativada, quando você move um volume com política de disposição em categorias `auto` ou `snapshot-only` para um FabricPool, o FabricPool lê os blocos direcionáveis de temperatura de um arquivo de mapa de calor e, quando a política de disposição em categorias estiver definida como `auto` no volume que não é FabricPool, o FabricPool usará essa temperatura para mover os dados inativos diretamente para a camada de capacidade no destino do FabricPool.
 
 Você não deve usar a `-tiering-policy` opção na movimentação de volume se estiver usando o ONTAP 9.8 e quiser que o FabricPools use informações de relatórios de dados inativos para mover dados diretamente para o nível de capacidade. O uso dessa opção faz com que o FabricPools ignore os dados de temperatura e, em vez disso, siga o comportamento de movimentação de Releases antes do ONTAP 9.8.
 
@@ -41,7 +44,7 @@ Você pode especificar uma das seguintes políticas de disposição em categoria
 
 
 .Exemplo de mover um volume para o FabricPool
-O exemplo a seguir move um volume chamado "yvol2" do SVM "VS1" para o agregado habilitado para FabricPool "dest_FabricPool". O volume está explicitamente definido para usar a `none` política de disposição em camadas:
+O exemplo a seguir move um volume chamado "yvol2" do SVM "VS1" para o nível local habilitado para FabricPool "dest_FabricPool". O volume está explicitamente definido para usar a `none` política de disposição em camadas:
 
 [listing]
 ----
