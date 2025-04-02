@@ -14,13 +14,16 @@ summary: Se o SVM de origem tiver uma configuração SMB e você optar por defin
 Se o SVM de origem tiver uma configuração SMB e você optar por definir `identity-preserve` como `false`, você deverá criar um servidor SMB para o SVM de destino. O servidor SMB é necessário para algumas configurações SMB, como compartilhamentos durante a inicialização do relacionamento SnapMirror.
 
 .Passos
-. Inicie o SVM de destino usando o `vserver start` comando. Saiba mais sobre `vserver start` o link:https://docs.netapp.com/us-en/ontap-cli/vserver-start.html["Referência do comando ONTAP"^]na .
+. Inicie o SVM de destino usando o `vserver start` comando.
 +
 [listing]
 ----
 destination_cluster::> vserver start -vserver dvs1
 [Job 30] Job succeeded: DONE
 ----
++
+Saiba mais sobre `vserver start` o link:https://docs.netapp.com/us-en/ontap-cli/vserver-start.html["Referência do comando ONTAP"^]na .
+
 . Verifique se o SVM de destino está no `running` estado e se o subtipo está `dp-destination` usando o `vserver show` comando.
 +
 [listing]
@@ -31,12 +34,18 @@ Vserver  Type    Subtype           State      State       Volume     Aggregate
 -------- ------- ----------       ---------- ----------- ---------- ----------
 dvs1     data    dp-destination    running    running       -         -
 ----
++
+Saiba mais sobre `vserver show` o link:https://docs.netapp.com/us-en/ontap-cli/vserver-show.html["Referência do comando ONTAP"^]na .
+
 . Crie um LIF usando o `network interface create` comando.
 +
 [listing]
 ----
 destination_cluster::>network interface create -vserver dvs1 -lif NAS1 -role data -data-protocol cifs -home-node destination_cluster-01 -home-port a0a-101  -address 192.0.2.128 -netmask 255.255.255.128
 ----
++
+Saiba mais sobre `network interface create` o link:https://docs.netapp.com/us-en/ontap-cli/network-interface-create.html["Referência do comando ONTAP"^]na .
+
 . Crie uma rota usando o `network route create` comando.
 +
 [listing]
@@ -47,6 +56,9 @@ destination_cluster::>network route create -vserver dvs1 -destination 0.0.0.0/0
 +
 link:../networking/networking_reference.html["Gerenciamento de rede"]
 
++
+Saiba mais sobre `network route create` o link:https://docs.netapp.com/us-en/ontap-cli/network-route-create.html["Referência do comando ONTAP"^]na .
+
 . Configure o DNS usando o `vserver services dns create` comando.
 +
 [listing]
@@ -54,6 +66,9 @@ link:../networking/networking_reference.html["Gerenciamento de rede"]
 destination_cluster::>vserver services dns create -domains mydomain.example.com -vserver
 dvs1 -name-servers 192.0.2.128 -state enabled
 ----
++
+Saiba mais sobre `vserver services dns create` o link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=vserver+services+dns+create["Referência do comando ONTAP"^]na .
+
 . Adicione o controlador de domínio preferido usando o `vserver cifs domain preferred-dc add` comando.
 +
 [listing]
@@ -61,6 +76,9 @@ dvs1 -name-servers 192.0.2.128 -state enabled
 destination_cluster::>vserver cifs domain preferred-dc add -vserver dvs1 -preferred-dc
 192.0.2.128 -domain mydomain.example.com
 ----
++
+Saiba mais sobre `vserver cifs domain preferred-dc add` o link:https://docs.netapp.com/us-en/ontap-cli/vserver-cifs-domain-preferred-dc-add.html["Referência do comando ONTAP"^]na .
+
 . Crie o servidor SMB usando o `vserver cifs create` comando.
 +
 [listing]
@@ -68,6 +86,9 @@ destination_cluster::>vserver cifs domain preferred-dc add -vserver dvs1 -prefer
 destination_cluster::>vserver cifs create -vserver dvs1 -domain mydomain.example.com
 -cifs-server CIFS1
 ----
++
+Saiba mais sobre `vserver cifs create` o link:https://docs.netapp.com/us-en/ontap-cli/vserver-cifs-create.html["Referência do comando ONTAP"^]na .
+
 . Pare o SVM de destino usando o `vserver stop` comando.
 +
 [listing]
@@ -75,4 +96,7 @@ destination_cluster::>vserver cifs create -vserver dvs1 -domain mydomain.example
 destination_cluster::> vserver stop -vserver dvs1
 [Job 46] Job succeeded: DONE
 ----
++
+Saiba mais sobre `vserver stop` o link:https://docs.netapp.com/us-en/ontap-cli/vserver-stop.html["Referência do comando ONTAP"^]na .
+
 
