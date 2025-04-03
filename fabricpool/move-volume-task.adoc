@@ -2,7 +2,7 @@
 permalink: fabricpool/move-volume-task.html 
 sidebar: sidebar 
 keywords: aggregate, local tier, moving, volume, fabricpool, fabric pool, tiering, policy, policies, block, capacity, cold data, 
-summary: Quando você move um volume para o FabricPool, você tem a opção de especificar ou alterar a política de disposição em camadas do volume com a movimentação. A partir do ONTAP 9.8, quando você move um volume não FabricPool com relatórios de dados inativos ativados, o FabricPool usa um mapa de calor para ler blocos direcionáveis e move dados inativos para a camada de capacidade no destino do FabricPool. 
+summary: 'É importante entender como a migração de volume funciona com o FabricPool porque as mudanças ocorridas na camada local, na camada de nuvem conectada e no volume (políticas de disposição em categorias de volumes) podem ter um grande impacto na funcionalidade.' 
 ---
 = Mover um volume para um nível local ONTAP habilitado para FabricPool
 :allow-uri-read: 
@@ -11,43 +11,60 @@ summary: Quando você move um volume para o FabricPool, você tem a opção de e
 
 
 [role="lead"]
-Quando você move um volume para o FabricPool, você tem a opção de especificar ou alterar a política de disposição em camadas do volume com a movimentação. A partir do ONTAP 9.8, quando você move um volume não FabricPool com relatórios de dados inativos ativados, o FabricPool usa um mapa de calor para ler blocos direcionáveis e move dados inativos para a camada de capacidade no destino do FabricPool.
+A link:../volumes/move-volume-task.html["movimentação de volume"] é a maneira como o ONTAP move um volume sem interrupções de um nível local (fonte) para outro (destino). As movimentações de volume podem ser executadas por diversos motivos, embora os motivos mais comuns sejam o gerenciamento do ciclo de vida do hardware, a expansão do cluster e o balanceamento de carga.
+
+É importante entender como a migração de volume funciona com o FabricPool porque as mudanças ocorridas na camada local, na camada de nuvem conectada e no volume (políticas de disposição em categorias de volumes) podem ter um grande impacto na funcionalidade.
 
 
 NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para descrever um nível _local_. Independentemente da sua versão do ONTAP, a CLI do ONTAP usa o termo _agregado_. Para saber mais sobre os níveis locais, link:../disks-aggregates/index.html["Discos e camadas locais"]consulte .
 
-.Antes de começar
-Você deve entender como mudar a política de disposição em camadas pode afetar o tempo necessário para que os dados fiquem inativos e sejam movidos para a categoria de nuvem.
 
-link:tiering-policies-concept.html#what-happens-to-the-tiering-policy-when-you-move-a-volume["O que acontece com a política de disposição em camadas quando você move um volume"]
 
-.Sobre esta tarefa
-Se um volume que não é FabricPool tiver a geração de relatórios de dados inativos ativada, quando você move um volume com política de disposição em categorias `auto` ou `snapshot-only` para um FabricPool, o FabricPool lê os blocos direcionáveis de temperatura de um arquivo de mapa de calor e, quando a política de disposição em categorias estiver definida como `auto` no volume que não é FabricPool, o FabricPool usará essa temperatura para mover os dados inativos diretamente para a camada de capacidade no destino do FabricPool.
+== Nível local de destino
 
-Você não deve usar a `-tiering-policy` opção na movimentação de volume se estiver usando o ONTAP 9.8 e quiser que o FabricPools use informações de relatórios de dados inativos para mover dados diretamente para o nível de capacidade. O uso dessa opção faz com que o FabricPools ignore os dados de temperatura e, em vez disso, siga o comportamento de movimentação de Releases antes do ONTAP 9.8.
+Se o nível local de destino de uma movimentação de volume não tiver um nível de nuvem anexado, os dados sobre o volume de origem armazenado na categoria de nuvem serão gravados no nível local no nível local de destino.
 
-.Passo
-. Use o `volume move start` comando para mover um volume para o FabricPool.
-+
-O `-tiering-policy` parâmetro opcional permite especificar a política de disposição em camadas para o volume.
+A partir do ONTAP 9,8, quando um volume estiver link:determine-data-inactive-reporting-task.html["relatórios de dados inativos"] ativado, o FabricPool usará o mapa de calor do volume para colocar imediatamente os dados inativos na fila para começar a disposição em categorias assim que forem gravados no agregado de destino.
 
-+
-Você pode especificar uma das seguintes políticas de disposição em categorias:
-
-+
-** `snapshot-only` (predefinição)
-** `auto`
-** `all`
-** `none` E link:tiering-policies-concept.html#types-of-fabricpool-tiering-policies["Tipos de políticas de disposição em camadas do FabricPool"]
+Antes do ONTAP 9,8, mover um volume para outro nível local redefine o período de inatividade dos blocos no nível local. Por exemplo, um volume usando a política de disposição automática de volumes com dados no nível local que ficaram inativos por 20 dias, mas ainda não tinham sido categorizados, terá a temperatura dos dados redefinida para 0 dias após uma movimentação de volume.
 
 
 
+== Movimentos de volume otimizados
 
-.Exemplo de mover um volume para o FabricPool
-O exemplo a seguir move um volume chamado "yvol2" do SVM "VS1" para o nível local habilitado para FabricPool "dest_FabricPool". O volume está explicitamente definido para usar a `none` política de disposição em camadas:
+A partir do ONTAP 9,6, se o nível local de destino de uma movimentação de volume usar o mesmo bucket do nível local de origem, os dados do volume de origem armazenado no bucket não serão movidos de volta para o nível local. Essa movimentação otimizada de volume resulta em eficiências de rede significativas.
+
+[NOTE]
+====
+Algumas configurações são incompatíveis com movimentos de volume otimizados:
+
+* Alteração da política de disposição em camadas durante a movimentação de volume
+* Agregados de origem e destino usando diferentes chaves de criptografia
+* Volumes FlexClone
+* Volumes pai do FlexClone
+* MetroCluster (suporta movimentos de volume otimizados no ONTAP 9,8 e posteriores)
+* Baldes de espelho FabricPool não sincronizados
+
+
+====
+Se o nível local de destino de uma movimentação de volume tiver um nível de nuvem anexado, os dados sobre o volume de origem armazenado na categoria de nuvem serão gravados primeiro no nível local no nível local de destino. Ele será gravado no nível de nuvem no nível local de destino, se essa abordagem for apropriada para a política de disposição em camadas do volume.
+
+Gravar dados na camada local primeiro melhora a performance da movimentação de volume e reduz o tempo de redução. Se uma política de disposição em categorias de volume não for especificada durante a movimentação de volume, o volume de destino usará a política de disposição em categorias do volume de origem.
+
+Se uma política de disposição em camadas diferente for especificada ao executar a movimentação de volume, o volume de destino será criado com a política de disposição em camadas especificada e a movimentação de volume não será otimizada.
+
+
+NOTE: Em uma relação com o SVM DR, os volumes de origem e destino devem usar a mesma política de disposição em categorias.
+
+.Passos
+. Use o `volume move start` comando para mover um volume de um nível local de origem para um nível local de destino.
+
+
+.Exemplo de mover um volume
+O exemplo a seguir move um volume chamado `myvol2` `vs1` SVM para `dest_FabricPool`, um nível local habilitado para FabricPool.
 
 [listing]
 ----
 cluster1::> volume move start -vserver vs1 -volume myvol2
--destination-aggregate dest_FabricPool -tiering-policy none
+-destination-aggregate dest_FabricPool
 ----
