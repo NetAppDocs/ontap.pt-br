@@ -24,7 +24,7 @@ NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para d
 
 Se o nível local de destino de uma movimentação de volume não tiver um nível de nuvem anexado, os dados sobre o volume de origem armazenado na categoria de nuvem serão gravados no nível local no nível local de destino.
 
-A partir do ONTAP 9,8, quando um volume estiver link:determine-data-inactive-reporting-task.html["relatórios de dados inativos"] ativado, o FabricPool usará o mapa de calor do volume para colocar imediatamente os dados inativos na fila para começar a disposição em categorias assim que forem gravados no agregado de destino.
+A partir do ONTAP 9,8, quando um volume estiver link:determine-data-inactive-reporting-task.html["relatórios de dados inativos"] ativado, o FabricPool usará o mapa de calor do volume para colocar imediatamente os dados inativos na fila para começar a disposição em categorias assim que forem gravados no nível local de destino.
 
 Antes do ONTAP 9,8, mover um volume para outro nível local redefine o período de inatividade dos blocos no nível local. Por exemplo, um volume usando a política de disposição automática de volumes com dados no nível local que ficaram inativos por 20 dias, mas ainda não tinham sido categorizados, terá a temperatura dos dados redefinida para 0 dias após uma movimentação de volume.
 
@@ -32,14 +32,16 @@ Antes do ONTAP 9,8, mover um volume para outro nível local redefine o período 
 
 == Movimentos de volume otimizados
 
-A partir do ONTAP 9,6, se o nível local de destino de uma movimentação de volume usar o mesmo bucket do nível local de origem, os dados do volume de origem armazenado no bucket não serão movidos de volta para o nível local. Essa movimentação otimizada de volume resulta em eficiências de rede significativas.
+A partir do ONTAP 9,6, se o nível local de destino de uma movimentação de volume usar o mesmo bucket do nível local de origem, os dados do volume de origem armazenado no bucket não serão movidos de volta para o nível local. Os dados em camadas permanecem em repouso e somente os dados ativos precisam ser movidos de um nível local para outro. Essa movimentação otimizada de volume resulta em eficiências de rede significativas.
+
+As movimentações de volume em excesso geram tráfego adicional de rede e computação (leituras/obtenção e gravações/puts), aumentando as demandas do cluster e do armazenamento de objetos do ONTAP, aumentando os custos ao dispor em categorias em armazenamentos de objetos públicos.
 
 [NOTE]
 ====
 Algumas configurações são incompatíveis com movimentos de volume otimizados:
 
 * Alteração da política de disposição em camadas durante a movimentação de volume
-* Agregados de origem e destino usando diferentes chaves de criptografia
+* Camadas locais de origem e destino usando diferentes chaves de criptografia
 * Volumes FlexClone
 * Volumes pai do FlexClone
 * MetroCluster (suporta movimentos de volume otimizados no ONTAP 9,8 e posteriores)
@@ -52,6 +54,16 @@ Se o nível local de destino de uma movimentação de volume tiver um nível de 
 Gravar dados na camada local primeiro melhora a performance da movimentação de volume e reduz o tempo de redução. Se uma política de disposição em categorias de volume não for especificada durante a movimentação de volume, o volume de destino usará a política de disposição em categorias do volume de origem.
 
 Se uma política de disposição em camadas diferente for especificada ao executar a movimentação de volume, o volume de destino será criado com a política de disposição em camadas especificada e a movimentação de volume não será otimizada.
+
+
+
+=== Metadados de volume
+
+Independentemente de uma movimentação de volume ser otimizada, o ONTAP armazena informações sobre o local de todos os dados, incluindo dados locais e em camadas. Quando um volume é movido de um nível local para outro, essas informações também precisam ser movidas para o nível local de destino. Esses metadados sempre permanecem no nível local, mas dependendo da quantidade de dados em camadas, isso pode fazer com que o processo de movimentação de volume demore mais do que o esperado seja concluído.
+
+Por exemplo, uma movimentação de volume otimizada para 300TBx significa que 300TB TB de dados inativos não precisa mover de um nível local para outro (ou acionar 300TBx de leituras e 300TBx de gravações no armazenamento de objetos). Mas isso significa que os metadados associados a 300TB PB de dados (aproximadamente 15TB PB de dados neste exemplo) precisarão ser gravados no nível local de destino.
+
+É importante entender que a "taxa de transferência" relatada pelo `volume move show` comando não representa a taxa de transferência em termos de dados movidos da camada de nuvem, mas os metadados são atualizados localmente.
 
 
 NOTE: Em uma relação com o SVM DR, os volumes de origem e destino devem usar a mesma política de disposição em categorias.
