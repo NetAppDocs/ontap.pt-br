@@ -4,7 +4,7 @@ sidebar: sidebar
 keywords: ontap, software, setup, synchronize, system, time, across, cluster 
 summary: A sincronização do tempo garante que cada nó no cluster tenha o mesmo tempo e evita falhas CIFS e Kerberos. 
 ---
-= Sincronize a hora do sistema no cluster
+= Sincronize a hora do sistema em um cluster do ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
@@ -17,12 +17,18 @@ Um servidor NTP (Network Time Protocol) deve ser configurado no seu site. A part
 
 Você sincroniza a hora no cluster associando o cluster a um ou mais servidores NTP.
 
-. Verifique se a hora e o fuso horário do sistema estão definidos corretamente para cada nó.
+. Verifique se a hora e o fuso horário do sistema estão definidos corretamente para cada nó:
++
+[source, cli]
+----
+cluster date show
+----
 +
 Todos os nós no cluster devem ser definidos para o mesmo fuso horário.
 
 +
-.. Use o comando de exibição de data do cluster para exibir a data, hora e fuso horário atuais para cada nó.
+Este exemplo mostra a data e o fuso horário de cada nó no cluster.
+
 +
 [listing]
 ----
@@ -35,7 +41,12 @@ cluster1-03  01/06/2015 09:35:15 America/New_York
 cluster1-04  01/06/2015 09:35:15 America/New_York
 4 entries were displayed.
 ----
-.. Use o comando de modificação de data do cluster para alterar a data ou o fuso horário de todos os nós.
+. Altere a data ou o fuso horário de todos os nós:
++
+[source, cli]
+----
+cluster date modify
+----
 +
 Este exemplo altera o fuso horário do cluster para ser GMT:
 
@@ -44,15 +55,26 @@ Este exemplo altera o fuso horário do cluster para ser GMT:
 ----
 cluster1::> cluster date modify -timezone GMT
 ----
-
-
-. Use o comando cluster time-service ntp Server Create para associar o cluster ao servidor ntp.
+. Associe o cluster ao seu servidor NTP:
 +
-** Para configurar seu servidor NTP sem autenticação simétrica, digite o seguinte comando: `cluster time-service ntp server create -server server_name`
-** Para configurar seu servidor NTP com autenticação simétrica, digite o seguinte comando: `cluster time-service ntp server create -server server_ip_address -key-id key_id`
+Para configurar seu servidor NTP sem autenticação simétrica, digite o seguinte comando:
+
++
+[source, cli]
+----
+cluster time-service ntp server create -server <server_name>
+----
++
+Para configurar seu servidor NTP com autenticação simétrica, digite o seguinte comando:
+
++
+[source, cli]
+----
+cluster time-service ntp server create -server <server_ip_address> -key-id <key_id>
+----
 +
 
-NOTE: A autenticação simétrica está disponível a partir do ONTAP 9.5. Ele não está disponível no ONTAP 9.4 ou anterior.
+NOTE: A autenticação simétrica está disponível a partir do ONTAP 9,5. Ele não está disponível no ONTAP 9.4 ou anterior.
 
 +
 Este exemplo pressupõe que o DNS foi configurado para o cluster. Se não tiver configurado o DNS, tem de especificar o endereço IP do servidor NTP:
@@ -62,9 +84,15 @@ Este exemplo pressupõe que o DNS foi configurado para o cluster. Se não tiver 
 ----
 cluster1::> cluster time-service ntp server create -server ntp1.example.com
 ----
+. Verifique se o cluster está associado a um servidor NTP:
++
+[source, cli]
+----
+cluster time-service ntp server show
+----
++
+Este exemplo mostra que o cluster está associado ao servidor NTP ntp1.example.com.
 
-
-. Verifique se o cluster está associado a um servidor NTP: `cluster time-service ntp server show`
 +
 [listing]
 ----
@@ -75,5 +103,82 @@ ntp1.example.com     auto
 ----
 
 
-.Informações relacionadas
-link:../system-admin/index.html["Administração do sistema"]
+
+
+== Comandos para gerenciar a autenticação simétrica em servidores NTP
+
+A partir do ONTAP 9.5, o protocolo de tempo de rede (NTP) versão 3 é suportado. O NTPv3 inclui autenticação simétrica usando chaves SHA-1, o que aumenta a segurança da rede.
+
+[cols="2*"]
+|===
+| Para fazer isso... | Use este comando... 
+
+
+ a| 
+Configurar um servidor NTP sem autenticação simétrica
+ a| 
+[source, cli]
+----
+cluster time-service ntp server create -server server_name
+----
+
+
+ a| 
+Configure um servidor NTP com autenticação simétrica
+ a| 
+[source, cli]
+----
+cluster time-service ntp server create -server server_ip_address -key-id key_id
+----
+
+
+ a| 
+Ative a autenticação simétrica para um servidor NTP existente
+
+Um servidor NTP existente pode ser modificado para ativar a autenticação adicionando o ID-chave necessário.
+ a| 
+[source, cli]
+----
+cluster time-service ntp server modify -server server_name -key-id key_id
+----
+
+
+ a| 
+Configurar uma chave NTP partilhada
+ a| 
+[source, cli]
+----
+cluster time-service ntp key create -id shared_key_id -type shared_key_type -value shared_key_value
+----
+*Nota:* as chaves compartilhadas são referidas por um ID. O ID, seu tipo e valor devem ser idênticos no nó e no servidor NTP
+
+
+
+ a| 
+Configure um servidor NTP com um ID de chave desconhecido
+ a| 
+[source, cli]
+----
+cluster time-service ntp server create -server server_name -key-id key_id
+----
+
+
+ a| 
+Configure um servidor com um ID de chave não configurado no servidor NTP.
+ a| 
+[source, cli]
+----
+cluster time-service ntp server create -server server_name -key-id key_id
+----
+*Nota:* o ID, tipo e valor da chave devem ser idênticos ao ID, tipo e valor da chave configurados no servidor NTP.
+
+
+
+ a| 
+Desativar a autenticação simétrica
+ a| 
+[source, cli]
+----
+cluster time-service ntp server modify -server server_name -authentication disabled
+----
+|===

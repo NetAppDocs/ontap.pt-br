@@ -1,0 +1,148 @@
+---
+permalink: san-config/asa-support-limitations.html 
+sidebar: sidebar 
+keywords: all flash san array, asa, san, array, software, configuration, configure, configuring, setup, set up, limitations, restrictions, nvme, mcc ip, persistent ports, host, settings, utilities, ways to identify 
+summary: 'Os limites de configuração e suporte do All-Flash SAN Array (ASA) variam de acordo com a versão do ONTAP.' 
+---
+= Limites de configuração e suporte do All-Flash SAN Array
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os limites de configuração e suporte do All-Flash SAN Array (ASA) variam de acordo com a versão do ONTAP.
+
+Os detalhes mais atuais sobre os limites de configuração suportados estão disponíveis no link:https://hwu.netapp.com/["NetApp Hardware Universe"^].
+
+
+NOTE: Essas limitações se aplicam aos sistemas ASA atuais. Se tiver um sistema ASA R2 (ASA A1K, ASA A90, ASA A70, ASA A50, ASA A30 ou ASA A20), consulte link:https://docs.netapp.com/us-en/asa-r2/manage-data/storage-limits.html["Limites de storage do sistema ASA R2"].
+
+
+
+== Protocolos SAN e número de nós com suporte por cluster
+
+Os protocolos SAN compatíveis e o número máximo de nós por cluster dependem de você ter uma configuração que não seja MetroCluster ou MetroCluster:
+
+[role="tabbed-block"]
+====
+.Configurações que não são MetroCluster
+--
+A tabela a seguir mostra o suporte do ASA para protocolos SAN e o número de nós suportados por cluster em configurações que não sejam MetroCluster:
+
+[cols="3*"]
+|===
+| Começando com ONTAP... | Suporte ao protocolo | Máximo de nós por cluster 
+
+
+| 9.11.1  a| 
+* NVMe/TCP
+* NVMe/FC
+
+ a| 
+12
+
+
+
+| 9.10.1  a| 
+* NVMe/TCP
+
+ a| 
+2
+
+
+
+.2+| 9.9.1  a| 
+* NVMe/FC
+
+ a| 
+2
+
+
+
+ a| 
+* FC
+* ISCSI
+
+ a| 
+12
+
+
+
+| 9,7  a| 
+* FC
+* ISCSI
+
+ a| 
+2
+
+|===
+--
+.Configurações IP do MetroCluster
+--
+A tabela a seguir mostra o suporte do ASA para protocolos SAN e o número de nós suportados por cluster nas configurações IP do MetroCluster:
+
+[cols="3*"]
+|===
+| Começando com ONTAP... | Suporte ao protocolo | Máximo de nós por cluster 
+
+
+| 9.15.1  a| 
+* NVMe/TCP
+
+| 2 nós por cluster em configurações de IP MetroCluster de quatro nós 
+
+
+| 9.12.1  a| 
+* NVMe/FC
+
+ a| 
+2 nós por cluster em configurações de IP MetroCluster de quatro nós
+
+
+
+| 9.9.1  a| 
+* FC
+* ISCSI
+
+ a| 
+4 nós por cluster em configurações de IP MetroCluster de oito nós
+
+
+
+| 9,7  a| 
+* FC
+* ISCSI
+
+ a| 
+2 nós por cluster em configurações de IP MetroCluster de quatro nós
+
+|===
+--
+====
+
+
+== Suporte para portas persistentes
+
+A partir do ONTAP 9.8, as portas persistentes são habilitadas por padrão em all-flash SAN Arrays (asas all-flash) configurados para usar o protocolo FC. As portas persistentes estão disponíveis apenas para FC e exigem associação de zona identificada pelo World Wide Port Name (WWPN).
+
+As portas persistentes reduzem o impactos das aquisições criando um LIF de sombra na porta física correspondente do parceiro de alta disponibilidade (HA). Quando um nó é assumido, o LIF sombra no nó parceiro assume a identidade do LIF original, incluindo o WWPNe. Antes que o status do caminho para o nó tomado sobre seja alterado para defeituoso, o Shadow LIF aparece como um caminho ativo/otimizado para a pilha MPIO do host, e I/o é deslocado. Isso reduz a interrupção de e/S porque o host sempre vê o mesmo número de caminhos para o destino, mesmo durante operações de failover de storage.
+
+Para portas persistentes, as seguintes características de porta FCP devem ser idênticas no par de HA:
+
+* Contagens de portas FCP
+* Nomes de portas FCP
+* Velocidades de porta FCP
+* Zoneamento baseado em WWPN do FCP
+
+
+Se alguma destas caraterísticas não for idêntica no par HA, é gerada a seguinte mensagem EMS:
+
+`EMS : scsiblade.lif.persistent.ports.fcp.init.error`
+
+Para obter mais informações sobre portas persistentes, link:https://www.netapp.com/pdf.html?item=/media/10680-tr4080pdf.pdf["Relatório técnico da NetApp 4080: Práticas recomendadas para SAN moderna"^]consulte .

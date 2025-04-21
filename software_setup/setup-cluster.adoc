@@ -1,0 +1,217 @@
+---
+sidebar: sidebar 
+permalink: software_setup/setup-cluster.html 
+keywords: install, installing, cluster, set up, setup, configure, disk, data ports, guided setup, local tiers, aggregate, vserver, volume, configuring ONTAP on a new cluster, configuring a new cluster, assign a node-management IP address, node, DNS server, host name, hostname, NTP server, synchronize time, create a local tier, configure protocol, SSD, provision storage, add LUN, add volume, add namespace, volume, vserver, configure ONTAP on a new cluster, configuration 
+summary: O System Manager fornece um fluxo de trabalho simples e fácil para configurar o cluster e o armazenamento de dados. 
+---
+= Crie um cluster do ONTAP e junte nós
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+A NetApp recomenda que você use o Gerenciador de sistemas para criar novos clusters. O System Manager fornece um fluxo de trabalho simples e fácil para a configuração do cluster. Só é necessário usar a interface de linha de comando (CLI) do ONTAP se você estiver executando o ONTAP 9,7 ou anterior em uma configuração do MetroCluster ou se precisar configurar um cluster somente IPv6 em determinadas plataformas.
+
+.Sobre esta tarefa
+Este procedimento aplica-se aos sistemas FAS, AFF e ASA atuais. Se tiver um sistema ASA R2 (ASA A1K, ASA A90, ASA A70, ASA A50, ASA A30 ou ASA A20), siga link:https://docs.netapp.com/us-en/asa-r2/install-setup/initialize-ontap-cluster.html["estes passos"^] para utilizar o Gestor do sistema para configurar um cluster ONTAP. Os sistemas ASA R2 fornecem uma experiência de ONTAP simplificada específica para clientes somente SAN.
+
+A partir do ONTAP 9.13.1, é possível atribuir endereços IPv6 a LIFs de gerenciamento nas plataformas AFF A800 e FAS8700 durante a configuração inicial do cluster usando a CLI do ONTAP. Para versões do ONTAP anteriores ao ONTAP 9.13.1, ou para o ONTAP 9.13.1 e posterior em outras plataformas, use o Gerenciador do sistema para criar seu cluster usando endereços IPv4 e, em seguida, link:convert-ipv4-to-ipv6-task.html["Converter para IPv6"] endereços após concluir a configuração do cluster.
+
+
+NOTE: O Gerenciador de sistema não suporta implantações que exigem rede IPv6G no ONTAP 9,6 e versões anteriores.
+
+.Antes de começar
+* Você deve ter instalado, cabeado e ligado seu novo sistema de storage de acordo com as instruções de instalação e configuração para o modelo de sua plataforma.
++
+Consulte link:https://docs.netapp.com/us-en/ontap-systems/index.html["Documentação do AFF e do FAS"^].
+
+* link:gather_cluster_setup_information.html["Reúna as informações que você precisa"] para concluir a configuração do cluster.
+* As interfaces de rede do cluster devem ser configuradas em cada nó do cluster para comunicação intra-cluster.
+* Se você estiver usando a CLI para configurar o IPv6, o IPv6 deve ser configurado no controlador de gerenciamento básico (BMC) para que você possa usar o SSH para acessar o sistema.
+
+
+.Passos
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Atribua um endereço IP de gerenciamento de nó
++
+** Computador Windows
++
+... Conete o computador Windows à mesma sub-rede que os controladores.
++
+Isso atribui automaticamente um endereço IP de gerenciamento de nó ao seu sistema.
+
+... Abra a unidade *Network* para descobrir os nós.
+... Selecione o nó para iniciar o assistente de configuração do cluster.
+
+
+** Computador não Windows
++
+... Ligue todos os nós que você está adicionando ao cluster.
++
+Isso é necessário para habilitar a descoberta para o seu conjunto.
+
+... Conete-se ao console do primeiro nó.
++
+O nó é inicializado e, em seguida, o assistente Configuração de cluster é iniciado no console.
+
++
+[listing]
+----
+Welcome to the cluster setup wizard....
+----
+... Confirme a declaração AutoSupport.
++
+[listing]
+----
+Type yes to confirm and continue {yes}: yes
+----
++
+O AutoSupport está ativado por predefinição.
+
+... Siga as instruções na tela para atribuir um endereço IP de gerenciamento ao nó.
+... Em um navegador da Web, insira o endereço IP de gerenciamento de nós que você configurou: "https://node-management-IP"[].
++
+O System Manager descobre automaticamente os nós restantes no cluster.
+
+
+
+
+
+. Em *Initialize storage system*, insira o nome do cluster e a senha de administrador.
+. Em *rede*, insira o endereço IP de gerenciamento de cluster, a máscara de sub-rede e o gateway.
+. Se você quiser usar o serviço de nome de domínio para resolver nomes de host, selecione *Use Domain Name Service (DNS)*; em seguida, insira as informações do servidor DNS.
+. Se pretender utilizar o NTP (Network Time Protocol) para manter os tempos sincronizados no cluster, em *outros*, selecione *utilizar serviços de tempo (NTP)* e, em seguida, introduza as informações do servidor NTP.
+. Selecione *Enviar*.
+
+
+--
+.CLI do ONTAP
+--
+. Ligue todos os nós que você está adicionando ao cluster.
++
+Isso é necessário para ativar o reconhecimento para a configuração do cluster.
+
+. Conete-se ao console do primeiro nó.
++
+O nó é inicializado e, em seguida, o assistente Configuração de cluster é iniciado no console.
+
++
+[listing]
+----
+Welcome to the cluster setup wizard....
+----
+. Confirme a declaração AutoSupport.
++
+[listing]
+----
+Type yes to confirm and continue {yes}: yes
+----
++
+O AutoSupport está ativado por predefinição.
+
+. Siga as instruções na tela para atribuir um endereço IP de gerenciamento ao nó.
++
+A partir do ONTAP 9.13.1, você pode atribuir endereços IPv6 para LIFs de gerenciamento em plataformas A800 e FAS8700. Para versões do ONTAP anteriores a 9.13.1, ou para 9.13.1 e posteriores em outras plataformas, você deve atribuir endereços IPv4 para LIFs de gerenciamento e depois converter para IPv6 depois de concluir a configuração do cluster.
+
+. Pressione *Enter* para continuar.
++
+[listing]
+----
+Do you want to create a new cluster or join an existing cluster? {create, join}:
+----
+. Criar um novo cluster:
++
+.. Introduza `create`
+.. Aceite as predefinições do sistema ou introduza os seus próprios valores.
+.. Após a conclusão da configuração, faça login no cluster e verifique se o cluster está ativo e se o primeiro nó está em bom estado: `cluster show`
++
+O exemplo a seguir mostra um cluster no qual o primeiro nó (cluster1-01) está íntegro e qualificado para participar:
+
++
+[listing]
+----
+cluster1::> cluster show
+Node                  Health  Eligibility
+--------------------- ------- ------------
+cluster1-01           true    true
+----
++
+Se necessário, você pode usar o `cluster setup` comando para acessar o assistente Configuração de cluster e alterar qualquer um dos valores inseridos para o administrador ou nó SVM.
+
+
+
+. Junte um nó ao cluster:
++
+Você pode unir um nó ao cluster de cada vez. Você deve concluir a operação de junção para cada nó e o nó deve fazer parte do cluster antes de começar a ingressar no próximo nó.
+
++
+Se você tiver um FAS2720 com 24 ou menos unidades NL-SAS, verifique se o padrão de configuração de storage está definido como ativo/passivo para otimizar o desempenho. Para obter mais informações, consulte a documentação para link:../disks-aggregates/setup-active-passive-config-root-data-task.html["configurando uma configuração ativo-passivo em nós usando o particionamento de dados raiz"].
+
++
+.. Faça login no nó que você pretende ingressar no cluster.
++
+O assistente de configuração do cluster é iniciado no console.
+
++
+[listing]
+----
+Welcome to the cluster setup wizard....
+----
+.. Confirme a declaração AutoSupport.
++
+
+NOTE: O AutoSupport está ativado por predefinição.
+
+
+
++
+[listing]
+----
+Type yes to confirm and continue {yes}: yes
+----
++
+.. Siga as instruções na tela para atribuir um endereço IP ao nó.
++
+A partir do ONTAP 9.13.1, você pode atribuir endereços IPv6 para LIFs de gerenciamento em plataformas A800 e FAS8700. Para versões do ONTAP anteriores a 9.13.1, ou para 9.13.1 e posteriores em outras plataformas, você deve atribuir endereços IPv4 para LIFs de gerenciamento e depois converter para IPv6 depois de concluir a configuração do cluster.
+
+.. Pressione *Enter* para continuar.
++
+[listing]
+----
+Do you want to create a new cluster or join an existing cluster? {create, join}:
+----
+.. Introduza `join`
+.. Siga as instruções na tela para configurar o nó e associá-lo ao cluster.
+.. Após a conclusão da configuração, verifique se o nó está íntegro e qualificado para participar do cluster: `cluster show`
++
+O exemplo a seguir mostra um cluster após o segundo nó (cluster1-02) ter sido Unido ao cluster:
+
++
+[listing]
+----
+cluster1::> cluster show
+Node                  Health  Eligibility
+--------------------- ------- ------------
+cluster1-01           true    true
+cluster1-02           true    true
+----
+
+
+. Repita a etapa 7 para unir cada nó restante.
+
+
+--
+====
+.O que vem a seguir
+* Se necessário, link:convert-ipv4-to-ipv6-task.html["Converter de IPv4 para IPv6"].
+* link:task_check_cluster_with_config_advisor.html["Execute o Active IQ Config Advisor para validar sua configuração e verificar se há erros de configuração comuns"].
+
