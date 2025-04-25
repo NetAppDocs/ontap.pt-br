@@ -22,7 +22,7 @@ Se você quiser adicionar mais espaço, você pode aumentar o tamanho coletivo d
 Se você quiser melhorar o desempenho, pode expandir o volume FlexGroup. Você pode querer expandir um volume do FlexGroup e adicionar novos volumes de membros nas seguintes situações:
 
 * Novos nós foram adicionados ao cluster.
-* Novos agregados foram criados nos nós existentes.
+* Novos níveis locais (agregados) foram criados nos nós existentes.
 * Os volumes de membros existentes do volume FlexGroup atingiram o tamanho máximo de FlexVol para o hardware (100TB ou 300TB se link:../volumes/enable-large-vol-file-support-task.html["suporte de grande volume"] tiver sido ativado) e, portanto, o volume FlexGroup não pode ser redimensionado sem adicionar volumes de membros adicionais.
 
 
@@ -55,12 +55,18 @@ Expanda o volume FlexGroup adicionando novos volumes de membros (constituintes):
 
 O valor padrão do `-aggr-list-multiplier` parâmetro é 1.
 
-Para expandir um volume FlexGroup para FabricPool no ONTAP 9.5, todos os novos agregados usados devem ser FabricPool.
+Ao expandir um volume FlexGroup com link:../fabricpool/index.html["FabricPool"]o , todas as camadas locais (agregados) precisam ser conectadas à mesma camada de nuvem.
 
 |===
 
 
-Sempre que possível, você deve aumentar a capacidade de um volume FlexGroup. Se for necessário expandir um volume FlexGroup, adicione volumes de membros nas mesmas múltiplas que os volumes de membros do volume FlexGroup existente para garantir uma performance consistente. Por exemplo, se o volume FlexGroup existente tiver 16 volumes membros com oito volumes membros por nó, você poderá expandir o volume FlexGroup existente em 8 ou 16 volumes membros.
+Supondo que agregados existentes (camadas locais) ou volumes de membros não tenham atingido suas capacidades máximas (100/300TB ou dois bilhões de arquivos cada), é preferível aumentar o tamanho geral do volume FlexGroup em vez de adicionar volumes de membros adicionais.
+
+Use a expansão de volume somente se o aumento do tamanho do volume ou da contagem de arquivos existente não for uma opção ou se o FlexGroup estiver sendo expandido pelo novo hardware. O mesmo número de volumes de membros deve ser adicionado a todos os nós para garantir um desempenho consistente. Por exemplo, se um volume FlexGroup existente tiver 8 volumes membros com quatro volumes membros por nó, adicionar dois membros por nó resultará em 12 volumes membros, seis volumes membros por nó.
+
+Ao adicionar novos membros a novos nós, tente manter um número consistente de volumes de membros por nó, como nos nós existentes. Por exemplo, se um volume FlexGroup existente tiver 8 volumes membros com quatro volumes membros por nó, se os volumes FlexGroup forem expandidos para o novo nó, quatro volumes membros deverão ser adicionados, resultando em um volume FlexGroup de 12 membros.
+
+Adicionar novos membros a um volume do FlexGroup altera a heurística de ingestão para favorecer os novos volumes de membros vazios e pode afetar o desempenho geral do sistema para a nova ingestão de dados até que os novos volumes de membros fiquem equilibrados com os volumes de membros pré-existentes.
 
 .Exemplos
 *Exemplo de aumento da capacidade dos volumes de membros existentes*
@@ -75,10 +81,10 @@ Se o volume FlexGroup tiver 16 volumes de membros, o espaço de cada volume de m
 
 *Exemplo de melhoria do desempenho adicionando novos volumes de membros*
 
-O exemplo a seguir mostra como adicionar mais dois volumes de membros ao volume volX do FlexGroup:
+O exemplo a seguir mostra como adicionar quatro volumes de membros adicionais, dois a cada um dos agregados locais subjacentes ao volume FG1 do FlexGroup:
 
 [listing]
 ----
-cluster1::> volume expand -vserver vs1 -volume volX -aggr-list aggr1,aggr2
+cluster1::> volume expand -vserver svm1 -volume fg1 -aggr-list aggr1,aggr2 -aggr-list-multiplier 2
 ----
 O tamanho dos novos volumes de membros é o mesmo dos volumes de membros existentes.
