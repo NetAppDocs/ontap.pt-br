@@ -26,6 +26,9 @@ As sub-redes contêm um conjunto de endereços IP que pertencem à mesma sub-red
 * Você pode criar LIFs IPv4 e IPv6 na mesma porta de rede.
 * Se você estiver usando a autenticação Kerberos, ative o Kerberos em várias LIFs.
 * Se você tiver um grande número de LIFs no cluster, poderá verificar a capacidade de LIF suportada no cluster usando o `network interface capacity show` comando e a capacidade de LIF suportada em cada nó usando o `network interface capacity details show` comando (no nível de privilégio avançado).
++
+Saiba mais sobre `network interface capacity show` e `network interface capacity details show` no link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=network+interface+capacity+show["Referência do comando ONTAP"^].
+
 * A partir do ONTAP 9.7, se outros LIFs já existirem para o SVM na mesma sub-rede, você não precisará especificar a porta inicial do LIF. O ONTAP escolhe automaticamente uma porta aleatória no nó inicial especificado no mesmo domínio de broadcast que os outros LIFs já configurados na mesma sub-rede.
 
 
@@ -44,6 +47,10 @@ A partir do ONTAP 9.4, o FC-NVMe é compatível. Se você estiver criando um LIF
 `network interface create -vserver _vserver_name_ -lif _lif_name_ -role data -data-protocol nfs -home-node _node_name_ -home-port _port_name_ {-address _IP_address_ -netmask _IP_address_ | -subnet-name _subnet_name_} -firewall-policy data -auto-revert {true|false}`
 
 +
+Saiba mais sobre `network interface create` o link:https://docs.netapp.com/us-en/ontap-cli/network-interface-create.html["Referência do comando ONTAP"^]na .
+
+
+
 |===
 
 
@@ -63,21 +70,23 @@ A partir do ONTAP 9.4, o FC-NVMe é compatível. Se você estiver criando um LIF
 `network interface create -vserver _vserver_name_ -lif _lif_name_ -role data -data-protocol nfs -home-node _node_name_ -home-port _port_name_ {-address _IP_address_ -netmask _IP_address_ | -subnet-name _subnet_name_} -firewall-policy data -auto-revert {true|false}`
 
 |===
-+
-**  `-role`O parâmetro não é necessário ao criar um LIF usando uma política de serviço (a partir do ONTAP 9,6).
-** O `-data-protocol` parâmetro deve ser especificado quando o LIF é criado e não pode ser modificado mais tarde sem destruir e recriar o LIF de dados.
+*  `-role`O parâmetro não é necessário ao criar um LIF usando uma política de serviço (a partir do ONTAP 9,6).
+* O `-data-protocol` parâmetro deve ser especificado quando o LIF é criado e não pode ser modificado mais tarde sem destruir e recriar o LIF de dados.
 +
 O `-data-protocol` parâmetro não é necessário ao criar um LIF usando uma política de serviço (começando com ONTAP 9.6).
 
-** `-home-node` É o nó para o qual o LIF retorna quando o `network interface revert` comando é executado no LIF.
+* `-home-node` É o nó para o qual o LIF retorna quando o `network interface revert` comando é executado no LIF.
 +
 Você também pode especificar se o LIF deve reverter automaticamente para o nó inicial e porta inicial com a `-auto-revert` opção.
 
-** `-home-port` É a porta física ou lógica para a qual o LIF retorna quando o `network interface revert` comando é executado no LIF.
-** Pode especificar um endereço IP com `-address` as opções e `-netmask` ou ativar a atribuição a partir de uma sub-rede com a `-subnet_name` opção.
-** Ao usar uma sub-rede para fornecer o endereço IP e a máscara de rede, se a sub-rede foi definida com um gateway, uma rota padrão para esse gateway é adicionada automaticamente ao SVM quando um LIF é criado usando essa sub-rede.
-** Se você atribuir endereços IP manualmente (sem usar uma sub-rede), talvez seja necessário configurar uma rota padrão para um gateway se houver clientes ou controladores de domínio em uma sub-rede IP diferente. Saiba mais sobre `network route create` como criar uma rota estática em um SVM no link:https://docs.netapp.com/us-en/ontap-cli/network-route-create.html["Referência do comando ONTAP"^].
-** Para a `-firewall-policy` opção, use o mesmo padrão `data` que a função LIF.
++
+Saiba mais sobre `network interface revert` o link:https://docs.netapp.com/us-en/ontap-cli/network-interface-revert.html["Referência do comando ONTAP"^]na .
+
+* `-home-port` É a porta física ou lógica para a qual o LIF retorna quando o `network interface revert` comando é executado no LIF.
+* Pode especificar um endereço IP com `-address` as opções e `-netmask` ou ativar a atribuição a partir de uma sub-rede com a `-subnet_name` opção.
+* Ao usar uma sub-rede para fornecer o endereço IP e a máscara de rede, se a sub-rede foi definida com um gateway, uma rota padrão para esse gateway é adicionada automaticamente ao SVM quando um LIF é criado usando essa sub-rede.
+* Se você atribuir endereços IP manualmente (sem usar uma sub-rede), talvez seja necessário configurar uma rota padrão para um gateway se houver clientes ou controladores de domínio em uma sub-rede IP diferente. Saiba mais sobre `network route create` como criar uma rota estática em um SVM no link:https://docs.netapp.com/us-en/ontap-cli/network-route-create.html["Referência do comando ONTAP"^].
+* Para a `-firewall-policy` opção, use o mesmo padrão `data` que a função LIF.
 +
 Você pode criar e adicionar uma política de firewall personalizada mais tarde, se desejado.
 
@@ -85,11 +94,10 @@ Você pode criar e adicionar uma política de firewall personalizada mais tarde,
 
 NOTE: A partir do ONTAP 9.10,1, as políticas de firewall são obsoletas e totalmente substituídas por políticas de serviço LIF. Para obter mais informações, link:../networking/configure_firewall_policies_for_lifs.html["Configurar políticas de firewall para LIFs"]consulte .
 
-** `-auto-revert` Permite especificar se um LIF de dados é automaticamente revertido para o seu nó inicial em circunstâncias como inicialização, alterações no status do banco de dados de gerenciamento ou quando a conexão de rede é feita. A configuração padrão é `false`, mas você pode defini-la como `false` dependendo das políticas de gerenciamento de rede em seu ambiente.
-
-
-. Verifique se o LIF foi criado com sucesso usando o `network interface show` comando.
-. Verifique se o endereço IP configurado está acessível:
+* `-auto-revert` Permite especificar se um LIF de dados é automaticamente revertido para o seu nó inicial em circunstâncias como inicialização, alterações no status do banco de dados de gerenciamento ou quando a conexão de rede é feita. A configuração padrão é `false`, mas você pode defini-la como `false` dependendo das políticas de gerenciamento de rede em seu ambiente.
++
+.. Verifique se o LIF foi criado com sucesso usando o `network interface show` comando.
+.. Verifique se o endereço IP configurado está acessível:
 +
 |===
 
@@ -110,9 +118,11 @@ Endereço IPv6
 `network ping6`
 
 |===
-. Se você estiver usando Kerberos, repita as etapas 1 a 3 para criar LIFs adicionais.
+.. Se você estiver usando Kerberos, repita as etapas 1 a 3 para criar LIFs adicionais.
 +
 O Kerberos deve ser habilitado separadamente em cada um desses LIFs.
+
+
 
 
 
@@ -163,4 +173,5 @@ network interface create -vserver vs1 -lif lif2 -home-node node2 -homeport e0d -
 ----
 .Informações relacionadas
 * link:https://docs.netapp.com/us-en/ontap-cli/network-ping.html["ping de rede"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=network+interface["interface de rede"^]
 
