@@ -4,7 +4,7 @@ sidebar: sidebar
 keywords: restore, all, luns in a volume, from, snapshot copy 
 summary: Você pode usar o comando volume snapshot restore para restaurar todos os LUNs em um volume especificado de um snapshot. 
 ---
-= Restaurar todos os LUNs em um volume a partir de um snapshot
+= Restaure todos os LUNs em um volume a partir de um snapshot do ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
@@ -21,49 +21,54 @@ Usar o SnapRestore sem interromper todo o acesso do host aos LUNs no volume pode
 . Desmonte os LUNs nesse host para que o host não possa acessar os LUNs.
 . Desmapear os LUNs:
 +
-`lun mapping delete -vserver _vserver_name_ -volume _volume_name_ -lun _lun_name_ -igroup _igroup_name_`
-
-+
-Saiba mais sobre `lun mapping delete` o link:https://docs.netapp.com/us-en/ontap-cli/lun-mapping-delete.html["Referência do comando ONTAP"^]na .
-
+[source, cli]
+----
+lun mapping delete -vserver <SVM_name> -volume <volume_name> -lun <lun_name> -igroup <igroup_name>
+----
 . Determine o instantâneo para o qual você deseja restaurar o volume:
 +
-`volume snapshot show -vserver _vserver_name_ -volume _volume_name_`
+[source, cli]
+----
+volume snapshot show -vserver <SVM_name> -volume <volume_name>
 
+----
 . Altere a configuração de privilégio para avançado:
 +
-`set -privilege advanced`
-
+[source, cli]
+----
+set -privilege advanced
+----
 . Restaure seus dados:
 +
-`volume snapshot restore -vserver _vserver_name_ -volume _volume_name_ -snapshot _snapshot_name_`
-
+[source, cli]
+----
+volume snapshot restore -vserver <SVM_name> -volume <volume_name> -snapshot <snapshot_name>
+----
 . Siga as instruções apresentadas no ecrã.
 . Remapear os LUNs:
 +
-`lun mapping create -vserver _vserver_name_ -volume _volume_name_ -lun _lun_name_ -igroup _igroup_name_`
-
-+
-Saiba mais sobre `lun mapping create` o link:https://docs.netapp.com/us-en/ontap-cli/lun-mapping-create.html["Referência do comando ONTAP"^]na .
-
+[source, cli]
+----
+lun mapping create -vserver <SVM_name> -volume <volume_name> -lun <lun_name> -igroup <igroup_name>
+----
 . Verifique se os LUNs estão online:
 +
-`lun show -vserver _vserver_name_ -path _lun_path_ -fields state`
-
-+
-Saiba mais sobre `lun show` o link:https://docs.netapp.com/us-en/ontap-cli/lun-show.html["Referência do comando ONTAP"^]na .
-
+[source, cli]
+----
+lun show -vserver <SVM_name> -path <lun_path> -fields state
+----
 . Se os LUNs não estiverem online, coloque-os online:
 +
-`lun modify -vserver _vserver_name_ -path _lun_path_ -state online`
-
-+
-Saiba mais sobre `lun modify` o link:https://docs.netapp.com/us-en/ontap-cli/lun-modify.html["Referência do comando ONTAP"^]na .
-
+[source, cli]
+----
+lun modify -vserver <SVM_name> -path <lun_path> -state online
+----
 . Altere a configuração de privilégios para admin:
 +
-`set -privilege admin`
-
+[source, cli]
+----
+set -privilege admin
+----
 . No host, remonte seus LUNs.
 . No host, reinicie o acesso aos LUNs.
 

@@ -4,7 +4,7 @@ sidebar: sidebar
 keywords: restore, single lun, snapshot copy 
 summary: Você pode restaurar um único LUN a partir de um instantâneo sem restaurar todo o volume que contém o único LUN. Você pode restaurar o LUN no lugar ou para um novo caminho no volume. A operação restaura apenas o único LUN sem afetar outros arquivos ou LUNs no volume. Você também pode restaurar arquivos com streams. 
 ---
-= Restaure um único LUN a partir de um instantâneo
+= Restaure um único LUN a partir de um instantâneo do ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
@@ -40,38 +40,41 @@ Se o LUN de destino tiver um tipo de SO diferente do LUN de origem, o anfitrião
 . Desmonte o LUN em seu host para que o host não possa acessar o LUN.
 . Desmapear o LUN:
 +
-`lun mapping delete -vserver _vserver_name_ -volume _volume_name_ -lun _lun_name_ -igroup _igroup_name_`
-
-+
-Saiba mais sobre `lun mapping delete` o link:https://docs.netapp.com/us-en/ontap-cli/lun-mapping-delete.html["Referência do comando ONTAP"^]na .
-
+[source, cli]
+----
+lun mapping delete -vserver <SVM_name> -volume <volume_name> -lun <lun_name> -igroup <igroup_name>
+----
 . Determine o instantâneo para o qual deseja restaurar o LUN:
 +
-`volume snapshot show -vserver _vserver_name_ -volume _volume_name_`
-
+[source, cli]
+----
+volume snapshot show -vserver <SVM_name> -volume <volume_name>
+----
 . Crie um instantâneo do LUN antes de restaurar o LUN:
 +
-`volume snapshot create -vserver _vserver_name_ -volume _volume_name_ -snapshot _snapshot_name_`
-
+[source, cli]
+----
+volume snapshot create -vserver <SVM_name> -volume <volume_name> -snapshot <snapshot_name>
+----
 . Restaure o LUN especificado em um volume:
 +
-`volume snapshot restore-file -vserver _vserver_name_ -volume _volume_name_ -snapshot _snapshot_name_ -path _lun_path_`
-
+[source, cli]
+----
+volume snapshot restore-file -vserver <SVM_name> -volume <volume_name> -snapshot <snapshot_name> -path <lun_path>
+----
 . Siga os passos apresentados no ecrã.
 . Se necessário, coloque o LUN online:
 +
-`lun modify -vserver _vserver_name_ -path _lun_path_ -state online`
-
-+
-Saiba mais sobre `lun modify` o link:https://docs.netapp.com/us-en/ontap-cli/lun-modify.html["Referência do comando ONTAP"^]na .
-
+[source, cli]
+----
+lun modify -vserver <SVM_name> -path <lun_path> -state online
+----
 . Se necessário, remapear o LUN:
 +
-`lun mapping create -vserver _vserver_name_ -volume _volume_name_ -lun _lun_name_ -igroup _igroup_name_`
-
-+
-Saiba mais sobre `lun mapping create` o link:https://docs.netapp.com/us-en/ontap-cli/lun-mapping-create.html["Referência do comando ONTAP"^]na .
-
+[souce]
+----
+lun mapping create -vserver <SVM_name> -volume <volume_name> -lun <lun_name> -igroup <igroup_name>
+----
 . Do host, remonte o LUN.
 . A partir do host, reinicie o acesso ao LUN.
 

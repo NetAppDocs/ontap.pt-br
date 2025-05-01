@@ -49,7 +49,7 @@ volume snapshot create -vserver <SVM> -volume <volume> -snapshot <snapshot_name>
 ====
 
 
-== Eliminar manualmente um instantâneo
+== Eliminar instantâneos manualmente
 
 Você pode excluir manualmente um snapshot usando o Gerenciador do sistema ou a CLI do ONTAP.
 
@@ -67,12 +67,69 @@ Você pode excluir manualmente um snapshot usando o Gerenciador do sistema ou a 
 --
 .CLI
 --
-. Eliminar um instantâneo:
+. Use o `volume snapshot show` comando para verificar quais snapshots você deseja excluir.
 +
 [source, cli]
 ----
-volume snapshot delete -vserver <SVM> -volume <volume> -snapshot <snapshot_name>
+volume snapshot show -vserver <SVM> -volume <volume>
 ----
++
+Neste exemplo, o comando mostra os snapshots no volume vol3 no SVM VS3.
+
++
+[listing]
+----
+cluster::> volume snapshot show -vserver vs3 -volume vol3
+
+                                                ---Blocks---
+Vserver  Volume  Snapshot                Size   Total% Used%
+-------- ------- ----------------------- -----  ------ -----
+vs3      vol3
+                 snap1.2013-05-01_0015   100KB   0%    38%
+                 snap1.2013-05-08_0015   76KB   0%    32%
+                 snap2.2013-05-09_0010   76KB   0%    32%
+                 snap2.2013-05-10_0010   76KB   0%    32%
+                 snap3.2013-05-10_1005   72KB   0%    31%
+                 snap3.2013-05-10_1105   72KB   0%    31%
+                 snap3.2013-05-10_1205   72KB   0%    31%
+                 snap3.2013-05-10_1305   72KB   0%    31%
+                 snap3.2013-05-10_1405   72KB   0%    31%
+                 snap3.2013-05-10_1505   72KB   0%    31%
+10 entries were displayed.
+----
+. Eliminar um instantâneo:
++
+[cols="2*"]
+|===
+| Se você quiser... | Digite este comando... 
+
+
+ a| 
+Eliminar um único instantâneo
+ a| 
+[source, cli]
+----
+volume snapshot delete -vserver _svm_name_ -volume _vol_name_ -snapshot _snapshot_name_
+----
+
+
+ a| 
+Eliminar vários instantâneos
+ a| 
+[source, cli]
+----
+volume snapshot delete -vserver _svm_name_ -volume _vol_name_ -snapshot _snapshot_name1_[,_snapshot_name2_,...]
+----
+
+
+ a| 
+Eliminar todos os instantâneos
+ a| 
+[source, cli]
+----
+volume snapshot delete -vserver _svm_name_ -volume _vol_name_ -snapshot *
+----
+|===
 
 
 --
