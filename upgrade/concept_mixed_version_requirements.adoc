@@ -4,65 +4,197 @@ sidebar: sidebar
 keywords: ontap, upgrade, mixed, version, clusters, mixed-version nodes, requirements 
 summary: Um cluster ONTAP de versão mista consiste em nós que executam duas versões principais diferentes do ONTAP, como o ONTAP 9.8 e o 9.12.1. Os clusters ONTAP de versão mista são compatíveis apenas em cenários específicos. 
 ---
-= Verifique se há clusters ONTAP de versão mista antes de uma atualização
+= Verifique a compatibilidade das versões do ONTAP para clusters de versões mistas
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-Um cluster de ONTAP de versão mista consiste em nós que executam duas versões principais diferentes do ONTAP por um tempo limitado. Por exemplo, se um cluster consiste atualmente em nós que executam o ONTAP 9.8 e 9.12.1, o cluster é um cluster de versão mista. Da mesma forma, um cluster no qual os nós estão executando o ONTAP 9.9,1 e o 9.13.1 seria um cluster de versão mista. O NetApp é compatível com clusters ONTAP de versão mista por períodos limitados de tempo e em cenários específicos.
+Em um cluster ONTAP de versão mista, os nós executam duas versões principais diferentes do ONTAP por um curto período de tempo. Por exemplo, um cluster com nós executando o ONTAP 9,8 e 9.12.1 ou o ONTAP 9.9.1 e 9.13.1 é um cluster de versão mista. Os clusters com nós executando diferentes níveis de patch na mesma versão, como o ONTAP 9,9.1P1 e 9,9.1P5, não são clusters de versões mistas.
+
+
+NOTE: Os clusters de versões mistas não são compatíveis com o Cloud Volumes ONTAP.
+
+O NetApp é compatível com clusters ONTAP de versão mista por períodos limitados de tempo e em cenários específicos.
 
 A seguir estão os cenários mais comuns em que um cluster ONTAP estará em um estado de versão mista:
 
 * Atualizações de software do ONTAP em clusters grandes
++
+Pode levar vários dias ou semanas para atualizar todos os nós em um cluster grande. O cluster entra e permanece em um estado de versão mista até que todos os nós sejam atualizados.
+
 * São necessárias atualizações de software do ONTAP quando você planeja adicionar novos nós a um cluster
-
-
-As informações se aplicam a versões do ONTAP que dão suporte a sistemas das plataformas NetApp, como os sistemas AFF A-Series e C-Series, ASA, FAS e C-series. As informações não se aplicam a versões de nuvem do ONTAP (9.x.0), como 9.12.0.
-
-
-
-== Requisitos para clusters ONTAP de versão mista
-
-Se o cluster precisar inserir um estado de versão mista do ONTAP, você precisará estar ciente dos requisitos e restrições importantes.
-
-* Não pode haver mais de duas versões principais diferentes do ONTAP em um cluster em um determinado momento. Por exemplo, ONTAP 9.9,1 e 9.13.1 são suportados, mas ONTAP 9.9,1, 9.12.1 e 9.13.1 não é. Os clusters com nós executados com diferentes níveis de patch P ou D da mesma versão do ONTAP, como ONTAP 9.9.1P1 e 9,9.1P5, não são considerados clusters de versão mista do ONTAP.
-* Embora o cluster esteja em um estado de versão mista, você não deve inserir nenhum comando que altere a operação ou configuração do cluster, exceto aqueles que são necessários para o processo de atualização ou migração de dados. Por exemplo, atividades como (mas não limitadas a) migração de LIF, operações de failover de armazenamento planejadas ou criação ou exclusão de objetos em grande escala não devem ser realizadas até que a atualização e a migração de dados estejam concluídas.
-* Para uma operação ideal do cluster, o período de tempo em que o cluster está em um estado de versão mista deve ser o mais curto possível. O período máximo de tempo que um cluster pode permanecer em um estado de versão mista depende da versão mais baixa do ONTAP no cluster.
 +
-[cols="2*"]
+Você pode adicionar novos nós ao cluster para expandir sua capacidade ou adicionar novos nós como parte do processo de substituição completa dos controladores. Em ambos os casos, talvez seja necessário inserir um estado de versão mista para permitir a migração de seus dados de controladores existentes para os novos nós em seu novo sistema.
+
+
+
+Para uma operação ideal do cluster, o período de tempo em que o cluster está em um estado de versão mista deve ser o mais curto possível. O período máximo de tempo que um cluster é elegível para suporte em um estado de versão mista depende da versão mais baixa do ONTAP no cluster.
+
+[cols="2"]
 |===
-| Se a versão mais baixa do ONTAP em execução no cluster de versões mistas for: | Então você pode permanecer em um estado de versão mista por um máximo de 
+| Se a versão mais baixa do ONTAP em execução no cluster de versão mista for... | Então você pode permanecer em um estado de versão mista por um máximo de... 
 
 
-| ONTAP 9 1.8 ou superior | 90 dias 
+| ONTAP 9 .8 ou posterior | 90 dias 
 
 
-| ONTAP 9 1.7 ou inferior | 7 dias 
+| ONTAP 9,7 ou anterior | 7 dias 
 |===
-* A partir do ONTAP 9.8, a diferença de versão entre os nós originais e os novos nós não pode ser maior que quatro. Por exemplo, um cluster ONTAP de versão mista pode ter nós executando o ONTAP 9.8 e 9.12.1, ou pode ter nós executando o ONTAP 9.9,1 e 9.13.1. No entanto, um cluster ONTAP de versão mista com nós executando o ONTAP 9.8 e 9.13.1 não seria suportado.
-+
-Para obter uma lista completa de clusters de versões mistas compatíveis, link:concept_upgrade_paths.html["caminhos de atualização suportados"]consulte . Todos os caminhos de atualização _Direct_ são suportados para clusters de versões mistas.
+Embora o cluster esteja em um estado de versão mista, você não deve inserir nenhum comando que altere a operação ou configuração do cluster, exceto aqueles que são necessários para o processo de atualização ou migração de dados. Por exemplo, atividades como (mas não limitadas a) migração de LIF, operações de failover de armazenamento planejadas ou criação ou exclusão de objetos em grande escala não devem ser realizadas até que a atualização e a migração de dados estejam concluídas.
 
 
 
+== Clusters de versões mistas compatíveis com atualizações de software ONTAP
+
+Você pode inserir um estado de versão mista com qualquer versão do ONTAP suportada para uma atualização direta a partir da versão atual mais baixa. Por exemplo, se você estiver executando o ONTAP 9.11.1, poderá inserir um estado de versão mista com nós executando o ONTAP 9.15.1. Não é possível inserir um estado de versão mista com nós executando o ONTAP 9.11.1 e o ONTAP 9.16.1. O ONTAP 9.16.1 não é suportado para atualização direta do ONTAP 9.11.1.
+
+Para atualizar para uma versão do ONTAP que não seja suportada para uma atualização direta a partir da versão atual, tem de efetuar uma atualização em vários estágios. Em uma atualização de vários estágios, você primeiro entra em um estado de versão mista com a versão mais alta suportada para uma atualização direta de sua versão atual. Você conclui essa atualização; em seguida, executa uma atualização separada para a versão de destino. Por exemplo, se a versão atual mais baixa for o ONTAP 9.10.1 e você quiser atualizar para o ONTAP 9.16.1, primeiro insira um estado de versão mista para atualizar todos os nós para o ONTAP 9.14.1; em seguida, execute uma atualização separada do ONTAP 9.14.1 para o ONTAP 9.16.1. Saiba mais sobre link:concept_upgrade_paths.html#types-of-upgrade-paths["atualizações em vários estágios"] e link:concept_upgrade_paths.html#supported-upgrade-paths["caminhos de atualização suportados"].
+
+Um cluster de versão mista pode conter apenas duas versões principais do ONTAP. Por exemplo, você pode ter um cluster de versão mista com nós executando o ONTAP 9.13.1 e 9.15.1 ou com nós executando o ONTAP 9.13.1 e 9.16.1. Você não pode ter um cluster de versão mista com nós executando o ONTAP 9.13.1, 9.15.1 e 9.16.1.
+
+[cols="25,25,50"]
+|===
+| Se a sua versão atual do ONTAP for... | E seu lançamento de ONTAP alvo é... | O estado de versão mista para atualização é... 
 
 
-== Atualizando a versão do ONTAP de um cluster grande
+| 9.15.1 | 9.16.1 | Suportado 
 
-Um cenário para inserir um estado de cluster de versão mista envolve a atualização da versão ONTAP de um cluster com vários nós para aproveitar os recursos disponíveis em versões posteriores do ONTAP 9. Quando você precisar atualizar a versão do ONTAP de um cluster maior, você entrará em um estado de cluster de versão mista por um período de tempo enquanto atualiza cada nó no cluster.
 
+.2+| 9.14.1 | 9.16.1 | Suportado 
+
+
+| 9.15.1 | Suportado 
+
+
+.3+| 9.13.1 | 9.16.1 | Suportado 
+
+
+| 9.15.1 | Suportado 
+
+
+| 9.14.1 | Suportado 
+
+
+.4+| 9.12.1 | 9.16.1 | Suportado 
+
+
+| 9.15.1 | Suportado 
+
+
+| 9.14.1 | Suportado 
+
+
+| 9.13.1 | Suportado 
+
+
+.5+| 9.11.1 | 9.16.1  a| 
+Não suportado
+
+
+
+| 9.15.1 | Suportado 
+
+
+| 9.14.1 | Suportado 
+
+
+| 9.13.1 | Suportado 
+
+
+| 9.12.1 | Suportado 
+
+
+.6+| 9.10.1 | 9.16.1  a| 
+Não suportado
+
+
+
+| 9.15.1  a| 
+Não suportado
+
+
+
+| 9.14.1 | Suportado 
+
+
+| 9.13.1 | Suportado 
+
+
+| 9.12.1 | Suportado 
+
+
+| 9.11.1 | Suportado 
+
+
+.7+| 9.9.1 | 9.16.1  a| 
+Não suportado
+
+
+
+| 9.15.1  a| 
+Não suportado
+
+
+
+| 9.14.1  a| 
+Não suportado
+
+
+
+| 9.13.1 | Suportado 
+
+
+| 9.12.1 | Suportado 
+
+
+| 9.11.1 | Suportado 
+
+
+| 9.10.1 | Suportado 
+
+
+.8+| 9,8 | 9.16.1  a| 
+Não suportado
+
+
+
+| 9.15.1  a| 
+Não suportado
+
+
+
+| 9.14.1  a| 
+Não suportado
+
+
+
+| 9.13.1  a| 
+Não suportado
+
+
+
+| 9.12.1 | Suportado 
+
+
+| 9.11.1 | Suportado 
+
+
+| 9.10.1  a| 
+Suportado
+
+
+
+| 9.9.1 | Suportado 
+|===
 
 
 == Adição de novos nós a um cluster do ONTAP
 
-Outro cenário para inserir um estado de cluster de versão mista envolve a adição de novos nós ao cluster. Você pode adicionar novos nós ao cluster para expandir sua capacidade ou adicionar novos nós como parte do processo de substituição completa dos controladores. Em ambos os casos, você precisa habilitar a migração de seus dados de controladores existentes para os novos nós em seu novo sistema.
+Se você pretende adicionar novos nós ao cluster e esses nós exigirem uma versão mínima do ONTAP posterior à versão atualmente em execução no cluster, será necessário realizar atualizações de software com suporte nos nós existentes no cluster antes de adicionar os novos nós. Idealmente, você faria upgrade de todos os nós existentes para a versão mínima do ONTAP exigida pelos nós que pretende adicionar ao cluster. No entanto, se isso não for possível porque alguns dos seus nós existentes não suportam a versão posterior do ONTAP, você precisará inserir um estado de versão mista por um período limitado de tempo como parte do processo de atualização.
 
-Se você pretende adicionar novos nós ao cluster e esses nós exigirem uma versão mínima do ONTAP posterior à versão atualmente em execução no cluster, será necessário realizar atualizações de software com suporte nos nós existentes no cluster antes de adicionar os novos nós.
-
-Idealmente, você faria upgrade de todos os nós existentes para a versão mínima do ONTAP exigida pelos nós que pretende adicionar ao cluster. No entanto, se isso não for possível porque alguns dos seus nós existentes não suportam a versão posterior do ONTAP, você precisará inserir um estado de versão mista por um período limitado de tempo como parte do processo de atualização. Se você tiver nós que não suportem a versão mínima do ONTAP exigida pelos novos controladores, faça o seguinte:
-
+.Passos
 . link:concept_upgrade_methods.html["Atualização"] Os nós que não oferecem suporte à versão mínima do ONTAP exigida pelos novos controladores para a versão máxima do ONTAP que eles oferecem suporte.
 +
 Por exemplo, se você tiver um FAS8080 executando o ONTAP 9.5 e estiver adicionando uma nova plataforma C-Series executando o ONTAP 9.12,1, você deve atualizar seu FAS8080 para o ONTAP 9.8 (que é a versão máxima do ONTAP que ele suporta).
