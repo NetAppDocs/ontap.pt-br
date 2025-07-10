@@ -105,14 +105,14 @@ Não use o modo LDAP fast-bind para autenticação ao criar URLs pré-assinados.
 
 [listing]
 ----
-$curl -siku <user>:<user_password> -X POST https://<LIF_IP_Address>/api/protocols/s3/services/<SVM_UUID>/users -d {"comment":"<S3_user_name>", "name":<user>,"<key_time_to_live>":"PT6H3M"}'
+$curl -siku <user>:<user_password> -X POST https://<LIF_IP_Address>/api/protocols/s3/services/<SVM_UUID>/users -d {"comment":"<S3_user_name>", "name":<user>,"key_time_to_live":"PT6H3M"}
 ----
 
 NOTE: Direcione a API para o LIF de gerenciamento de cluster, não para o LIF de dados da SVM. Se você quiser permitir que os usuários gerem suas próprias chaves, você deve adicionar permissões HTTP à sua função para usar curl. Essa permissão é além das permissões da API S3.
 
 
 
-== Configurar o acesso S3 para servidores ative Directory ou CIFS
+== Configurar acesso S3 para servidores Active Directory ou SMB
 
 Se o nasgroup especificado na instrução bucket policy ou os usuários que fazem parte do nasgroup não tiverem UID e GID definidos, as pesquisas falharão quando esses atributos não forem encontrados. O ative Directory usa SID, não UID. Se as entradas SID não puderem ser mapeadas para UID, os dados necessários precisam ser trazidos para o ONTAP.
 
@@ -120,7 +120,7 @@ Para fazer isso, use link:../authentication/enable-ad-users-groups-access-cluste
 
 Como alternativa, use link:../authentication/enable-ad-users-groups-access-cluster-svm-task.html["svm cifs criar"] para criar um servidor SMB em um domínio do ative Directory.
 
-Para evitar falhas de pesquisa, o NetApp recomenda o uso de domínios confiáveis para autorização de recursos no formato UPN: `nasgroup/group@trusted_domain.com`
+Se você tiver nomes de domínio diferentes para servidores de nomes e repositórios de objetos, poderá enfrentar falhas de pesquisa. Para evitar falhas de pesquisa, a NetApp recomenda o uso de domínios confiáveis ​​para autorização de recursos no formato UPN:  `nasgroup/group@trusted_domain.com` Domínios confiáveis ​​são aqueles que foram adicionados à lista de domínios confiáveis ​​do servidor SMB. Saiba como link:../smb-admin/add-remove-replace-trusted-domains-preferred-lists-task.html["adicionar, remover e modificar domínios confiáveis preferenciais"] na lista de servidores SMB.
 
 
 
@@ -130,7 +130,7 @@ Use o `s3/services/<svm_uuid>/users` endpoint com usuários especificados no for
 
 [listing]
 ----
-$curl -siku FQDN\\user:<user_password> -X POST https://<LIF_IP_Address>/api/protocols/s3/services/<SVM_UUID>/users -d {"comment":"<S3_user_name>", "name":<user@fqdn>,"<key_time_to_live>":"PT6H3M"}'
+$curl -siku FQDN\\user:<user_password> -X POST https://<LIF_IP_Address>/api/protocols/s3/services/<SVM_UUID>/users -d {"comment":"<S3_user_name>", "name":<user@fqdn>,"key_time_to_live":"PT6H3M"}
 ----
 
 NOTE: Direcione a API para o LIF de gerenciamento de cluster, não para o LIF de dados da SVM. Se você quiser permitir que os usuários gerem suas próprias chaves, você deve adicionar permissões HTTP à sua função para usar curl. Essa permissão é além das permissões da API S3.
@@ -143,7 +143,7 @@ Esta ação é possível quando o LDAP está desativado ou quando os utilizadore
 
 [listing]
 ----
-$curl -siku FQDN\\user:<user_password> -X POST https://<LIF_IP_Address>/api/protocols/s3/services/<SVM_UUID>/users -d {"comment":"<S3_user_name>", "name":<user[@fqdn]>,"<key_time_to_live>":"PT6H3M"}'
+$curl -siku FQDN\\user:<user_password> -X POST https://<LIF_IP_Address>/api/protocols/s3/services/<SVM_UUID>/users -d {"comment":"<S3_user_name>", "name":<user[@fqdn]>,"key_time_to_live":"PT6H3M"}
 ----
 
 NOTE: Direcione a API para o LIF de gerenciamento de cluster, não para o LIF de dados da SVM. Se você quiser permitir que os usuários gerem suas próprias chaves, você deve adicionar permissões HTTP à sua função para usar curl. Essa permissão é além das permissões da API S3. Você só precisa adicionar o valor de domínio opcional a um nome de usuário se não houver domínios confiáveis.
