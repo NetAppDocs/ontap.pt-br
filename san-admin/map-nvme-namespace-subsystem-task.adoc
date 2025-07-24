@@ -13,6 +13,8 @@ summary: É necessário mapear um namespace para um subsistema ao usar o NVMe.
 [role="lead"]
 O mapeamento de um namespace NVMe para um subsistema permite acesso aos dados do seu host. É possível mapear um namespace NVMe para um subsistema quando você provisiona o storage ou pode fazê-lo depois que o storage tiver sido provisionado.
 
+A partir do ONTAP 9.17.1, se você estiver usando uma configuração de sincronização ativa do SnapMirror , poderá adicionar uma SVM a um host como um vserver proximal enquanto adiciona o host a um subsistema NVMe. Caminhos otimizados para ativos para um namespace em um subsistema NVMe são publicados em um host apenas a partir da SVM configurada como vserver proximal.
+
 A partir do ONTAP 9.14,1, você pode priorizar a alocação de recursos para hosts específicos. Por padrão, quando um host é adicionado ao subsistema NVMe, ele recebe prioridade regular. Você pode usar a interface de linha de comando (CLI) do ONTAP para alterar manualmente a prioridade padrão de regular para alta. Os hosts atribuídos a uma alta prioridade são alocadas contagens de filas de e/S maiores e profundidades de filas.
 
 
@@ -20,6 +22,10 @@ NOTE: Se você quiser dar uma alta prioridade a um host que foi adicionado a um 
 
 .Antes de começar
 Seu namespace e subsistema já devem ser criados. Se precisar criar um namespace e um subsistema, link:create-nvme-namespace-subsystem-task.html["Provisionamento de storage NVMe"]consulte .
+
+
+
+== Mapear um namespace NVMe
 
 .Passos
 . Obtenha o NQN do host.
@@ -31,6 +37,9 @@ vserver nvme subsystem host add -vserver <SVM_name> -subsystem <subsystem_name> 
 ----
 +
 Se você quiser alterar a prioridade padrão do host de regular para alta, use a `-priority high` opção. Esta opção está disponível a partir de ONTAP 9.14,1. Saiba mais sobre `vserver nvme subsystem host add` o link:https://docs.netapp.com/us-en/ontap-cli/vserver-nvme-subsystem-host-add.html["Referência do comando ONTAP"^]na .
+
++
+Se você quiser adicionar um SVM como um  `proximal-vserver` para um host ao adicionar o host a um subsistema NVMe em uma configuração de sincronização ativa do SnapMirror , você pode usar o  `-proximal-vservers` opção. Esta opção está disponível a partir do ONTAP 9.17.1. Você pode adicionar a SVM de origem ou de destino, ou ambas. A SVM na qual você está executando este comando é a padrão.
 
 . Mapeie o namespace para o subsistema:
 +

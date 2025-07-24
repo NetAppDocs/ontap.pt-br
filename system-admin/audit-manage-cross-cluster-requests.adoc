@@ -1,0 +1,63 @@
+---
+permalink: system-admin/audit-manage-cross-cluster-requests.html 
+sidebar: sidebar 
+keywords: audit, peered, cross cluster, log, cluster, get request 
+summary: Habilite a auditoria entre clusters para registrar operações iniciadas a partir de um cluster peering e melhorar o rastreamento de operações entre clusters. 
+---
+= Habilitar auditorias entre clusters do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.17.1, e com o ONTAP 9.16.1 P4 e versões posteriores do patch 9.16.1, você pode habilitar a auditoria entre clusters no ONTAP para registrar operações iniciadas a partir de um cluster peering. Essa auditoria remota é particularmente valiosa em ambientes onde vários clusters ONTAP interagem, fornecendo rastreabilidade e responsabilização por ações remotas.
+
+A auditoria entre clusters pode distinguir entre operações GET (leitura) ou SET (criação/modificação/remoção) iniciadas pelo usuário. Por padrão, apenas operações SET iniciadas pelo usuário são auditadas nos clusters de destino. Qualquer solicitação que leia dados, como uma GET ou  `show` comando na CLI, não é auditado por padrão, independentemente de a solicitação ser entre clusters.
+
+.Antes de começar
+* Você deve ter  `advanced` permissões de nível
+* O cluster deve ser pareado com outro cluster, e ambos os clusters devem estar executando o ONTAP 9.16.1 P4 ou posterior.
++
+
+NOTE: Em ambientes onde alguns, mas não todos os nós, são atualizados para o ONTAP 9.16.1 P4 ou posterior, o registro de auditoria ocorre apenas nos nós que executam a versão atualizada. Recomenda-se atualizar todos os nós para uma versão compatível para garantir um comportamento de auditoria consistente.
+
+
+
+
+
+== Habilitar ou desabilitar auditoria entre clusters
+
+.Passos
+. Habilite (ou desabilite) a auditoria entre clusters no cluster definindo o  `cluster-peer` parâmetro para  `on` ou  `off` :
++
+[source, cli]
+----
+security audit modify -cluster-peer {on|off}
+----
+. Confirme se a configuração do peer do cluster está habilitada ou desabilitada verificando o estado de auditoria atual:
++
+[listing]
+----
+security audit show
+----
++
+Resposta:
+
++
+[listing]
+----
+    Audit Setting State
+    ------------- -----
+         CLI GET: off
+        HTTP GET: off
+      ONTAPI GET: off
+    Cluster Peer: on
+----
+
+
+
+
+== Efeitos da ativação da auditoria GET
+
+A partir do ONTAP 9.17.1, se você  https://docs.netapp.com/us-en/ontap-cli/security-audit-modify.html["habilitar auditoria CLI, HTTP, ONTAPI GET"^] Em um cluster emparelhado, você também habilita a auditoria de solicitações GET iniciadas pelo usuário entre clusters. Em versões anteriores do ONTAP , a auditoria GET se aplicava apenas a solicitações em um cluster local. Com o ONTAP 9.17.1, se você habilitar a auditoria GET com o  `cluster-peer` opção definida para  `on` , tanto as solicitações de cluster local quanto as de cluster cruzado serão auditadas.

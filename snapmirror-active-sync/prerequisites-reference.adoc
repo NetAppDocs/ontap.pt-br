@@ -4,7 +4,7 @@ permalink: snapmirror-active-sync/prerequisites-reference.html
 keywords: SM-BC, SMBC, prerequisites, planning, software, hardware, licensing, protocols, network, snapmirror active sync 
 summary: Existem vários pré-requisitos que você deve considerar como parte do Planejamento de uma implantação de solução de sincronização ativa do SnapMirror. 
 ---
-= Pré-requisitos para a sincronização ativa do SnapMirror no ONTAP
+= Pré-requisitos para sincronização ativa do ONTAP SnapMirror
 :hardbreaks:
 :allow-uri-read: 
 :nofooter: 
@@ -26,7 +26,7 @@ A tabela a seguir descreve as configurações de cluster do NetApp compatíveis.
 |===
 
 
-| Tipo de cluster | Modelos suportados | Recursos suportados | Nós com suporte 
+| Tipo de cluster | Modelos suportados | Recursos suportados | Nós de cluster máximos suportados 
 
 
  a| 
@@ -36,34 +36,35 @@ Série a, série C.
  a| 
 Duplex de failover automatizado (ativo/ativo simétrico), failover automatizado (ativo/ativo assimétrico)
  a| 
-Cluster de dois nós ou quatro nós 1
+* 2 (ONTAP 9.9.1 ou posterior)
+* 4 (ONTAP 9.16.1 com configurações AA simétricas)
+
 
 
 
  a| 
-Todos os hotéis em San Array (ASA)
+ASA
  a| 
 Série a, série C.
  a| 
 Duplex de failover automatizado (Symmetric AA), failover automatizado (Asymmetric AA)
  a| 
-Cluster de dois nós ou quatro nós 1
+* 2 (ONTAP 9.9.1 ou posterior
+* 4 (ONTAP 9.16.1 com configurações AA simétricas)
+
 
 
 
  a| 
 ASA r2
  a| 
--
+Tudo
  a| 
 Duplex de failover automatizado (Symmetric AA)
  a| 
-Clusters de dois nós de alta disponibilidade (HA)
+2
 
 |===
-. O suporte para clusters de quatro nós está disponível a partir do ONTAP 9.16.1 e requer AA simétrico.
-
-
 A tabela abaixo descreve a capacidade de replicação entre tipos de cluster.
 
 [cols="33,33,33"]
@@ -92,16 +93,22 @@ Não
 
 
  a| 
-ASA 1
+ASA
  a| 
 ASA r2
  a| 
 Não
 
+
+
+ a| 
+ASA r2
+ a| 
+ASA r2
+ a| 
+Sim
+
 |===
-. Para obter mais informações sobre os tipos de cluster compatíveis com o ASA, link:../asa/support-limitations.html["Limites de configuração e suporte do All-Flash SAN Array"]consulte .
-
-
 
 
 == Software
@@ -116,6 +123,20 @@ Não
 
 
 | ONTAP versão mediadora | Versões Linux suportadas 
+
+
+ a| 
+1,10
+ a| 
+* Red Hat Enterprise Linux
++
+** Compatível: 9,5 ^1^
+** Recomendado: 8.10, 9.4, 9.6 e 10
+
+
+* Rocky Linux 8.10, 9.6 e 10
+
+
 
 
  a| 
@@ -235,10 +256,33 @@ NOTE: Se os sistemas de storage da ONTAP tiverem sido adquiridos antes de junho 
 
 == Protocolos compatíveis
 
-* Somente protocolos SAN são compatíveis (não NFS/SMB).
-* Apenas são suportados protocolos Fibre Channel e iSCSI.
-* O espaço IPspace padrão é exigido pela sincronização ativa do SnapMirror para relacionamentos de pares de cluster. IPspace personalizado não é suportado.
+A sincronização ativa do SnapMirror suporta protocolos SAN.
 
+* Os protocolos FC e iSCSI são suportados a partir do ONTAP 9.9.1.
+* O protocolo NVMe é compatível com cargas de trabalho VMware a partir do ONTAP 9.17.1.
++
+
+NOTE: NVMe/TCP com VMware depende da resolução do VMware Bug ID: TR1049746.
+
++
+A sincronização ativa do SnapMirror não oferece suporte ao seguinte com o protocolo NVMe:
+
++
+** Configurações ativas/ativas simétricas de 4 nós
+** Mudanças no tamanho do grupo de consistência
++
+Não é possível expandir ou reduzir um grupo de consistência ao usar o protocolo NVMe com sincronização ativa do SnapMirror .
+
+** A coexistência de LUNs e namespaces no mesmo grupo de consistência não é suportada.
+
+
+
+
+
+
+== IPspace
+
+O espaço IPspace padrão é exigido pela sincronização ativa do SnapMirror para relacionamentos de pares de cluster. IPspace personalizado não é suportado.
 
 
 

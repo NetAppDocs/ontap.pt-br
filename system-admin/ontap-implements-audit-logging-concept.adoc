@@ -11,32 +11,40 @@ summary: As atividades de gerenciamento registradas no log de auditoria são inc
 
 
 [role="lead"]
-As atividades de gerenciamento registradas no log de auditoria são incluídas nos relatórios padrão do AutoSupport e certas atividades de Registro são incluídas nas mensagens do EMS. Você também pode encaminhar o log de auditoria para destinos especificados e exibir arquivos de log de auditoria usando a CLI ou um navegador da Web.
+As atividades de gerenciamento registradas no log de auditoria são incluídas nos relatórios padrão do AutoSupport , e determinadas atividades de registro são incluídas nas mensagens do EMS. Você também pode encaminhar o log de auditoria para destinos especificados e exibir os arquivos de log de auditoria usando a CLI do ONTAP ou um navegador da web.
 
 A partir do ONTAP 9.11,1, você pode exibir o conteúdo do log de auditoria usando o Gerenciador do sistema.
 
 A partir do ONTAP 9.12,1, o ONTAP fornece alertas de adulteração para logs de auditoria. O ONTAP executa um trabalho de segundo plano diário para verificar se há adulteração de arquivos audit.log e envia um alerta EMS se ele encontrar arquivos de log que foram alterados ou adulterados.
 
-O ONTAP Registra as atividades de gerenciamento que são executadas no cluster, por exemplo, qual solicitação foi emitida, o usuário que acionou a solicitação, o método de acesso do usuário e a hora da solicitação.
+Começando com o ONTAP 9.17.1, e com o ONTAP 9.16.1 P4 e versões posteriores do patch 9.16.1, link:audit-manage-cross-cluster-requests.html["atividades de gerenciamento remoto iniciadas a partir de um cluster peering usando operações entre clusters também podem ser registradas"] . Essas atividades incluem operações internas e conduzidas pelo usuário que se originam de outro cluster.
 
-As atividades de gestão podem ser um dos seguintes tipos:
+.Atividades de gerenciamento registradas no ONTAP
+O ONTAP registra atividades de gerenciamento executadas em um cluster, como qual solicitação foi emitida, o usuário que acionou a solicitação, o método de acesso do usuário e a hora da solicitação.
 
-* Definir solicitações, que normalmente se aplicam a comandos ou operações que não sejam exibidas:
+As atividades de gestão podem ser de um dos seguintes tipos:
+
+* *Solicitações SET*:
 +
+** Essas solicitações geralmente se aplicam a comandos ou operações sem exibição.
 ** Essas solicitações são emitidas quando você executa um `create` comando , `modify`, ou `delete`, por exemplo.
-** As solicitações de conjunto são registradas por padrão.
+** As solicitações SET são registradas por padrão.
 
 
-* OBTENHA solicitações, que recuperam informações e exibem na interface de gerenciamento:
+* *Solicitações GET*:
 +
+** Essas solicitações recuperam informações e as exibem na interface de gerenciamento.
 ** Essas solicitações são emitidas quando você executa um `show` comando, por exemplo.
-** As SOLICITAÇÕES GET não são registradas por padrão, mas você pode controlar se as solicitações GET enviadas da CLI do ONTAP (`-cliget`), da API do ONTAP (`-ontapiget`) ou da API REST (`-httpget`) estão registradas no arquivo.
+** As solicitações GET não são registradas por padrão, mas você pode controlar se as solicitações GET enviadas do ONTAP CLI (`-cliget` ), da API ONTAP (`-ontapiget` ), ou da API REST do ONTAP (`-httpget` ) são registrados no arquivo.
 
 
 
 
-O ONTAP Registra atividades de gerenciamento `/mroot/etc/log/mlog/audit.log` no arquivo de um nó. Comandos dos três shells para comandos CLI - o clustershell, o nodeshell e o systemshell não interativo (comandos do systemshell interativo não são registrados) - assim como os comandos API são registrados aqui. Os logs de auditoria incluem carimbos de data/hora para mostrar se todos os nós de um cluster estão sincronizados com a hora.
+.Registro e rotação de log de auditoria
+Atividades de gerenciamento de registros do ONTAP no  `/mroot/etc/log/mlog/audit.log` arquivo de um nó. Comandos dos três shells para comandos CLI: o clustershell, o nodeshell e o systemshell não interativo, bem como comandos de API, são registrados aqui. Comandos interativos do systemshell não são registrados. Os logs de auditoria incluem registros de data e hora para mostrar se todos os nós em um cluster estão sincronizados.
 
 O `audit.log` arquivo é enviado pela ferramenta AutoSupport para os destinatários especificados. Você também pode encaminhar o conteúdo de forma segura para destinos externos especificados por você; por exemplo, um Splunk ou um servidor syslog.
 
 O `audit.log` arquivo é girado diariamente. A rotação também ocorre quando atinge 100 MB de tamanho, e as 48 cópias anteriores são preservadas (com um total máximo de 49 arquivos). Quando o arquivo de auditoria executa sua rotação diária, nenhuma mensagem EMS é gerada. Se o arquivo de auditoria girar porque seu limite de tamanho de arquivo é excedido, uma mensagem EMS é gerada.
+
+Ao habilitar a auditoria GET, considere configurar o encaminhamento de logs para evitar perda de dados devido à rotação rápida de logs. Para obter mais informações, consulte o seguinte artigo da Base de Conhecimento: https://kb.netapp.com/on-prem/ontap/Ontap_OS/OS-KBs/Enabling_audit-log_forwarding["Habilitando o encaminhamento do log de auditoria"^] .

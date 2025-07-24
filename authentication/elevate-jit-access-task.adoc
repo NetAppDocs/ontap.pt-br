@@ -1,0 +1,56 @@
+---
+permalink: authentication/elevate-jit-access-task.html 
+sidebar: sidebar 
+keywords: just in time, just-in-time, privilege elevation, password, security, authentication, JIT, elevation 
+summary: Configure a elevação de privilégios just-in-time para permitir que usuários do ONTAP elevem temporariamente seus privilégios para executar determinadas tarefas. 
+---
+= Acessar elevação de privilégio JIT no ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.17.1, os administradores de cluster podem link:configure-jit-elevation-task.html["configurar elevação de privilégio just-in-time (JIT)"] para permitir que usuários do ONTAP elevem temporariamente seus privilégios para executar determinadas tarefas. Quando o JIT é configurado para um usuário, ele pode elevar temporariamente seu privilégio para uma função que tenha as permissões necessárias para executar uma tarefa. Após o término da sessão, o usuário retorna ao seu nível de acesso original.
+
+Os administradores de cluster podem configurar a duração do acesso de um usuário à elevação JIT. Por exemplo, os administradores de cluster podem configurar o acesso do usuário à elevação JIT com um limite de 30 minutos por sessão (o _período de validade da sessão_) por um período de 30 dias (o _período de validade JIT_). Durante o período de 30 dias, o usuário pode elevar seu privilégio quantas vezes forem necessárias, mas cada sessão é limitada a 30 minutos.
+
+.Sobre esta tarefa
+* A elevação de privilégios JIT está disponível apenas para usuários que acessam o ONTAP via SSH. A elevação de privilégios está disponível apenas na sessão SSH atual, mas você pode elevar privilégios em quantas sessões SSH simultâneas forem necessárias.
+* A elevação de privilégios JIT só é suportada por usuários que usam autenticação por senha, nsswitch ou domínio para efetuar login. A autenticação multifator (MFA) não é suportada para elevação de privilégios JIT.
+* A sessão JIT de um usuário será encerrada se a sessão configurada ou o período de validade do JIT expirar, ou se um administrador de cluster revogar o acesso JIT para o usuário.
+
+
+.Antes de começar
+* Para acessar a elevação de privilégios JIT, um administrador de cluster precisa configurar o acesso JIT para sua conta. O administrador de cluster determina a função para a qual você pode elevar seus privilégios e a duração do acesso a esses privilégios.
+
+
+.Passos
+. Eleve temporariamente seus privilégios para a função configurada:
++
+[source, cli]
+----
+security jit-privilege elevate
+----
++
+Após inserir este comando, você será solicitado a inserir sua senha de login. Se o acesso JIT estiver configurado para sua conta, você receberá acesso elevado durante a duração da sessão configurada. Após o término da sessão, você retornará ao seu nível de acesso original. Você pode elevar seus privilégios quantas vezes forem necessárias dentro do período de validade do JIT configurado.
+
+. Veja o tempo restante da sua sessão JIT:
++
+[source, cli]
+----
+security jit-privilege show-remaining-time
+----
++
+Se você estiver em uma sessão JIT, este comando exibirá o tempo restante.
+
+. Se necessário, encerre sua sessão JIT mais cedo:
++
+[source, cli]
+----
+security jit-privilege reset
+----
++
+Se você estiver em uma sessão JIT, este comando encerrará a sessão JIT e restaurará seu nível de acesso original.
+
+

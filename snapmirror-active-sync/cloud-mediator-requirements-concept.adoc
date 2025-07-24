@@ -1,0 +1,122 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/cloud-mediator-requirements-concept.html 
+keywords: SM-BC, SMBC, ONTAP, Cloud Mediator, prerequisites, requirements, configuration, firewall, latency, proxy, certificate, snapmirror active sync 
+summary: Você deve atender a certos requisitos antes de instalar o ONTAP Cloud Mediator. 
+---
+= Preparar para configurar o ONTAP Cloud Mediator
+:hardbreaks:
+:allow-uri-read: 
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Antes de você link:cloud-mediator-config-task.html["configurar o ONTAP Cloud Mediator"] , você deve garantir que os pré-requisitos sejam atendidos.
+
+
+
+== Requisitos de firewall
+
+A configuração do firewall no controlador de domínio deve permitir o tráfego HTTPS  `api.bluexp.netapp.com` de ambos os clusters.
+
+
+
+== Requisitos do servidor proxy
+
+Se você usar servidores proxy para sincronização ativa do SnapMirror , certifique-se de que os servidores proxy estejam criados e que você tenha as seguintes informações do servidor proxy:
+
+* IP do proxy HTTPS
+* Porta
+* Nome de utilizador
+* Palavra-passe
+
+
+
+
+== Latência
+
+A latência de ping recomendada entre o servidor de nuvem BlueXP e os pares do cluster de sincronização ativa do SnapMirror é inferior a 200 ms.
+
+
+
+== Certificados de CA raiz
+
+.Verifique o cluster em busca de certificados
+O ONTAP vem com certificados CA raiz conhecidos pré-instalados, portanto, na maioria dos casos, você não precisa instalar o certificado CA raiz do servidor BlueXP . Antes de iniciar a configuração do ONTAP Cloud Mediator, você pode verificar o cluster para verificar se os certificados existem:
+
+Exemplo:
+
+[listing]
+----
+C1_cluster% openssl s_client -showcerts -connect api.bluexp.netapp.com:443|egrep "s:|i:"
+depth=2 C = US, O = DigiCert Inc, OU = www.digicert.com, CN = DigiCert Global Root G2
+verify return:1
+depth=1 C = US, O = Microsoft Corporation, CN = Microsoft Azure RSA TLS Issuing CA 04
+verify return:1
+depth=0 C = US, ST = WA, L = Redmond, O = Microsoft Corporation, CN = *.azureedge.net
+verify return:1
+ 0 s:/C=US/ST=WA/L=Redmond/O=Microsoft Corporation/CN=*.azureedge.net
+   i:/C=US/O=Microsoft Corporation/CN=Microsoft Azure RSA TLS Issuing CA 04
+ 1 s:/C=US/O=Microsoft Corporation/CN=Microsoft Azure RSA TLS Issuing CA 04
+   i:/C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root G2
+ 2 s:/C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root G2
+   i:/C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root G2 <====
+
+C1_cluster::> security certificate show -common-name DigiCert*
+Vserver    Serial Number   Certificate Name                       Type
+---------- --------------- -------------------------------------- ------------
+C1_cluster 0CE7E0EXXXXX46FE8FE560FC1BFXXXXX DigiCertAssuredIDRootCA server-ca
+    Certificate Authority: DigiCert Assured ID Root CA
+          Expiration Date: Mon Nov 10 05:30:00 2031
+
+C1_cluster 0B931C3XXXXX67EA6723BFC3AF9XXXXX DigiCertAssuredIDRootG2 server-ca
+    Certificate Authority: DigiCert Assured ID Root G2
+          Expiration Date: Fri Jan 15 17:30:00 2038
+
+C1_cluster 0BA15AFXXXXXA0B54944AFCD24AXXXXX DigiCertAssuredIDRootG3 server-ca
+    Certificate Authority: DigiCert Assured ID Root G3
+          Expiration Date: Fri Jan 15 17:30:00 2038
+
+C1_cluster 083BE05XXXXX46B1A1756AC9599XXXXX DigiCertGlobalRootCA server-ca
+    Certificate Authority: DigiCert Global Root CA
+          Expiration Date: Mon Nov 10 05:30:00 2031
+
+C1_cluster 033AF1EXXXXXA9A0BB2864B11D0XXXXX DigiCertGlobalRootG2 server-ca
+    Certificate Authority: DigiCert Global Root G2
+          Expiration Date: Fri Jan 15 17:30:00 2038
+
+C1_cluster 055556BXXXXXA43535C3A40FD5AXXXXX DigiCertGlobalRootG3 server-ca
+    Certificate Authority: DigiCert Global Root G3
+          Expiration Date: Fri Jan 15 17:30:00 2038
+
+C1_cluster 02AC5C2XXXXX409B8F0B79F2AE4XXXXX DigiCertHighAssuranceEVRootCA server-ca
+    Certificate Authority: DigiCert High Assurance EV Root CA
+          Expiration Date: Mon Nov 10 05:30:00 2031
+
+C1_cluster 059B1B5XXXXX2132E23907BDA77XXXXX DigiCertTrustedRootG4 server-ca
+    Certificate Authority: DigiCert Trusted Root G4
+          Expiration Date: Fri Jan 15 17:30:00 2038
+----
+.Verifique o servidor proxy para certificados instalados
+Se você estiver usando um proxy para se conectar ao serviço ONTAP Cloud Mediator no BlueXP, certifique-se de que os certificados de CA raiz do servidor proxy estejam instalados no ONTAP:
+
+Exemplo:
+
+[listing]
+----
+C1_cluster% openssl s_client -showcerts -proxy <ip:port> -connect api.bluexp.netapp.com:443 |egrep "s:|i:"
+----
+.Baixe o certificado da CA:
+Se necessário, você pode baixar os certificados da CA raiz do site da autoridade de certificação e instalá-los nos clusters.
+
+Exemplo:
+
+[listing]
+----
+C1_cluster::> security certificate install -type server-ca -vserver C1_cluster
+
+C2_cluster::> security certificate install -type server-ca -vserver C2_cluster
+----

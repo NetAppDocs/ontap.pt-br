@@ -4,14 +4,14 @@ sidebar: sidebar
 keywords: s3, svm, bucket, object, server, versioning, protocol, filesystems, nas, directories 
 summary: Um buckets do nas S3 é um mapeamento entre um nome de bucket do S3 e um caminho nas. 
 ---
-= Crie um bucket do nas S3
+= Criar um bucket ONTAP S3 NAS
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-Um buckets do nas S3 é um mapeamento entre um nome de bucket do S3 e um caminho nas. Os buckets nas do S3 permitem que você forneça acesso S3 a qualquer parte do namespace SVM com volumes e estrutura de diretórios existentes.
+Um bucket NAS S3 é um mapeamento entre um nome de bucket S3 e um caminho NAS. Os buckets NAS S3 permitem que você conceda acesso S3 a qualquer parte de um namespace SVM com volumes e estrutura de diretórios existentes.
 
 .Antes de começar
 * Um servidor de objetos S3 é configurado em uma SVM que contém dados nas.
@@ -30,14 +30,19 @@ Você também pode definir políticas de bucket que permitem ou não permitem o 
 
 Por exemplo, você pode querer políticas de bucket separadas que concedem acesso somente leitura a um grande grupo de usuários e outra que permita que um grupo limitado execute operações em um subconjunto desses dados.
 
-Como os "buckets" do nas S3 são mapeamentos e não buckets do S3, as seguintes propriedades dos buckets do S3 padrão não se aplicam aos buckets do nas S3.
+A partir do ONTAP 9.17.1, você pode vincular diretamente um bucket S3 NAS a um volume, em vez de vincular ao caminho de junção. Por padrão, um bucket S3 em um volume NAS é associado a um caminho de junção, que pode ser alterado por um administrador do ONTAP a qualquer momento. Essas alterações podem interromper as operações do bucket S3. A partir do ONTAP 9.17.1, você pode usar o  `-is-nas-path-mutable false` opção com o  `vserver object-store-server bucket create` comando na CLI do ONTAP para habilitar a vinculação do bucket S3 NAS a um volume. Por padrão,  `-is-nas-path-mutable` está definido para  `true` .
+
+Como os "buckets" do S3 NAS são mapeamentos e não buckets do S3, as seguintes propriedades dos buckets padrão do S3 não se aplicam aos buckets do S3 NAS.
 
 * * aggr-list-multiplicador / storage-Service-level / volume / exclude-aggr-list / qos-policy-group * não são criados volumes ou qtree ao configurar buckets do S3 nas.
-* *A função é -protegida/está -protegida/está -protegida-na-ONTAP* mais de S3 buckets nas não são protegidos ou espelhados usando o SnapMirror S3, mas em vez disso estarão usando a proteção SnapMirror regular disponível na granularidade do volume.
+* *role \ is -protected \ is -protected-on-ontap \ is -protected-on-cloud* + Os buckets NAS S3 não são protegidos ou espelhados usando o SnapMirror S3, mas usam a proteção regular do SnapMirror disponível na granularidade do volume.
 * Os volumes nas geralmente têm tecnologia de snapshot disponível para salvar versões diferentes. No entanto, o controle de versão não está disponível atualmente em buckets do nas S3.
 * *As estatísticas equivalentes usadas em lógica estão disponíveis para volumes nas através dos comandos de volume.
-* A partir do ONTAP 9.16.1, os objetos multipart são suportados em buckets nas S3 quando link:../flexgroup/enable-adv-capacity-flexgroup-task.html["balanceamento de capacidade avançado"] está habilitado no volume FlexGroup subjacente. O balanceamento avançado de capacidade só pode ser habilitado em volumes FlexGroup. Ela não pode ser ativada no FlexVols.
+* *objetos multipartes* + A partir do ONTAP 9.16.1, objetos multipartes são suportados em buckets S3 NAS quando link:../flexgroup/enable-adv-capacity-flexgroup-task.html["balanceamento de capacidade avançado"] está habilitado no volume FlexGroup subjacente. O balanceamento de capacidade avançado só pode ser habilitado em volumes FlexGroup . Não pode ser habilitado em volumes FlexVol .
 
+
+.Passos
+Você pode usar o System Manager ou o ONTAP CLI para criar um bucket NAS.
 
 [role="tabbed-block"]
 ====
@@ -56,11 +61,21 @@ Caso contrário, clique em *Save* para concluir a configuração do bucket do na
 --
 .CLI
 --
-Crie um bucket do nas S3 em um SVM que contenha sistemas de arquivos nas. E
-`vserver object-store-server bucket create -vserver _svm_name_ -bucket _bucket_name_ -type nas -nas-path _junction_path_ [-comment _text_]`
+. Crie um bucket S3 NAS em um SVM contendo sistemas de arquivos NAS. + 
+`vserver object-store-server bucket create -vserver <svm_name> -bucket <bucket_name> -type nas -nas-path <junction_path> -is-nas-path-mutable true|false [-comment <text>]`
++
+Exemplo 1: Criar um bucket NAS S3
 
-Exemplo
++
 `cluster1::> vserver object-store-server bucket create -bucket testbucket -type nas -path /vol1`
+
++
+Exemplo 2: Criar um bucket S3 NAS e vincular o bucket a um volume
+
++
+`vserver object-store-server bucket create -vserver vs1 -bucket nasbucket1 -type nas -nas-path /pathA/dir1 -is-nas-path-mutable false`
+
+
 
 --
 ====

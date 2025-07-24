@@ -1,0 +1,220 @@
+---
+permalink: authentication/configure-jit-elevation-task.html 
+sidebar: sidebar 
+keywords: just in time, just-in-time, privilege elevation, password, security, authentication, JIT, elevation 
+summary: Configure a elevação de privilégios just-in-time para permitir que usuários do ONTAP elevem temporariamente seus privilégios para executar determinadas tarefas. 
+---
+= Configurar elevação de privilégio JIT no ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.17.1, os administradores de cluster podem configurar a elevação de privilégios just-in-time (JIT) para permitir que usuários do ONTAP elevem temporariamente seus privilégios para executar determinadas tarefas. Quando o JIT é configurado para um usuário, ele pode temporariamente link:elevate-jit-access-task.html["elevar seus privilégios"] para uma função que tenha as permissões necessárias para executar uma tarefa. Após o término da sessão, o usuário retorna ao seu nível de acesso original.
+
+Os administradores de cluster podem configurar a duração do acesso de um usuário à elevação JIT. Por exemplo, você pode configurar o acesso do usuário à elevação JIT com um limite de 30 minutos por sessão (o _período de validade da sessão_) por um período de 30 dias (o _período de validade JIT_). Durante o período de 30 dias, o usuário pode elevar seu privilégio quantas vezes forem necessárias, mas cada sessão é limitada a 30 minutos.
+
+A elevação de privilégios JIT apoia o princípio do privilégio mínimo, permitindo que os usuários executem tarefas que exigem privilégios elevados sem conceder-lhes esses privilégios permanentemente. Isso ajuda a reduzir o risco de acesso não autorizado ou alterações acidentais no sistema. Os exemplos a seguir descrevem alguns casos de uso comuns para elevação de privilégios JIT:
+
+* Permitir acesso temporário ao  `security login create` e  `security login delete` comandos para habilitar a integração e a desintegração de usuários.
+* Permitir acesso temporário a  `system node image update` e  `system node upgrade-revert` durante uma janela de atualização. Após a conclusão da atualização, o acesso ao comando é revogado.
+* Permitir acesso temporário a  `cluster add-node` ,  `cluster remove-node` , e  `cluster modify` para permitir a expansão ou reconfiguração do cluster. Após a conclusão das alterações no cluster, o acesso ao comando será revogado.
+* Permitir acesso temporário a  `volume snapshot restore` para habilitar operações de restauração e gerenciamento de destinos de backup. Após a conclusão da restauração ou configuração, o acesso ao comando é revogado.
+* Permitir acesso temporário a  `security audit log show` para permitir a revisão e exportação do log de auditoria durante uma verificação de conformidade.
+
+
+Consulte o  https://docs.netapp.com/us-en/ontap-cli/["Referência do comando ONTAP"^] para obter mais informações sobre os comandos nestes exemplos. Para uma lista mais abrangente de casos de uso comuns do JIT, consulte <<Casos de uso comuns do JIT>> .
+
+Os administradores de cluster podem configurar o acesso JIT para usuários do ONTAP e configurar os períodos de validade JIT padrão globalmente no cluster ou para SVMs específicas.
+
+.Sobre esta tarefa
+* A elevação de privilégios JIT está disponível apenas para usuários que acessam o ONTAP via SSH. Os privilégios elevados estão disponíveis apenas na sessão SSH atual do usuário, mas podem ser elevados em quantas sessões SSH simultâneas forem necessárias.
+* A elevação de privilégios JIT só é suportada por usuários que usam autenticação por senha, nsswitch ou domínio para efetuar login. A autenticação multifator (MFA) não é suportada para elevação de privilégios JIT.
+
+
+.Antes de começar
+* Você deve ser um administrador de cluster ONTAP no  `admin` nível de privilégio para executar as seguintes tarefas.
+
+
+
+
+== Modificar configurações globais do JIT
+
+Você pode modificar as configurações JIT padrão globalmente no cluster ONTAP ou para uma SVM específica. Essas configurações determinam o período de validade da sessão padrão e o período máximo de validade JIT para usuários configurados para acesso JIT.
+
+.Sobre esta tarefa
+* O padrão  `default-session-validity-period` O valor é uma hora. Esta configuração determina por quanto tempo um usuário pode acessar privilégios elevados em uma sessão JIT antes de precisar elevá-los novamente.
+* O padrão  `max-jit-validity-period` O valor é 90 dias. Esta configuração determina o período máximo durante o qual um usuário pode acessar a elevação JIT após a data de início configurada. Você pode configurar o período de validade do JIT para usuários individuais, mas ele não pode exceder o período máximo de validade do JIT.
+
+
+.Passos
+. Verifique as configurações atuais do JIT:
++
+[source, cli]
+----
+security jit-privilege show -vserver <svm_name>
+----
++
+`-vserver` é opcional. Se você não especificar uma SVM, o comando mostrará as configurações globais do JIT.
+
+. Modifique as configurações do JIT globalmente ou para um SVM:
++
+[source, cli]
+----
+security jit-privilege modify -vserver <svm_name> -default-session-validity-period <period> -max-jit-validity-period <period>
+----
++
+Se você não especificar um SVM, o comando modificará as configurações globais do JIT. O exemplo a seguir definirá a duração padrão da sessão JIT para 45 minutos e a duração máxima do JIT para 30 dias para SVM.  `svm1` : + 
+`security jit-privilege modify -vserver svm1 -default-session-validity-period 45m -max-jit-validity-period 30d`
+
++
+Neste exemplo, os usuários poderão acessar a elevação JIT por 45 minutos por vez e podem iniciar sessões JIT por no máximo 30 dias após a data de início configurada.
+
+
+
+
+
+== Configurar acesso de elevação de privilégio JIT para um usuário
+
+Você pode atribuir acesso de elevação de privilégio JIT aos usuários ONTAP .
+
+.Passos
+. Verifique o acesso JIT atual para um usuário:
++
+[source, cli]
+----
+security jit-privilege user show -username <username>
+----
++
+`-username` é opcional. Se você não especificar um nome de usuário, o comando mostrará o acesso JIT para todos os usuários.
+
+. Atribuir novo acesso JIT para um usuário:
++
+[source, cli]
+----
+security jit-privilege create -username <username> -vserver <svm_name> -role <rbac_role> -session-validity-period <period> -jit-validity-period <period> -start-time <date>
+----
++
+** Se  `-vserver` não for especificado, o acesso JIT será atribuído no nível do cluster.
+**  `-role` é a função RBAC à qual o usuário será elevado. Se não for especificado,  `-role` padrão para  `admin` .
+** `-session-validity-period` é a duração pela qual o usuário pode acessar a função elevada antes de precisar iniciar uma nova sessão JIT. Se não for especificado, o valor global ou SVM  `default-session-validity-period` é usado.
+** `-jit-validity-period` é a duração máxima para a qual um usuário pode iniciar sessões JIT após a data de início configurada. Se não for especificado, o  `session-validity-period` é usado. Este parâmetro não pode exceder o global ou SVM  `max-jit-validity-period` .
+** `-start-time` é a data e a hora após as quais o usuário pode iniciar sessões JIT. Se não especificado, a data e a hora atuais serão usadas.
++
+O exemplo a seguir permitirá  `ontap_user` para acessar o  `admin` função por 1 hora antes de precisar iniciar uma nova sessão JIT.  `ontap_user` poderá iniciar sessões JIT por um período de 60 dias a partir das 13h do dia 1º de julho de 2025: + 
+`security jit-privilege user create -username ontap_user -role admin -session-validity-period 1h -jit-validity-period 60d -start-time "7/1/25 13:00:00"`
+
+
+
+. Se necessário, revogue o acesso JIT de um usuário:
++
+[source, cli]
+----
+security jit-privilege user delete -username <username> -vserver <svm_name>
+----
++
+Este comando revogará o acesso JIT de um usuário, mesmo que ele não tenha expirado. Se  `-vserver` Se ".jit" não for especificado, o acesso JIT será revogado no nível do cluster. Se o usuário estiver em uma sessão JIT ativa, a sessão será encerrada.
+
+
+
+
+
+== Casos de uso comuns do JIT
+
+A tabela a seguir contém casos de uso comuns para elevação de privilégios JIT. Para cada caso de uso, uma função RBAC precisaria ser configurada para fornecer acesso aos comandos relevantes. Cada comando está vinculado à referência de comandos ONTAP , com mais informações sobre o comando e seus parâmetros.
+
+[cols="1,1a,1"]
+|===
+| Caso de uso | Comandos | Detalhes 
+
+
+| Gerenciamento de usuários e funções  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/security-login-create.html["login de segurança criar"] , link:https://docs.netapp.com/us-en/ontap-cli/security-login-delete.html["7a414cbc26ad99f3f688affc1ecabe6f"]
+| Eleve temporariamente para adicionar/remover usuários ou alterar funções durante a integração ou desligamento. 
+
+
+| Gestão de certificados  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/security-certificate-create.html["9ea06376db2d229da0b3a4c13ce61404"] , link:https://docs.netapp.com/us-en/ontap-cli/security-certificate-install.html["instalação do certificado de segurança"]
+| Conceda acesso de curto prazo para instalação ou renovação de certificado. 
+
+
+| Controle de acesso SSH/CLI  a| 
+`link:https://docs.netapp.com/us-en/ontap-cli/security-login-create.html[security login create] -application ssh`
+| Conceda temporariamente acesso SSH para solução de problemas ou suporte ao fornecedor. 
+
+
+| Gerenciamento de licenças  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/system-license-add.html["6c25ae7b27db9a62b5c245ad70b9d7cc"] , link:https://docs.netapp.com/us-en/ontap-cli/system-license-delete.html["5f3eb0e0b3c2143bc24467a3ed94289e"]
+| Conceda direitos para adicionar ou remover licenças durante a ativação ou desativação de recursos. 
+
+
+| Atualizações e patches do sistema  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/system-node-image-update.html["atualização da imagem do nó do sistema"] , link:https://docs.netapp.com/us-en/ontap-cli/system-node-upgrade-revert-upgrade.html["3375ab72573f54f214f0e7b4b9759e15"]
+| Eleve para a janela de atualização e depois revogue. 
+
+
+| Configurações de segurança de rede  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/security-login-role-create.html["função de login de segurança criar"] , link:https://docs.netapp.com/us-en/ontap-cli/security-login-role-modify.html["c44e895fab96f3c7a61edd2ebae0fd59"]
+| Permitir alterações temporárias em funções de segurança relacionadas à rede. 
+
+
+| Gerenciamento de cluster  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/cluster-add-node.html["cluster add-node"] , link:https://docs.netapp.com/us-en/ontap-cli/cluster-remove-node.html["nó de remoção do cluster"] , link:https://docs.netapp.com/us-en/ontap-cli/cluster-modify.html["modificação do cluster"]
+| Eleve para expansão ou reconfiguração do cluster. 
+
+
+| Gestão de SVM  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/vserver-create.html["svm criar"] , link:https://docs.netapp.com/us-en/ontap-cli/vserver-delete.html["a75eb9196380a98a2a2a693496267088"] , link:https://docs.netapp.com/us-en/ontap-cli/vserver-modify.html["modificação do svm"]
+| Conceda temporariamente a um administrador do SVM direitos para provisionamento ou descomissionamento. 
+
+
+| Gerenciamento de volume  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/volume-create.html["criar volume"] , link:https://docs.netapp.com/us-en/ontap-cli/volume-delete.html["eliminação do volume"] , link:https://docs.netapp.com/us-en/ontap-cli/volume-modify.html["modificação do volume"]
+| Eleve para provisionamento, redimensionamento ou remoção de volume. 
+
+
+| Gerenciamento de instantâneos  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/volume-snapshot-create.html["ceb6830d4a1748af1adc615d6239b127"] , link:https://docs.netapp.com/us-en/ontap-cli/volume-snapshot-delete.html["1cf71c15916b07b46dc8360baf4bd9d5"] , link:https://docs.netapp.com/us-en/ontap-cli/volume-snapshot-restore.html["8f381ba1024744332b561ba609495012"]
+| Eleve para exclusão ou restauração de instantâneos durante a recuperação. 
+
+
+| Configuração de rede  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/network-interface-create.html["8e4b4cb9c44fdee9551da126fb754f8a"] , link:https://docs.netapp.com/us-en/ontap-cli/network-port-vlan-create.html["733be7dba8f13ff258d7f73e2740324c"]
+| Conceda direitos para alterações de rede durante janelas de manutenção. 
+
+
+| Gerenciamento de disco/agregação  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/storage-disk-assign.html["3c698d76925a2f101122edd72990fc94"] , link:https://docs.netapp.com/us-en/ontap-cli/storage-aggregate-create.html["1b40ef6e34df7d2fb54b5d639e14412d"] , link:https://docs.netapp.com/us-en/ontap-cli/storage-aggregate-add-disks.html["be260f7e87b5ae56c1d81f359067a35f"]
+| Eleve para adicionar ou remover discos ou gerenciar agregados. 
+
+
+| Proteção de dados  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/snapmirror-create.html["SnapMirror create"] , link:https://docs.netapp.com/us-en/ontap-cli/snapmirror-modify.html["modificar snapmirror"] , link:https://docs.netapp.com/us-en/ontap-cli/snapmirror-restore.html["restauração de SnapMirror"]
+| Eleve temporariamente para configurar ou restaurar relacionamentos do SnapMirror . 
+
+
+| Ajuste de desempenho  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/qos-policy-group-create.html["grupo de políticas qos criar"] , link:https://docs.netapp.com/us-en/ontap-cli/qos-policy-group-modify.html["92e30cc5fff2e2aead2254497baabf90"]
+| Eleve para solução de problemas de desempenho ou ajuste. 
+
+
+| Acesso ao log de auditoria  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/security-audit-log-show.html["8886c6249c30eca960ab30fed3c6746b"]
+| Eleve temporariamente para revisão de log de auditoria ou exportação durante verificações de conformidade. 
+
+
+| Gerenciamento de eventos e alertas  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/event-notification-create.html["64b1a654c15b96443ae00ee82d8ea7ad"] , link:https://docs.netapp.com/us-en/ontap-cli/event-notification-modify.html["3289b87193da03bd8309fc4b2ea2e02e"]
+| Elevate para configurar ou testar notificações de eventos ou traps SNMP. 
+
+
+| Acesso a dados orientado por conformidade  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/volume-show.html["apresentação do volume"] , link:https://docs.netapp.com/us-en/ontap-cli/security-audit-log-show.html["8886c6249c30eca960ab30fed3c6746b"]
+| Conceda acesso temporário somente leitura para que auditores revisem dados ou registros confidenciais. 
+
+
+| Avaliações de acesso privilegiado  a| 
+link:https://docs.netapp.com/us-en/ontap-cli/security-login-show.html["025c83c1a746b39471a98aa72befe950"] , link:https://docs.netapp.com/us-en/ontap-cli/security-login-role-show.html["c964d7ae2ca92e255e3199e128824eb9"]
+| Eleve temporariamente para revisar e relatar acesso privilegiado. Conceda acesso elevado somente leitura por tempo limitado. 
+|===

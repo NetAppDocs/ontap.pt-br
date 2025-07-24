@@ -21,18 +21,26 @@ A partir do ONTAP 9.10,1, você pode ativar a proteção autônoma contra ransom
 Se você quiser configurar o cluster do ONTAP para que todos os novos volumes sejam ativados por padrão para a proteção autônoma contra ransomware (ARP), consulte este link:enable-default-task.html["Procedimento ARP relacionado"].
 
 .Sobre esta tarefa
-* *Para ONTAP 9.10,1 a 9.15.1 e ARP com volumes FlexGroup* para essas versões do ONTAP, você deve sempre ativar o ARP inicialmente no link:index.html#learning-and-active-modes["modo de aprendizagem"]modo (ou "Dry-run"). Quando você ativa o ARP pela primeira vez no modo de aprendizado, o sistema analisa a carga de trabalho para caraterizar o comportamento normal. O início no modo ativo pode levar a relatórios falsos positivos excessivos.
+* *(Apenas ambientes NAS) Para ONTAP 9.10.1 a 9.15.1 ou ARP com volumes FlexGroup * Para essas versões do ONTAP, você deve sempre habilitar o ARP inicialmente em link:index.html#learn-about-arp-modes["modo de aprendizagem"] (ou estado de "teste"). Ao habilitar o ARP pela primeira vez no modo de aprendizagem, o sistema analisa a carga de trabalho para caracterizar o comportamento normal. Começar no modo ativo pode levar a um excesso de relatórios de falsos positivos.
 +
-Recomenda-se que o ARP seja executado no modo de aprendizagem por um mínimo de 30 dias. A partir do ONTAP 9.13,1, o ARP determina automaticamente o intervalo ideal do período de aprendizagem e automatiza o switch, que pode ocorrer antes de 30 dias.
+É recomendável que você deixe o ARP em modo de aprendizado por no mínimo 30 dias. A partir do ONTAP 9.13.1, o ARP determina automaticamente o intervalo ideal do período de aprendizado e automatiza a troca, o que pode ocorrer antes dos 30 dias.
 
-* *Para o ONTAP 9.16.1 e posterior com volumes FlexVol* quando você ativa o ARP, a proteção ARP/AI é ativada e ativa imediatamente. Nenhum período de aprendizagem é necessário.
+* *(Somente ambientes NAS) Para ONTAP 9.16.1 e versões posteriores com volumes FlexVol * Ao habilitar o ARP usando o Gerenciador de Sistemas ou a CLI, a proteção ARP/AI é habilitada e ativada imediatamente. Não é necessário período de aprendizagem.
+* *(Somente ambientes SAN) Para ONTAP 9.17.1 e versões posteriores com volumes FlexVol * Ao habilitar o ARP usando o Gerenciador de Sistemas ou a CLI, a funcionalidade ARP/AI é habilitada automaticamente. Uma vez habilitada em um volume SAN, link:respond-san-entropy-eval-period.html["O ARP/AI monitora os dados continuamente durante um período de avaliação"] para determinar se as cargas de trabalho são adequadas para ARP e define um limite de criptografia ideal para detecção.
 
 
 .Antes de começar
-* Você precisa ter uma VM de storage (SVM) habilitada para NFS, SMB (ou ambos).
-* O xref:index.html#licenses-and-enablement[licença correta] tem de estar instalado para a versão do ONTAP.
-* Você precisa ter um workload nas com clientes configurados.
-* O volume em que deseja definir ARP deve estar protegido e ter um link:../concepts/namespaces-junction-points-concept.html["caminho de junção"]ativo .
+* Você deve ter uma VM de armazenamento (SVM) com protocolos habilitados:
++
+** NAS: NFS ou SMB (ou ambos)
+** SAN: iSCSI, FC ou NVMe
+
+
+
+
+* O link:index.html#licenses-and-enablement["licença correta"] deve ser instalado para sua versão do ONTAP .
+* Você deve ter carga de trabalho NAS ou SAN com clientes configurados.
+* (Apenas ambientes NAS) O volume no qual você deseja definir o ARP deve ter um ativo link:../concepts/namespaces-junction-points-concept.html["caminho de junção"] .
 * O volume tem de ser inferior a 100% cheio.
 * É recomendável configurar o sistema EMS para enviar notificações por e-mail, que incluirão avisos de atividade ARP. Para obter mais informações, link:../error-messages/configure-ems-events-send-email-task.html["Configurar eventos EMS para enviar notificações por e-mail"]consulte .
 * A partir do ONTAP 9.13.1, é recomendável ativar a verificação multi-admin (MAV) para que dois ou mais administradores de usuário autenticados sejam necessários para a configuração ARP (Autonomous ransomware Protection). Para obter mais informações, link:../multi-admin-verify/enable-disable-task.html["Ative a verificação de vários administradores"]consulte .
@@ -52,7 +60,7 @@ Você pode ativar o ARP usando o Gerenciador do sistema ou a CLI do ONTAP.
 . Selecione *armazenamento > volumes* e, em seguida, selecione o volume que pretende proteger.
 . Na guia *Security* da visão geral *volumes*, selecione *Status* para alternar de Disabled (Desativado) para Enabled (habilitado).
 +
-** Se você estiver usando ARP com ONTAP 9.15,1 ou anterior ou ONTAP 9.16,1 com volumes FlexGroup, selecione *Enabled in learning-mode* na caixa *Anti-ransomware*.
+** (Somente ambientes NAS) Se você estiver usando ARP com ONTAP 9.15.1 ou anterior ou ONTAP 9.16.1 com volumes FlexGroup , selecione *Habilitado no modo de aprendizagem* na caixa *Anti-ransomware*.
 +
 
 NOTE: A partir do ONTAP 9.13,1, o ARP determina automaticamente o intervalo ideal do período de aprendizagem e automatiza o switch. link:enable-default-task.html["Desative essa configuração na VM de armazenamento associada"]Pode controlar manualmente o modo de aprendizagem para a transição do modo ativo.
@@ -61,7 +69,6 @@ NOTE: A partir do ONTAP 9.13,1, o ARP determina automaticamente o intervalo idea
 
 NOTE: Nos volumes existentes, os modos de aprendizagem e ativos aplicam-se apenas a dados recém-gravados, não a dados já existentes no volume. Os dados existentes não são digitalizados e analisados, porque as caraterísticas do tráfego de dados normal anterior são assumidas com base nos novos dados depois que o volume é ativado para ARP.
 
-** Se você estiver usando ARP em volumes FlexVol com o ONTAP 9.16.1 ou posterior, a funcionalidade ARP/AI estará ativada e ativa imediatamente. Nenhum período de aprendizagem é necessário.
 
 
 . Você pode verificar o estado ARP do volume na caixa *Anti-ransomware*.
@@ -73,22 +80,24 @@ Para exibir o status ARP para todos os volumes: No painel *volumes*, selecione *
 --
 .CLI
 --
-O processo para ativar o ARP com a CLI difere se você estiver habilitando-o em um volume existente versus um novo volume.
+O processo para habilitar o ARP com a CLI difere se você o estiver habilitando em um volume existente ou em um novo volume.
 
 .Ative ARP em um volume existente
 . Modifique um volume existente para habilitar a proteção contra ransomware:
 +
+** Para ambientes NAS sem ARP/AI ou para volumes FlexGroup , use  `dry-run` estado para que novos volumes iniciem no modo de aprendizagem.
+** Para ambientes NAS executando ONTAP 9.16.1 ou posterior ou ambientes SAN com ONTAP 9.17.1, use  `enabled` estado.
++
 [source, cli]
 ----
-security anti-ransomware volume dry-run -volume <vol_name> -vserver <svm_name>
+security anti-ransomware volume <dry-run|enabled> -volume <vol_name> -vserver <svm_name>
 ----
-+
-Para o ONTAP 9.15.1 e anteriores e volumes FlexGroup, novos volumes começam no modo de aprendizado. Para o ONTAP 9.16.1 e posterior com volumes FlexVol, o ARP/AI é ativado imediatamente. Em ambos os casos, use `dry-run` como o valor.
-
 +
 Saiba mais sobre `security anti-ransomware volume dry-run` o link:https://docs.netapp.com/us-en/ontap-cli/security-anti-ransomware-volume-dry-run.html["Referência do comando ONTAP"^]na .
 
-. Se você atualizou para o ONTAP 9.13.1 através do ONTAP 9.15.1 e o estado padrão for `dry-run`, o aprendizado adaptável será ativado para que a alteração para `active` o estado seja feita automaticamente. Se você não quiser que esse comportamento seja ativado automaticamente, altere a configuração no nível SVM em todos os volumes associados:
+
+
+. Se você atualizou um ambiente NAS para ONTAP 9.13.1 através do ONTAP 9.15.1 e o estado padrão é  `dry-run` (modo de aprendizagem), a aprendizagem adaptativa é habilitada para que a mudança para  `enabled` O estado (modo ativo) é ativado automaticamente. Se você não quiser que esse comportamento seja ativado automaticamente, altere a configuração no nível do SVM em todos os volumes associados:
 +
 [source, cli]
 ----
@@ -105,14 +114,16 @@ security anti-ransomware volume show
 .Ative ARP em um novo volume
 . Crie um novo volume com ARP ativado antes de provisionar dados:
 +
+** Para ambientes NAS sem ARP/AI ou para volumes FlexGroup , use  `dry-run` estado para que novos volumes iniciem no modo de aprendizagem.
+** Para ambientes NAS executando ONTAP 9.16.1 ou posterior ou ambientes SAN com ONTAP 9.17.1, use  `enabled` estado.
++
 [source, cli]
 ----
-volume create -volume <vol_name> -vserver <svm_name> -aggregate <aggr_name> -size <nn> -anti-ransomware-state dry-run -junction-path </path_name>
+volume create -volume <vol_name> -vserver <svm_name> -aggregate <aggr_name> -size <nn> -anti-ransomware-state <dry-run|enabled> -junction-path </path_name>
 ----
-+
-Para o ONTAP 9.15.1 e anteriores e volumes FlexGroup, novos volumes começam no modo de aprendizado. Para o ONTAP 9.16.1 e posterior com volumes FlexVol, o ARP/AI é ativado imediatamente. Em ambos os casos, use `dry-run` como o valor.
 
-. Se você atualizou para o ONTAP 9.13.1 através do ONTAP 9.15.1 e o estado padrão for `dry-run`, o aprendizado adaptável será ativado para que a alteração para `active` o estado seja feita automaticamente. Se você não quiser que esse comportamento seja ativado automaticamente, altere a configuração no nível SVM em todos os volumes associados:
+
+. Se você atualizou um ambiente NAS para ONTAP 9.13.1 através do ONTAP 9.15.1 e o estado padrão é  `dry-run` (modo de aprendizagem), a aprendizagem adaptativa é habilitada para que a mudança para  `enabled` O estado (modo ativo) é ativado automaticamente. Se você não quiser que esse comportamento seja ativado automaticamente, altere a configuração no nível do SVM em todos os volumes associados:
 +
 [source, cli]
 ----

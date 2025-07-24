@@ -23,7 +23,7 @@ A partir do ONTAP 9.13.1, você pode habilitar a verificação multi-admin (MAV)
 link:../multi-admin-verify/enable-disable-task.html["Saiba mais sobre o MAV"].
 
 .Sobre esta tarefa
-Durante uma pausa ARP, nenhum evento é registrado nem nenhuma ação para novas gravações. No entanto, a operação de análise continua para logs anteriores em segundo plano.
+Durante uma pausa do ARP, nenhum evento ou ação para novas gravações é registrado; no entanto, a operação de análise continua para logs anteriores em segundo plano.
 
 
 NOTE: Não use a função de desativação ARP para pausar a análise. Isso desativa o ARP no volume e todas as informações existentes sobre o comportamento da carga de trabalho aprendida são perdidas. Isso exigiria um reinício do período de aprendizagem.
@@ -36,11 +36,12 @@ Você pode usar o Gerenciador do sistema ou a CLI do ONTAP para pausar o ARP.
 .System Manager
 --
 . Selecione *armazenamento > volumes* e, em seguida, selecione o volume em que deseja pausar ARP.
-. Na guia **Segurança** da visão geral dos volumes, selecione *Pausa anti-ransomware* na caixa *Anti-ransomware*.
+. Na guia *Segurança* da visão geral de Volumes, selecione *Pausar anti-ransomware* na caixa *Anti-ransomware*.
 +
 
 NOTE: A partir do ONTAP 9.13,1, se você estiver usando MAV para proteger suas configurações ARP, a operação de pausa solicitará que você obtenha a aprovação de um ou mais administradores adicionais. link:../multi-admin-verify/request-operation-task.html["A aprovação deve ser recebida de todos os administradores"] Associado ao grupo de aprovação MAV ou à operação falhará.
 
+. Para retomar o monitoramento, selecione *Retomar anti-ransomware*.
 
 
 --
@@ -48,12 +49,16 @@ NOTE: A partir do ONTAP 9.13,1, se você estiver usando MAV para proteger suas c
 --
 . Pausar ARP em um volume:
 +
-`security anti-ransomware volume pause -vserver _svm_name_ -volume _vol_name_`
-
+[source, cli]
+----
+security anti-ransomware volume pause -vserver <svm_name> -volume <vol_name>
+----
 . Para retomar o processamento, use o `resume` comando:
 +
-`security anti-ransomware volume resume -vserver _svm_name_ -volume _vol_name_`
-
+[source, cli]
+----
+security anti-ransomware volume resume -vserver <svm_name> -volume <vol_name>
+----
 +
 Saiba mais sobre `security anti-ransomware volume` o link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=security+anti-ransomware+volume+["Referência do comando ONTAP"^]na .
 
@@ -64,12 +69,16 @@ Se você estiver usando MAV e uma operação de pausa esperada precisar de aprov
 +
 .. Mostrar o pedido:
 +
-`security multi-admin-verify request show`
-
+[source, cli]
+----
+security multi-admin-verify request show
+----
 .. Aprovar a solicitação:
 +
-`security multi-admin-verify request approve -index[_number returned from show request_]`
-
+[source, cli]
+----
+security multi-admin-verify request approve -index[<number returned from show request>]
+----
 +
 A resposta para o último aprovador de grupo indica que o volume foi modificado e o estado de ARP está pausado.
 
@@ -77,8 +86,10 @@ A resposta para o último aprovador de grupo indica que o volume foi modificado 
 Se você estiver usando MAV e for um aprovador de grupo MAV, poderá rejeitar uma solicitação de operação de pausa:
 
 +
-`security multi-admin-verify request veto -index[_number returned from show request_]`
-
+[source, cli]
+----
+security multi-admin-verify request veto -index[<number returned from show request>]
+----
 +
 Saiba mais sobre `security multi-admin-verify request` o link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=security+multi-admin-verify+request["Referência do comando ONTAP"^]na .
 

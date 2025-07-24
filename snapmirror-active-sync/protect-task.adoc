@@ -1,10 +1,10 @@
 ---
 sidebar: sidebar 
 permalink: snapmirror-active-sync/protect-task.html 
-keywords: SM-BC, snapmirror business continuity, consistency group, remote protection, destination 
+keywords: SM-BC, snapmirror business continuity, consistency group, remote protection, destination, scsi, nvme 
 summary: A configuração da proteção para a continuidade dos negócios envolve a seleção de LUNs no cluster de origem ONTAP e a adição deles a um grupo de consistência. 
 ---
-= Proteja com a sincronização ativa do SnapMirror no ONTAP
+= Proteja com sincronização ativa ONTAP SnapMirror
 :hardbreaks:
 :toclevels: 1
 :allow-uri-read: 
@@ -43,7 +43,7 @@ A configuração de proteção assimétrica usando a sincronização ativa do Sn
 .Passos
 Você pode configurar um grupo de consistência usando a CLI do ONTAP ou o Gerenciador do sistema.
 
-A partir do ONTAP 9.10.1, o ONTAP oferece um endpoint de grupo de consistência e um menu no Gerenciador de sistemas, oferecendo utilitários de gerenciamento adicionais. Se estiver a utilizar o ONTAP 9.10,1 ou posterior, consulte link:../consistency-groups/configure-task.html["Configurar um grupo de consistência"] link:../consistency-groups/protect-task.html["configurar a proteção"]para criar uma relação de sincronização ativa do SnapMirror.
+A partir do ONTAP 9.10.1, o ONTAP oferece um ponto de extremidade de grupo de consistência e um menu no Gerenciador de Sistemas, oferecendo utilitários de gerenciamento adicionais. Se você estiver usando o ONTAP 9.10.1 ou posterior, consulte link:../consistency-groups/configure-task.html["Configurar um grupo de consistência"] então link:../consistency-groups/protect-task.html["configurar a proteção"] para criar um relacionamento de sincronização ativa do SnapMirror .
 
 
 IMPORTANT: Do ONTAP 9.8 ao 9.14.1, a sincronização ativa do SnapMirror é chamada de continuidade de negócios do SnapMirror (SM-BC).
@@ -115,9 +115,16 @@ Você pode estabelecer proteção simétrica usando o Gerenciador do sistema ou 
 ** Você pode usar a configuração de quatro nós para atualizar o storage e os controladores. Esse processo não causa interrupções e expande o cluster enquanto move volumes para os novos nós. Para obter mais informações, link:upgrade-revert-task.html#refresh-a-cluster["atualizar um cluster"]consulte .
 
 
+* A partir do ONTAP 9.17.1, você pode configurar a proteção simétrica ativa/ativa em namespaces NVMe somente quando ambos os clusters estiverem executando o ONTAP 9.17.1 ou posterior.
 
+
+
+
+== Configurar proteção simétrica ativa/ativa usando uma configuração de sincronização ativa SCSI SnapMirror
 
 .Passos
+Você pode usar o System Manager ou o ONTAP CLI para configurar a proteção simétrica ativa/ativa usando mapeamentos de host do protocolo SCSI.
+
 [role="tabbed-block"]
 ====
 .System Manager
@@ -193,7 +200,7 @@ NOTE: A partir do ONTAP 9.16.1, use o `-proximal-vserver peer` parâmetro neste 
 
 
 .Passos para uma configuração não uniforme
-. Crie uma nova relação do SnapMirror agrupando todos os volumes na aplicação. Certifique-se de designar a política "AutomatedFailOverDuplex" para estabelecer replicação de sincronização bidirecional.
+. Crie uma nova relação do SnapMirror agrupando todos os volumes na aplicação. Certifique-se de designar a `AutomatedFailOverDuplex` política para estabelecer replicação de sincronização bidirecional.
 +
 `snapmirror create -source-path <source_path> -destination-path <destination_path> -cg-item-mappings <source_volume:@destination_volume> -policy AutomatedFailOverDuplex`
 
@@ -214,6 +221,89 @@ SiteA::> igroup create -vserver <svm_name> -igroup <igroup_name> -initiator <hos
 SiteB::> igroup create -vserver <svm_name> -igroup <igroup_name> -initiator <host_2_name>`
 
 . A partir do host, descubra os caminhos e verifique se os hosts têm um caminho ativo/otimizado para o LUN de storage a partir do cluster preferido.
+. Implante o aplicativo e distribua as cargas de trabalho da VM entre clusters para alcançar o balanceamento de carga necessário.
+
+
+--
+====
+
+
+== Configurar proteção simétrica ativa/ativa usando uma configuração de sincronização ativa NVMe SnapMirror
+
+.Antes de começar
+Além dos requisitos para configurar a proteção simétrica ativa/ativa, você deve estar ciente das configurações suportadas e não suportadas ao usar o protocolo NVMe.
+
+* Grupos de consistência podem ter um ou mais subsistemas.
+* Volumes dentro do grupo de consistência podem ter mapas de namespace de vários subsistemas.
+* Subsistemas não podem ter mapas de namespace que pertençam a mais de um grupo de consistência.
+* Os subsistemas não podem ter alguns mapas de namespace que pertençam a um grupo de consistência e alguns mapas de namespace que não pertençam a um grupo de consistência.
+* Os subsistemas devem ter mapas de namespace que façam parte do mesmo grupo de consistência.
+
+
+.Passos
+A partir do ONTAP 9.17.1, você pode usar o System Manager ou a CLI do ONTAP para criar um grupo de consistência e configurar a proteção simétrica ativa/ativa usando mapeamentos de host do protocolo NVMe.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. No site principal, link:../consistency-groups/configure-task.html#create-a-consistency-group-with-new-luns-or-volumes["crie um grupo de consistência usando novos volumes ou namespaces NVMe."^]
+. selecione *+Adicionar* e escolha *Usando novos namespaces NVMe*.
+. Insira o nome do grupo de consistência.
+. Selecione *Mais*.
+. Na seção *Proteção*, selecione *Ativar SnapMirror* e escolha  `AutomatedFailoverDuplex` política.
+. Na seção *Mapeamento de host*, escolha *Subsistema NVMe existente* ou *Novo subsistema NVMe*.
+. Selecione *Na proximidade de* para alterar o SVM proximal. O SVM de origem é selecionado por padrão.
+. Se necessário, adicione outro subsistema NVMe.
+
+
+--
+.CLI
+--
+. Crie um novo relacionamento SnapMirror agrupando todos os volumes que contêm todos os namespaces NVMe usados pelo aplicativo. Certifique-se de designar o  `AutomatedFailOverDuplex` política para estabelecer replicação de sincronização bidirecional.
++
+`snapmirror create -source-path <source_path> -destination-path <destination_path> -cg-item-mappings <source_volume:@destination_volume> -policy AutomatedFailOverDuplex`
+
++
+Exemplo:
+
++
+[listing]
+----
+DST::> snapmirror create -source-path vs_src:/cg/cg_src_1 -destination-path vs_dst:/cg/cg_dst_1 -cg-item-mappings vs_src_vol1:@vs_dst_vol1,vs_src_vol2:@vs_dst_vol2 -policy AutomatedFailOverDuplex
+----
+. Inicialize a relação SnapMirror:
+`snapmirror initialize -destination-path <destination-consistency-group>`
++
+Exemplo:
+
++
+[listing]
+----
+DST::> snapmirror initialize -destination-path vs1:/cg/cg_dst_1
+----
+. Confirme se a operação foi bem-sucedida, aguardando que o `Mirrored State` mostre como `SnapMirrored` e `Relationship Status` as `Insync`.
++
+`snapmirror show -destination-path <destination_path>`
+
++
+Os subsistemas NVMe associados aos namespaces NVMe nos volumes primários são replicados automaticamente para o cluster secundário.
+
+. No seu host, configure a conectividade de host com acesso a cada cluster de acordo com suas necessidades.
+. Especifique a SVM próxima a cada um dos seus hosts. Isso permite que o host acesse o namespace NVMe usando um caminho do cluster preferencial. Pode ser a SVM no cluster primário _ou_ a SVM no cluster de recuperação de desastres.
++
+O comando a seguir indica que o SVM VS_A é próximo ao host H1 e define o VS_A como o SVM próximo:
+
++
+`SiteA::> vserver nvme subsystem host add -subsystem ss1 -host-nqn <H1_NQN> -proximal-vservers <VS_A>`
+
++
+O comando a seguir indica que o SVM VS_B é próximo ao host H2 e define o VS_B como o SVM próximo:
+
++
+`SiteB::> vserver nvme subsystem host add -subsystem ss1 -host-nqn <H2_NQN> -proximal-vservers <VS_B>`
+
+. No host, descubra os caminhos e verifique se os hosts têm um caminho ativo/otimizado para o armazenamento do cluster preferencial.
 . Implante o aplicativo e distribua as cargas de trabalho da VM entre clusters para alcançar o balanceamento de carga necessário.
 
 

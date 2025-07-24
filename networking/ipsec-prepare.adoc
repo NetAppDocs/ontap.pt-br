@@ -37,10 +37,10 @@ Para certos tipos de tráfego, outra opção de criptografia de dados em movimen
 
 == Evolução da implementação IPsec do ONTAP
 
-O IPsec foi introduzido pela primeira vez com o ONTAP 9.8. A implementação continuou a evoluir e melhorar, conforme descrito abaixo.
+O IPsec foi introduzido pela primeira vez com o ONTAP 9.8. A implementação continuou a evoluir nas versões subsequentes do ONTAP , conforme descrito abaixo.
 
-
-NOTE: Quando um recurso é introduzido a partir de uma versão específica do ONTAP, ele também é suportado em versões subsequentes, a menos que indicado de outra forma.
+.ONTAP 9.17.1
+O suporte para descarregamento de hardware IPsec é estendido para link:../networking/combine_physical_ports_to_create_interface_groups.html["grupos de agregação de links"] . link:../networking/ipsec-configure.html#define-the-security-policy-database-spd["Chaves pré-compartilhadas pós-quânticas (PPKs)"] são suportados para autenticação de chaves pré-compartilhadas (PSK) IPsec.
 
 .ONTAP 9.16,1
 Várias operações criptográficas, como verificações de criptografia e integridade, podem ser descarregadas para uma placa NIC suportada. Consulte <<Recurso de descarga de hardware IPsec>> para obter mais informações.
@@ -49,7 +49,7 @@ Várias operações criptográficas, como verificações de criptografia e integ
 O suporte ao protocolo de host front-end IPsec está disponível nas configurações de conexão de malha MetroCluster IP e MetroCluster. O suporte IPsec fornecido com clusters MetroCluster é limitado ao tráfego de host front-end e não é compatível com LIFs MetroCluster entre clusters.
 
 .ONTAP 9.10,1
-Os certificados podem ser usados para autenticação IPsec, além das chaves pré-compartilhadas (PSKs). Antes do ONTAP 9.10,1, apenas PSKs são suportados para autenticação.
+Além dos PSKs, certificados podem ser usados para autenticação IPsec. Antes do ONTAP 9.10.1, apenas PSKs eram suportados para autenticação.
 
 .ONTAP 9.9,1
 Os algoritmos de criptografia usados pelo IPsec são validados pelo FIPS 140-2. Esses algoritmos são processados pelo módulo criptográfico NetApp no ONTAP, que carrega a validação FIPS 140-2.
@@ -70,35 +70,39 @@ Se você estiver usando o ONTAP 9.16,1 ou posterior, terá a opção de descarre
 Há vários requisitos que você deve considerar antes de usar o recurso de descarga de hardware IPsec.
 
 .Placas Ethernet suportadas
-Você precisa instalar e usar apenas placas Ethernet suportadas. As seguintes placas Ethernet são suportadas com o ONTAP 9.16.1 nas seguintes plataformas. Consulte o link:https://hwu.netapp.com/["NetApp Hardware Universe"^] para obter mais informações sobre as plataformas e os cartões suportados.
+Você precisa instalar e usar apenas placas Ethernet compatíveis. As seguintes placas Ethernet são compatíveis a partir do ONTAP 9.16.1:
 
 * X50131A (controlador Ethernet 2P, 40G/100g/200g/400G)
-+
-A placa X50131A é suportada nas seguintes plataformas:
-
-+
-** ASA A1K
-** ASA A90
-** ASA A70
-** AFF A1K
-** AFF A90
-** AFF A70
-
-
 * X60132A (controlador Ethernet 4P, 10G/25G)
-+
-A placa X60132A é suportada nas seguintes plataformas:
-
-+
-** ASA A50
-** ASA A30
-** ASA A20
-** AFF A50
-** AFF A30
-** AFF A20
 
 
+O ONTAP 9.17.1 adiciona suporte para as seguintes placas Ethernet:
 
+* X50135A (Controlador Ethernet 2p, 40G/100G)
+* X60135A (Controlador Ethernet 2p, 40G/100G)
+
+
+As placas X50131A e X50135A são suportadas nas seguintes plataformas:
+
+* ASA A1K
+* ASA A90
+* ASA A70
+* AFF A1K
+* AFF A90
+* AFF A70
+
+
+As placas X60132A e X60135A são suportadas nas seguintes plataformas:
+
+* ASA A50
+* ASA A30
+* ASA A20
+* AFF A50
+* AFF A30
+* AFF A20
+
+
+Veja o link:https://hwu.netapp.com/["NetApp Hardware Universe"^] para mais informações sobre as plataformas e placas suportadas.
 
 .Escopo do cluster
 O recurso de descarga de hardware IPsec é configurado globalmente para o cluster. E assim, por exemplo, o comando `security ipsec config` se aplica a todos os nós no cluster.
@@ -124,13 +128,15 @@ Você deve garantir que a proteção anti-replay IPsec esteja desativada no clie
 Há várias limitações que você deve considerar antes de usar o recurso de descarga de hardware IPsec.
 
 .IPv6
-A versão 6 do IP não é suportada para o recurso de descarga de hardware IPsec. O IPv6 só é suportado com a implementação do software IPsec.
+O IPv6 não é compatível com o recurso de descarregamento de hardware do IPsec. O IPv6 é compatível apenas com a implementação de software do IPsec.
 
 .Números de sequência alargados
 Os números de sequência estendida IPsec não são suportados com o recurso de descarga de hardware. Apenas são utilizados os números normais de sequência de 32 bits.
 
 .Agregação de links
-O recurso de descarga de hardware IPsec não suporta agregação de links. E assim não pode ser usado com uma interface ou grupo de agregação de links conforme administrado através dos `network port ifgrp` comandos na CLI do ONTAP.
+A partir do ONTAP 9.17.1, você pode usar o recurso de descarregamento de hardware IPsec com um link:../networking/combine_physical_ports_to_create_interface_groups.html["grupo de agregação de links"] .
+
+Antes da versão 9.17.1, o recurso de descarregamento de hardware IPsec não suportava agregação de links. Ele não pode ser usado com uma interface ou grupo de agregação de links administrados pelo  `network port ifgrp` comandos no ONTAP CLI.
 
 
 
