@@ -27,6 +27,26 @@ Para que o ONTAP mantenha as permissões de leitura e gravação apropriadas em 
 * Os arquivos com o bit somente leitura habilitado são graváveis somente pelo root.
 
 
+O bit somente leitura interage com os bits ACL e do modo Unix das seguintes maneiras:
+
+Quando o bit somente leitura é definido em um arquivo:
+
+* Nenhuma alteração será feita na ACL desse arquivo. Os clientes NFS verão a mesma ACL de antes da definição do bit somente leitura.
+* Todos os bits do modo Unix que permitem acesso de gravação ao arquivo são ignorados.
+* Clientes NFS e SMB podem ler o arquivo, mas não podem modificá-lo.
+* ACLs e bits do modo UNIX são ignorados em favor do bit somente leitura. Isso significa que, mesmo que a ACL permita acesso de gravação, o bit somente leitura impede modificações.
+
+
+Quando o bit somente leitura não está definido em um arquivo:
+
+* O ONTAP determina o acesso com base nos bits do ACL e do modo UNIX.
++
+** Se os bits da ACL ou do modo UNIX negarem acesso de gravação, os clientes NFS e SMB não poderão modificar o arquivo.
+** Se nem os bits do ACL nem do modo UNIX negarem acesso de gravação, os clientes NFS e SMB poderão modificar o arquivo.
+
+
+
+
 [NOTE]
 ====
 As alterações às permissões de arquivo entram em vigor imediatamente em clientes SMB, mas podem não ter efeito imediatamente em clientes NFS se o cliente NFS ativar o armazenamento em cache de atributos.
