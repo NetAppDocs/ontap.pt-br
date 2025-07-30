@@ -1,0 +1,43 @@
+= 
+:allow-uri-read: 
+
+
+Os clientes SMB que usam o Windows podem definir um bit somente leitura por arquivo. Os clientes NFS não definem um bit somente leitura por arquivo porque os clientes NFS não têm operações de protocolo que usam um bit somente leitura por arquivo.
+
+O ONTAP pode definir um bit somente leitura em um arquivo quando um cliente SMB que usa o Windows cria esse arquivo. O ONTAP também pode definir um bit somente leitura quando um arquivo é compartilhado entre clientes NFS e clientes SMB. Alguns softwares, quando usados por clientes NFS e clientes SMB, exigem que o bit somente leitura seja ativado.
+
+Para que o ONTAP mantenha as permissões de leitura e gravação apropriadas em um arquivo compartilhado entre clientes NFS e clientes SMB, ele trata o bit somente leitura de acordo com as seguintes regras:
+
+* O NFS trata qualquer arquivo com o bit somente leitura ativado como se ele não tivesse bits de permissão de gravação ativados.
+* Se um cliente NFS desativar todos os bits de permissão de gravação e pelo menos um desses bits tiver sido ativado anteriormente, o ONTAP ativa o bit somente leitura para esse arquivo.
+* Se um cliente NFS ativar qualquer bit de permissão de gravação, o ONTAP desativa o bit somente leitura para esse arquivo.
+* Se o bit somente leitura de um arquivo estiver ativado e um cliente NFS tentar descobrir permissões para o arquivo, os bits de permissão para o arquivo não serão enviados para o cliente NFS; em vez disso, o ONTAP enviará os bits de permissão para o cliente NFS com os bits de permissão de gravação mascarados.
+* Se o bit somente leitura de um arquivo estiver ativado e um cliente SMB desabilitar o bit somente leitura, o ONTAP ativa o bit de permissão de gravação do proprietário para o arquivo.
+* Os arquivos com o bit somente leitura habilitado são graváveis somente pelo root.
+
+
+O bit somente leitura interage com os bits ACL e do modo Unix das seguintes maneiras:
+
+Quando o bit somente leitura é definido em um arquivo:
+
+* Nenhuma alteração será feita na ACL desse arquivo. Os clientes NFS verão a mesma ACL de antes da definição do bit somente leitura.
+* Todos os bits do modo Unix que permitem acesso de gravação ao arquivo são ignorados.
+* Clientes NFS e SMB podem ler o arquivo, mas não podem modificá-lo.
+* ACLs e bits do modo UNIX são ignorados em favor do bit somente leitura. Isso significa que, mesmo que a ACL permita acesso de gravação, o bit somente leitura impede modificações.
+
+
+Quando o bit somente leitura não está definido em um arquivo:
+
+* O ONTAP determina o acesso com base nos bits do ACL e do modo UNIX.
++
+** Se os bits da ACL ou do modo UNIX negarem acesso de gravação, os clientes NFS e SMB não poderão modificar o arquivo.
+** Se nem os bits do ACL nem do modo UNIX negarem acesso de gravação, os clientes NFS e SMB poderão modificar o arquivo.
+
+
+
+
+[NOTE]
+====
+As alterações às permissões de arquivo entram em vigor imediatamente em clientes SMB, mas podem não ter efeito imediatamente em clientes NFS se o cliente NFS ativar o armazenamento em cache de atributos.
+
+====
