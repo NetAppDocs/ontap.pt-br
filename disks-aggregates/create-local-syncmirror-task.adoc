@@ -1,0 +1,63 @@
+---
+permalink: disks-aggregates/create-local-syncmirror-task.html 
+sidebar: sidebar 
+keywords: ontap 9, create, aggregates, syncmirror, sync mirror, add, local tier 
+summary: Você pode habilitar o SyncMirror ao criar manualmente uma camada local para espelhar sincronizadamente os dados da camada local. 
+---
+= Adicionar camadas locais ONTAP com SyncMirror habilitado
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode habilitar o SyncMirror ao criar manualmente uma camada local para espelhar sincronizadamente os dados da camada local.
+
+Saiba mais sobre link:../concepts/mirrored-unmirrored-aggregates-concept.html["camadas locais espelhadas e não espelhadas"] .
+
+.Antes de começar
+* O cluster deve ser inicializado apenas com armazenamento interno.
+* A configuração do cluster deve ter sido concluída em ambos os nós.
+
+
+.Sobre esta tarefa
+Este procedimento cria camadas locais de dados espelhados de tamanho igual em cada nó do cluster, e cada camada local tem uma contagem de discos de 44.
+
+.Passos
+. Desabilitar atribuição automática de armazenamento:
++
+`storage disk option modify -node * -autoassign off`
+
+. Confirme se a atribuição automática está desabilitada:
++
+`storage disk option show`
+
+. Fixe a prateleira externa.
+. Atribua as unidades externas a cada nó especificando o pool 1:
++
+`storage disk assign -disk <disk ID> -owner <node name> -pool 1`
+
+. Espelhe a camada local raiz em cada nó:
++
+`storage aggregate mirror -aggregate <node1 root-aggr>`
+
++
+`storage aggregate mirror -aggregate <node2 root-aggr>`
+
++
+
+NOTE: As unidades no pool 1 são particionadas automaticamente para corresponder àquelas no plex 0.
+
+. No nó 1, crie uma camada local de dados espelhados usando uma contagem de discos de 44.  Isso seleciona 22 partições do pool 0 e 22 partições do pool 1.
++
+`storage aggregate create -node <node1 name> -aggregate <node1 aggr-name> -diskcount 44 -mirror true`
+
+. No nó 2, crie uma camada local de dados espelhados usando uma contagem de discos de 44.  Isso seleciona 22 partições do pool 0 e 22 partições do pool 1.
++
+`storage aggregate create -node <node2 name> -aggregate <node2 aggr-name> -diskcount 44 -mirror true`
+
+. Verifique se camadas locais de tamanho igual foram criadas com sucesso:
++
+`storage aggregate show`
+
+

@@ -19,6 +19,7 @@ Os volumes de origem e destino devem ser criados em clusters com SVMs com peered
 .Sobre esta tarefa
 * A partir do ONTAP 9.5, você pode replicar arquivos WORM com a relação SnapMirror do tipo XDP (proteção de dados estendida) em vez da relação de tipo DP (proteção de dados). O modo XDP é independente da versão do ONTAP e é capaz de diferenciar arquivos armazenados no mesmo bloco, facilitando a ressincronização de volumes replicados em modo de conformidade. Para obter informações sobre como converter uma relação de tipo DP existente em uma relação do tipo XDP, link:../data-protection/index.html["Proteção de dados"]consulte .
 * Uma operação ressincronizada em uma relação de SnapMirror tipo DP falha para um volume de modo de conformidade se o SnapLock determinar que isso resultará em perda de dados. Se uma operação ressincronizada falhar, você pode usar o `volume clone create` comando para fazer um clone do volume de destino. Em seguida, é possível sincronizar novamente o volume de origem com o clone.
+* Um relacionamento SnapMirror de um volume SnapLock suporta apenas o `MirrorAllSnapshots` política do tipo async-mirror.  O período de retenção de um volume SnapLock é determinado pelo período máximo de retenção entre todos os arquivos WORM que ele contém.  Como o destino é uma cópia de DR da origem, o período de retenção do volume SnapLock de destino será o mesmo do volume de origem.
 * Uma relação SnapMirror do tipo XDP entre volumes compatíveis com SnapLock suporta uma ressincronização após uma pausa, mesmo que os dados no destino tenham divergido da origem após a quebra.
 +
 Em uma ressincronização, quando a divergência de dados é detetada entre a origem do destino além do snapshot comum, um novo snapshot é cortado no destino para capturar essa divergência. O novo snapshot e o snapshot comum são bloqueados com um tempo de retenção da seguinte forma:
@@ -78,7 +79,7 @@ A partir do ONTAP 9.12,1, você pode usar o System Manager para configurar a rep
 
 +
 
-NOTE: A partir do ONTAP 9.10,1, os volumes SnapLock e não SnapLock podem existir no mesmo agregado; portanto, você não será mais necessário criar um agregado SnapLock separado se estiver usando o ONTAP 9.10,1. Você usa a opção volume -SnapLock-type para especificar um tipo de volume Compliance ou Enterprise SnapLock. Em versões do ONTAP anteriores ao ONTAP 9.10,1, o modo SnapLock --conformidade ou empresa -- é herdado do agregado. Os volumes de destino flexíveis de versão não são suportados. A definição de idioma do volume de destino tem de corresponder à definição de idioma do volume de origem.
+NOTE: A partir do ONTAP 9.10.1, volumes SnapLock e não SnapLock podem existir no mesmo agregado; portanto, você não precisa mais criar um agregado SnapLock separado se estiver usando o ONTAP 9.10.1.  Use a opção volume -snaplock-type para especificar um tipo de volume SnapLock de conformidade ou empresarial.  Em versões do ONTAP anteriores ao ONTAP 9.10.1, o modo SnapLock (Compliance ou Enterprise) é herdado do agregado.  A configuração de idioma do volume de destino deve corresponder à configuração de idioma do volume de origem.
 
 +
 O comando a seguir cria um volume SnapLock de 2 GB `Compliance` nomeado `dstvolB` `SVM2` no agregado `node01_aggr`:
