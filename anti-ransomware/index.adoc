@@ -20,7 +20,7 @@ A partir do ONTAP 9.10.1, os administradores do ONTAP podem habilitar a Proteç�
 
 O ARP é integrado diretamente ao ONTAP, garantindo controle e coordenação integrados com os demais recursos do ONTAP. O ARP opera em tempo real, processando dados conforme são gravados ou lidos no sistema de arquivos e detectando e respondendo rapidamente a potenciais ataques de ransomware.
 
-O ARP cria snapshots bloqueados em intervalos regulares, juntamente com os agendados, para maior proteção. Ele gerencia de forma inteligente a duração da retenção de snapshots. Se nenhuma atividade incomum for detectada, os snapshots são reciclados rapidamente. No entanto, se um ataque for detectado, um snapshot criado antes do início do ataque é mantido por um período prolongado.
+O ARP cria snapshots bloqueados em intervalos regulares, juntamente com os agendados, para maior proteção. Ele gerencia de forma inteligente por quanto tempo os instantâneos são mantidos. Se nenhuma atividade incomum for detectada, os snapshots são reciclados rapidamente. No entanto, se um ataque for detectado, um snapshot criado antes do início do ataque é mantido por um período prolongado.
 
 
 
@@ -56,9 +56,7 @@ link:enable-task.html["Você pode habilitar a Proteção Autônoma contra Ransom
 
 == Estratégia de proteção contra ransomware da ONTAP
 
-Uma estratégia eficaz de detecção de ransomware deve incluir mais do que uma única camada de proteção.
-
-Uma analogia seria as caraterísticas de segurança de um veículo. Você não confia em uma única caraterística, como um cinto de segurança, para protegê-lo completamente em um acidente. Os airbags, os travões antibloqueio e o aviso de colisão à frente são todos elementos de segurança adicionais que conduzirão a um resultado muito melhor. A proteção contra ransomware deve ser vista da mesma maneira.
+Uma estratégia eficaz de detecção de ransomware deve incluir mais de uma camada de proteção.  Considere os recursos de segurança de um veículo como uma analogia.  Você não depende de um único recurso, como um cinto de segurança, para protegê-lo completamente em um acidente.  Airbags, freios ABS e alerta de colisão frontal são recursos de segurança que, juntos, levam a um melhor resultado.  A proteção contra ransomware deve ser vista da mesma maneira.
 
 Embora o ONTAP inclua recursos como FPolicy, snapshots, SnapLock e Active IQ Digital Advisor (também conhecido como Digital Advisor) para ajudar a proteger contra ransomware, as informações a seguir se concentram no recurso ARP com recursos de aprendizado de máquina.
 
@@ -83,13 +81,13 @@ O ONTAP ARP foi projetado para proteger contra ataques de negação de serviço,
 O ARP detecta a propagação da maioria dos ataques de ransomware depois que apenas um pequeno número de arquivos é criptografado, responde automaticamente para proteger os dados e alerta você sobre a ocorrência de um ataque suspeito.
 
 
-NOTE: Nenhum sistema de prevenção ou detecção de ransomware pode garantir completamente a segurança de um ataque de ransomware. Embora seja possível que um ataque não seja detetado, o ARP atua como uma importante camada adicional de defesa se o software antivírus não conseguir detetar uma intrusão.
+NOTE: Nenhum sistema de detecção de ransomware pode garantir segurança completa.  O ARP fornece uma camada extra de defesa caso o software antivírus não detecte uma intrusão.
 
 
 
 == Aprenda sobre os modos ARP
 
-Após a ativação do ARP para um volume, ele passa por dois modos distintos. O ARP utiliza um período de aprendizado ou avaliação para estabelecer uma linha de base do comportamento normal da carga de trabalho. Durante esse período, o ARP analisa as métricas do sistema para desenvolver um perfil de alerta antes de ativar a proteção ativa. Após a transição para o modo de detecção ativa, o ARP começa a monitorar atividades anormais em tempo real, tomando medidas de proteção automaticamente e gerando alertas caso comportamentos anormais sejam detectados.
+Depois que o ARP é habilitado para um volume, ele entra em um período de aprendizado para estabelecer uma linha de base.  O ARP analisa as métricas do sistema para desenvolver um perfil de alerta antes de passar para o modo de detecção ativa.  No modo ativo, o ARP monitora atividades anormais, tomando ações de proteção e gerando alertas se detectar comportamento anormal.
 
 Para ARP, os comportamentos do modo de aprendizagem e do modo ativo diferem de acordo com a versão do ONTAP , o tipo de volume e o protocolo (NAS ou SAN).
 
@@ -185,9 +183,9 @@ Você pode visualizar informações sobre ameaças moderadas na seção *Eventos
 
 === Snapshots ARP
 
-No ONTAP 9.16.1 e versões anteriores, o ARP cria um snapshot quando os primeiros sinais de um ataque são detectados. Uma análise detalhada é então conduzida para confirmar ou descartar o ataque potencial. Como os snapshots do ARP são criados proativamente, mesmo antes de um ataque ser totalmente confirmado, eles também podem ser gerados em intervalos regulares para determinados aplicativos legítimos. A presença desses snapshots não deve ser considerada uma anomalia. Se um ataque for confirmado, a probabilidade de ataque é aumentada para  `Moderate` , e uma notificação de ataque é gerada.
+O ARP cria um instantâneo quando os primeiros sinais de um ataque são detectados. Uma análise detalhada é então conduzida para confirmar ou descartar o ataque potencial.  Como os snapshots ARP são criados proativamente antes mesmo de um ataque ser totalmente confirmado, eles também podem ser gerados em intervalos regulares para determinados aplicativos legítimos. A presença desses snapshots não deve ser considerada uma anomalia.  Se um ataque for confirmado, a probabilidade de ataque é aumentada para `Moderate` e uma notificação de ataque é gerada.
 
-A partir do ONTAP 9.17.1, snapshots ARP são gerados em intervalos regulares para volumes NAS e SAN. O ONTAP adiciona um nome ao snapshot ARP para torná-lo facilmente identificável.
+A partir do ONTAP 9.17.1, instantâneos ARP são gerados em intervalos regulares para volumes NAS e SAN, bem como em resposta a anomalias detectadas. O ONTAP adiciona um nome ao snapshot ARP para torná-lo facilmente identificável.
 
 A partir do ONTAP 9.11.1, você pode modificar as configurações de retenção. Para obter mais informações, consulte link:modify-automatic-shapshot-options-task.html["Modificar opções para instantâneos"] .
 
@@ -206,11 +204,15 @@ A tabela a seguir resume as diferenças de instantâneo ARP entre o ONTAP 9.16.1
 
 O intervalo de criação de instantâneo é baseado no tipo de gatilho.
  a| 
-Os instantâneos são criados em intervalos fixos de 4 horas, independentemente de qualquer gatilho específico, e não são necessariamente indicativos de um ataque.
+* Os instantâneos são criados em intervalos fixos de 4 horas, independentemente de qualquer gatilho específico
+* Confirmação de um ataque
+
+
+Um instantâneo "periódico" ou de "ataque" é criado com base no tipo de gatilho.
 
 
 
-| Convenção de nomes prefixados | "Backup anti-ransomware" | "Backup_periódico_anti_ransomware" 
+| Convenção de nomes prefixados | "Backup anti-ransomware" | "Backup_periódico_anti_ransomware" "Backup_anti_ataque_anti_ransomware" 
 
 
 | Comportamento de exclusão | O instantâneo ARP está bloqueado e não pode ser excluído pelo administrador | O instantâneo ARP está bloqueado e não pode ser excluído pelo administrador 
@@ -228,9 +230,6 @@ Os instantâneos normalmente são retidos por 12 horas.
 
 * Volumes NAS: se um ataque for confirmado pela análise de arquivos, os instantâneos criados antes do ataque serão retidos até que o administrador marque o ataque como verdadeiro ou um falso positivo (suspeita clara).
 * Volume SAN ou datastores de VM: se um ataque for confirmado pela análise de entropia de bloco, os snapshots criados antes do ataque serão retidos por 10 dias (configurável).
-+
-O período de retenção de um snapshot criado antes do início de um ataque é estendido para 10 dias (configurável).
-
 
 
 
@@ -258,11 +257,11 @@ Os administradores podem executar uma ação de limpeza de suspeitos que define 
 
 == Como recuperar dados no ONTAP após um ataque de ransomware
 
-O ARP se baseia na comprovada tecnologia de proteção de dados e recuperação de desastres do ONTAP para responder a ataques de ransomware. O ARP cria snapshots bloqueados quando os primeiros sinais de um ataque são detectados no ONTAP 9.16.1 e versões anteriores ou em intervalos regulares na versão 9.17.1 e versões posteriores. Você precisará primeiro confirmar se o ataque é real ou um falso positivo. Se você confirmar o ataque, o volume poderá ser restaurado usando o snapshot do ARP.
+O ARP se baseia na comprovada tecnologia de proteção de dados e recuperação de desastres do ONTAP para responder a ataques de ransomware. O ARP cria instantâneos bloqueados quando os primeiros sinais de um ataque são detectados. Você precisará primeiro confirmar se o ataque é real ou um falso positivo. Se você confirmar o ataque, o volume poderá ser restaurado usando o snapshot do ARP.
 
-Os instantâneos bloqueados não podem ser eliminados por meios normais. No entanto, se você decidir mais tarde marcar o ataque como um falso positivo, a cópia bloqueada será excluída.
+Snapshots bloqueados não podem ser excluídos por meios normais.  Entretanto, se mais tarde você decidir marcar o ataque como um falso positivo, o ONTAP excluirá a cópia bloqueada.
 
-Com o conhecimento dos arquivos afetados e o tempo de ataque, é possível recuperar seletivamente os arquivos afetados de vários snapshots, em vez de simplesmente reverter todo o volume para um dos snapshots.
+Você pode recuperar arquivos afetados de instantâneos selecionados em vez de reverter o volume inteiro.
 
 Consulte os tópicos a seguir para obter mais informações sobre como responder a um ataque e recuperar dados:
 
