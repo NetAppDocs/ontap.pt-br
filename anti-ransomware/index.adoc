@@ -16,7 +16,7 @@ summary: A Proteção Autônoma contra Ransomware usa análise de carga de traba
 
 
 [role="lead"]
-A partir do ONTAP 9.10.1, os administradores do ONTAP podem habilitar a Proteção Autônoma contra Ransomware (ARP) para realizar análises de carga de trabalho em ambientes NAS (NFS e SMB) para detectar e alertar proativamente sobre atividades anormais que possam indicar um ataque de ransomware. A partir do ONTAP 9.17.1, a ARP também oferece suporte a volumes de dispositivos de bloco, incluindo volumes SAN contendo LUNs ou volumes NAS contendo discos virtuais de hipervisores como VMware, Hyper-V e KVM.
+A partir do ONTAP 9.10.1, os administradores do ONTAP podem habilitar a Proteção Autônoma contra Ransomware (ARP) para realizar análises de carga de trabalho em ambientes NAS (NFS e SMB) para detectar e alertar proativamente sobre atividades anormais que possam indicar um ataque de ransomware. A partir do ONTAP 9.17.1, o ARP também oferece suporte a volumes de dispositivos de bloco, incluindo volumes SAN contendo LUNs ou namespaces NVMe, ou volumes NAS contendo discos virtuais de hipervisores como VMware, Hyper-V e KVM.
 
 O ARP é integrado diretamente ao ONTAP, garantindo controle e coordenação integrados com os demais recursos do ONTAP. O ARP opera em tempo real, processando dados conforme são gravados ou lidos no sistema de arquivos e detectando e respondendo rapidamente a potenciais ataques de ransomware.
 
@@ -189,7 +189,7 @@ A partir do ONTAP 9.17.1, instantâneos ARP são gerados em intervalos regulares
 
 A partir do ONTAP 9.11.1, você pode modificar as configurações de retenção. Para obter mais informações, consulte link:modify-automatic-shapshot-options-task.html["Modificar opções para instantâneos"] .
 
-A tabela a seguir resume as diferenças de instantâneo ARP entre o ONTAP 9.16.1 e versões anteriores e o ONTAP 9.17.1.
+A tabela a seguir resume as diferenças de instantâneos do ARP por versão.
 
 [cols="1,3,3"]
 |===
@@ -197,7 +197,11 @@ A tabela a seguir resume as diferenças de instantâneo ARP entre o ONTAP 9.16.1
 
 
 | Gatilho de criação  a| 
-Os instantâneos são criados em intervalos fixos de 4 horas, independentemente de qualquer gatilho específico, e não são necessariamente indicativos de um ataque.
+* Os instantâneos são criados em intervalos fixos de 4 horas, independentemente de qualquer gatilho específico
+* Confirmação de um ataque
+
+
+Um instantâneo "periódico" ou de "ataque" é criado com base no tipo de gatilho.
  a| 
 * Alta entropia é detectada
 * Uma nova extensão de arquivo foi detectada (9.15.1 e anteriores)
@@ -208,13 +212,7 @@ O intervalo de criação de instantâneo é baseado no tipo de gatilho.
 
 
 
- a| 
-* Os instantâneos são criados em intervalos fixos de 4 horas, independentemente de qualquer gatilho específico
-* Confirmação de um ataque
-
-
-Um instantâneo "periódico" ou de "ataque" é criado com base no tipo de gatilho.
-| Convenção de nomes prefixados | "Backup_periódico_anti_ransomware" "Backup_anti_ataque_anti_ransomware" 
+| Convenção de nomes prefixados | "Backup_periódico_anti_ransomware" "Backup_anti_ataque_anti_ransomware" | "Backup anti-ransomware" 
 
 
 | Comportamento de exclusão | O instantâneo ARP está bloqueado e não pode ser excluído pelo administrador | O instantâneo ARP está bloqueado e não pode ser excluído pelo administrador 
@@ -228,9 +226,6 @@ Os instantâneos normalmente são retidos por 12 horas.
 
 * Volumes NAS: se um ataque for confirmado pela análise de arquivos, os instantâneos criados antes do ataque serão retidos até que o administrador marque o ataque como verdadeiro ou um falso positivo (suspeita clara).
 * Volume SAN ou datastores de VM: se um ataque for confirmado pela análise de entropia de bloco, os snapshots criados antes do ataque serão retidos por 10 dias (configurável).
-+
-O período de retenção de um snapshot criado antes do início de um ataque é estendido para 10 dias (configurável).
-
 
  a| 
 * Determinado com base nas condições de disparo (não fixo)
