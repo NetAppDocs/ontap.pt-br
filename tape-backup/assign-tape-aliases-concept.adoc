@@ -57,3 +57,49 @@ Nomes lógicos e números de série são usados apenas para acessar um dispositi
 
 ====
 Existem dois tipos de nomes disponíveis para a distorção: Nome do caminho físico e número de série.
+
+
+
+== Aprenda sobre nomes de caminhos físicos
+
+Nomes de caminho físico (PPNs) são as sequências de endereços numéricos que o ONTAP atribui a unidades de fita e bibliotecas de fitas com base no adaptador ou switch SCSI-2/3 (local específico) que estão conetados ao sistema de armazenamento. PPNs também são conhecidos como nomes elétricos.
+
+Os PPNs de dispositivos com conexão direta usam o seguinte formato `host_adapter`: . `device_id_lun`
+
+[NOTE]
+====
+O valor LUN é exibido apenas para dispositivos de troca de fita e médio cujos valores de LUN não são zero; ou seja, se o valor LUN for zero, a `lun` parte do PPN não é exibida.
+
+====
+Por exemplo, o PPN 8,6 indica que o número do adaptador host é 8, o ID do dispositivo é 6 e o número da unidade lógica (LUN) é 0.
+
+Os dispositivos de fita SAS também são dispositivos de conexão direta. Por exemplo, o PPN 5c.4 indica que em um sistema de armazenamento, o HBA SAS está conetado no slot 5, a fita SAS está conetada à porta C do HBA SAS e o ID do dispositivo é 4.
+
+Os PPNs de dispositivos conetados a switch Fibre Channel usam o seguinte formato `switch:port_id`: . `device_id_lun`
+
+Por exemplo, o PPN my_SWITCH:5.3L2 indica que a unidade de fita conetada à porta 5 de um switch chamado MY_SWITCH está definida com ID de dispositivo 3 e tem o LUN 2.
+
+O LUN (número de unidade lógica) é determinado pela unidade. Fibre Channel, unidades de fita SCSI e bibliotecas e discos têm PPNs.
+
+Os PPNs de unidades de fita e bibliotecas não mudam a menos que o nome do switch mude, a unidade de fita ou a biblioteca se mova ou a unidade de fita ou a biblioteca seja reconfigurada. Os PPNs permanecem inalterados após a reinicialização. Por exemplo, se uma unidade de fita chamada MY_SWITCH:5.3L2 for removida e uma nova unidade de fita com o mesmo ID de dispositivo e LUN estiver conetada à porta 5 do switch my_SWITCH, a nova unidade de fita será acessível usando MY_SWITCH:5.3L2.
+
+
+
+== Saiba mais sobre números de série
+
+Um número de série (SN) é um identificador exclusivo para uma unidade de fita ou um carregador médio. O ONTAP gera aliases baseados no SN em vez do WWN.
+
+Como o SN é um identificador exclusivo para uma unidade de fita ou um trocador de médio, o alias permanece o mesmo independentemente dos caminhos de conexão múltiplos para a unidade de fita ou trocador de médio. Isso ajuda os sistemas de armazenamento a rastrear a mesma unidade de fita ou carregador médio em uma configuração de biblioteca de fitas.
+
+O SN de uma unidade de fita ou de um trocador de médio não muda mesmo se você renomear o switch Fibre Channel ao qual a unidade de fita ou o trocador de médio está conetado. No entanto, em uma biblioteca de fitas, se você substituir uma unidade de fita existente por uma nova, o ONTAP gera novos aliases porque o SN da unidade de fita muda. Além disso, se você mover uma unidade de fita existente para um novo slot em uma biblioteca de fitas ou remapear o LUN da unidade de fita, o ONTAP gera um novo alias para essa unidade de fita.
+
+[NOTE]
+====
+Você deve atualizar os aplicativos de backup com os aliases recém-gerados.
+
+====
+O SN de um dispositivo de fita usa o seguinte formato: `SN[xxxxxxxxxx]L[X]`
+
+`x` É um caractere alfanumérico e L``X`` é o LUN do dispositivo de fita. Se o LUN for 0, a parte L``X`` da cadeia de carateres não será exibida.
+
+Cada SN é composto por até 32 carateres; o formato para o SN não é sensível a maiúsculas e minúsculas.
