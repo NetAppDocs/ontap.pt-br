@@ -1,8 +1,8 @@
 ---
 permalink: mediator/host-maintenance-task.html 
 sidebar: sidebar 
-keywords: mediator, maintain, host, maintenance, package update, kernal upgrade, change hostname, change IP, self-signed certificate, self signed certificate 
-summary: Para um desempenho ideal, você deve manter o OD do host para o Mediador ONTAP regularmente. 
+keywords: mediator, maintain, host, maintenance, package update, kernel upgrade, change hostname, change IP, self-signed certificate, self signed certificate 
+summary: Faça a manutenção regular do sistema operacional host do ONTAP Mediator para obter o desempenho ideal. 
 ---
 = Mantenha o sistema operacional do host para o ONTAP Mediator
 :allow-uri-read: 
@@ -11,25 +11,25 @@ summary: Para um desempenho ideal, você deve manter o OD do host para o Mediado
 
 
 [role="lead"]
-Para um desempenho ideal, você deve manter o sistema operacional do host para o ONTAP Mediator regularmente.
+Faça a manutenção regular do sistema operacional host do ONTAP Mediator para obter o desempenho ideal.
 
 
 
 == Reinicie o host
 
-Reinicie o host quando os clusters estiverem saudáveis. Enquanto o ONTAP Mediator estiver offline, os clusters correm o risco de não conseguir reagir adequadamente a falhas. Recomenda-se uma janela de serviço se for necessário reiniciar.
+Reinicie o host somente quando os clusters estiverem íntegros.  Os clusters não podem responder a falhas enquanto o ONTAP Mediator estiver offline.  Agende uma janela de serviço antes de reinicializar.
 
-O Mediador ONTAP será retomado automaticamente durante uma reinicialização e reentrará as relações que foram configuradas anteriormente com clusters ONTAP.
+O ONTAP Mediator é retomado automaticamente durante uma reinicialização e reinserido em relacionamentos configurados anteriormente com clusters ONTAP .
 
 
 
 == Atualizações do pacote de host
 
-Qualquer biblioteca ou pacote yum (exceto o kernel) pode ser atualizado com segurança, mas pode exigir uma reinicialização para entrar em vigor. Recomenda-se uma janela de serviço se for necessário reiniciar.
+Atualize qualquer biblioteca ou pacote yum, exceto o kernel.  Reinicie o host, se necessário, para que as alterações entrem em vigor.  Agende uma janela de serviço antes de reinicializar o host.
 
 Se você instalar o `yum-utils` pacote, use o `needs-restarting` comando para detetar se alguma alteração de pacote requer uma reinicialização.
 
-Você deve reiniciar se alguma das dependências do ONTAP Mediator for atualizada porque elas não terão efeito imediato nos processos em execução.
+Reinicie após atualizar as dependências do ONTAP Mediator porque as alterações não têm efeito imediato.
 
 
 
@@ -40,11 +40,206 @@ SCST deve ser compilado para o kernel que está sendo usado. Para atualizar o SO
 .Passos
 Execute as etapas a seguir para atualizar o kernel do sistema operacional do host.
 
+
+NOTE: Antes de atualizar o kernel, verifique se o sistema operacional e a versão do ONTAP Mediator são compatíveis.  Para versões suportadas, consulte olink:whats-new-concept.html#os-support-matrix["Matriz de suporte de SO"] .
+
 . Pare o Mediador ONTAP.
-. Desinstale o pacote SCST. (O SCST não fornece um mecanismo de atualização.)
+. Desinstale o pacote SCST, veja<<Executar manutenção do host>> .  (O SCST não fornece um mecanismo de atualização.)
 . Atualize o sistema operacional e reinicie.
 . Volte a instalar o pacote SCST.
 . Reative o ONTAP Mediator.
+
+
+
+
+== Executar manutenção do host
+
+Atualizar o kernel da VM pode causar problemas de compatibilidade com módulos SCST.  Desinstale e reinstale manualmente o SCST.
+
+
+
+=== Etapa 1: Desinstale o SCST
+
+Para desinstalar o SCST, use o pacote tar da sua versão do ONTAP Mediator.
+
+.Passos
+. Baixe o pacote SCST apropriado (conforme mostrado na tabela a seguir) e extraia-o.
++
+[cols="50,50"]
+|===
+
+
+| Para esta versão ... | Use este pacote tar... 
+
+
+ a| 
+Mediador ONTAP 1.10
+ a| 
+scst-3.9.tar.gz
+
+
+
+ a| 
+Mediador ONTAP 1.9.1
+ a| 
+scst-3,8.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,9
+ a| 
+scst-3,8.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,8
+ a| 
+scst-3,8.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,7
+ a| 
+scst-3,7.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,6
+ a| 
+scst-3,7.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,5
+ a| 
+scst-3,6.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,4
+ a| 
+scst-3,6.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,3
+ a| 
+scst-3,5.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,1
+ a| 
+scst-3,4.0.tar.bz2
+
+
+
+ a| 
+ONTAP Mediador 1,0
+ a| 
+scst-3,3.0.tar.bz2
+
+|===
++
+.. Acesse o pacote de código aberto emlink:https://scst.sourceforge.net/downloads.html["Downloads do SCST SourceForge"^] .
+.. Selecione *Baixar versões lançadas*.
+.. Extraia o pacote para sua VM.
+
+
+. Execute os seguintes comandos de desinstalação no `scst` diretório:
++
+.. `systemctl stop mediator-scst`
+.. `make scstadm_uninstall`
+.. `make iscsi_uninstall`
+.. `make usr_uninstall`
+.. `make scst_uninstall`
+.. `depmod`
+
+
+
+
+
+
+=== Etapa 2: Instalar o SCST
+
+Para instalar manualmente o SCST, você precisa do pacote tar SCST usado para a versão instalada do ONTAP Mediator (consulte o<<scst-bundle-table,Tabela SCST>> ).
+
+
+NOTE: Execute esta etapa antes de instalar o ONTAP Mediator. Se a versão do SCST que você estiver usando for mais recente que a versão incluída no instalador do ONTAP Mediator, o instalador pulará esta etapa.
+
+. Execute os seguintes comandos de instalação no `scst` diretório:
++
+.. `make 2release`
+.. `make scst_install`
+.. `make usr_install`
+.. `make iscsi_install`
+.. `make scstadm_install`
+.. `depmod`
++
+[NOTE]
+====
+Se você estiver executando uma instalação pela primeira vez e quiser pré-instalar o ONTAP Mediator, execute o seguinte comando antes de continuar com a próxima etapa:
+
+`mkdir -p /opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys`
+
+====
+.. `cp scst/src/certs/scst_module_key.der /opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/`
+.. `patch /etc/init.d/scst < /opt/netapp/lib/ontap_mediator/systemd/scst.patch`
++
+
+NOTE: Se você pré-instalar o SCST antes do ONTAP Mediator durante uma primeira instalação, pule esta etapa.  O instalador aplica patches SCST relevantes.
+
+
+
+. Opcionalmente, se o Secure Boot estiver ativado, antes de reiniciar, execute as seguintes etapas:
++
+.. Determine cada nome de arquivo para o `scst_vdisk` , `scst` , e `iscsi_scst` módulos:
++
+....
+[root@localhost ~]# modinfo -n scst_vdisk
+[root@localhost ~]# modinfo -n scst
+[root@localhost ~]# modinfo -n iscsi_scst
+....
+.. Determine a versão do kernel:
++
+....
+[root@localhost ~]# uname -r
+....
+.. Assine cada arquivo de módulo com o kernel:
++
+....
+[root@localhost ~]# /usr/src/kernels/<KERNEL-RELEASE>/scripts/sign-file \sha256 \
+/opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/scst_module_key.priv \
+/opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/scst_module_key.der \
+_module-filename_
+....
+.. Instale a chave UEFI com o firmware.
++
+As instruções para instalar a chave UEFI estão localizadas em:
+
++
+`/opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/README.module-signing`
+
++
+A chave UEFI gerada está localizada em:
+
++
+`/opt/netapp/lib/ontap_mediator/ontap_mediator/SCST_mod_keys/scst_module_key.der`
+
+
+
+. Reinicie o sistema:
++
+`reboot`
+
 
 
 
@@ -53,12 +248,12 @@ Execute as etapas a seguir para atualizar o kernel do sistema operacional do hos
 
 .Sobre esta tarefa
 * Execute esta tarefa no host Linux onde você instalou o ONTAP Mediator.
-* Você pode executar esta tarefa somente se os certificados autoassinados gerados se tornarem obsoletos devido a alterações no nome do host ou no endereço IP do host após a instalação do ONTAP Mediator.
-* Depois que o certificado auto-assinado temporário for substituído por um certificado de terceiros confiável, você _não_ usará essa tarefa para regenerar um certificado. A ausência de um certificado auto-assinado fará com que este procedimento falhe.
+* Execute esta tarefa somente se os certificados autoassinados estiverem obsoletos porque o nome do host ou endereço IP foi alterado após a instalação do ONTAP Mediator.
+* Depois que o certificado autoassinado temporário for substituído por um certificado confiável de terceiros, você _não_ usa esta tarefa para regenerar um certificado.  Se você não tiver um certificado autoassinado, não poderá usar este procedimento.
 
 
 .Passo
-Para regenerar um novo certificado auto-assinado temporário para o host atual, execute o seguinte passo:
+Crie um certificado autoassinado temporário para o host atual:
 
 . Reinicie o ONTAP Mediator:
 +

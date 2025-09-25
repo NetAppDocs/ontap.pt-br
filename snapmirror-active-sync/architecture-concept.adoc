@@ -20,7 +20,7 @@ O relacionamento de proteção de dados para proteger a continuidade dos negóci
 
 image:snapmirror-active-sync-architecture.png["Arquitetura do SnapMirror ativo"]
 
-Embora existam duas cópias separadas dos dados no relacionamento de proteção de dados, como a sincronização ativa do SnapMirror mantém a mesma identidade de namespace LUN ou NVMe, o host do aplicativo o vê como um dispositivo virtual compartilhado com vários caminhos, enquanto apenas uma cópia de namespace LUN ou NVMe está sendo gravada por vez. Quando uma falha deixa o sistema de armazenamento primário offline, o ONTAP detecta essa falha e usa o Mediador para reconfirmação; se nem o ONTAP nem o Mediador conseguirem executar ping no site primário, o ONTAP executa a operação de failover automática. Esse processo resulta no failover apenas de um aplicativo específico, sem a necessidade de intervenção manual ou script, que antes eram necessários para fins de failover.
+Embora existam duas cópias separadas dos dados no relacionamento de proteção de dados, como a sincronização ativa do SnapMirror mantém a mesma identidade de namespace LUN ou NVMe, o host do aplicativo o vê como um dispositivo virtual compartilhado com vários caminhos, enquanto apenas uma cópia de namespace LUN ou NVMe está sendo gravada por vez. Quando uma falha deixa o sistema de armazenamento primário offline, o ONTAP detecta essa falha e usa o Mediador para reconfirmação; se nem o ONTAP nem o Mediador conseguirem executar ping no site primário, o ONTAP executa a operação de failover automática. Esse processo resulta no failover apenas de um aplicativo específico, sem a necessidade de intervenção manual ou script, o que antes era necessário para fins de failover.
 
 Outros pontos a considerar:
 
@@ -35,7 +35,7 @@ Outros pontos a considerar:
 
 O SnapMirror Active Sync usa um mediador para atuar como testemunha passiva das cópias do SnapMirror Active Sync. Em caso de partição de rede ou indisponibilidade de uma cópia, o SnapMirror Active Sync usa o mediador para determinar qual cópia continua a fornecer E/S, enquanto interrompe a E/S na outra cópia. Além do ONTAP Mediator local, a partir do ONTAP 9.17.1, você pode instalar o ONTAP Cloud Mediator para fornecer a mesma funcionalidade em uma implantação na nuvem. Você pode usar o ONTAP Mediator ou o ONTAP Cloud Mediator, mas não pode usar os dois ao mesmo tempo.
 
-O Mediador desempenha um papel crucial nas configurações de sincronização ativa do SnapMirror como testemunha passiva de quorum, garantindo a manutenção do quorum e facilitando o acesso aos dados durante falhas. Ele atua como um proxy de ping para que os controladores determinem a atividade dos controladores pares. Embora o Mediador não acione ativamente as operações de comutação, ele desempenha uma função vital, permitindo que o nó sobrevivente verifique o status do seu parceiro durante problemas de comunicação de rede. Em sua função de testemunha de quorum, o Mediador ONTAP fornece um caminho alternativo (servindo efetivamente como um proxy) para o cluster de pares.
+O Mediador desempenha um papel crucial nas configurações de sincronização ativa do SnapMirror como testemunha passiva de quorum, garantindo a manutenção do quorum e facilitando o acesso aos dados durante falhas. Ele atua como um proxy de ping para controladores determinarem a atividade dos controladores pares. Embora o Mediador não acione ativamente as operações de comutação, ele desempenha uma função vital, permitindo que o nó sobrevivente verifique o status do seu parceiro durante problemas de comunicação de rede. Em sua função de testemunha de quorum, o Mediador ONTAP fornece um caminho alternativo (servindo efetivamente como um proxy) para o cluster de pares.
 
 Além disso, permite que os clusters obtenham essas informações como parte do processo de quorum. Ele utiliza o LIF de gerenciamento de nós e o LIF de gerenciamento de cluster para fins de comunicação. Estabelece conexões redundantes por meio de múltiplos caminhos para diferenciar entre falha de site e falha do InterSwitch Link (ISL). Quando um cluster perde a conexão com o software Mediator e todos os seus nós devido a um evento, ele é considerado inacessível. Isso aciona um alerta e habilita o failover automatizado para o grupo de consistência de espelho no site secundário, garantindo E/S ininterruptas para o cliente. O caminho de dados de replicação depende de um mecanismo de heartbeat e, se uma falha ou evento de rede persistir além de um determinado período, pode resultar em falhas de heartbeat, fazendo com que o relacionamento fique fora de sincronia. No entanto, a presença de caminhos redundantes, como failover de LIF para outra porta, pode sustentar o heartbeat e evitar tais interrupções.
 
@@ -55,16 +55,16 @@ O ONTAP Mediator é usado para os seguintes propósitos:
 
 
 
-NOTE: O ONTAP Mediator 1,7 pode gerenciar dez pares de cluster com o objetivo de continuidade dos negócios.
+NOTE: O ONTAP Mediator 1.7 pode gerenciar dez pares de clusters para continuidade dos negócios.
 
 
-NOTE: Quando o Mediador ONTAP não está disponível, não é possível executar failovers planejados ou automatizados. Os dados da aplicação continuam a replicar de forma síncrona, sem interrupções, para zero perda de dados.
+NOTE: Quando o Mediador ONTAP não estiver disponível, você não poderá executar failovers planejados ou automatizados.  Os dados do aplicativo continuam a ser replicados de forma sincronizada, sem nenhuma interrupção, sem perda de dados.
 
 .Mediador de Nuvem ONTAP
 A partir do ONTAP 9.17.1, o ONTAP Cloud Mediator está disponível como um serviço baseado em nuvem no BlueXP para uso com a sincronização ativa do SnapMirror . Semelhante ao ONTAP Mediator, o ONTAP Cloud Mediator oferece as seguintes funcionalidades em um relacionamento de sincronização ativa do SnapMirror :
 
 * Fornece um armazenamento persistente e protegido para metadados de sincronização ativa do HA ou SnapMirror .
-* Serve como proxy de ping para a atividade do controlador.
+* Serve como um proxy ping para vivacidade do controlador.
 * Fornece funcionalidade de consulta de integridade do nó síncrono para auxiliar na determinação do quórum.
 
 
@@ -80,7 +80,7 @@ image:workflow_san_snapmirror_business_continuity.png["Design da sincronização
 
 O diagrama mostra uma aplicação empresarial hospedada em uma VM de storage (SVM) no data center primário. O SVM contém cinco volumes, três dos quais fazem parte de um grupo de consistência. Os três volumes no grupo de consistência são espelhados para um data center secundário. Em circunstâncias normais, todas as operações de gravação são executadas no data center principal; na verdade, esse data center serve como fonte para operações de e/S, enquanto o data center secundário serve como destino.
 
-No caso de um cenário de desastre no data center principal, o ONTAP direciona o data center secundário para atuar como o principal, atendendo a todas as operações de e/S. Apenas os volumes que são espelhados no grupo consistência são servidos. Qualquer operação pertencente aos outros dois volumes na SVM será afetada pelo evento de desastre.
+No caso de um cenário de desastre no data center principal, o ONTAP direciona o data center secundário para atuar como primário, atendendo a todas as operações de E/S.  Somente os volumes espelhados no grupo de consistência são atendidos.  Todas as operações referentes aos outros dois volumes no SVM são afetadas pelo evento de desastre.
 
 
 
