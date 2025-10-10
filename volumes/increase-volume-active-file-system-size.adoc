@@ -1,0 +1,89 @@
+---
+permalink: volumes/increase-volume-active-file-system-size.html 
+sidebar: sidebar 
+keywords: increase, active, file system, volume, cpu offload, compression offload, dedicated offload processor, storage efficiency, compression 
+summary: Se você estiver movendo um volume de uma plataforma que _não_ oferece suporte à eficiência de armazenamento do processador de offload dedicado para uma plataforma que _oferece_ suporte à eficiência de armazenamento de offload dedicado, você deve aumentar o tamanho do sistema de arquivos ativo do volume antes de movê-lo para evitar que ele fique sem espaço. 
+---
+= Aumente o sistema de arquivos ativo de um volume ONTAP antes de migrar da compactação adaptativa de 8k
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Plataformas que suportam compressão adaptável de 8k economizam espaço no nível de volume.  As plataformas AFF C-Series e as plataformas que suportam compactação de 32k economizam espaço no nível agregado.  Ao migrar um volume de compactação adaptável de 8k para uma plataforma AFF C-Series ou para uma plataforma com compactação de 32k, você precisa aumentar o tamanho do sistema de arquivos ativo do volume pela economia de compactação de 8k.  Isso evita que o volume fique sem espaço livre durante a movimentação.
+
+Os seguintes sistemas suportam compactação de 32k:
+
+[cols="2"]
+|===
+| Plataforma | Versão de ONTAP 
+
+
+ a| 
+* AFF A1K
+* AFF A90
+* AFF A70
+* FAS90
+* FAS70
+
+| 9.15.1 ou posterior 
+
+
+ a| 
+* AFF A50
+* AFF A30
+
+| 9.16.1 ou posterior 
+|===
+Saiba mais sobre link:../concepts/builtin-storage-efficiency-concept.html["Plataformas AFF e FAS que suportam compressão de 32k"] .
+
+Veja olink:https://hwu.netapp.com/["Hardware Universe"^] para uma lista completa de plataformas da série C da AFF .
+
+.Sobre esta tarefa
+Execute estas etapas se estiver migrando seus dados usando uma operação de movimentação de volume.  Se você estiver migrando seus dados usando uma operação SnapMirror , não precisará aumentar manualmente o tamanho do sistema de arquivos ativo.  Os volumes de destino do SnapMirror usam o dimensionamento automático de volume por padrão e, portanto, não se espera que fiquem sem espaço devido à economia de compactação realizada na camada de agregação em vez da camada de volume.
+
+.Antes de começar
+Se o relatório e a aplicação do espaço lógico não estiverem habilitados no seu volume, você poderá habilitá-los opcionalmente configurando o `-is-space-reporting-logical` e `-is-space-enforcement-logical` parâmetros para *true*.  Habilitar essas configurações antes da movimentação do volume pode ajudar você a avaliar se o seu volume é grande o suficiente para acomodar a perda de economia de compactação na camada de volume quando você converte da compactação de 8k.  Você deve habilitar essas configurações no volume.  Se você habilitar essas configurações no nível do SVM, elas serão aplicadas somente aos volumes recém-criados.
+
+.Passos
+. Verifique o tamanho atual do volume e a reserva de snapshot:
++
+[source, cli]
+----
+volume show-space
+----
+. Verifique a economia de espaço de compressão do volume:
++
+[source, cli]
+----
+volume show -vserver -volume -fields compression-space-saved
+----
+. Aumenta o tamanho do sistema de arquivos ativo do volume pela quantidade mostrada para `compression-space-saved` mais a reserva de instantâneos.
++
+[source, cli]
+----
+volume size -vserver <vserver_name> -volume <volume_name> -new-size +<size>
+----
++
+.Exemplo
+SE um volume tiver 100 GB e uma reserva de snapshot de 20%, o sistema de arquivos ativo terá 80 GB e a reserva de snapshot será de 20 GB.  Para aumentar o sistema de arquivos ativo em 20 GB, você deve adicionar 25 GB ao tamanho geral do volume; ou seja, 20 GB para o sistema de arquivos ativo e 5 GB (20%) para a reserva de instantâneo.
+
++
+[listing]
+----
+volume size -vserver svm1 -volume volx -size +20GB
+----
+. Verifique se o tamanho do volume está aumentado:
++
+[source, cli]
+----
+volume show -vserver <vserver_name> -volume <volume_name> -fields size
+----
+
+
+.Resultado
+O tamanho do sistema de arquivos ativo do seu volume é aumentado e você está pronto para mover o volume.
+
+.O que se segue?
+Executar umlink:move-volume-task.html["movimentação de volume"] para migrar seus dados.

@@ -4,7 +4,7 @@ sidebar: sidebar
 keywords: move, volume 
 summary: 'Mova um FlexVol volume para um agregado, nó ou ambos diferentes na mesma máquina virtual de storage (SVM) para equilibrar a capacidade de storage.' 
 ---
-= Mover um volume
+= Mover um volume ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
@@ -18,12 +18,32 @@ Por padrão, se a operação de transição não for concluída dentro de 30 seg
 
 Você deve ser um administrador de cluster para executar esta tarefa.
 
-.Passos
-. Se você estiver movendo um espelho de proteção de dados e não tiver inicializado a relação de espelho, inicialize a relação de espelho usando o `snapmirror initialize` comando. Saiba mais sobre `snapmirror initialize` o link:https://docs.netapp.com/us-en/ontap-cli/snapmirror-initialize.html["Referência do comando ONTAP"^]na .
+.Antes de começar
+* Se você estiver movendo um volume que usa compactação adaptável de 8K para uma das seguintes plataformas, você develink:increase-volume-active-file-system-size.html["aumentar o tamanho do sistema de arquivos ativo do volume"] antes de mover o volume.  Os dados são compactados de forma diferente nessas plataformas para que o espaço seja economizado no nível agregado em vez do nível de volume.  Devido a essa diferença, o tamanho do sistema de arquivos ativo do volume deve ser aumentado na quantidade de economia de compactação de 8k para evitar que o volume fique sem espaço durante a movimentação do volume.
++
+** Plataformas AFF e FAS que oferecem suporte à eficiência de armazenamento do processador de offload dedicado
++
+Saiba mais sobre as plataformas AFF e FAS que oferecem suportelink:../concepts/builtin-storage-efficiency-concept.html["eficiência de armazenamento do processador de descarregamento dedicado"] .
+
+** Plataformas AFF Série C
++
+Veja olink:https://hwu.netapp.com/["Hardware Universe"^] para uma lista completa de plataformas da série C.
+
+
+
+* Se você estiver movendo um espelho de proteção de dados e não tiver inicializado o relacionamento do espelho, use o `snapmirror initialize` comando para inicializar o relacionamento de espelho. Saiba mais sobre  `snapmirror initialize` no link:https://docs.netapp.com/us-en/ontap-cli/snapmirror-initialize.html["Referência do comando ONTAP"^] .
 +
 As relações de espelho de proteção de dados devem ser inicializadas antes de poder mover um dos volumes.
 
-. Determine um agregado para o qual você pode mover o volume usando o `volume move target-aggr show` comando.
+
+
+.Passos
+. Determine um agregado para o qual você pode mover o volume:
++
+[source, cli]
+----
+volume move target-aggr show
+----
 +
 O agregado que você selecionar deve ter espaço suficiente para o volume; ou seja, o tamanho disponível é maior do que o volume que você está movendo.
 
@@ -46,8 +66,21 @@ node12a_aggr4    10.36GB          hdd
 +
 Saiba mais sobre `volume move target-aggr show` o link:https://docs.netapp.com/us-en/ontap-cli/volume-move-target-aggr-show.html["Referência do comando ONTAP"^]na .
 
-. Verifique se o volume pode ser movido para o agregado pretendido usando o `volume move start -perform-validation-only` comando para executar uma verificação de validação. Saiba mais sobre `volume move start` o link:https://docs.netapp.com/us-en/ontap-cli/volume-move-start.html["Referência do comando ONTAP"^]na .
-. Mova o volume usando o `volume move start` comando.
+. Execute uma verificação de validação para verificar se o volume pode ser movido para o agregado pretendido:
++
+[source, cli]
+----
+volume move start -perform-validation-only
+----
++
+Saiba mais sobre `volume move start` o link:https://docs.netapp.com/us-en/ontap-cli/volume-move-start.html["Referência do comando ONTAP"^]na .
+
+. Mover o volume:
++
+[source, cli]
+----
+volume move start
+----
 +
 O comando a seguir move o volume user_Max no SVM VS2 para o agregado node12a_aggr3. O movimento é executado como um processo em segundo plano.
 
@@ -57,7 +90,12 @@ O comando a seguir move o volume user_Max no SVM VS2 para o agregado node12a_agg
 cluster1::> volume move start -vserver vs2 -volume user_max
 -destination-aggregate node12a_aggr3
 ----
-. Determine o status da operação de movimentação de volume usando o `volume move show` comando.
+. Determinar o status da operação de movimentação de volume:
++
+[source, cli]
+----
+volume move show
+----
 +
 O exemplo a seguir mostra o estado de uma movimentação de volume que concluiu a fase de replicação e está na fase de transição:
 
@@ -75,6 +113,16 @@ A movimentação do volume está concluída quando não aparece mais na `volume 
 
 +
 Saiba mais sobre `volume move show` o link:https://docs.netapp.com/us-en/ontap-cli/volume-move-show.html["Referência do comando ONTAP"^]na .
+
+. Opcionalmente, visualize a economia de compactação:
++
+[source, cli]
+----
+volume show-footprint -vserver <SVM> -volume <volume_name>
+----
++
+
+NOTE: Economias adicionais no nível agregado podem ser obtidas por meio de uma verificação de conversão pós-processo que é executada automaticamente e logo após a conclusão da movimentação do volume.
 
 
 
