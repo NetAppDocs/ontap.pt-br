@@ -6,8 +6,6 @@ summary: Você pode usar o Gerenciador de chaves integrado para proteger as chav
 ---
 = Habilitar o gerenciamento de chaves integrado para NVE no ONTAP 9.6 e posterior
 :allow-uri-read: 
-:icons: font
-:imagesdir: ../media/
 
 
 [role="lead"]
@@ -18,13 +16,13 @@ Você deve executar o `security key-manager onboard sync` comando sempre que adi
 
 Se você tiver uma configuração do MetroCluster, deverá executar primeiro o `security key-manager onboard enable` comando no cluster local e, em seguida, executar o `security key-manager onboard sync` comando no cluster remoto, usando a mesma senha em cada um. Ao executar o `security key-manager onboard enable` comando a partir do cluster local e depois sincronizar no cluster remoto, não é necessário executar o `enable` comando novamente a partir do cluster remoto.
 
-Saiba mais sobre `security key-manager onboard enable` e `security key-manager onboard sync` no link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=security+key-manager+onboard["Referência do comando ONTAP"^].
+Saiba mais sobre `security key-manager onboard enable` e `security key-manager onboard sync` nolink:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-onboard-enable.html["Referência do comando ONTAP"^] .
 
 Por padrão, você não é obrigado a inserir a senha do gerenciador de chaves quando um nó é reinicializado. Pode utilizar a `cc-mode-enabled=yes` opção para exigir que os utilizadores introduzam a frase-passe após uma reinicialização.
 
 Para NVE, se você definir `cc-mode-enabled=yes`o , os volumes criados com os `volume create` comandos e `volume move start` serão criptografados automaticamente. Para `volume create`, não é necessário especificar `-encrypt true`. Para `volume move start`, não é necessário especificar `-encrypt-destination true`.
 
-Ao configurar a criptografia de dados em repouso do ONTAP, para atender aos requisitos de soluções comerciais para classificação (CSfC), você deve usar o NSE com NVE e garantir que o Gerenciador de chaves integrado esteja habilitado no modo critérios comuns. Consulte a link:https://assets.netapp.com/m/128a1e9f4b5d663/original/Commercial-Solutions-for-Classified.pdf["Resumo da solução CSfC"^]para obter mais informações sobre o CSfC.
+Ao configurar a criptografia de dados em repouso do ONTAP , para atender aos requisitos de Soluções Comerciais para Classificados (CSfC), você deve usar o NSE com o NVE e garantir que o Onboard Key Manager esteja habilitado no modo Common Criteria. Verlink:https://assets.netapp.com/m/128a1e9f4b5d663/original/Commercial-Solutions-for-Classified.pdf["Resumo da solução CSfC"^] .
 
 [NOTE]
 ====
@@ -32,17 +30,17 @@ Quando o Gerenciador de chaves integrado está habilitado no modo Common Criteri
 
 * O sistema monitoriza as tentativas consecutivas de frase-passe do cluster falhadas ao funcionar no modo Common Criteria (critérios comuns).
 +
-Se não conseguir introduzir a frase-passe correta do cluster no arranque, os volumes encriptados não são montados. Para corrigir isso, você deve reinicializar o nó e inserir a senha correta do cluster. Uma vez iniciado, o sistema permite até 5 tentativas consecutivas para inserir corretamente a senha do cluster em um período de 24 horas para qualquer comando que exija a senha do cluster como um parâmetro. Se o limite for atingido (por exemplo, você não conseguiu inserir corretamente a senha do cluster 5 vezes em uma linha), então você deve esperar o período de tempo limite de 24 horas para decorrer, ou você deve reiniciar o nó, a fim de redefinir o limite.
+Se você não digitar a senha do cluster 5 vezes, aguarde 24 horas ou reinicie o nó para redefinir o limite.
 
 * As atualizações de imagem do sistema usam o certificado de assinatura de código NetApp RSA-3072 juntamente com os digests assinados por código SHA-384 para verificar a integridade da imagem em vez do certificado de assinatura de código NetApp RSA-2048 usual e os digests assinados por código SHA-256.
 +
-O comando upgrade verifica se o conteúdo da imagem não foi alterado ou corrompido verificando várias assinaturas digitais. O processo de atualização da imagem prossegue para o próximo passo se a validação for bem-sucedida; caso contrário, a atualização da imagem falhará. Saiba mais sobre `cluster image` o link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=cluster+image["Referência do comando ONTAP"^]na .
+O comando de atualização verifica se o conteúdo da imagem não foi alterado ou corrompido, verificando várias assinaturas digitais.  O sistema prossegue para a próxima etapa no processo de atualização da imagem se a validação for bem-sucedida; caso contrário, a atualização da imagem falha.  Saiba mais sobre `cluster image` nolink:https://docs.netapp.com/us-en/ontap-cli/search.html?q=cluster+image["Referência do comando ONTAP"^] .
 
 
 
 ====
 
-NOTE: O Gerenciador de chaves integrado armazena as chaves na memória volátil. O conteúdo da memória volátil é apagado quando o sistema é reinicializado ou interrompido. Em condições normais de funcionamento, o conteúdo da memória volátil será apagado dentro de 30sMB quando um sistema for interrompido.
+NOTE: O Onboard Key Manager armazena chaves na memória volátil.  O conteúdo da memória volátil é limpo quando o sistema é reinicializado ou interrompido.  O sistema limpa a memória volátil em 30 segundos quando é interrompido.
 
 .Antes de começar
 * Você deve ser um administrador de cluster para executar esta tarefa.
@@ -60,18 +58,7 @@ NOTE: O Gerenciador de chaves integrado armazena as chaves na memória volátil.
 Defina `cc-mode-enabled=yes` para exigir que os usuários inseram a senha do gerenciador de chaves após uma reinicialização. Para NVE, se você definir `cc-mode-enabled=yes`o , os volumes criados com os `volume create` comandos e `volume move start` serão criptografados automaticamente. A `- cc-mode-enabled` opção não é suportada nas configurações do MetroCluster. O `security key-manager onboard enable` comando substitui o `security key-manager setup` comando.
 
 ====
-+
-O exemplo a seguir inicia o comando de configuração do gerenciador de chaves no cluster1 sem exigir que a senha seja inserida após cada reinicialização:
-
-+
-[listing]
-----
-cluster1::> security key-manager onboard enable
-
-Enter the cluster-wide passphrase for onboard key management in Vserver "cluster1"::    <32..256 ASCII characters long text>
-Reenter the cluster-wide passphrase:    <32..256 ASCII characters long text>
-----
-. No prompt de frase-passe, insira uma frase-passe entre 32 e 256 carateres ou, para "cc-mode", uma frase-passe entre 64 e 256 carateres.
+. Digite uma senha entre 32 e 256 caracteres ou, para "`cc-mode`", uma senha entre 64 e 256 caracteres.
 +
 [NOTE]
 ====
@@ -90,36 +77,9 @@ O `security key-manager key query` comando substitui o `security key-manager que
 
 ====
 +
-O exemplo a seguir verifica se as chaves de autenticação foram criadas para `cluster1`:
-
-+
-[listing]
-----
-cluster1::> security key-manager key query -key-type NSE-AK
-               Node: node1
-            Vserver: cluster1
-        Key Manager: onboard
-   Key Manager Type: OKM
- Key Manager Policy: -
-
- Key Tag                               Key Type Encryption   Restored
-
-------------------------------------  -------- ------------ --------
-
-node1                                 NSE-AK   AES-256      true
-
-    Key ID: <id_value>
-
-node1                                 NSE-AK   AES-256      true
-
-    Key ID: <id_value>
-
-2 entries were displayed.
-----
-+
 Saiba mais sobre `security key-manager key query` o link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-key-query.html["Referência do comando ONTAP"^]na .
 
-. Opcionalmente, converta volumes de texto simples em volumes criptografados.
+. Opcionalmente, você pode converter volumes de texto simples em volumes criptografados.
 +
 `volume encryption conversion start`
 
@@ -131,8 +91,11 @@ O Gerenciador de chaves integrado deve estar totalmente configurado antes de con
 .Depois de terminar
 Copie a senha para um local seguro fora do sistema de armazenamento para uso futuro.
 
-Sempre que você configurar a senha do Gerenciador de chaves integrado, você também deve fazer backup das informações manualmente para um local seguro fora do sistema de armazenamento para uso em caso de desastre. link:backup-key-management-information-manual-task.html["Faça backup manual das informações de gerenciamento de chaves integradas"]Consulte .
+Depois de configurar a senha do Onboard Key Manager, faça backup manualmente das informações em um local seguro fora do sistema de armazenamento. Verlink:backup-key-management-information-manual-task.html["Faça backup manual das informações de gerenciamento de chaves integradas"] .
 
 .Informações relacionadas
-* link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-setup.html["configuração do gerenciador de chaves de segurança"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=cluster+image["comandos de imagem de cluster"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-external-enable.html["gerenciador de chaves de segurança externo habilitado"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-key-query.html["consulta de chave do gerenciador de chaves de segurança"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-onboard-enable.html["habilitar gerenciador de chaves de segurança integrado"^]
 

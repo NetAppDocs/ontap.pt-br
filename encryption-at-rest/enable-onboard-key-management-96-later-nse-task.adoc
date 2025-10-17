@@ -18,7 +18,7 @@ Você pode usar o Gerenciador de chaves integrado para proteger as chaves que o 
 .Sobre esta tarefa
 Você deve executar o `security key-manager onboard enable` comando sempre que adicionar um nó ao cluster. Nas configurações do MetroCluster, você deve executar `security key-manager onboard enable` primeiro no cluster local e, em seguida, executar `security key-manager onboard sync` no cluster remoto, usando a mesma senha em cada um.
 
-Saiba mais sobre `security key-manager onboard enable` e `security key-manager onboard sync` no link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=security+key-manager+onboard["Referência do comando ONTAP"^].
+Saiba mais sobre `security key-manager onboard enable` e `security key-manager onboard sync` nolink:https://docs.netapp.com/us-en/ontap-cli//security-key-manager-onboard-enable.html["Referência do comando ONTAP"^] .
 
 Por padrão, você não é obrigado a inserir a senha do gerenciador de chaves quando um nó é reinicializado. Exceto no MetroCluster, você pode usar a `cc-mode-enabled=yes` opção para exigir que os usuários digitem a senha após uma reinicialização.
 
@@ -32,7 +32,7 @@ Se a encriptação de armazenamento NetApp (NSE) estiver ativada e não consegui
 
 * As atualizações de imagem do sistema usam o certificado de assinatura de código NetApp RSA-3072 juntamente com os digests assinados por código SHA-384 para verificar a integridade da imagem em vez do certificado de assinatura de código NetApp RSA-2048 usual e os digests assinados por código SHA-256.
 +
-O comando upgrade verifica se o conteúdo da imagem não foi alterado ou corrompido verificando várias assinaturas digitais. O processo de atualização da imagem prossegue para o próximo passo se a validação for bem-sucedida; caso contrário, a atualização da imagem falhará. Saiba mais sobre `cluster image` o link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=cluster+image["Referência do comando ONTAP"^]na .
+O comando de atualização verifica se o conteúdo da imagem não foi alterado ou corrompido, verificando várias assinaturas digitais.  Se a validação funcionar, a atualização da imagem vai para a próxima etapa.  Se a validação não funcionar, a atualização da imagem falhará.  Saiba mais sobre `cluster image` nolink:https://docs.netapp.com/us-en/ontap-cli/search.html?q=cluster+image["Referência do comando ONTAP"^] .
 
 
 
@@ -46,7 +46,7 @@ NOTE: O Gerenciador de chaves integrado armazena as chaves na memória volátil.
 link:delete-key-management-database-task.html["Transição para o gerenciamento de chaves integrado do gerenciamento de chaves externas"]
 
 * Você deve ser um administrador de cluster para executar esta tarefa.
-* Você deve configurar o ambiente MetroCluster antes que o Gerenciador de chaves integrado seja configurado.
+* Você deve configurar o ambiente MetroCluster antes de configurar o Gerenciador de chaves integrado.
 
 
 .Passos
@@ -61,21 +61,13 @@ NOTE: Defina `cc-mode-enabled=yes` para exigir que os usuários inseram a senha 
 +
 O exemplo a seguir inicia o comando de configuração do gerenciador de chaves no cluster1 sem exigir que a senha seja inserida após cada reinicialização:
 
-+
-[listing]
-----
-cluster1::> security key-manager onboard enable
-
-Enter the cluster-wide passphrase for onboard key management in Vserver "cluster1"::    <32..256 ASCII characters long text>
-Reenter the cluster-wide passphrase:    <32..256 ASCII characters long text>
-----
-. No prompt de frase-passe, insira uma frase-passe entre 32 e 256 carateres ou, para "cc-mode", uma frase-passe entre 64 e 256 carateres.
+. Digite uma senha entre 32 e 256 caracteres ou, para "`cc-mode`", uma senha entre 64 e 256 caracteres.
 +
 
 NOTE: Se a senha "'cc-mode'" especificada for inferior a 64 carateres, haverá um atraso de cinco segundos antes que a operação de configuração do gerenciador de chaves exiba o prompt de senha novamente.
 
 . No prompt de confirmação da senha, redigite a senha.
-. Verifique se as chaves de autenticação foram criadas:
+. Verifique se o sistema cria as chaves de autenticação:
 +
 `security key-manager key query -node node`
 
@@ -84,44 +76,19 @@ NOTE: Se a senha "'cc-mode'" especificada for inferior a 64 carateres, haverá u
 NOTE: O `security key-manager key query` comando substitui o `security key-manager query key` comando.
 
 +
-O exemplo a seguir verifica se as chaves de autenticação foram criadas para `cluster1`:
-
-+
-[listing]
-----
-cluster1::> security key-manager key query
-       Vserver: cluster1
-   Key Manager: onboard
-          Node: node1
-
-Key Tag                               Key Type  Restored
-------------------------------------  --------  --------
-node1                                 NSE-AK    yes
-    Key ID: <id_value>
-node1                                 NSE-AK    yes
-    Key ID: <id_value>
-
-       Vserver: cluster1
-   Key Manager: onboard
-          Node: node2
-
-Key Tag                               Key Type  Restored
-------------------------------------  --------  --------
-node1                                 NSE-AK    yes
-    Key ID: <id_value>
-node2                                 NSE-AK    yes
-    Key ID: <id_value>
-----
-+
-Saiba mais sobre `security key-manager key query` o link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-key-query.html?q=security+key-manager+key+query["Referência do comando ONTAP"^]na .
+Saiba mais sobre `security key-manager key query` o link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-key-query.html["Referência do comando ONTAP"^]na .
 
 
 
 .Depois de terminar
 Copie a senha para um local seguro fora do sistema de armazenamento para uso futuro.
 
-Todas as informações de gerenciamento de chaves são automaticamente armazenadas no banco de dados replicado (RDB) para o cluster. Você também deve fazer backup das informações manualmente para uso em caso de desastre.
+O sistema faz backup automaticamente das principais informações de gerenciamento no banco de dados replicado (RDB) do cluster.  Você também deve fazer backup dessas informações manualmente para recuperação de desastres.
 
 .Informações relacionadas
-* link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-setup.html["configuração do gerenciador de chaves de segurança"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=cluster+image["comandos de imagem de cluster"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-external-enable.html["gerenciador de chaves de segurança externo habilitado"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-key-query.html["consulta de chave do gerenciador de chaves de segurança"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-onboard-enable.html["habilitar gerenciador de chaves de segurança integrado"^]
+* link:delete-key-management-database-task.html["Transição para o gerenciamento de chaves integrado do gerenciamento de chaves externas"]
 
