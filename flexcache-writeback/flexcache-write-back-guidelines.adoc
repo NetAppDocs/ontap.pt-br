@@ -11,15 +11,15 @@ summary: Siga estas diretrizes para garantir o desempenho ideal ao usar o FlexCa
 
 
 [role="lead"]
-O FlexCache write-back envolve muitas interações complexas entre a origem e caches. Para um desempenho ideal, você deve garantir que seu ambiente siga estas diretrizes. Estas diretrizes baseiam-se na versão principal mais recente do ONTAP (ONTAP 9.15.1.) disponível no momento da criação de conteúdo.
+O processo de gravação em FlexCache envolve muitas interações complexas entre a origem e os caches. Para um desempenho ideal, você deve garantir que seu ambiente siga estas diretrizes. Estas diretrizes são baseadas na versão principal mais recente do ONTAP (ONTAP 9.17.1) disponível no momento da criação do conteúdo.
 
 Como prática recomendada, teste sua carga de trabalho de produção em um ambiente que não seja de produção. Isso é ainda mais importante se você estiver implementando o FlexCache write-back fora dessas diretrizes.
 
 As seguintes diretrizes são bem testadas internamente na NetApp. É *_fortemente_* recomendado que você fique dentro deles. Se não o fizer, poderá ocorrer um comportamento inesperado.
 
-* Melhorias significativas para o FlexCache write-back foram introduzidas no ONTAP 9.15.1P5. É *_fortemente_* aconselhado que você execute a versão recomendada atual após 9.15.1P5 nos clusters origem e cache.
+* Melhorias significativas para o recurso de write-back do FlexCache foram introduzidas no ONTAP 9.17.1P1. É *altamente* recomendável que você execute a versão recomendada mais recente, posterior à 9.17.1P1, tanto no cluster de origem quanto no cluster de cache. Caso não consiga executar a linha de código 9.17.1, a versão P mais recente, 9.16.1, é a próxima versão sugerida. O ONTAP 9.15.1 não possui todas as correções e melhorias necessárias para o recurso de write-back do FlexCache e não é recomendado para cargas de trabalho de produção.
 * Em sua iteração atual, os caches write-back do FlexCache devem ser configurados com um único constituinte para todo o volume FlexCache. FlexCaches multiconstitutivos pode resultar em despejos indesejados de dados do cache.
-* O teste foi executado para arquivos menores que 100GB e tempos de ida e volta da WAN entre o cache e a origem não superiores a 100ms. Quaisquer cargas de trabalho fora desses limites podem resultar em caraterísticas de desempenho inesperadas.
+* Os testes foram realizados com arquivos menores que 100 GB e tempos de ida e volta na WAN entre o cache e a origem não superiores a 200 ms. Cargas de trabalho que excedam esses limites podem resultar em características de desempenho inesperadas.
 * A gravação em fluxos de dados alternativos SMB faz com que o arquivo principal seja despejado do cache. Todos os dados sujos para o arquivo principal precisam ser lavados para a origem antes que qualquer outra operação possa ocorrer nesse arquivo. O fluxo de dados alternativo também é encaminhado para a origem.
 * Renomear um arquivo faz com que o arquivo seja despejado do cache. Todos os dados sujos para o arquivo precisam ser lavados para a origem antes que qualquer outra operação possa ocorrer nesse arquivo.
 * Neste momento, os únicos atributos que podem ser alterados ou definidos em um arquivo no volume FlexCache habilitado para gravação são:
@@ -36,5 +36,7 @@ Quaisquer outros atributos que sejam alterados ou definidos são encaminhados pa
 
 
 * Os instantâneos tirados na origem causam a recuperação de todos os dados sujos pendentes de cada cache habilitado para gravação associada a esse volume de origem. Isso pode exigir várias tentativas da operação se houver uma atividade significativa de retorno de gravação em andamento, já que os despejos desses arquivos sujos podem levar algum tempo.
+* Os bloqueios oportunistas (Oplocks) SMB para gravações não são suportados em volumes FlexCache com write-back habilitado.
 * A origem deve permanecer abaixo de 80% cheio. Os volumes de cache não recebem delegações de bloqueio exclusivo se não houver pelo menos 20% de espaço restante no volume de origem. As chamadas para um cache habilitado para write-back são encaminhadas para a origem nesta situação. Isso ajuda a evitar a falta de espaço na origem, o que resultaria em deixar dados sujos órfãos em um cache habilitado para write-back.
+* Redes intercluster com baixa largura de banda e/ou com perda de dados podem ter um impacto negativo significativo no desempenho de gravação do FlexCache . Embora não haja um requisito específico de largura de banda, já que isso depende muito da sua carga de trabalho, é *altamente* recomendável que você verifique a integridade do link entre clusters, entre o(s) cache(s) e a origem.
 
