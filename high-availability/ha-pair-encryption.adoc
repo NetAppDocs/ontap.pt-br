@@ -1,0 +1,58 @@
+---
+sidebar: sidebar 
+permalink: high-availability/ha-pair-encryption.html 
+keywords: cluster network, encryption, TLS, data-in-flight 
+summary: Configure a comunicação criptografada entre os nós do par HA. 
+---
+= Configure a criptografia para o tráfego ONTAP HA.
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.18.1, é possível configurar a criptografia para o tráfego de rede entre nós de pares de alta disponibilidade (HA).  Essa criptografia protege os dados do cliente e os metadados enviados entre os nós em um par de alta disponibilidade.
+
+.Sobre esta tarefa
+* A criptografia para tráfego de alta disponibilidade (HA) está desativada por padrão.
+* Habilitar ou desabilitar a criptografia de tráfego HA afeta todos os pares HA no cluster.  Não é possível ativar ou desativar a criptografia para nós individuais.
+* Ao ativar a criptografia de tráfego HA, todos os dados e metadados do cliente transmitidos entre os nós do par HA são criptografados.  Alguns tráfegos de alta disponibilidade (HA), como metadados do sistema de arquivos e mensagens de pulsação, não são criptografados.
+* Quando a criptografia de tráfego HA está habilitada e novos pares HA são adicionados ao cluster, você precisa habilitar manualmente a criptografia de tráfego HA para os novos nós executando novamente o comando. `security ha-network modify -enabled true` comando.
+
+
+.Antes de começar
+* Você precisa ser um administrador do ONTAP no `admin` Nível de privilégio necessário para executar o seguinte procedimento.
+* Antes de ativar a criptografia de tráfego HA, você develink:../encryption-at-rest/configure-external-key-management-concept.html["Configurar o gerenciamento de chaves externas"] .
+* Todos os nós do cluster devem estar executando o ONTAP 9.18.1 ou posterior para habilitar a criptografia de tráfego de alta disponibilidade.
+
+
+.Passos
+. Veja o status atual da criptografia para o tráfego HA:
++
+[source, cli]
+----
+security ha-network show
+----
++
+Este comando mostra o estado atual da criptografia de tráfego HA para cada nó:
+
++
+[source]
+----
+security ha-network show
+Node                  Enabled
+--------------------- --------------------
+node1                 true
+node2                 true
+node3                 true
+node4                 true
+4 entries were displayed.
+----
+. Ativar ou desativar a criptografia para tráfego de alta disponibilidade:
+
+
+[source, cli]
+----
+security ha-network modify -enabled <true|false>
+----
+Este comando habilita ou desabilita o tráfego HA criptografado para todos os nós do cluster.  Ao adicionar novos pares HA ao cluster, você precisará executar este comando novamente para habilitar a criptografia de tráfego HA para os novos nós.

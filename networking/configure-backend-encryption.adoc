@@ -1,0 +1,99 @@
+---
+sidebar: sidebar 
+permalink: networking/configure-backend-encryption.html 
+keywords: cluster network, encryption, TLS, data-in-flight, backend network 
+summary: Configure as definições de criptografia de rede do cluster. 
+---
+= Configure a criptografia de rede do cluster de back-end ONTAP.
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.18.1, é possível configurar a criptografia Transport Layer Security (TLS) para dados em trânsito na rede do cluster de back-end.  Essa criptografia protege os dados do cliente armazenados no ONTAP quando são transmitidos entre os nós do ONTAP na rede do cluster de back-end.
+
+.Sobre esta tarefa
+* A criptografia de rede do cluster de backend está desativada por padrão.
+* Quando a criptografia de rede do cluster de backend está habilitada, todos os dados do cliente armazenados no ONTAP são criptografados durante a transmissão entre os nós do ONTAP na rede do cluster de backend.  Alguns tráfegos de rede do cluster, como dados do caminho de controle, não são criptografados.
+* Por padrão, a criptografia de rede do cluster de backend usará certificados gerados automaticamente para cada nó do cluster.  Você pode<<Gerenciar certificados de criptografia de rede de cluster>> Em cada nó, será utilizado um certificado personalizado instalado.
+
+
+.Antes de começar
+* Você precisa ser um administrador do ONTAP no `admin` Nível de privilégio necessário para executar as seguintes tarefas.
+* Todos os nós do cluster devem estar executando o ONTAP 9.18.1 ou posterior para habilitar a criptografia de rede do cluster no backend.
+
+
+
+
+== Ativar ou desativar a criptografia para comunicação em rede de cluster
+
+.Passos
+. Veja o status atual da criptografia da rede do cluster:
++
+[source, cli]
+----
+security cluster-network show
+----
++
+Este comando mostra o estado atual da criptografia da rede do cluster:
+
++
+[source]
+----
+Cluster-1::*> security cluster-network show
+
+Enabled: true
+
+Mode: tls
+
+Status: READY
+----
+. Ativar ou desativar a criptografia de rede TLS no cluster de backend:
++
+[source, cli]
+----
+security cluster-network modify -enabled <true|false>
+----
++
+Este comando habilita ou desabilita a comunicação criptografada para dados do cliente em trânsito na rede do cluster de back-end.
+
+
+
+
+
+== Gerenciar certificados de criptografia de rede de cluster
+
+. Veja as informações atuais do certificado de criptografia da rede do cluster:
++
+[source, cli]
+----
+security cluster-network certificate show
+----
++
+Este comando exibe as informações atuais do certificado de criptografia de rede do cluster:
+
++
+[source]
+----
+security cluster-network certificate show
+Node                  Certificate Name                      CA
+--------------------- -----------------------------------   --------------
+node1                 -                                     Cluster-1_Root_CA
+node2                 -                                     Cluster-1_Root_CA
+node3                 google_issued_cert1                   Google_CA1
+node4                 google_issued_cert2                   Google_CA1
+----
++
+O certificado e o nome da autoridade certificadora (CA) são exibidos para cada nó do cluster.
+
+. Modifique o certificado de criptografia de rede do cluster para um nó:
++
+[source, cli]
+----
+security cluster-network certificate modify -node <node_name> -name <certificate_name>
+----
++
+Este comando modifica o certificado de criptografia da rede do cluster para um nó específico.  O certificado deve ser instalado e assinado por uma Autoridade Certificadora (CA) instalada antes da execução deste comando.  Para obter mais informações sobre gerenciamento de certificados, consultelink:../authentication/manage-certificates-sm-task.html["Gerencie certificados ONTAP com o Gerenciador de sistemas"] .  Se `-name` Caso não seja especificado, será utilizado o certificado padrão gerado automaticamente.
+
+

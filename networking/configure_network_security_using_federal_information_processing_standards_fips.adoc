@@ -14,7 +14,7 @@ summary: 'Conformidade com Federal Information Processing Standards (FIPS) 140-2
 
 
 [role="lead"]
-O ONTAP é compatível com os padrões federais de processamento de informações (FIPS) 140-2 para todas as conexões SSL. Você pode ativar e desativar o modo SSL FIPS, definir protocolos SSL globalmente e desativar quaisquer cifras fracas, como RC4 dentro do ONTAP.
+O ONTAP está em conformidade com o padrão FIPS 140-2 (Federal Information Processing Standards) para todas as conexões SSL.  Você pode ativar e desativar o modo SSL FIPS, definir protocolos SSL globalmente e desativar quaisquer cifras fracas dentro do ONTAP.
 
 Por padrão, o SSL no ONTAP é definido com a conformidade FIPS desativada e com os seguintes protocolos TLS ativados:
 
@@ -62,7 +62,7 @@ Contas de chave pública SSH existentes sem os algoritmos de chave suportados de
 
 Para obter mais informações, link:../authentication/enable-ssh-public-key-accounts-task.html["Ativar contas de chave pública SSH"]consulte .
 
-Saiba mais sobre `security config modify` a configuração do modo SSL FIPS no link:https://docs.netapp.com/us-en/ontap-cli/security-config-modify.html["Referência do comando ONTAP"^].
+O ONTAP 9.18.1 introduz suporte para os algoritmos criptográficos pós-computação quântica ML-KEM, ML-DSA e SLH-DSA para SSL, fornecendo uma camada adicional de segurança contra possíveis futuros ataques de computadores quânticos.  Esses algoritmos só estão disponíveis quando<<Desativar FIPS,O FIPS está desativado.>> .  Os algoritmos criptográficos pós-quânticos são negociados quando o FIPS está desativado e o par os suporta.
 
 
 
@@ -80,7 +80,7 @@ NOTE: Quando o FIPS está ativado, não é possível instalar ou criar um certif
 
 . Ativar FIPS:
 +
-`security config modify -interface SSL -is-fips-enabled true`
+`security config modify -is-fips-enabled true`
 
 . Quando solicitado a continuar, digite `y`
 . A partir do ONTAP 9.9.1, não é necessário reinicializar.  Se você estiver executando o ONTAP 9.8 ou anterior, reinicie manualmente cada nó no cluster, um por um.
@@ -90,7 +90,7 @@ NOTE: Quando o FIPS está ativado, não é possível instalar ou criar um certif
 Se estiver a executar o ONTAP 9.9,1 ou posterior, não verá a mensagem de aviso.
 
 ....
-security config modify -interface SSL -is-fips-enabled true
+security config modify -is-fips-enabled true
 
 Warning: This command will enable FIPS compliance and can potentially cause some non-compliant components to fail. MetroCluster and Vserver DR require FIPS to be enabled on both sites in order to be compatible.
 Do you want to continue? {y|n}: y
@@ -98,11 +98,13 @@ Do you want to continue? {y|n}: y
 Warning: When this command completes, reboot all nodes in the cluster. This is necessary to prevent components from failing due to an inconsistent security configuration state in the cluster. To avoid a service outage, reboot one node at a time and wait for it to completely initialize before rebooting the next node. Run "security config status show" command to monitor the reboot status.
 Do you want to continue? {y|n}: y
 ....
+Saiba mais sobre `security config modify` a configuração do modo SSL FIPS no link:https://docs.netapp.com/us-en/ontap-cli/security-config-modify.html["Referência do comando ONTAP"^].
+
 
 
 == Desativar FIPS
 
-Se você ainda estiver executando uma configuração de sistema mais antiga e quiser configurar o ONTAP com compatibilidade com versões anteriores, você poderá ativar o SSLv3 somente quando o FIPS estiver desativado.
+A partir da versão 9.18.1 do ONTAP , o SSL no ONTAP oferece suporte aos algoritmos criptográficos pós-computação quântica ML-KEM, ML-DSA e SLH-DSA.  Esses algoritmos só estão disponíveis quando o FIPS está desativado e o servidor par os suporta.
 
 .Passos
 . Alterar para nível de privilégio avançado:
@@ -111,17 +113,18 @@ Se você ainda estiver executando uma configuração de sistema mais antiga e qu
 
 . Desative o FIPS digitando:
 +
-`security config modify -interface SSL -is-fips-enabled false`
+`security config modify -is-fips-enabled false`
 
 . Quando solicitado a continuar, digite `y`.
 . A partir do ONTAP 9.9.1, não é necessário reinicializar.  Se você estiver executando o ONTAP 9.8 ou anterior, reinicie manualmente cada nó no cluster.
 
 
-.Exemplo
-Se estiver a executar o ONTAP 9.9,1 ou posterior, não verá a mensagem de aviso.
+Se precisar usar o protocolo SSLv3, você deve desativar o FIPS seguindo o procedimento acima.  O SSLv3 só pode ser ativado quando o FIPS estiver desativado.
+
+Você pode habilitar o SSLv3 com o seguinte comando.  Se você estiver executando o ONTAP 9.9.1 ou posterior, não verá a mensagem de aviso.
 
 ....
-security config modify -interface SSL -supported-protocols SSLv3
+security config modify -supported-protocols SSLv3
 
 Warning: Enabling the SSLv3 protocol may reduce the security of the interface, and is not recommended.
 Do you want to continue? {y|n}: y
@@ -129,8 +132,6 @@ Do you want to continue? {y|n}: y
 Warning: When this command completes, reboot all nodes in the cluster. This is necessary to prevent components from failing due to an inconsistent security configuration state in the cluster. To avoid a service outage, reboot one node at a time and wait for it to completely initialize before rebooting the next node. Run "security config status show" command to monitor the reboot status.
 Do you want to continue? {y|n}: y
 ....
-Saiba mais sobre `security config status show` o link:https://docs.netapp.com/us-en/ontap-cli/security-config-status-show.html["Referência do comando ONTAP"^]na .
-
 
 
 == Visualizar o status de conformidade FIPS
@@ -138,25 +139,31 @@ Saiba mais sobre `security config status show` o link:https://docs.netapp.com/us
 Você pode ver se todo o cluster está executando as configurações de segurança atuais.
 
 .Passos
-. Um por um, reinicie cada nó no cluster.
-+
-Não reinicie todos os nós de cluster simultaneamente. É necessário reinicializar para garantir que todos os aplicativos do cluster estejam executando a nova configuração de segurança e todas as alterações no modo de ativação/desativação FIPS, protocolos e cifras.
-
+. Se você estiver executando o ONTAP 9.8 ou anterior, reinicie manualmente cada nó no cluster, um por um.
 . Exibir o status de conformidade atual:
 +
 `security config show`
 
 +
 ....
-security config show
-
-          Cluster                                              Cluster Security
-Interface FIPS Mode  Supported Protocols     Supported Ciphers Config Ready
---------- ---------- ----------------------- ----------------- ----------------
-SSL       false      TLSv1_2, TLSv1_1, TLSv1 ALL:!LOW:!aNULL:  yes
-                                             !EXP:!eNULL
+cluster1::> security config show
+Cluster    Supported
+FIPS Mode  Protocols Supported Cipher Suites
+---------- --------- ----------------------------------------------------------
+false      TLSv1.3,  TLS_RSA_WITH_AES_128_CCM, TLS_RSA_WITH_AES_128_CCM_8,
+           TLSv1.2   TLS_RSA_WITH_AES_128_GCM_SHA256,
+                     TLS_RSA_WITH_AES_128_CBC_SHA,
+                     TLS_RSA_WITH_AES_128_CBC_SHA256, TLS_RSA_WITH_AES_256_CCM,
+                     TLS_RSA_WITH_AES_256_CCM_8,
+                     ...
 ....
 +
 Saiba mais sobre `security config show` o link:https://docs.netapp.com/us-en/ontap-cli/security-config-show.html["Referência do comando ONTAP"^]na .
 
+
+
+.Informações relacionadas
+* link:https://csrc.nist.gov/pubs/fips/203/final["FIPS 203: Padrão de Mecanismo de Encapsulamento de Chaves Baseado em Reticulado de Módulos (ML-KEM)"^]
+* link:https://csrc.nist.gov/pubs/fips/204/final["FIPS 204: Padrão de Assinatura Digital Baseado em Módulo-Reticulado (ML-DSA)"^]
+* link:https://csrc.nist.gov/pubs/fips/205/final["FIPS 205: Padrão de Assinatura Digital Baseada em Hash Sem Estado (SLH-DSA)"^]
 

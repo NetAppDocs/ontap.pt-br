@@ -26,7 +26,7 @@ O ARP cria snapshots bloqueados em intervalos regulares, juntamente com os agend
 
 == Licenças e capacitação
 
-O suporte ARP está incluído no link:https://kb.netapp.com/onprem/ontap/os/ONTAP_9.10.1_and_later_licensing_overview["Licença ONTAP ONE"^] . Se você não tiver a licença ONTAP One, outras licenças estarão disponíveis para uso ARP, que variam dependendo da sua versão do ONTAP.
+O suporte a ARP está incluído no pacote.link:https://kb.netapp.com/onprem/ontap/os/ONTAP_9.10.1_and_later_licensing_overview["Licença ONTAP One"^] . Se você não tiver a licença ONTAP One, outras licenças estarão disponíveis para uso ARP, que variam dependendo da sua versão do ONTAP.
 
 [cols="2*"]
 |===
@@ -95,9 +95,9 @@ Para ARP, os comportamentos do modo de aprendizagem e do modo ativo diferem de a
 
 === Ambientes NAS e tipos de modo
 
-Os ambientes NAS usam modos de aprendizagem e ativos. Para <<arp-ai,ARP/IA>> em execução em ambientes NAS a partir do ONTAP 9.16.1, não há período de aprendizado quando o ARP é usado com volumes FlexVol .
-
 A tabela a seguir resume as diferenças entre o ONTAP 9.10.1 e versões posteriores para ambientes NAS.
+
+Nas versões com o modelo ARP anterior, recomenda-se um período de aprendizagem antes do início do monitoramento ativo.  Para ambientes NAS que suportam<<arp-ai,ARP/IA>> Não há período de aprendizagem e o monitoramento ativo começa imediatamente.
 
 [cols="1,5,1"]
 |===
@@ -105,24 +105,28 @@ A tabela a seguir resume as diferenças entre o ONTAP 9.10.1 e versões posterio
 
 
 | Aprendizado  a| 
-Para o ONTAP 9.15.1 a 9.10.1, o ARP é definido automaticamente para o modo de aprendizagem quando você o habilita. No modo de aprendizagem, o sistema ONTAP desenvolve um perfil de alerta com base nas áreas analíticas: entropia, tipos de extensão de arquivo e IOPS de arquivo. Recomenda-se deixar o ARP no modo de aprendizagem por 30 dias. A partir do ONTAP 9.13.1, o ARP determina automaticamente o intervalo de aprendizado ideal e automatiza a alternância, o que pode ocorrer antes de 30 dias. Para versões anteriores ao ONTAP 9.13.1, você pode fazer a troca manualmente.
+Para determinadas versões do ONTAP e certos tipos de volume, o ARP é automaticamente configurado para o modo de aprendizagem quando você o habilita. No modo de aprendizagem, o sistema ONTAP desenvolve um perfil de alerta com base nas áreas analíticas: entropia, tipos de extensão de arquivo e IOPS de arquivo.
+
+Recomenda-se deixar o ARP no modo de aprendizagem por 30 dias. A partir do ONTAP 9.13.1, o ARP determina automaticamente o intervalo de aprendizado ideal e automatiza a alternância, o que pode ocorrer antes de 30 dias. Para versões anteriores ao ONTAP 9.13.1, você pode fazer a troca manualmente.
+
+A partir do ONTAP 9.16.1, para volumes FlexVol , existe apenas o modo ativo, e o modo de aprendizado é automaticamente migrado para o modo ativo para quaisquer volumes FlexVol atualizados para esta versão ou posterior.
+
+Para o ONTAP 9.16.1 a 9.17.1, os volumes FlexGroup ainda não são suportados pelo ARP/AI e continuam a executar o modelo ARP antigo.  Por esse motivo, ainda é recomendável um período de adaptação para essas versões com volumes FlexGroup .
+
+A partir do ONTAP 9.18.1, existe apenas o modo ativo para volumes FlexVol e FlexGroup .  Quaisquer volumes atualizados são automaticamente colocados em modo ativo.
 
 link:switch-learning-to-active-mode.html["Saiba mais sobre como mudar do modo de aprendizagem para o modo ativo"] .
 
 
 TIP: O comando `security anti-ransomware volume workload-behavior show` mostra extensões de arquivo que foram detetadas no volume. Se você executar esse comando no início do modo de aprendizado e ele mostrar uma representação precisa dos tipos de arquivo, você não deve usar esses dados como base para mover para o modo ativo, já que o ONTAP ainda está coletando outras métricas. Saiba mais sobre `security anti-ransomware volume workload-behavior show` o link:https://docs.netapp.com/us-en/ontap-cli/security-anti-ransomware-volume-workload-behavior-show.html["Referência do comando ONTAP"^]na .
  a| 
-* Volumes FlexVol com ONTAP 9.15.1 a 9.10.1
-* Volumes FlexGroup com ONTAP 9.13.1 e posterior
+* Volumes FlexVol com ONTAP 9.10.1 a 9.15.1
+* Volumes FlexGroup com ONTAP 9.13.1 a ONTAP 9.17.1
 
 
 
 
 | Ativo  a| 
-Após executar o ARP no modo de aprendizado por tempo suficiente para avaliar as características da carga de trabalho, você pode alternar para o modo ativo e começar a proteger seus dados. A partir do ONTAP 9.13.1, o ARP determina automaticamente o intervalo de aprendizado ideal e automatiza a alternância, o que pode ocorrer antes de 30 dias.
-
-Com o ONTAP 9.15.1 a 9.10.1, o ARP alterna para o modo ativo após a conclusão do período de aprendizado ideal. Após a mudança para o modo ativo, o ONTAP cria snapshots do ARP para proteger os dados caso uma ameaça seja detectada.
-
 No modo ativo, se uma extensão de arquivo for sinalizada como anormal, você deve avaliar o alerta. Você pode agir de acordo com o alerta para proteger seus dados ou marcá-lo como um falso positivo. Marcar um alerta como falso positivo atualiza o perfil de alerta. Por exemplo, se o alerta for disparado por uma nova extensão de arquivo e você marcá-lo como falso positivo, não receberá um alerta na próxima vez que a extensão do arquivo for observada.
  a| 
 Todas as versões ONTAP suportadas e volumes FlexVol e FlexGroup
@@ -140,7 +144,7 @@ Ambientes SAN utilizam períodos de _avaliação_ (semelhantes aos modos de apre
 
 
 | Avaliação  a| 
-Um período de avaliação de duas a quatro semanas é realizado para determinar o comportamento básico da criptografia. Você pode determinar se o período de avaliação foi concluído executando o  `security anti-ransomware volume show` comando e verificação  `Block device detection status` .
+Um período de avaliação de duas a quatro semanas é realizado para determinar o comportamento básico de criptografia, enquanto o ARP/AI fornece proteção ativa imediata para volumes SAN durante esse período.  A detecção e os alertas podem ocorrer enquanto os limites de referência estão sendo estabelecidos.  Você pode determinar se o período de avaliação foi concluído executando o `security anti-ransomware volume show` comando e verificação `Block device detection status` .
 
 link:respond-san-entropy-eval-period.html["Saiba mais sobre volumes SAN e o período de avaliação de entropia"] .
  a| 
@@ -283,10 +287,15 @@ A partir do ONTAP 9.13.1, é recomendável ativar a verificação multi-admin (M
 
 A partir do ONTAP 9.16.1, o ARP aprimora a resiliência cibernética adotando um modelo de aprendizado de máquina para análises anti-ransomware que detecta formas de ransomware em constante evolução com 99% de precisão em ambientes NAS. O modelo de aprendizado de máquina do ARP é pré-treinado em um grande conjunto de dados de arquivos antes e depois de um ataque de ransomware simulado. Este treinamento intensivo em recursos é realizado fora do ONTAP, utilizando conjuntos de dados de pesquisa forense de código aberto para treinar o modelo. Os dados do cliente não são utilizados em todo o pipeline de modelagem e não há problemas de privacidade. O modelo pré-treinado resultante deste treinamento está incluído na caixa do ONTAP . Este modelo não é acessível ou modificável por meio da CLI ou da API do ONTAP .
 
-.Transição imediata para proteção ativa para ARP/AI com volumes FlexVol
-Com os volumes ARP/AI e FlexVol, não há<<Aprenda sobre os modos ARP,período de aprendizagem>>. O ARP/AI é habilitado e ativado imediatamente após a instalação ou atualização para a versão 9.16. ONTAP o ARP já esteja habilitado para esses volumes.
+.Transição imediata para proteção ativa para ARP/IA
+Com ARP/AI, não há<<Aprenda sobre os modos ARP,período de aprendizagem>> .  O ARP/AI é ativado imediatamente após a instalação ou atualização para os seguintes tipos de volume suportados:
 
-link:enable-arp-ai-with-au.html["Saiba mais sobre como ativar o ARP/AI"]
+* Volumes NAS FlexVol com ONTAP 9.16.1 e versões posteriores.
+* Volumes NAS FlexGroup com ONTAP 9.18.1 e versões posteriores.
+* Volumes SAN com ONTAP 9.17.1 e posterior (ativos imediatamente, mesmo durante olink:respond-san-entropy-eval-period.html["período de avaliação"] )
+
+
+Para volumes existentes e novos com funcionalidade ARP já habilitada, a proteção ARP/AI será ativada automaticamente após a atualização do cluster para uma versão do ONTAP compatível com ARP/AI.
 
 .Atualizações automáticas ARP/AI
 Para manter a proteção atualizada contra as ameaças de ransomware mais recentes, a ARP/AI oferece atualizações automáticas frequentes que ocorrem fora dos ritmos regulares de atualização e lançamento do ONTAP . Se você tiver link:../update/enable-automatic-updates-task.html["atualizações automáticas ativadas"] então você também poderá começar a receber atualizações automáticas de segurança para ARP/AI após selecionar atualizações automáticas para arquivos de segurança. Você também pode optar por link:arp-ai-automatic-updates.html#manually-update-arpai-with-the-latest-security-package["faça essas atualizações manualmente"] e controlar quando as atualizações ocorrem.

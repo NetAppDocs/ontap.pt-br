@@ -11,7 +11,7 @@ summary: Você pode usar um grupo de políticas de QoS adaptável para escalar a
 
 
 [role="lead"]
-Você pode usar um grupo de políticas _Adaptive QoS_ para escalar automaticamente um limite de taxa de transferência ou um tamanho de chão para volume, mantendo a taxa de IOPS para TBs|GBs conforme o tamanho do volume muda. Essa é uma vantagem significativa quando você gerencia centenas ou milhares de workloads em uma implantação grande.
+Você pode usar um grupo de políticas de _QoS adaptativo_ para dimensionar automaticamente um limite máximo ou mínimo de taxa de transferência de acordo com o tamanho do volume, mantendo a proporção de IOPS para TBs/GBs à medida que o tamanho do volume muda.  Essa é uma vantagem significativa quando você está gerenciando centenas ou milhares de cargas de trabalho em uma implantação de grande porte.
 
 .Antes de começar
 * Você deve estar executando o ONTAP 9.3 ou posterior. Os grupos de políticas de QoS adaptáveis estão disponíveis a partir do ONTAP 9.3.
@@ -25,14 +25,14 @@ Grupos de políticas de QoS adaptáveis sempre não são compartilhados: O limit
 
 A proporção de limites de taxa de transferência para o tamanho do objeto de armazenamento é determinada pela interação dos seguintes campos:
 
-* `expected-iops` É o mínimo esperado de IOPS por TB|GB alocado.
+* `expected-iops`é o número mínimo esperado de IOPS por TB/GB alocado.
 +
 [NOTE]
 ====
  `expected-iops` É garantido apenas nas plataformas AFF. `expected-iops` Será garantido para o FabricPool somente se a política de disposição em categorias estiver definida como "nenhuma" e não houver blocos na nuvem. `expected-iops` É garantido para volumes que não estão em uma relação síncrona SnapMirror.
 
 ====
-* `peak-iops` É o máximo de IOPS possível por TB|GB alocado ou usado.
+* `peak-iops`é o número máximo possível de IOPS por TB/GB alocado ou utilizado.
 * `expected-iops-allocation` especifica se o espaço alocado (o padrão) ou o espaço usado é usado para iops-esperado.
 +
 [NOTE]
@@ -47,6 +47,10 @@ Por exemplo, se você definir `expected-iops` como 1.000 IOPS/TB e o tamanho do 
 
 * `block-size` Especifica o tamanho do bloco de e/S da aplicação. A predefinição é 32K. Os valores válidos são 8K, 16K, 32K, 64K, QUALQUER. QUALQUER significa que o tamanho do bloco não é imposto.
 
+
+
+
+== Grupos de políticas de QoS adaptativas padrão
 
 Três grupos de políticas de QoS adaptáveis padrão estão disponíveis, como mostrado na tabela a seguir. Você pode aplicar esses grupos de políticas diretamente a um volume.
 
@@ -88,37 +92,59 @@ Três grupos de políticas de QoS adaptáveis padrão estão disponíveis, como 
 75
 
 |===
-Não é possível atribuir um objeto de armazenamento a um grupo de políticas se o objeto que contém ou os objetos filho pertencerem a um grupo de políticas. A tabela a seguir lista as restrições.
+
+
+== restrições de atribuição de grupo de política de objeto de armazenamento
+
+Em alguns casos, não é possível atribuir um objeto de armazenamento a um grupo de políticas se o objeto que o contém ou seus objetos filhos pertencerem a um grupo de políticas.
+
+A partir do ONTAP 9.18.1, é possível usar políticas de QoS aninhadas, que permitem atribuir grupos de políticas tanto ao objeto que as contém, como uma SVM, quanto ao seu objeto filho, como um volume.  Em um ambiente multi-inquilino, as políticas de QoS aninhadas permitem que os administradores subdividam os limites de QoS em SVMs entre os volumes e qtrees dentro da SVM, e que forneçam a capacidade de equilibrar os recursos de armazenamento em ambientes de computação, além de permitir a priorização de cargas de trabalho críticas.
+
+Políticas de QoS aninhadas são suportadas para os seguintes pares de objetos:
+
+* SVMs e volumes FlexVol ou FlexGroup contidos pela SVM.
+* Volumes FlexVol ou FlexGroup e qtrees dentro dos volumes.
+
+
+Para políticas de QoS aninhadas, utiliza-se a política aplicável mais restritiva.
+
+A tabela a seguir lista as restrições.
 
 |===
-| Se você atribuir... | Então você não pode atribuir... 
+| Se você atribuir... | Então você não poderá atribuir a um grupo de políticas... 
 
 
  a| 
 SVM em um grupo de políticas
  a| 
-Quaisquer objetos de storage contidos pelo SVM em um grupo de políticas
+Quaisquer objetos de armazenamento contidos pela SVM.
+
+
+NOTE: Se você estiver executando o ONTAP 9.18.1, os volumes FlexVol e FlexGroup contidos em SVMs _podem_ ser atribuídos a um grupo de políticas.
 
 
 
  a| 
 Volume para um grupo de políticas
  a| 
-Volume contendo SVM ou LUNs filho, em um grupo de políticas
+A SVM que contém o volume ou quaisquer LUNs filhos.
+
+
+NOTE: Se você estiver executando o ONTAP 9.18.1 ou posterior, o SVM que contém o volume _pode_ ser atribuído a um grupo de políticas.  Além disso, é possível atribuir qtrees em volumes FlexVol ou FlexGroup .
 
 
 
  a| 
 LUN para um grupo de políticas
  a| 
-LUN que contêm volume ou SVM em um grupo de políticas
+O volume ou SVM que contém os LUNs
 
 
 
  a| 
 Arquivo para um grupo de políticas
  a| 
-Os arquivos contêm volume ou SVM em um grupo de políticas
+O volume ou SVM que contém o arquivo
 
 |===
 .Passos
