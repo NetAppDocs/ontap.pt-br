@@ -15,16 +15,32 @@ Você precisa ressincronizar uma relação de replicação depois de fazer um vo
 
 A partir do ONTAP 9.8, você pode usar o Gerenciador do sistema para executar uma operação de ressincronização reversa para excluir uma relação de proteção existente e reverter as funções dos volumes de origem e destino. Em seguida, você usa o volume de destino para servir dados enquanto você reparar ou substituir a origem, atualizar a origem e restabelecer a configuração original dos sistemas.
 
-.Sobre esta tarefa
-* Embora a ressincronização não exija uma transferência de linha de base, ela pode ser demorada. Você pode querer executar a ressincronização em horas fora do pico.
-* Os volumes que fazem parte de uma configuração de fan-out ou cascata podem levar mais tempo para ressincronizar. Não é incomum ver a relação do SnapMirror informando o status "preparando" por um período de tempo prolongado.
-
-
 [NOTE]
 ====
 O System Manager não é compatível com a ressincronização reversa com relacionamentos entre clusters. Você pode usar a CLI do ONTAP para realizar operações ressincronizadas revertidas com relacionamentos entre clusters.
 
 ====
+.Sobre esta tarefa
+* Embora a ressincronização não exija uma transferência de linha de base, ela pode ser demorada. Você pode querer executar a ressincronização em horas fora do pico.
+* Os volumes que fazem parte de uma configuração de fan-out ou cascata podem levar mais tempo para ressincronizar. Não é incomum ver a relação do SnapMirror informando o status "preparando" por um período de tempo prolongado.
+* A partir da versão 9.13.1 do ONTAP , o ONTAP tenta usar a resincronização rápida por padrão para reduzir o tempo de resincronização. As seguintes condições devem estar presentes para que a resincronização rápida seja usada por padrão:
++
+** Os volumes FlexVol não possuem clones no volume.
+** Ao usar a política MirrorAllSnapshots
++
+
+NOTE: Usando `-quick-resync` Pode consumir espaço adicional no volume de destino da ressincronização devido à remoção da eficiência de armazenamento nos blocos de dados transferidos. Esse consumo adicional de espaço é recuperado como parte da aplicação de eficiência de armazenamento em linha ou pós-replicação no destino de ressincronização.
+
++
+O `-quick-resync` O parâmetro é opcional. Você pode ativar ou desativar a ressincronização rápida usando o `-quick-resync true|false` parâmetro com o `snapmirror resync` comando.
+
++
+Para obter mais informações sobre `-quick-resync`, veja o link:https://docs.netapp.com/us-en/ontap-cli/snapmirror-resync.html["Referência do comando ONTAP"^].
+
+
+
+
+
 .Passos
 Você pode usar o Gerenciador do sistema ou a CLI do ONTAP para executar esta tarefa. Se você usar a CLI do ONTAP, o procedimento será o mesmo, independentemente de você estar criando um volume de destino gravável ou atualizando a relação de replicação.
 

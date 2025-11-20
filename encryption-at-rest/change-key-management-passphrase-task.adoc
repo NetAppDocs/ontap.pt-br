@@ -9,12 +9,12 @@ summary: Altere regularmente a senha de gerenciamento de chaves integrada.  Arma
 
 
 [role="lead"]
-Altere regularmente a senha de gerenciamento de chaves integrada.  Armazene a nova senha em um local seguro fora do sistema de armazenamento.
+A NetApp recomenda que você altere regularmente a senha de gerenciamento de chaves integradas. Você deve armazenar a nova senha em um local seguro fora do sistema de armazenamento.
 
 .Antes de começar
 * Você deve ser um administrador de cluster ou SVM para executar essa tarefa.
 * São necessários Privileges avançados para esta tarefa.
-* Se você estiver administrando um ambiente ONTAP MetroCluster , deverá atualizar a senha em ambos os clusters
+* Em um ambiente MetroCluster , após atualizar a senha no cluster local, sincronize a atualização da senha no cluster parceiro.
 
 
 .Passos
@@ -22,41 +22,65 @@ Altere regularmente a senha de gerenciamento de chaves integrada.  Armazene a no
 +
 `set -privilege advanced`
 
-. Altere a senha de gerenciamento de chaves integradas:
+. Alterar a senha de gerenciamento da chave integrada. O comando que você usa depende da versão do ONTAP que você está executando.
 +
-[cols="25,75"]
-|===
-
-
-| Para esta versão ONTAP... | Use este comando... 
-
-
- a| 
-ONTAP 9 F.6 e mais tarde
- a| 
+[role="tabbed-block"]
+====
+.ONTAP 9 F.6 e mais tarde
+--
 `security key-manager onboard update-passphrase`
 
-
-
- a| 
-ONTAP 9 F.5 e anteriores
- a| 
+--
+.ONTAP 9 F.5 e anteriores
+--
 `security key-manager update-passphrase`
 
-|===
+--
+====
 . Digite uma senha entre 32 e 256 caracteres ou, para "`cc-mode`", uma senha entre 64 e 256 caracteres.
 +
 Se a senha "'cc-mode'" especificada for inferior a 64 carateres, haverá um atraso de cinco segundos antes que a operação de configuração do gerenciador de chaves exiba o prompt de senha novamente.
 
 . No prompt de confirmação da senha, redigite a senha.
+. Se você estiver em uma configuração MetroCluster , sincronize a senha atualizada no cluster parceiro.
++
+.. Sincronize a senha no cluster parceiro selecionando o comando correto para a sua versão do ONTAP :
++
+[role="tabbed-block"]
+====
+.ONTAP 9 F.6 e mais tarde
+--
+`security key-manager onboard sync`
+
+--
+.ONTAP 9 F.5 e anteriores
+--
+*** No ONTAP 9.5, execute:
++
+`security key-manager setup -sync-metrocluster-config`
+
+*** No ONTAP 9.4 e versões anteriores, após atualizar a senha no cluster local, aguarde 20 segundos e execute o seguinte comando no cluster parceiro:
++
+`security key-manager setup`
+
+
+
+--
+====
+.. Digite a nova senha quando solicitado.
++
+A mesma senha deve ser usada em ambos os clusters.
+
+
+
 
 
 .Depois de terminar
-Copie a senha de gerenciamento de chaves integrada para um local seguro fora do sistema de storage para uso futuro.
+Copie a senha de gerenciamento de chaves integrada para um local seguro fora do sistema de armazenamento para uso futuro.
 
-Você deve fazer backup manual das informações de gerenciamento de chaves sempre que alterar a senha de gerenciamento de chaves integradas.
+Faça backup manual das informações de gerenciamento de chaves sempre que alterar a senha de gerenciamento de chaves integrada.
 
 .Informações relacionadas
-* link:backup-key-management-information-manual-task.html["Fazer backup manual de informações de gerenciamento de chaves integradas"]
+* link:backup-key-management-information-manual-task.html["Faça backup manual das informações de gerenciamento de chaves integradas"]
 * link:https://docs.netapp.com/us-en/ontap-cli/security-key-manager-onboard-update-passphrase.html["gerenciador de chaves de segurança integrado atualização de frase-senha"^]
 
