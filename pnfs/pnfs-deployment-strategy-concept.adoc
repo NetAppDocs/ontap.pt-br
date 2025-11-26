@@ -1,0 +1,55 @@
+---
+permalink: pnfs/pnfs-deployment-strategy-concept.html 
+sidebar: sidebar 
+keywords: tr-4063, pnfs, deployment, strategy, configuration, traditional nfs, benefits, technical report 
+summary: Compreender os desafios do NFS tradicional e como o pNFS os resolve ajuda você a planejar uma implementação eficaz do pNFS. 
+---
+= Estratégia de implantação do pNFS no ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+O pNFS foi introduzido para aprimorar o NFS tradicional, separando os caminhos de metadados e dados, fornecendo localização de dados e permitindo operações paralelas.
+
+
+
+== Desafios do NFS tradicional e benefícios do pNFS
+
+A tabela a seguir mostra os desafios do NFS tradicional e explica como o pNFS no ONTAP os resolve.
+
+[cols="40,60"]
+|===
+| Desafio | benefício pNFS 
+
+
+| *Mesmo caminho para metadados e dados* No NFS tradicional, metadados e dados percorrem o mesmo caminho, o que pode saturar tanto a rede quanto a CPU, já que um único caminho se conecta a um único nó de hardware no cluster. Essa situação se agrava quando muitos usuários tentam acessar a mesma exportação NFS. | *Os caminhos de metadados e de dados são separados, e os caminhos de dados são paralelizados.* Ao separar os caminhos de metadados e de dados para o tráfego NFS e fornecer vários caminhos de rede para os caminhos de dados, os recursos de CPU e de rede são maximizados em um cluster ONTAP , proporcionando assim maior escalabilidade para as cargas de trabalho. 
+
+
+| *Desafios de distribuição de carga de trabalho* Em um cluster ONTAP NAS, você pode ter até 24 nós, cada um com seu próprio conjunto de volumes de dados e interfaces de rede. Cada volume pode hospedar sua própria carga de trabalho ou um subconjunto dela, e com um volume FlexGroup essa carga de trabalho pode existir em vários nós que acessam um único namespace para maior simplicidade. Quando um cliente monta uma exportação NFS, o tráfego de rede será estabelecido em um único nó. Quando os dados acessados ​​residem em um nó separado no cluster, ocorrerá tráfego remoto, o que pode adicionar latência à carga de trabalho e complexidade à administração. | *Caminhos locais e paralelos para estruturas de dados* Como o pNFS separa os caminhos de dados dos metadados e fornece vários caminhos de dados paralelos dependendo da localidade do volume no cluster, a latência pode ser reduzida diminuindo a distância do tráfego de rede no cluster, bem como aproveitando vários recursos de hardware em um cluster. Além disso, como o pNFS no ONTAP redireciona o tráfego de dados automaticamente, os administradores têm menos necessidade de gerenciar vários caminhos e locais de exportação. 
+
+
+| *Realocação de pontos de montagem NFS* Depois que um ponto de montagem é estabelecido, desmontar e remontar o volume seria problemático. O ONTAP oferece a capacidade de migrar interfaces de rede entre nós, mas isso adiciona sobrecarga de gerenciamento e é disruptivo para conexões NFS com estado usando NFSv4.x. Algumas das razões para a mudança de localização de um ponto de montagem estão relacionadas aos desafios de localização dos dados. | *Realocação automática de caminhos* Com o pNFS, o servidor NFS mantém uma tabela com a localização das interfaces de rede e dos volumes. Quando uma estrutura de dados é solicitada por um cliente através do caminho de metadados no pNFS, o servidor entrega um caminho de rede otimizado ao cliente, que então utiliza esse caminho para operações de dados. Isso reduz drasticamente a sobrecarga de gerenciamento das cargas de trabalho e pode melhorar o desempenho em alguns casos. 
+|===
+
+
+== Requisitos de configuração
+
+A configuração do pNFS no NetApp ONTAP requer o seguinte:
+
+* Um cliente NFS que suporte pNFS e esteja montado com NFSv4.1 ou posterior.
+* NFSv4.1 habilitado no servidor NFS no ONTAP (`nfs modify -v4.1 enabled`(Desativado por padrão)
+* pNFS habilitado no servidor NFS no ONTAP (`nfs modify -v4.1-pnfs enabled`(Desativado por padrão)
+* Pelo menos uma interface de rede por nó, roteável para os clientes NFS.
+* Volumes de dados no SVM que possuem políticas e regras de exportação que permitem NFSv4
+
+
+image::pNFS_fig_020.png[Requisitos de configuração do pNFS]
+
+Após os requisitos de configuração acima serem atendidos, o pNFS funcionará automaticamente.
+
+.Informações relacionadas
+* link:../nfs-config/index.html["Configuração NFS"]
+* link:../nfs-admin/ontap-support-nfsv41-concept.html["Suporte ONTAP para NFSv4.1"]
+
