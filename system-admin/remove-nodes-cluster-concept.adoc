@@ -14,10 +14,10 @@ summary: Você pode remover nós indesejados de um cluster, um nó de cada vez. 
 Você pode remover nós indesejados de um cluster, um nó de cada vez. Depois de remover um nó, você também deve remover o parceiro de failover. Se você estiver removendo um nó, seus dados ficarão inacessíveis ou apagados.
 
 .Antes de começar
-As condições a seguir devem ser satisfeitas antes de remover nós do cluster:
+Você deve atender às seguintes condições antes de remover nós do cluster:
 
 * Mais da metade dos nós no cluster precisa estar saudável.
-* Todos os dados, volumes e agregados não-raiz foram transferidos ou removidos do nó.
+* Todos os dados, volumes e agregados não raiz devem ser realocados ou removidos do nó.
 +
 ** Todos os dados no nó que você deseja remover devem ter sido evacuados. Isso pode incluir link:../encryption-at-rest/secure-purge-data-encrypted-volume-concept.html["limpando dados de um volume criptografado"].
 ** Todos os volumes que não são raiz link:../volumes/move-volume-task.html["movido"]foram de agregados pertencentes ao nó.
@@ -114,7 +114,11 @@ O nó principal é o nó que contém processos como `mgmt` , `vldb`, , `vifmgr`,
 cluster modify -node <node_name> -eligibility false
 ----
 +
-Isso fará com que o nó seja marcado como não saudável até que a elegibilidade seja restaurada na próxima etapa. Quando o nó mestre se torna inelegível, um dos nós restantes é eleito pelo quorum do cluster como o novo mestre.
+O nó é marcado como não saudável até que a elegibilidade seja restaurada. Quando o nó mestre se torna inelegível, um dos nós restantes é eleito pelo quórum do cluster como o novo mestre.
+
++
+
+NOTE: Se você estiver executando esta etapa no primeiro nó de um par HA, deverá marcar apenas esse nó como inelegível. Não altere o status do parceiro HA. Se o nó parceiro for selecionado como o novo mestre, você precisa verificar se ele possui o valor epsilon antes de torná-lo inelegível. Isso é feito quando você repete esses passos para remover o nó parceiro.
 
 .. Torne o nó principal anterior elegível para participar novamente no cluster:
 +
