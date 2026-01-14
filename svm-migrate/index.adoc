@@ -130,6 +130,7 @@ Antes de iniciar uma migração SVM, você deve atender aos seguintes pré-requi
 * Todos os nós no cluster de destino estão executando a mesma versão do ONTAP .
 * A versão do ONTAP do cluster de destino é igual ou, no máximo, duas versões principais mais recentes que a do cluster de origem.
 * Os clusters de origem e destino suportam a mesma sub-rede IP para acesso LIF aos dados.
+* Tanto o cluster de origem quanto o de destino devem ter pelo menos uma interface com acesso a todas as redes das SVMs em migração; caso contrário, a verificação prévia da migração falhará.
 * A SVM de origem contém menos do que o xref:Maximum supported volumes per SVM[número máximo de volumes de dados suportados para a versão].
 * Existe espaço suficiente no destino para acomodar o volume de produtos.
 * O gerenciador de chaves integrado ou o gerenciamento de chaves externo é configurado no nível do cluster no destino, caso o SVM de origem possua volumes criptografados.
@@ -190,7 +191,26 @@ Para obter informações sobre a interoperabilidade da versão do ONTAP entre um
 | Recurso | Lançamento primeiro suportado | Comentários 
 
 
+| Registros de auditoria (NFS e SMB) | ONTAP 9.13,1  a| 
+[NOTE]
+====
+Para a migração SVM no local com auditoria habilitada, você deve desativar a auditoria na SVM de origem e, em seguida, executar a migração.
+
+====
+Antes da migração para o SVM:
+
+* link:../nas-audit/enable-disable-auditing-svms-task.html["O registro de auditoria deve estar ativado no cluster de destino."].
+* link:../nas-audit/commands-modify-auditing-config-reference.html?q=audit+log+destination+path["O caminho de destino do log de auditoria da SVM de origem deve ser criado no cluster de destino"].
+
+
+
+
 | Proteção autônoma contra ransomware | ONTAP 9.12,1 |  
+
+
+| Instâncias na nuvem | Não suportado  a| 
+A migração de SVMs de ou para instâncias locais para a nuvem não é suportada.
+
 
 
 | Cloud Volumes ONTAP | Não suportado |  
@@ -262,20 +282,6 @@ Veja o <<Pré-requisitos,pré-requisitos>> para migrar um SVM em uma configuraç
 | Criptografia de volume NetApp (NVE) | ONTAP 9.10,1 | Os volumes NVE são migrados como volumes NVE no destino. 
 
 
-| Logs de auditoria NFS e SMB | ONTAP 9.13,1  a| 
-[NOTE]
-====
-Para a migração SVM no local com auditoria habilitada, você deve desativar a auditoria na SVM de origem e, em seguida, executar a migração.
-
-====
-Antes da migração para o SVM:
-
-* link:../nas-audit/enable-disable-auditing-svms-task.html["O redirecionamento do log de auditoria deve estar ativado no cluster de destino"].
-* link:../nas-audit/commands-modify-auditing-config-reference.html?q=audit+log+destination+path["O caminho de destino do log de auditoria da SVM de origem deve ser criado no cluster de destino"].
-
-
-
-
 | NFS v3, NFS v4,1 e NFS v4,2 | ONTAP 9.10,1 |  
 
 
@@ -291,6 +297,9 @@ Antes da migração para o SVM:
 | Gerenciador de chaves integrado (OKM) com o modo critérios comuns ativado no cluster de origem | Não suportado |  
 
 
+| ONTAP Select | Não suportado | A migração de SVMs para ou de instâncias do ONTAP Select não é suportada. 
+
+
 | Qtrees | ONTAP 9.14,1 |  
 
 
@@ -300,7 +309,7 @@ Antes da migração para o SVM:
 | S3 | Não suportado |  
 
 
-| Protocolo SMB | ONTAP 9.12,1  a| 
+| Protocolo SMB | ONTAP 9.12.1. No entanto, o protocolo SMB1 não é suportado.  a| 
 Migrações de pequenas e médias empresas (PMEs) são disruptivas e exigem uma atualização do cliente após a migração.
 
 
@@ -429,3 +438,10 @@ A tabela a seguir indica operações de volume com suporte à migração do SVM 
 
 | Restaure o arquivo a partir do snapshot | Permitido | Permitido | Não suportado 
 |===
+
+
+== Informações pós-migração
+
+* Após a migração, as políticas de snapshots locais têm a extensão -MIG, o que pode interromper algumas automações. Você deve procurar por essa extensão e renomear as políticas conforme necessário.
+* Os volumes SnapMirror de destino do cofre migrado devem executar uma resincronização para reativar a proteção. A resincronização do cofre é necessária porque a migração cria uma nova linha de base entre as SVMs de migração, que é mais recente do que a linha de base anterior do cofre. Executar uma resincronização reativa o cofre, o que também exclui quaisquer dados mais recentes do que a linha de base atual do cofre, especificamente o snapshot gerado durante a migração.
+
