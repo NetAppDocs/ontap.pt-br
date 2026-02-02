@@ -5,14 +5,7 @@ keywords: anti-ransomware workloads, anti-ransomware requirements, anti-ransomwa
 summary: O ARP é compatível com cargas de trabalho NAS e SAN. É mais adequado para bancos de dados em armazenamento NFS, diretórios home do Windows ou Linux e cargas de trabalho de vídeo e imagem. 
 ---
 = Casos de uso e considerações da proteção autônoma contra ransomware do ONTAP
-:hardbreaks:
-:toclevels: 1
 :allow-uri-read: 
-:toclevels: 1
-:nofooter: 
-:icons: font
-:linkattrs: 
-:imagesdir: ../media/
 
 
 [role="lead"]
@@ -83,8 +76,13 @@ O suporte para outras configurações e tipos de volume está disponível nas se
 
 
 | ARP/AI com atualizações automáticas | ✓ | ✓ |  |  |  |  |  |  |  
+
+
+| Capacitação padrão de ARP/AI^2^ | ✓ |  |  |  |  |  |  |  |  
 |===
 ^1^ O ONTAP 9.16.1 e 9.17.1 não oferecem suporte a ARP/AI para volumes FlexGroup .  Após a atualização para essas versões, os volumes FlexGroup habilitados para ARP continuam a operar com o mesmo modelo ARP usado antes do ARP/AI.  A partir do ONTAP 9.18.1, os volumes FlexGroup utilizam o modelo ARP/AI.
+
+^2^ A partir do ONTAP 9.18.1, o comportamento padrão de capacitação do ARP/AI está disponível para AFF série A e AFF série C, ASA e ASA r2. Esse comportamento ativa automaticamente o ARP/AI em todos os novos volumes após um período de carência de 12 horas após uma atualização ou imediatamente para novas instalações do ONTAP 9.18.1. Você precisará ativar o ARP manualmente em link:enable-task.html["volumes existentes"].
 
 
 
@@ -157,7 +155,7 @@ O ARP pode ter um impacto mínimo no desempenho do sistema, medido em taxa de tr
 
 | Gravação intensiva e os dados não podem ser compactados | 60  a| 
 * NAS: 10% do IOPS máximo para ONTAP 9.15.1 e anteriores
-* NAS: 4% do IOPS máximo para ONTAP 9.16.1 e posterior
+* NAS: 5% do IOPS máximo para ONTAP 9.16.1 e versões posteriores
 * SAN: 5% do IOPS máximo para ONTAP 9.17.1 e posterior
 
 
@@ -165,6 +163,33 @@ O ARP pode ter um impacto mínimo no desempenho do sistema, medido em taxa de tr
 ^1^ O desempenho do sistema não é degradado além dessas porcentagens, independentemente do número de volumes adicionados além dos limites recomendados.
 
 Como a análise de ARP é executada em uma sequência priorizada, ela é executada em cada volume com menos frequência à medida que o número de volumes protegidos aumenta.
+
+[NOTE]
+====
+Habilitar o ARP por padrão em um grande número de novos volumes pode aumentar o uso de recursos do sistema. Considere as demandas de espaço para processos concorrentes, como snapshots, ao habilitar o ARP em volumes.
+
+====
+
+
+== Limites de volume para ARP por plataforma
+
+A partir do ONTAP 9.18.1, o ARP suporta limites de volume aumentados com base no tipo de plataforma e na contagem de núcleos de CPU.
+
+[cols="40,30"]
+|===
+| Tipo de plataforma | Máximo de volumes habilitados para ARP por nó 
+
+
+| Baixo custo (sistemas com até 20 núcleos de CPU) | 250 
+
+
+| Médio (sistemas com até 64 núcleos de CPU) | 500 
+
+
+| High-end (sistemas com mais de 64 núcleos de CPU) | 1000 
+|===
+
+NOTE: A contagem de núcleos de CPU se aplica a cada nó individual em um par de HA.
 
 
 

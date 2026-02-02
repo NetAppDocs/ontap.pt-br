@@ -26,6 +26,12 @@ O ARP cria snapshots bloqueados em intervalos regulares, além dos agendados, pa
 
 == Licenças e capacitação
 
+Você precisa de uma licença para usar o ARP. Decida se deseja habilitar o ARP por padrão em novos volumes ou habilitar manualmente por volume.
+
+
+
+=== Opções de licença para ARP
+
 O suporte a ARP está incluído no pacote.link:https://kb.netapp.com/onprem/ontap/os/ONTAP_9.10.1_and_later_licensing_overview["Licença ONTAP One"^] . Se você não tiver a licença ONTAP One, outras licenças estarão disponíveis para uso ARP, que variam dependendo da sua versão do ONTAP.
 
 [cols="2*"]
@@ -50,15 +56,34 @@ ONTAP 9.10,1
 * Se você estiver revertendo do ONTAP 9.11.1 ou posterior para o ONTAP 9.10.1 e tiver habilitado o ARP com a licença Anti_ransomware, verá uma mensagem de aviso e talvez seja necessário reconfigurar o ARP. link:../revert/anti-ransomware-license-task.html["Saiba mais sobre como reverter ARP"] .
 
 
-link:enable-task.html["Você pode habilitar a Proteção Autônoma contra Ransomware (ARP) em um volume existente ou criar um novo volume e habilitar a ARP"] .
+
+
+=== Opções de capacitação para ARP
+
+O ARP oferece opções flexíveis de capacitação nos níveis de cluster, SVM e volume, permitindo que você configure a capacitação automática padrão para novos volumes ou ative o ARP manualmente em volumes existentes, conforme necessário.
+
+.Capacitação padrão automática em novos volumes
+A partir do ONTAP 9.18.1, o ARP é habilitado automaticamente por padrão em todos os novos volumes para AFF série A e AFF série C, ASA e ASA r2. Essa capacitação padrão automática do ARP não se aplica a link:use-cases-restrictions-concept.html#unsupported-configurations["volumes ou configurações não suportadas"].
+
+A capacitação ARP padrão em novos volumes entra em vigor após um período de carência de 12 horas após uma atualização ou imediatamente para uma nova instalação do ONTAP 9.18.1, desde que uma licença ARP esteja instalada em ambos os casos. Você deve <<manual-default-enablement,habilitar ARP manualmente>> em volumes existentes.
+
+Durante o período de carência, você pode link:default-enable-change.html["desative a capacitação padrão para novos volumes no nível do cluster usando o System Manager ou a ONTAP CLI"]. Se você não optar por não participar, ARP será ativado automaticamente para todos os novos volumes criados após o término do período de carência. Se as necessidades mudarem após o período de carência, você também terá a flexibilidade de ativar ou desativar a capacitação padrão a qualquer momento.
+
+.Capacitação padrão manual em novos volumes
+Se você desativou a capacitação padrão automática do ARP no nível do cluster, também pode optar por link:enable-default-task.html["Ativar manualmente o ARP por padrão em todos os novos volumes"] no nível do SVM. Para ONTAP 9.17.1 e anteriores, esta é a única maneira de configurar o ARP para ser ativado por padrão em novos volumes.
+
+.Capacitação de ARP em todos os volumes existentes ou em volumes específicos
+A partir da versão 9.18.1, você pode habilitar manualmente o ARP em todos os volumes existentes no nível do cluster (selecione *Cluster > Segurança* e image:icon_kabob.gif["Ícone de opções do menu"] na seção *Anti-ransomware*, depois selecione *Habilitar em todos os volumes existentes*).
+
+Se preferir limitar a capacitação de ARP a um volume específico, você pode link:enable-task.html["habilitar ARP por volume"].
 
 
 
 == Estratégia de proteção contra ransomware da ONTAP
 
-Uma estratégia eficaz de detecção de ransomware deve incluir mais de uma camada de proteção.  Considere os recursos de segurança de um veículo como uma analogia.  Você não depende de um único recurso, como um cinto de segurança, para protegê-lo completamente em um acidente.  Airbags, freios ABS e alerta de colisão frontal são recursos de segurança que, juntos, levam a um melhor resultado.  A proteção contra ransomware deve ser vista da mesma maneira.
+A proteção eficaz contra ransomware requer várias camadas de proteção trabalhando juntas.
 
-Embora o ONTAP inclua recursos como FPolicy, snapshots, SnapLock e Active IQ Digital Advisor (também conhecido como Digital Advisor) para ajudar a proteger contra ransomware, as informações a seguir se concentram no recurso ARP com recursos de aprendizado de máquina.
+Embora ONTAP inclua recursos como FPolicy, snapshots, SnapLock e Active IQ Digital Advisor (também conhecido como Digital Advisor) para ajudar na proteção contra ransomware, o ARP fornece uma camada adicional de defesa.
 
 Para saber mais sobre outros recursos do portfólio da NetApp que protegem contra ransomware, consulte link:https://docs.netapp.com/us-en/ontap-technical-reports/ransomware-solutions/ransomware-active-iq.html["Portfólio de proteção de ransomware e NetApp"^] .
 
@@ -164,7 +189,7 @@ Após o período de avaliação, você pode determinar se a proteção ARP SAN e
 
 == Avaliação de ameaças e instantâneos ARP
 
-O ARP avalia a probabilidade de ameaças com base nos dados recebidos, medidos em comparação com as análises aprendidas. Quando o ARP detecta uma anormalidade, uma medição é atribuída. Um snapshot pode ser atribuído no momento da detecção ou em intervalos regulares.
+O ARP avalia a probabilidade de ameaças com base nos dados recebidos, comparados com análises aprendidas. Quando o ARP detecta uma anomalia, uma medição é atribuída. O ARP pode atribuir um snapshot no momento da detecção ou em intervalos regulares.
 
 
 
@@ -304,6 +329,51 @@ A partir do ONTAP 9.16,1, as atualizações de segurança para ARP/AI estão dis
 
 link:arp-ai-automatic-updates.html["Saiba mais sobre as atualizações ARP/AI"]
 
+
+
+== Diferenças entre ARP/AI e modelos ARP em resumo
+
+[cols="1,1,1"]
+|===
+| Recurso | ARP | ARP/IA 
+
+
+| Versões do ONTAP | ONTAP 9.10.1-9.15.1 | ONTAP 9.16.1 e posterior; 9.15.1 (tech preview) 
+
+
+| Método de detecção | Analisa a atividade dos arquivos, a entropia dos dados e os tipos de extensão de arquivos | Modelo de IA/aprendizado de máquina treinado em grandes conjuntos de dados forenses; analisa entropia e comportamento de arquivos 
+
+
+| Período de aprendizagem | Requer modo de aprendizagem de 30 dias para volumes NAS FlexVol (alternância automática disponível em 9.13.1 e posteriores) | Sem período de aprendizagem; ativo imediatamente após capacitação 
+
+
+| Suporte ao tipo de volume  a| 
+* FlexVol: 9.10.1 e posterior
+* FlexGroup: 9.13.1 e posterior
+* SAN: não suportado
+
+ a| 
+* FlexVol: 9.16.1 e posterior
+* FlexGroup: 9.18.1 e posterior
+* SAN: 9.17.1 e posterior (com período de avaliação)
+
+
+
+
+| Criação de Snapshot | Acionado por alta entropia, novas extensões de arquivo ou picos de operações de arquivo | Criado em intervalos fixos de 4 horas e mediante confirmação de ataque 
+
+
+| Retenção de Snapshot | Retido até que o administrador limpe a atividade suspeita | Padrão de 12 horas; prorrogado com base na confirmação do ataque (24 horas para falso positivo, 7 dias para positivo confirmado) 
+
+
+| Atualizações | Lógica de detecção estática (atualizada apenas com as atualizações do ONTAP) | Atualizações de segurança automáticas independentes das versões do ONTAP 
+
+
+| Implantação | Capacitação manual por volume ou configuração padrão em nível de SVM | Capacitação manual por volume ou configuração padrão no nível do SVM; capacitação padrão em todos os novos volumes no nível do cluster para sistemas compatíveis em 9.18.1 e posteriores 
+
+
+| Período de avaliação | Não aplicável | Necessário para volumes SAN (2 a 4 semanas) para estabelecer limites de criptografia de referência 
+|===
 .Informações relacionadas
 * link:https://docs.netapp.com/us-en/ontap-cli/["Referência do comando ONTAP"^]
 

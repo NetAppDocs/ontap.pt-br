@@ -11,16 +11,17 @@ summary: Você pode criar um volume FlexCache no mesmo cluster para melhorar a p
 
 
 [role="lead"]
-Você pode criar um volume FlexCache no mesmo cluster para melhorar a performance ao acessar um objeto ativo. Se você tiver data centers em diferentes locais, poderá criar FlexCache volumes em clusters remotos para acelerar o acesso aos dados.
+Você pode criar um volume FlexCache no mesmo cluster ONTAP para melhorar o desempenho ao acessar um objeto frequentemente acessado. Se você tiver data centers em locais diferentes, pode criar volumes FlexCache em clusters ONTAP remotos para acelerar o acesso aos dados.
 
 .Sobre esta tarefa
-* A partir do ONTAP 9.5, o FlexCache oferece suporte a volumes FlexVol como volumes de origem e volumes FlexGroup como volumes FlexCache.
-* A partir do ONTAP 9,7, os volumes FlexVol volume e FlexGroup são compatíveis como volumes de origem.
-* A partir do ONTAP 9.14,0, você pode criar um volume FlexCache não criptografado a partir de uma fonte criptografada.
+* A partir do ONTAP 9.18.1, você pode habilitar o acesso ao bucket S3 do NAS em um FlexCache volume definindo a  `-is-s3-enabled` opção  `true` ao criar o volume. Essa opção está desabilitada por padrão.
 * A partir do ONTAP 9.18.1, o FlexCache oferece suporte à criação de volumes de cache para volumes de origem com SVMs que pertencem a um relacionamento SVM-DR.
 +
 Se você estiver executando o ONTAP 9.18.1 ou posterior, um administrador de armazenamento deve emparelhar os SVMs de cache com os SVMs de origem primário e secundário que fazem parte de um relacionamento SVM-DR antes de criar volumes de cache de volumes de origem que fazem parte do relacionamento SVM-DR.
 
+* A partir do ONTAP 9.14,0, você pode criar um volume FlexCache não criptografado a partir de uma fonte criptografada.
+* A partir do ONTAP 9.7, tanto o volume FlexVol quanto os volumes FlexGroup são suportados como volumes de origem.
+* A partir do ONTAP 9.5, o FlexCache oferece suporte a volumes FlexVol como volumes de origem e volumes FlexGroup como volumes FlexCache.
 
 
 .Antes de começar
@@ -39,7 +40,7 @@ NOTE: Se um par de HA estiver usando link:https://docs.netapp.com/us-en/ontap/en
 ====
 .System Manager
 --
-. Se o volume FlexCache estiver em um cluster diferente do volume de origem, crie uma relação de par de cluster:
+. Se o FlexCache volume estiver em um cluster ONTAP diferente do volume de origem, crie um relacionamento de peers de clusters:
 +
 .. No cluster local, clique em *proteção > Visão geral*.
 .. Expanda *Intercluster Settings*, clique em *Add Network interfaces* e adicione interfaces de rede entre clusters para o cluster.
@@ -144,7 +145,7 @@ vserver peer create -vserver <local_SVM> -peer-vserver <remote_SVM> -peer-cluste
 +
 [source, cli]
 ----
-volume flexcache create -vserver <cache_svm> -volume <cache_vol_name> -auto-provision-as flexgroup -size <vol_size> -origin-vserver <origin_svm> -origin-volume <origin_vol_name>
+volume flexcache create -vserver <cache_svm> -volume <cache_vol_name> -auto-provision-as flexgroup -size <vol_size> -origin-vserver <origin_svm> -origin-volume <origin_vol_name> -is-s3-enabled true|false
 ----
 +
 O exemplo a seguir cria um volume FlexCache e seleciona automaticamente agregados existentes para provisionamento:
@@ -161,8 +162,16 @@ O exemplo a seguir cria um volume FlexCache e define o caminho de junção:
 +
 [listing]
 ----
-cluster1::> flexcache create -vserver vs34 -volume fc4 -aggr-list aggr34,aggr43 -origin-volume origin1 -size 400m -junction-path /fc4
+cluster1::> volume flexcache create -vserver vs34 -volume fc4 -aggr-list aggr34,aggr43 -origin-volume origin1 -size 400m -junction-path /fc4
 [Job 903] Job succeeded: Successful
+----
++
+O exemplo a seguir permite o acesso ao S3 em um FlexCache volume:
+
++
+[listing]
+----
+cluster1::> volume flexcache create -vserver vs3 -volume cache_vs3_vol33 -origin-volume vol33 -origin-vserver vs3 -junction-path /cache_vs3_vol33 -is-s3-enabled true
 ----
 . Verifique a relação FlexCache a partir do volume FlexCache e do volume de origem.
 +
