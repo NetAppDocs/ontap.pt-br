@@ -61,12 +61,17 @@ IMPORTANT: Não execute operações como `cluster remove-node` , `cluster unjoin
 ** ONTAP 9 .4 e posterior: `cluster remove-node -skip-last-low-version-node-check`
 
 
-* Se você desmarcar 2 nós de um cluster de 4 nós, o HA do cluster será automaticamente ativado nos dois nós restantes.
+* Se você remover dois nós de um cluster de quatro nós, o HA do cluster será ativado automaticamente nos dois nós restantes.
 
 
+[NOTE]
+====
+Todos os dados do sistema e dados de usuário, de todos os discos conectados ao nó, devem ser tornados inacessíveis aos usuários antes de remover um nó do cluster.
 
-NOTE: Todos os dados do sistema e do usuário, de todos os discos conetados ao nó, devem ficar inacessíveis aos usuários antes de remover um nó do cluster. Se um nó foi desvinculado incorretamente de um cluster, entre em Contato com o suporte da NetApp para obter assistência com opções de recuperação.
+Caso um nó tenha sido removido incorretamente de um cluster, entre em contato com o Suporte da NetApp para obter assistência com as opções de recuperação.
 
+====
+[[disable-ha]]
 .Passos
 . Altere o nível de privilégio para avançado:
 +
@@ -74,21 +79,35 @@ NOTE: Todos os dados do sistema e do usuário, de todos os discos conetados ao n
 ----
 set -privilege advanced
 ----
-. Verifique se um nó no cluster contém epsilon:
+. Identifique o nó no cluster que possui epsilon:
 +
 [source, cli]
 ----
-cluster show -epsilon true
+cluster show
 ----
-. Se um nó no cluster contiver epsilon e esse nó for desvinculado, mova o epsilon para um nó que não será desconetado:
 +
-.. Mova o epsilon do nó que vai ser desconetado
+No exemplo a seguir, "node0" atualmente contém epsilon:
+
++
+[listing]
+----
+cluster::*>
+Node                 Health  Eligibility  Epsilon
+-------------------- ------- ------------ ------------
+node0                true    true         true
+node1                true    true         false
+node2                true    true         false
+node3                true    true         false
+----
+. [[epsilon-true]]Se o nó que você está removendo contém epsilon:
++
+.. Mova o epsilon do nó que você está removendo:
 +
 [source, cli]
 ----
-cluster modify -node <name_of_node_to_be_unjoined> -epsilon false
+cluster modify -node <name_of_node_to_be_removed> -epsilon false
 ----
-.. Mova o epsilon para um nó que não vai ser desconetado:
+.. Mova epsilon para um nó que você não está removendo:
 +
 [source, cli]
 ----
@@ -105,7 +124,7 @@ cluster ring show
 +
 O nó principal é o nó que contém processos como `mgmt` , `vldb`, , `vifmgr`, `bcomd` `crs` e .
 
-. Se o nó que você deseja remover for o nó principal atual, habilite outro nó no cluster a ser eleito como o nó mestre:
+. Se o nó que você está removendo for o nó mestre atual, habilite outro nó no cluster para ser eleito como o nó mestre:
 +
 .. Torne o nó principal atual inelegível para participar do cluster:
 +
@@ -114,12 +133,16 @@ O nó principal é o nó que contém processos como `mgmt` , `vldb`, , `vifmgr`,
 cluster modify -node <node_name> -eligibility false
 ----
 +
-O nó é marcado como não saudável até que a elegibilidade seja restaurada. Quando o nó mestre se torna inelegível, um dos nós restantes é eleito pelo quórum do cluster como o novo mestre.
+O nó é marcado como não íntegro até que a elegibilidade seja restaurada. Quando o nó mestre se torna inelegível, um dos nós restantes é eleito pelo quórum do cluster como o novo mestre.
 
 +
+[NOTE]
+====
+Se você estiver executando esta etapa no primeiro nó de um par de HA, você deve marcar apenas esse nó como inelegível. Não modifique o status do parceiro de HA.
 
-NOTE: Se você estiver executando esta etapa no primeiro nó de um par HA, deverá marcar apenas esse nó como inelegível. Não altere o status do parceiro HA. Se o nó parceiro for selecionado como o novo mestre, você precisa verificar se ele possui o valor epsilon antes de torná-lo inelegível. Isso é feito quando você repete esses passos para remover o nó parceiro.
+Se o nó parceiro for selecionado como o novo mestre, você precisa verificar se ele detém epsilon antes de torná-lo inelegível. Se o nó parceiro detiver epsilon, você precisa mover epsilon para outro nó que permaneça no cluster antes de torná-lo inelegível. Você faz isso ao repetir estas etapas para remover o nó parceiro.
 
+====
 .. Torne o nó principal anterior elegível para participar novamente no cluster:
 +
 [source, cli]
@@ -128,8 +151,8 @@ cluster modify -node <node_name> -eligibility true
 ----
 
 
-. Faça login no LIF de gerenciamento de nós remoto ou no LIF de gerenciamento de cluster em um nó diferente daquele que está sendo removido.
-. Remova o nó do cluster:
+. Faça login na LIF de gerenciamento de nó remoto ou na LIF de gerenciamento de cluster em um nó que você não está removendo do cluster.
+. Remova os nós do cluster:
 +
 |===
 | Para esta versão ONTAP... | Use este comando... 
@@ -168,7 +191,7 @@ O sistema informa-o do seguinte:
 
 +
 ** Você também deve remover o parceiro de failover do nó do cluster.
-** Depois que o nó é removido e antes que ele possa reingressar em um cluster, você deve usar a opção de menu de inicialização (4) Limpar configuração e inicializar todos os discos ou a opção (9) Configurar particionamento de unidade avançado para apagar a configuração do nó e inicializar todos os discos.
+** Após o nó ser removido e antes que ele possa se juntar novamente a um cluster, você deve usar a opção do menu de inicialização *(4) Limpar configuração e inicializar todos os discos* ou a opção *(9) Configurar particionamento avançado de unidade* para apagar a configuração do nó e inicializar todos os discos.
 +
 Uma mensagem de falha é gerada se você tiver condições que devem ser endereçadas antes de remover o nó. Por exemplo, a mensagem pode indicar que o nó tem recursos compartilhados que você deve remover ou que o nó está em uma configuração de HA de cluster ou configuração de failover de storage que você deve desativar.
 
@@ -179,21 +202,21 @@ Se o nó for o mestre do quórum, o cluster perderá brevemente e retornará ao 
 
 . Se uma mensagem de falha indicar condições de erro, aborde essas condições e execute novamente o `cluster remove-node` comando ou `cluster unjoin`.
 +
-O nó é reinicializado automaticamente depois de removido com sucesso do cluster.
+O nó reinicia automaticamente após ser removido com sucesso do cluster.
 
 . Se você estiver reutilizando o nó, apague a configuração do nó e inicialize todos os discos:
 +
 .. Durante o processo de inicialização, pressione Ctrl-C para exibir o menu de inicialização quando solicitado a fazê-lo.
-.. Selecionar a opção do menu de arranque (4) Limpar a configuração e inicializar todos os discos.
+.. Selecione a opção do menu de inicialização *(4) Limpar configuração e inicializar todos os discos*.
 
 
-. Voltar ao nível de privilégio de administrador:
+. [[return-admin]]Retornar ao nível de privilégio de admin:
 +
 [source, cli]
 ----
 set -privilege admin
 ----
-. Repita as etapas anteriores para remover o parceiro de failover do cluster.
+. Repita os passos <<disable-ha,1>> a <<return-admin,9>> para remover o parceiro de failover do cluster.
 
 
 .Informações relacionadas
