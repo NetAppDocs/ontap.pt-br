@@ -1,0 +1,241 @@
+---
+sidebar: sidebar 
+permalink: concepts/capacity-measurements.html 
+keywords: capacity, measurement, physical, logical, storage, used storage, local tier capacity, aggregate capacity, block, capacity concern, add capacity, volume, used capacity, available capacity, total capacity, inactive capacity, static insights, dynamic insights, snapshot copy, snapshot copies, inactive data, overprovision, overflows, snapshot copy policy, snapshot copy reserves, reserves, policy, top volumes 
+summary: 'Sua capacidade de storage do ONTAP pode ser medida como espaço físico ou espaço lógico. Como essas medições são relatadas varia dependendo da sua versão do ONTAP e se você está usando o System Manager ou a Command Line Interface (CLI). Compreender vários termos relacionados à capacidade, as diferenças entre capacidade física e lógica e como os tipos de capacidade são relatados é importante ao monitorar o uso do seu storage.' 
+---
+= Saiba mais sobre relatórios e medições de capacidade do ONTAP
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+Sua capacidade de storage do ONTAP pode ser medida como espaço físico ou espaço lógico. A forma como essas medições são apresentadas varia dependendo da sua versão do ONTAP e se você está usando System Manager ou a Command Line Interface (CLI). Compreender os diversos termos relacionados à capacidade, as diferenças entre capacidade física e lógica e como os tipos de capacidade são relatados é importante ao monitorar o uso do seu storage.
+
+* *Capacidade física*: O espaço físico refere-se aos blocos físicos de armazenamento utilizados no volume ou nível local. O valor da capacidade física usada geralmente é menor do que o valor da capacidade lógica usada devido à redução de dados de recursos de eficiência de storage (como deduplicação e compactação).
+* *Capacidade lógica*: O espaço lógico refere-se ao espaço utilizável (os blocos lógicos) em um volume ou nível local. O espaço lógico refere-se a como o espaço teórico pode ser usado, sem levar em conta os resultados da deduplicação ou compressão. O valor do espaço lógico usado é derivado da quantidade de espaço físico usado, além da economia com recursos de eficiência de storage (como deduplicação e compactação) configurados. Essa medição geralmente parece maior do que a capacidade física usada, pois inclui snapshots, clones e outros componentes, e não reflete a compactação de dados e outras reduções no espaço físico. Assim, a capacidade lógica total poderia ser maior do que o espaço provisionado.
+
+
+
+
+== Relatório de capacidade na CLI
+
+O espaço físico utilizado é relatado de forma diferente na ONTAP CLI dependendo da sua versão do ONTAP. No ONTAP 9.13.1 e versões anteriores, o  `physical used`parâmetro exibido na saída do  `volume show`comando inclui todas as economias de eficiência de storage aplicadas ao volume. A partir do ONTAP 9.14.1, o  `physical used`parâmetro não inclui economias de eficiência de storage em nível de agregado, como armazenamento sensível à temperatura (TSSE), compressão inline, compactação e deduplicação entre volumes, portanto, não reflete com precisão o espaço físico utilizado do volume. No ONTAP 9.14.1 e versões posteriores, você deve usar o comando  `vol show-footprint`com o parâmetro  `effective_total_footprint`para visualizar o espaço físico utilizado exato de um volume.
+
+[cols="4"]
+|===
+| Versão de ONTAP | Comando | Parâmetro | Descrição 
+
+
+.3+| 9.14.1 e versões posteriores | `volume show-footprint` | `effective_total_footprint` | Reflete o espaço de disco utilizado, incluindo as economias do agregado. 
+
+
+| `volume show-space` | `physical used` | Reflete as economias de eficiência de storage em nível de volume, incluindo as economias do agregado. 
+
+
+| `volume show` | `physical used` | Não inclui as economias de eficiência de storage em nível de agregado, portanto não reflete com precisão o espaço físico utilizado do volume para link:..volumes/enable-temperature-sensitive-efficiency-concept.html["Plataformas com TSSE habilitado"]. 
+
+
+.3+| 9.13.1 e anteriores | `volume show-footprint` | `effective_total_footprint` | Reflete o espaço de disco utilizado, incluindo as economias do agregado. 
+
+
+| `volume show-space` | `physical used` | Reflete apenas as economias de eficiência de storage em nível de volume. 
+
+
+| `volume show` | `total physical used` | Reflete apenas as economias de eficiência de storage em nível de volume. 
+|===
+.Informações relacionadas
+* Saiba mais sobre o link:https://kb.netapp.com/on-prem/ontap/OHW/OHW-KBs/What_is_the_Change_in_Physical_Used_Space_Reporting_for_9.14.1_and_later["Alteração no relatório de espaço físico utilizado para 9.14.1 e posteriores"^].
+* Saiba mais sobre link:../volumes/commands-display-space-usage-reference.html["comandos para exibir informações de uso de espaço"].
+
+
+
+
+== Relatórios de capacidade no System Manager
+
+As medições da capacidade utilizada são exibidas de forma diferente no System Manager dependendo da versão do ONTAP. A partir do ONTAP 9.7, System Manager fornece medições tanto da capacidade física quanto da capacidade lógica.
+
+
+NOTE: No System Manager, as representações de capacidade não são responsáveis pelas capacidades da camada de storage raiz (agregado).
+
+[cols="30,30,40"]
+|===
+
+
+| Versão do System Manager | Termo usado para a capacidade | Tipo de capacidade referida 
+
+
+ a| 
+9.9.1 e mais tarde
+ a| 
+Lógica utilizada
+ a| 
+Espaço lógico utilizado se as definições de eficiência de armazenamento tiverem sido ativadas)
+
+
+
+ a| 
+9,7 e 9,8
+ a| 
+Usado
+ a| 
+Espaço lógico utilizado (se as definições de eficiência de armazenamento tiverem sido ativadas)
+
+
+
+ a| 
+9,5 e 9,6 (vista clássica)
+ a| 
+Usado
+ a| 
+Espaço físico utilizado
+
+|===
+
+
+== Termos de medição da capacidade
+
+Os seguintes termos são usados ao descrever a capacidade:
+
+* *Capacidade alocada*: A quantidade de espaço que foi alocada para volumes em uma VM de armazenamento.
+* *Disponível*: A quantidade de espaço físico disponível para armazenar dados ou provisionar volumes em uma VM de storage ou em um nível local.
+* *Capacidade entre volumes*: A soma do armazenamento usado e do armazenamento disponível de todos os volumes em uma VM de armazenamento.
+* *Dados do cliente*: A quantidade de espaço usada pelos dados do cliente (físico ou lógico).
++
+** A partir do ONTAP 9.13.1, a capacidade utilizada pelos dados do cliente é referida como *Logical Used*, e a capacidade utilizada pelos instantâneos é apresentada separadamente.
+** No ONTAP 9.12.1 e anteriores, a capacidade usada pelos dados do cliente adicionada à capacidade usada pelos snapshots é chamada de *Logical Used*.
+
+
+* * Comprometido*: O montante da capacidade comprometida para um nível local.
+* *Redução de dados*: A relação entre o tamanho dos dados ingeridos e o tamanho dos dados armazenados.
++
+** A partir do ONTAP 9.13,1, a redução de dados considera os resultados da maioria dos recursos de eficiência de storage, como deduplicação e compactação. No entanto, snapshots e thin Provisioning não são contados como parte da taxa de redução de dados.
+** No ONTAP 9.12,1 e anteriores, as relações de redução de dados são apresentadas da seguinte forma:
++
+*** O valor de redução de dados exibido no painel *capacidade* é a proporção geral de todo o espaço lógico usado em comparação com o espaço físico usado, e inclui os benefícios derivados do uso de snapshots e outros recursos de eficiência de armazenamento.
+*** Quando você exibe o painel de detalhes, você vê a proporção *geral* que foi exibida no painel de visão geral e a proporção do espaço lógico usado apenas pelos dados do cliente em comparação com o espaço físico usado apenas pelos dados do cliente, conhecido como *sem instantâneos e clones*.
+
+
+
+
+* *Utilização lógica*:
++
+** A partir do ONTAP 9.13.1, a capacidade utilizada pelos dados do cliente é referida como *Logical Used*, e a capacidade utilizada pelos instantâneos é apresentada separadamente.
+** No ONTAP 9.12.1 e anterior, a capacidade usada pelos dados do cliente adicionada à capacidade usada por snapshots é chamada de *Logical used*.
+
+
+* *Logical used %*: A percentagem da capacidade lógica utilizada atual em comparação com o tamanho provisionado, excluindo reservas de instantâneos. Esse valor pode ser superior a 100%, pois inclui economia de eficiência no volume.
+* *Capacidade máxima*: A quantidade máxima de espaço alocada para volumes em uma VM de armazenamento.
+* *Físico usado*: A quantidade de capacidade usada nos blocos físicos de um volume ou nível local.
+* * % Física usada*: A porcentagem de capacidade usada nos blocos físicos de um volume em comparação com o tamanho provisionado.
+* *Capacidade provisionada*: Um sistema de arquivos (volume) que foi alocado de um sistema Cloud Volumes ONTAP e está pronto para armazenar dados de usuário ou aplicativo.
+* *Reservado*: A quantidade de espaço reservado para volumes já provisionados em um nível local.
+* *Usado*: A quantidade de espaço que contém dados.
+* *Usado e reservado*: A soma do espaço físico utilizado e reservado.
+
+
+
+
+== Capacidade de uma VM de storage
+
+A capacidade máxima de uma VM de armazenamento é determinada pelo espaço total alocado para volumes mais o espaço não alocado restante.
+
+* O espaço alocado para volumes é a soma da capacidade usada e a soma da capacidade disponível dos volumes FlexVol, volumes FlexGroup e volumes FlexCache.
+* A capacidade dos volumes está incluída nas somas, mesmo quando elas estão restritas, offline ou na fila de recuperação após a exclusão.
+* Se os volumes estiverem configurados com crescimento automático, o valor máximo de dimensionamento automático do volume será usado nas somas. Sem crescimento automático, a capacidade real do volume é usada nas somas.
+
+
+O gráfico a seguir explica como a medição da capacidade entre volumes se relaciona com o limite máximo de capacidade.
+
+image:max-cap-limit-cap-x-volumes.gif["O limite máximo de capacidade compreende o espaço alocado e o espaço disponível e a capacidade entre os volumes ocupa apenas o espaço alocado."]
+
+A partir do ONTAP 9.13,1, os administradores de cluster podem link:../manage-max-cap-limit-svm-in-sm-task.html["Habilite um limite máximo de capacidade para uma VM de storage"]. No entanto, os limites de storage não podem ser definidos para uma VM de storage que contenha volumes para proteção de dados, em um relacionamento com a SnapMirror ou em uma configuração do MetroCluster. Além disso, as cotas não podem ser configuradas para exceder a capacidade máxima de uma VM de armazenamento.
+
+Depois de definir o limite máximo de capacidade, não pode ser alterado para um tamanho inferior à capacidade atualmente alocada.
+
+Quando uma VM de armazenamento atinge seu limite máximo de capacidade, certas operações não podem ser executadas. O System Manager fornece sugestões para as próximas etapas no link:../insights-system-optimization-task.html["*Insights*"].
+
+
+
+== Unidades de medição de capacidade no System Manager
+
+O System Manager calcula a capacidade de armazenamento com base em unidades binárias de 1024 (2,10) bytes.
+
+* A partir do ONTAP 9.10,1, as unidades de capacidade de armazenamento são exibidas no System Manager como KiB, MIB, GiB, TIB e PIB.
+* No ONTAP 9.10,0 e anterior, essas unidades são exibidas no Gerenciador de sistema como KB, MB, GB, TB e PB.
+
+
+
+NOTE: As unidades usadas no Gerenciador de sistemas para taxa de transferência continuam a ser KB/s, MB/s, GB/s, TB/s e PB/s para todas as versões do ONTAP.
+
+[cols="20,20,30,30"]
+|===
+
+
+| Unidade de capacidade exibida no Gerenciador do sistema para ONTAP 9.10,0 e anterior | Unidade de capacidade exibida no Gerenciador do sistema para ONTAP 9.10,1 e posterior | Cálculo | Valor em bytes 
+
+
+ a| 
+KB
+ a| 
+KiB
+ a| 
+1024
+ a| 
+1024 bytes
+
+
+
+ a| 
+MB
+ a| 
+MIB
+ a| 
+1024 * 1024
+ a| 
+1.048.576 bytes
+
+
+
+ a| 
+GB
+ a| 
+Gib
+ a| 
+1024 * 1024 * 1024
+ a| 
+1.073.741.824 bytes
+
+
+
+ a| 
+TB
+ a| 
+TIB
+ a| 
+1024 * 1024 * 1024 * 1024
+ a| 
+1.099.511.627.776 bytes
+
+
+
+ a| 
+PB
+ a| 
+PIB
+ a| 
+1024 * 1024 * 1024 * 1024 * 1024
+ a| 
+1.125.899.906.842.624 bytes
+
+|===
+.Informações relacionadas
+link:../task_admin_monitor_capacity_in_sm.html["Monitore a capacidade do cluster, da categoria e do SVM no System Manager"]
+
+link:../volumes/logical-space-reporting-enforcement-concept.html["Relatórios de espaço lógico e imposição para volumes"]

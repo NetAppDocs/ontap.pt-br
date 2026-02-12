@@ -19,28 +19,57 @@ Você pode modificar o valor MTU de um domínio de broadcast para alterar o valo
 
 NOTE: O procedimento para alterar o valor MTU para portas de domínio de broadcast é diferente no ONTAP 9,7 e versões anteriores. Se for necessário alterar o valor MTU para portas de domínio de broadcast em uma rede executando o ONTAP 9,7 e anterior, link:https://docs.netapp.com/us-en/ontap-system-manager-classic/networking-bd/change_the_mtu_value_for_ports_in_a_broadcast_domain97.html["Alterar o valor MTU para portas em um domínio de broadcast (ONTAP 9.7 e anterior)"^]consulte .
 
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.12.1, você pode usar System Manager para modificar o valor de MTU de um domínio de broadcast para alterar o valor de MTU de todas as portas nesse domínio de broadcast.
+
+.Passos
+. Selecione *Network > Broadcast Domains*.
+. Na seção *Broadcast Domains*, selecione o nome do broadcast domain para o qual você deseja alterar o valor de MTU.
+. Uma mensagem será exibida confirmando que você deseja alterar o valor de MTU para todas as portas no domínio de broadcast. Clique em *Sim* para prosseguir com a alteração.
+. Modifique o valor de MTU conforme necessário e salve suas alterações.
++
+O sistema aplica o novo valor de MTU a todas as portas no domínio de broadcast, o que causa uma breve interrupção no tráfego sobre essas portas.
+
+
+
+--
+.CLI
+--
 .Antes de começar
 O valor MTU deve corresponder a todos os dispositivos conetados a essa rede de camada 2, exceto para o tráfego de gerenciamento de manipulação de portas e0M.
 
 .Sobre esta tarefa
-A alteração do valor MTU provoca uma breve interrupção no tráfego nas portas afetadas. O sistema exibe um prompt que você deve responder com y para fazer a alteração da MTU.
+Alterar o valor de MTU causa uma breve interrupção no tráfego nas portas afetadas. O sistema exibe uma mensagem que você deve responder com *y* para fazer a alteração de MTU.
 
 .Passo
 Altere o valor MTU para todas as portas em um domínio de broadcast:
 
-....
+[listing]
+----
 network port broadcast-domain modify -broadcast-domain <broadcast_domain_name> -mtu <mtu_value> [-ipspace <ipspace_name>]
-....
+----
+Onde:
+
 * `broadcast_domain` é o nome do domínio de broadcast.
 * `mtu` É o tamanho MTU para pacotes IP; 1500 e 9000 são valores típicos.
-* `ipspace` É o nome do IPspace no qual esse domínio de broadcast reside. O espaço IPspace "padrão" é usado a menos que você especifique um valor para esta opção. O comando a seguir altera o MTU para 9000 para todas as portas no domínio de broadcast bcast1:
+* `ipspace` é o nome do IPspace no qual este domínio de broadcast reside. O IPspace "Default" é usado a menos que você especifique um valor para esta opção.
++
+O seguinte comando altera o MTU para 9000 para todas as portas no domínio de broadcast bcast1:
 
-
-....
++
+[listing]
+----
 network port broadcast-domain modify -broadcast-domain <Default-1> -mtu < 9000 >
 Warning: Changing broadcast domain settings will cause a momentary data-serving interruption.
 Do you want to continue? {y|n}: <y>
-....
+----
+
+
+--
+====
 .Informações relacionadas
 * link:https://docs.netapp.com/us-en/ontap-cli/network-port-broadcast-domain-modify.html["modificação do domínio de difusão da porta de rede"^]
 
