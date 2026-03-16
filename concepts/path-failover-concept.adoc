@@ -4,7 +4,7 @@ sidebar: sidebar
 keywords: path failover 
 summary: 'Há diferenças importantes em como o ONTAP gerencia o failover de caminho em topologias nas e SAN. Um LIF nas migra automaticamente para uma porta de rede diferente após uma falha de link. Um SAN LIF não migra (a menos que você o mova manualmente após a falha). Em vez disso, a tecnologia multipathing no host desvia o tráfego para um LIF diferente, no mesmo SVM, mas acessando uma porta de rede diferente.' 
 ---
-= Visão geral do failover de caminho
+= Saiba mais sobre o gerenciamento de failover de caminho do ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
@@ -12,3 +12,50 @@ summary: 'Há diferenças importantes em como o ONTAP gerencia o failover de cam
 
 [role="lead"]
 Há diferenças importantes em como o ONTAP gerencia o failover de caminho em topologias nas e SAN. Um LIF nas migra automaticamente para uma porta de rede diferente após uma falha de link. Um SAN LIF não migra (a menos que você o mova manualmente após a falha). Em vez disso, a tecnologia multipathing no host desvia o tráfego para um LIF diferente - no mesmo SVM, mas acessando uma porta de rede diferente.
+
+
+
+== Failover de caminho nas
+
+Um LIF nas migra automaticamente para uma porta de rede sobrevivente após uma falha de link em sua porta atual. A porta para a qual o LIF migra deve ser um membro do grupo _failover_ para o LIF. A política de grupo _failover_ restringe os destinos de failover para um LIF de dados para portas no nó que possui os dados e seu parceiro de HA.
+
+Para conveniência administrativa, o ONTAP cria um grupo de failover para cada domínio _broadcast_ na arquitetura de rede. Os domínios de broadcast agrupam portas que pertencem à mesma rede de camada 2. Se você estiver usando VLANs, por exemplo, para segregar o tráfego por departamento (Engenharia, Marketing, Finanças e assim por diante), cada VLAN define um domínio de broadcast separado. O grupo de failover associado ao domínio de broadcast é atualizado automaticamente sempre que você adicionar ou remover uma porta de domínio de broadcast.
+
+É quase sempre uma boa ideia usar um domínio de broadcast para definir um grupo de failover para garantir que o grupo de failover permaneça atual. Ocasionalmente, no entanto, você pode querer definir um grupo de failover que não esteja associado a um domínio de broadcast. Por exemplo, você pode querer que LIFs fail over apenas para portas em um subconjunto das portas definidas no domínio de broadcast.
+
+image:nas-lif-migration.gif["Diagrama de migração de LIF após falha de link em uma porta."]
+
+|===
+
+
+ a| 
+*_sub-redes_*
+
+Uma _sub-rede_ reserva um bloco de endereços IP em um domínio de broadcast. Esses endereços pertencem à mesma rede de camada 3 e são alocados às portas no domínio de broadcast quando você cria um LIF. Geralmente é mais fácil e menos propenso a erros especificar um nome de sub-rede quando você define um endereço LIF do que especificar um endereço IP e uma máscara de rede.
+
+|===
+
+
+== Failover de caminho SAN
+
+Um host SAN usa ALUA (Asymmetric Logical Unit Access) e MPIO (multipath I/o) para redirecionar o tráfego para um LIF sobrevivente após uma falha de link. Caminhos predefinidos determinam as possíveis rotas para o LUN servido pelo SVM.
+
+Em um ambiente SAN, os hosts são considerados como _iniciadores_ de solicitações para LUN _destinos._ o MPIO habilita vários caminhos de iniciadores para destinos. ALUA identifica os caminhos mais diretos, chamados _caminhos otimizados._
+
+Normalmente, você configura vários caminhos otimizados para LIFs no nó proprietário do LUN e vários caminhos não otimizados para LIFs em seu parceiro de HA. Se uma porta falhar no nó proprietário, o host roteia o tráfego para as portas sobreviventes. Se todas as portas falharem, o host roteia o tráfego pelos caminhos não otimizados.
+
+Por padrão, o ONTAP Selective LUN Map (SLM) limita o número de caminhos do host para um LUN. Um LUN recém-criado só pode ser acessado por meio de caminhos para o nó que possui o LUN ou seu parceiro de HA. Você também pode limitar o acesso a um LUN configurando LIFs em um _conjunto de portas_ para o iniciador.
+
+image:san-host-rerouting.gif["exemplo de failover de caminho san"]
+
+|===
+
+
+ a| 
+*_movendo volumes em ambientes SAN_*
+
+Por padrão, o ONTAP _Selective LUN Map (SLM)_ limita o número de caminhos para um LUN de um host SAN. Um LUN recém-criado só pode ser acessado por meio de caminhos para o nó que possui o LUN ou seu parceiro de HA, os _nodos de relatórios_ para o LUN.
+
+Isso significa que, quando você move um volume para um nó em outro par de HA, você precisa adicionar nós de geração de relatórios para o par de HA de destino ao mapeamento de LUN. Em seguida, você pode especificar os novos caminhos na configuração do MPIO. Depois que a movimentação de volume estiver concluída, você poderá excluir os nós de relatório do par de HA de origem do mapeamento.
+
+|===
