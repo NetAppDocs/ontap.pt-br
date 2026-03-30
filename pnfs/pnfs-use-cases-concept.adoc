@@ -2,7 +2,7 @@
 permalink: pnfs/pnfs-use-cases-concept.html 
 sidebar: sidebar 
 keywords: tr-4063, pnfs, use cases, nconnect, session trunking, referrals, advanced capacity balancing, technical report 
-summary: O pNFS pode ser usado com vários recursos do ONTAP , incluindo nconnect, trunking de sessão e balanceamento de capacidade avançado, para melhorar o desempenho e a flexibilidade. 
+summary: Você pode usar o pNFS com vários recursos do ONTAP, incluindo nconnect, trunking de sessão e balanceamento de capacidade avançado para melhorar o desempenho e a flexibilidade. 
 ---
 = Casos de uso de pNFS no ONTAP
 :allow-uri-read: 
@@ -11,7 +11,7 @@ summary: O pNFS pode ser usado com vários recursos do ONTAP , incluindo nconnec
 
 
 [role="lead"]
-O pNFS pode ser usado com vários recursos do ONTAP para melhorar o desempenho e fornecer flexibilidade adicional para cargas de trabalho NFS.
+Você pode usar pNFS com vários recursos do ONTAP para melhorar o desempenho e fornecer flexibilidade adicional para cargas de trabalho NFS.
 
 
 
@@ -32,11 +32,17 @@ link:../nfs-admin/ontap-support-nfsv41-concept.html["Saiba mais sobre o suporte 
 
 Tronco de sessão NFSv4.1 (https://datatracker.ietf.org/doc/html/rfc5661#section-2.10.5["RFC 5661, seção 2.10.5"^]) é o uso de múltiplas conexões TCP entre um cliente e um servidor para aumentar a velocidade de transferência de dados. O suporte para trunking de sessão NFSv4.1 foi adicionado ao ONTAP 9.14.1 e deve ser usado com clientes que também suportam trunking de sessão.
 
-No ONTAP, o trunking de sessão pode ser usado em vários nós de um cluster para fornecer maior taxa de transferência e redundância nas conexões.
+No ONTAP, o trunking de sessão NFSv4.1 é usado em várias interfaces físicas em um único nó de um cluster para fornecer maior taxa de transferência e redundância em conexões independentes.
 
-O trunking de sessão pode ser estabelecido de diversas maneiras:
+image::pNFS_fig_006.png[Trunking de sessão NFSv4.1 em várias interfaces em um único nó]
 
-* *Descobrir automaticamente através de opções de montagem:* O trunking de sessão na maioria dos clientes NFS modernos pode ser estabelecido através de opções de montagem (consulte a documentação do fornecedor do seu sistema operacional) que sinalizam ao servidor NFS para enviar informações de volta ao cliente sobre os trunks de sessão. Esta informação aparece através de um pacote NFS como um `fs_location4` chamar.
+Quando usados com pNFS, esses troncos podem proporcionar um desempenho agregado geral melhor em todo o cluster.
+
+image::pNFS_fig_021.png[NFSv4.1 com desempenho de pNFS em todo o cluster]
+
+O trunking de sessão é estabelecido de várias maneiras:
+
+* *Descobrir automaticamente por meio de opções de montagem:* o trunking de sessão na maioria dos clientes NFS modernos é estabelecido usando opções de montagem (consulte a documentação do fornecedor do seu sistema operacional) que sinalizam ao servidor NFS para enviar informações de volta ao cliente sobre os trunks de sessão. Essas informações aparecem por meio de um pacote NFS como uma chamada  `fs_location4`.
 +
 A opção de montagem utilizada depende da versão do sistema operacional do cliente. Por exemplo, as distribuições Linux do Ubuntu geralmente usam `max_connect=n` Para sinalizar que um tronco de sessão deve ser usado. Nas distribuições Linux RHEL, o `trunkdiscovery` A opção de montagem foi utilizada.
 
@@ -81,7 +87,7 @@ O pNFS pode fornecer um caminho local para cada nó participante em um cluster e
 
 image::pNFS_fig_017.png[Tronco de sessão NFSv4.1 com pNFS no ONTAP]
 
-Quando `trunkdiscovery` Se utilizado, uma chamada GETATTR adicional (FS_Locations) é aproveitada para as interfaces de tronco de sessão listadas no nó do servidor NFS onde a interface de montagem está localizada. Assim que esses endereços forem devolvidos, as montagens subsequentes serão feitas nos endereços retornados. Isso pode ser observado em uma captura de pacotes durante a montagem.
+Quando  `trunkdiscovery` é utilizado, uma chamada GETATTR adicional (FS_Locations) é aproveitada para as interfaces de trunking de sessão listadas no nó do servidor NFS onde a interface de montagem está localizada. Assim que essas são retornadas, as montagens subsequentes são feitas nos endereços retornados. Isso é visto em uma captura de pacotes durante a montagem.
 
 .Descoberta do tronco de sessão NFS durante a montagem: captura de pacotes
 image::pNFS_fig_018.png[Descoberta do tronco de sessão NFS durante a montagem: captura de pacotes]
@@ -96,7 +102,7 @@ O recurso de encaminhamento NFSv4.1 oferece um modo de redirecionamento inicial 
 
 O pNFS não tenta localizar um caminho de montagem. Em vez disso, ele estabelece um servidor de metadados usando um caminho de montagem e, em seguida, localiza o caminho dos dados dinamicamente, conforme necessário.
 
-É possível usar referências NFSv4.1 com pNFS, mas essa funcionalidade é desnecessária. Habilitar encaminhamentos com pNFS não apresentará resultados perceptíveis.
+Você pode usar referências NFSv4.1 com pNFS, mas essa funcionalidade é desnecessária. Habilitar referências com pNFS não apresentará resultados perceptíveis.
 
 link:../nfs-admin/enable-disable-nfsv4-referrals-task.html["Ativar ou desativar encaminhamentos NFSv4"]
 
