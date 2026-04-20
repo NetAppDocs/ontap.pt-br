@@ -271,7 +271,18 @@ Nesta tarefa, node_A_1 e node_B_1 são atualizados.
 
 Se você atualizou o software ONTAP no primeiro grupo DR e está atualizando o segundo grupo DR em uma configuração de MetroCluster de oito nós, nesta tarefa você estaria atualizando node_A_3 e node_B_3.
 
-. Se o software tiebreaker do MetroCluster estiver ativado, desabilite-o.
+. Migre todos os LIFs de dados para fora do nó:
++
+[source, cli]
+----
+network interface migrate-all -node node_A_1
+----
++
+[source, cli]
+----
+network interface migrate-all -node node_B_1
+----
+. Se o software MetroCluster Tiebreaker estiver ativado, desative-o.
 . Para cada nó no par de HA, desative a opção giveback automática:
 +
 [source, cli]
@@ -331,7 +342,7 @@ O exemplo a seguir mostra que a aquisição foi bem-sucedida. Node_A_1 está no 
 +
 [listing]
 ----
- cluster1::> storage failover show
+ cluster_A::> storage failover show
                                Takeover
  Node           Partner        Possible State Description
  -------------- -------------- -------- -------------------------------------
@@ -371,7 +382,7 @@ O exemplo a seguir mostra que a aquisição foi bem-sucedida. Node_B_1 está no 
 +
 [listing]
 ----
- cluster1::> storage failover show
+ cluster_B::> storage failover show
                                Takeover
  Node           Partner        Possible State Description
  -------------- -------------- -------- -------------------------------------
@@ -456,7 +467,7 @@ set -privilege advanced
 system image show
 ----
 +
-O exemplo a seguir mostra que o sistema image2 deve ser a versão padrão e atual no node_A_1:
+O exemplo a seguir mostra que a system image2 (imagem ONTAP de destino) é a versão padrão e atual no node_A_1:
 
 +
 [listing]
@@ -482,12 +493,12 @@ O exemplo a seguir mostra que o sistema image2 deve ser a versão padrão e atua
 system image show
 ----
 +
-O exemplo a seguir mostra que o sistema image2 (ONTAP 9.0,0) é a versão padrão e atual no node_A_1:
+O exemplo a seguir mostra que a imagem do sistema image2 (imagem ONTAP de destino) é a versão padrão e atual no node_B_1:
 
 +
 [listing]
 ----
- cluster_A::*> system image show
+ cluster_B::*> system image show
                   Is      Is               Install
  Node     Image   Default Current Version  Date
  -------- ------- ------- ------- -------- -------------------
@@ -499,7 +510,7 @@ O exemplo a seguir mostra que o sistema image2 (ONTAP 9.0,0) é a versão padrã
           image2  true    false    Y.Y.Y   MM/DD/YYYY TIME
  4 entries were displayed.
 
- cluster_A::>
+ cluster_B::>
 ----
 
 
@@ -519,7 +530,12 @@ Se você atualizou o software ONTAP no primeiro grupo de DR e está atualizando 
 +
 [source, cli]
 ----
-network interface migrate-all -node nodenameA
+network interface migrate-all -node node_A_2
+----
++
+[source, cli]
+----
+network interface migrate-all -node node_B_2
 ----
 . Inicie um takeover do nó de destino no cluster_A:
 +
@@ -554,7 +570,7 @@ O exemplo a seguir mostra que a aquisição foi bem-sucedida. Node_A_2 está no 
 +
 [listing]
 ----
-cluster1::> storage failover show
+cluster_A::> storage failover show
                               Takeover
 Node           Partner        Possible State Description
 -------------- -------------- -------- -------------------------------------
@@ -615,7 +631,7 @@ O exemplo a seguir mostra que a aquisição foi bem-sucedida. Node_B_2 está no 
 +
 [listing]
 ----
-cluster1::> storage failover show
+cluster_B::> storage failover show
                               Takeover
 Node           Partner        Possible State Description
 -------------- -------------- -------- -------------------------------------
@@ -700,12 +716,12 @@ set -privilege advanced
 system image show
 ----
 +
-O exemplo a seguir mostra que o sistema image2 (imagem ONTAP de destino) é a versão padrão e atual no node_A_2:
+O exemplo a seguir mostra que a imagem do sistema image2 (imagem ONTAP de destino) é a versão padrão e atual no node_A_2:
 
 +
 [listing]
 ----
-cluster_B::*> system image show
+cluster_A::*> system image show
                  Is      Is                 Install
 Node     Image   Default Current Version    Date
 -------- ------- ------- ------- ---------- -------------------
@@ -726,7 +742,7 @@ cluster_A::>
 system image show
 ----
 +
-O exemplo a seguir mostra que o sistema image2 (imagem ONTAP de destino) é a versão padrão e atual no node_B_2:
+O exemplo a seguir mostra que a system image2 (imagem ONTAP de destino) é a versão padrão e atual no node_B_2:
 
 +
 [listing]
@@ -743,7 +759,7 @@ node_B_2
          image2  true    true     Y.Y.Y     MM/DD/YYYY TIME
 4 entries were displayed.
 
-cluster_A::>
+cluster_B::>
 ----
 . Para cada nó no par de HA, habilite a giveback automática:
 +
