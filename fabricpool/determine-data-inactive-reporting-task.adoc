@@ -2,7 +2,7 @@
 permalink: fabricpool/determine-data-inactive-reporting-task.html 
 sidebar: sidebar 
 keywords: determining, how, much, data, volume, inactive, using, data reporting, fabricpool 
-summary: Ao ver a quantidade de dados em um volume inativos, você aproveita as camadas de storage. As informações nos relatórios de dados inativos ajudam você a decidir qual agregado usar para o FabricPool, se deseja mover um volume para dentro ou para fora do FabricPool ou se deseja modificar a política de disposição em camadas de um volume. 
+summary: 'O relatório de dados inativos (IDR, na sigla em inglês) é uma excelente ferramenta para determinar a quantidade de dados inativos (frios) que podem ser transferidos de uma camada local.' 
 ---
 = Analise dados inativos do ONTAP com relatórios de dados inativos
 :allow-uri-read: 
@@ -11,26 +11,47 @@ summary: Ao ver a quantidade de dados em um volume inativos, você aproveita as 
 
 
 [role="lead"]
-Ao ver a quantidade de dados em um volume inativos, você aproveita as camadas de storage. As informações nos relatórios de dados inativos ajudam você a decidir qual agregado usar para o FabricPool, se deseja mover um volume para dentro ou para fora do FabricPool ou se deseja modificar a política de disposição em camadas de um volume.
+O relatório de dados inativos (IDR, na sigla em inglês) é uma excelente ferramenta para determinar a quantidade de dados inativos (frios) que podem ser transferidos de uma camada local.
+
+Por padrão, o IDR usa um período de resfriamento de 31 dias para determinar quais dados são considerados inativos. A quantidade de dados inativos que é armazenada em camadas depende das políticas de armazenamento em camadas definidas nos volumes. Em versões anteriores ao ONTAP 9.8, o IDR usava um período de resfriamento fixo de 31 dias.
 
 .Antes de começar
-Você deve estar executando o ONTAP 9.4 ou posterior para usar a funcionalidade de relatórios de dados inativos.
+**ONTAP 9.4**
+
+* O IDR está ativado por padrão em todos os agregados FabricPool.
+* O IDR pode ser ativado em agregados SSD que não sejam FabricPool.
+
+
+**ONTAP 9.6**
+
+* O IDR está ativado por padrão em todos os agregados SSD que não sejam FabricPool.
+* O IDR pode ser ativado em agregados de HDD que não sejam FabricPool.
+
+
+**ONTAP 9.8**
+
+* O período de resfriamento do IDR pode ser ajustado usando a configuração volume-tiering-minimum-cooling-days.
+
 
 .Sobre esta tarefa
-* Relatórios de dados inativos não são suportados em alguns agregados.
-+
-Não é possível ativar o relatório de dados inativos quando o FabricPool não pode ser ativado, incluindo as seguintes instâncias:
+* O IDR reporta dados inativos que podem ser hierarquizados, não dados inativos que já foram hierarquizados. Se FabricPool estiver habilitado e os dados inativos já tiverem sido hierarquizados, eles não serão mais reportados pelo IDR.
 
+
+[NOTE]
+====
+Embora o IDR esteja habilitado por padrão em todos os agregados SSD (ONTAP 9.6 e posterior), se uma carga de trabalho do cliente precisar de 90% dos recursos do sistema, o IDR é desativado automaticamente, zerando os dias de resfriamento. Caso isso ocorra, o IDR não será reativado automaticamente.
+
+Para evitar que o processo automatizado desligue o IDR a fim de liberar recursos para outras cargas de trabalho, habilite manualmente -is-inactive-data-reporting-enabled como true.
+
+====
+* Relatórios de dados inativos quando FabricPool não pode ser ativado, incluindo as seguintes instâncias:
 +
 ** Agregados de raiz
+** Agregados que contêm volumes que utilizam uma garantia de espaço diferente de nenhuma. (Volumes provisionados estaticamente não são suportados.)
 ** MetroCluster agrega executando versões do ONTAP anteriores a 9,7
 ** Flash Pool (agregados híbridos ou agregados SnapLock)
 
 
-* O relatório de dados inativos é ativado por padrão em agregados em que qualquer volume tem compactação adaptável ativada.
-* O relatório de dados inativos é ativado por padrão em todos os agregados SSD no ONTAP 9.6.
-* O relatório de dados inativos é ativado por padrão no FabricPool Aggregate no ONTAP 9.4 e no ONTAP 9.5.
-* Você pode habilitar a geração de relatórios de dados inativos em agregados que não sejam FabricPool usando a CLI do ONTAP, incluindo agregados de HDD, começando com ONTAP 9.6.
 
 
 
