@@ -1,0 +1,106 @@
+---
+permalink: san-config/configure-fc-ports-direct-attachment.html 
+sidebar: sidebar 
+keywords:  
+summary:  
+---
+= Configurar as portas FC do ONTAP para conexão direta a hosts FC e FC-NVMe
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.19.1, não é necessário um switch FC para estabelecer conexões entre hosts FC e FC-NVMe e o armazenamento ONTAP. Os hosts podem ser conectados diretamente às portas de adaptador FC nos sistemas AFF, ASA, ASA r2 e FAS. A capacidade de conexão direta pode ser especialmente valiosa em sites remotos e ambientes híbridos, onde a simplicidade é fundamental. Você deve desativar a porta FC e modificar sua topologia antes que ela possa ser conectada diretamente a um host.
+
+As portas FC usadas em configurações de conexão direta têm as seguintes restrições:
+
+* A porta pode ser atribuída a apenas uma máquina virtual de armazenamento (SVM).
+* Somente uma interface de rede (LIF) pode ser atribuída à porta depois que ela for configurada para conexão direta.
+* A porta pode suportar o protocolo FC ou o protocolo FC-NVMe, mas não ambos.
+
+
+.Antes de começar
+Você deve ser um administrador de cluster.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. No System Manager, selecione *Rede > portas FC*.
+. Selecione image:icon_kabob.gif["ícone de seleção"] ao lado da porta que deseja configurar para conexão direta e, em seguida, selecione *Editar topologia*.
+. Em *Topologia*, selecione *Direto* e, em seguida, selecione *Desejo alterar a topologia e colocar a porta offline*.
+. Selecione *Salvar.*
+. Conecte o cabo da porta de destino diretamente ao iniciador do host.
+. Se você possui um sistema ASA r2, siga link:https://docs.netapp.com/us-en/asa-r2/administer/manage-client-vm-access.html#create-a-lif-network-interface["este procedimento do System Manager"^] para criar uma LIF. Se você possui um sistema AFF, ASA ou FAS, siga estas etapas para criar uma LIF:
++
+.. Selecione *Rede > Interfaces* e, em seguida, selecione image:icon_add.gif["adicionar ícone"].
+.. Selecione o protocolo FC ou NVMe/FC.
+.. Dê um nome à LIF ou aceite o nome gerado pelo ONTAP.
+.. Se pelo menos uma sub-rede estiver configurada, você poderá selecionar uma sub-rede para a LIF.
+.. Se você não selecionar uma sub-rede, poderá especificar o endereço IP e a máscara de sub-rede para o domínio de broadcast.
+.. Selecione a porta inicial do domínio de transmissão.
++
+O controle da porta inicial é exibido com base no domínio de broadcast ou na seleção de sub-rede
+
+.. Selecione *Guardar*.
++
+A porta é ativada automaticamente quando o LIF é criado.
+
+
+
+
+
+.O que se segue?
+No System Manager, selecione *Rede > Portas FC* e verifique se a *Topologia* está exibida como *Direct*.
+
+--
+.CLI
+--
+. Veja o status administrativo e operacional da LIF usada para a porta do adaptador:
++
+[source, cli]
+----
+network interface show -vserver <SVM_name>
+----
+. Coloque o adaptador offline:
++
+[source, cli]
+----
+network fcp adapter modify -node <node_name> -adapter <adapter_port> -status-admin down
+----
+. Remova todos os LIFs da porta do adaptador:
++
+[source, cli]
+----
+network interface delete -vserver <SVM_name> -lif <lif_name>,<lif_name>
+----
+. Altere a topologia da porta do adaptador para direta:
++
+[source, cli]
+----
+network fcp adapter modify -node <node_name> -adapter <adapter_port> -topology direct
+----
+. Conecte o cabo da porta de destino diretamente ao iniciador do host.
+. Crie uma única interface LIF:
++
+[source, cli]
+----
+network interface create -vserver <SVM_name> -lif <lif_name> -data protocol fcp|fcp-nvme -home-node <node_name> -home-port <port_name>
+----
++
+A porta é ativada automaticamente após a criação do LIF.
+
+. Verifique se a porta está configurada para conexão direta:
++
+[source, cli]
+----
+network fcp adapter show -fields topologies-supported
+----
++
+A topologia deve ser exibida como direta.
+
+
+
+--
+====

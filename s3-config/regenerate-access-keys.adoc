@@ -2,7 +2,7 @@
 permalink: s3-config/regenerate-access-keys.html 
 sidebar: sidebar 
 keywords: regenerate, s3, access keys, secret keys 
-summary: As chaves para acessar clientes S3 podem ser regeneradas e sua validade alterada. 
+summary: As chaves de acesso aos clientes S3 podem ser regeneradas, ter sua validade alterada ou uma segunda chave de acesso pode ser gerada ou removida. 
 ---
 = Regenere as chaves ONTAP S3 e modifique seu período de retenção
 :hardbreaks:
@@ -12,20 +12,25 @@ summary: As chaves para acessar clientes S3 podem ser regeneradas e sua validade
 
 
 [role="lead"]
-Chaves de acesso e chaves secretas são geradas automaticamente durante a criação do usuário para habilitar o acesso do cliente S3. Você pode regenerar chaves para um usuário se uma chave estiver expirada ou comprometida.
+As chaves de acesso e as chaves secretas são geradas automaticamente durante a criação do usuário para habilitar o acesso do cliente S3. Você pode regenerar as chaves de um usuário caso alguma delas expire ou seja comprometida. A partir do ONTAP 9.19.1, também é possível gerar ou remover uma segunda chave de acesso para um usuário S3, permitindo que ele acesse os recursos S3 caso a chave de acesso original expire.
 
 Para obter informações sobre a geração de chaves de acesso, link:../s3-config/create-s3-user-task.html["Crie um usuário S3"]consulte .
+
+
+
+== Gerar nova chave de acesso S3
 
 [role="tabbed-block"]
 ====
 .System Manager
 --
-. Clique em *Storage > Storage VMs* e selecione a VM de armazenamento.
-. Na guia *Settings*, clique image:icon_pencil.gif["Ícone de edição"] no mosaico *S3*.
+. Selecione *Storage > Storage VMs* e, em seguida, selecione a VM de armazenamento.
+. Na aba *Configurações*, selecione image:icon_pencil.gif["Ícone de edição"] no bloco *S3*.
 . Na guia *usuários*, verifique se não há nenhuma chave de acesso ou se a chave expirou para o usuário.
-. Se você precisar regenerar a chave, clique image:icon_kabob.gif["Ícone de opções do menu"] ao lado do usuário e clique em *regenerar chave*.
-. Por padrão, as chaves geradas são válidas por um período de tempo indefinido. A partir de 9.14.1, você pode modificar seu período de retenção, após o qual as chaves expiram automaticamente. Insira o período de retenção em dias, horas, minutos ou segundos.
-. Clique em *Salvar*. A chave é regenerada. Qualquer alteração no período de retenção da chave entra em vigor imediatamente.
+. Se precisar regenerar a chave, selecione image:icon_kabob.gif["Ícone de opções do menu"] ao lado do usuário e, em seguida, selecione *Regenerar chave*.
+. Por padrão, as chaves geradas têm um valor de validade de 0 e nunca expiram. A partir do ONTAP 9.14.1, você pode modificar o período de retenção, após o qual as chaves expiram automaticamente. Insira o período de retenção em dias, horas, minutos ou segundos.
+. A partir do ONTAP 9.19.1, os usuários podem ter uma segunda chave de acesso. Se o usuário tiver uma segunda chave de acesso, selecione a chave de acesso para regenerar. Você pode selecionar ambas as chaves de acesso para regeneração.
+. Selecione *Armazenamento > VMs de armazenamento* e, em seguida, selecione a VM de armazenamento. *Salve*. A chave é regenerada. Quaisquer alterações no período de retenção da chave entram em vigor imediatamente.
 . Transfira ou guarde a chave de acesso e a chave secreta. Eles serão necessários para acesso de clientes S3.
 
 
@@ -33,13 +38,125 @@ Para obter informações sobre a geração de chaves de acesso, link:../s3-confi
 .CLI
 --
 . Regenere o acesso e as chaves secretas para um usuário executando o `vserver object-store-server user regenerate-keys` comando.
-. Por padrão, as chaves geradas são válidas indefinidamente. A partir de 9.14.1, você pode modificar seu período de retenção, após o qual as chaves expiram automaticamente. Você pode adicionar o período de retenção neste formato: `P[<integer>D]T[<integer>H][<integer>M][<integer>S] | P<integer>W` Por exemplo, se quiser inserir um período de retenção de um dia, duas horas, três minutos e quatro segundos, digite o valor como `P1DT2H3M4S`.
+. Por padrão, as chaves geradas são válidas indefinidamente. A partir do ONTAP 9.14.1, você pode modificar o período de retenção, após o qual as chaves expiram automaticamente. Você pode adicionar o período de retenção neste formato: `P[<integer>D]T[<integer>H][<integer>M][<integer>S] | P<integer>W` Por exemplo, se você quiser inserir um período de retenção de um dia, duas horas, três minutos e quatro segundos, insira o valor como `P1DT2H3M4S`.
+. A partir do ONTAP 9.19.1, se o usuário tiver mais de uma chave de acesso, você pode escolher qual chave regenerar. Você especifica a chave neste formato: `[-key-id {1..2}]`
++
+** Caso não seja necessário especificar um key-id, a chave 1 será regenerada.
+** Para especificar a chave 1, insira o valor como  `-key-id 1`.
+** Para especificar a chave 2, insira o valor como  `-key-id 2`.
+** Para especificar as chaves 1 e 2, insira o valor como  `-key-id 1 2`. Por exemplo, para regenerar a chave 1:
 +
 [listing]
 ----
-vserver object-store-server user regenerate-keys -vserver svm_name -user user -key-time-to-live 0
+vserver object-store-server user regenerate-keys -vserver svm_name -user user -key-id 1 -key-time-to-live 0
+----
+
+
+. Guarde as chaves de acesso e secretas. Eles serão necessários para acesso de clientes S3.
+
+
+--
+====
+
+
+== Gere uma segunda chave de acesso S3
+
+A partir do ONTAP 9.19.1, é possível gerar uma segunda chave de acesso para um usuário.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *Storage > Storage VMs* e, em seguida, selecione a VM de armazenamento.
+. Selecione *Armazenamento > VMs de armazenamento* e, em seguida, selecione a VM de armazenamento. *Armazenamento > VMs de armazenamento* e, em seguida, selecione a VM de armazenamento.
+. Na aba *Configurações*, selecione image:icon_pencil.gif["Ícone de edição"] no bloco *S3*.
+. Na guia *Usuários*, selecione image:icon_kabob.gif["Ícone de opções do menu"] ao lado do usuário e, em seguida, selecione *Adicionar outra chave*.
+. Por padrão, as chaves geradas têm um valor de validade de 0 e nunca expiram. A partir do ONTAP 9.14.1, você pode modificar o período de retenção, após o qual as chaves expiram automaticamente. Insira o período de retenção em dias, horas, minutos ou segundos.
+. Selecione *Armazenamento > VMs de armazenamento* e, em seguida, selecione a VM de armazenamento. *Adicionar*. A segunda chave é gerada. O período de retenção especificado entra em vigor imediatamente.
+. Transfira ou guarde a chave de acesso e a chave secreta. Eles serão necessários para acesso de clientes S3.
+
+
+--
+.CLI
+--
+. Gere uma segunda chave de acesso e uma chave secreta para um usuário executando o comando  `vserver object-store-server user regenerate-keys`.
+. Por padrão, as chaves geradas são válidas indefinidamente. A partir do ONTAP 9.14.1, você pode modificar o período de retenção, após o qual as chaves expiram automaticamente. Você pode adicionar o período de retenção neste formato: `P[<integer>D]T[<integer>H][<integer>M][<integer>S] | P<integer>W` Por exemplo, se você quiser inserir um período de retenção de um dia, duas horas, três minutos e quatro segundos, insira o valor como `P1DT2H3M4S`.
+. A partir do ONTAP 9.19.1, você pode gerar uma segunda chave de acesso neste formato: `[-key-id 2]`
++
+Por exemplo:
+
++
+[listing]
+----
+vserver object-store-server user regenerate-keys -vserver svm_name -user user -key-id 2 -key-time-to-live 0
 ----
 . Guarde as chaves de acesso e secretas. Eles serão necessários para acesso de clientes S3.
+
+
+--
+====
+
+
+== Mostrar chaves de acesso S3
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *Storage > Storage VMs* e, em seguida, selecione a VM de armazenamento.
+. Na aba *Configurações*, selecione image:icon_pencil.gif["Ícone de edição"] no bloco *S3*.
+. Na aba *Usuários*, verifique se não existem chaves de acesso secundárias para os usuários do S3.
+
+
+--
+.CLI
+--
+Visualize as chaves de acesso e as chaves secretas de um usuário executando o comando  `vserver object-store-server user show`.
+
+Por exemplo:
+
+[listing]
+----
+vserver object-store-server user show -vserver svm_name -user user
+----
+--
+====
+
+
+== Remover uma chave de acesso S3
+
+A partir do ONTAP 9.19.1, é possível remover uma das chaves de acesso de um usuário. Para excluir ambas as chaves de um usuário, o usuário deve ser excluído.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *Storage > Storage VMs* e, em seguida, selecione a VM de armazenamento.
+. Na aba *Configurações*, selecione image:icon_pencil.gif["Ícone de edição"] no bloco *S3*.
+. Na guia *Usuários*, selecione image:icon_kabob.gif["Ícone de opções do menu"] ao lado do usuário e, em seguida, selecione *Adicionar outra chave*.
+. Selecione *Remover key 1* ou *Remover key 2*.
+. Selecione *Salvar*. A chave selecionada é removida.
+. Transfira ou guarde a chave de acesso e a chave secreta. Eles serão necessários para acesso de clientes S3.
+
+
+--
+.CLI
+--
+. Remova as chaves de acesso e as chaves secretas de um usuário executando o comando  `vserver object-store-server user delete-keys`.
+. Você pode escolher qual chave remover especificando-a neste formato: `[-key-id {1..2}]`
++
+** Se o usuário tiver apenas uma chave, não é necessário especificar um key-id.
+** Para especificar a chave 1, insira o valor como  `-key-id 1`.
+** Para especificar a chave 2, insira o valor como  `-key-id 2`.
+** Se nenhum ID de chave for especificado, o comando usará como padrão excluir a chave 2.
+** Para excluir ambas as chaves, exclua o usuário. Por exemplo:
++
+[listing]
+----
+vserver object-store-server user delete-keys -vserver svm_name -user user -key-id 2
+----
+
+
 
 
 --

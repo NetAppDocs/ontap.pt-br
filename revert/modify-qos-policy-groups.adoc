@@ -1,0 +1,29 @@
+---
+permalink: revert/modify-qos-policy-groups.html 
+sidebar: sidebar 
+keywords: modify, modifying, qos, policy, groups, adaptive, non-adaptive, revert, reverting, 9.19.1 
+summary: Se estiver a reverter a partir do ONTAP 9.12.1, tem de desativar a autenticação na banda antes de reverter. 
+---
+= Modifique os grupos de políticas de QoS criados no ONTAP 9.19.1 ou posterior antes de reverter do ONTAP 9.19.1
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Os grupos de políticas de QoS adaptativos e não adaptativos são ativados automaticamente para aumentar temporariamente o limite de throughput de uma carga de trabalho em 50% por 1 segundo, a fim de atender a demandas de curto prazo por maior desempenho por padrão. A partir do ONTAP 9.19.1, é possível modificar essas configurações padrão. No ONTAP 9.18.1 e versões anteriores, essas configurações não podem ser alteradas. Se você modificou as configurações padrão de qualquer grupo de políticas de QoS criado no ONTAP 9.19.1 ou posterior, será necessário redefini-las antes de poder retornar do ONTAP 9.19.1 para o ONTAP 9.18.1.
+
+.Passos
+. Verifique se você tem algum grupo de políticas de QoS habilitado para aumento automático do limite de taxa de transferência:
++
+[source, cli]
+----
+qos policy-group show – instance
+----
+. Se algum grupo de políticas estiver configurado com `burst-percent`, `burst-iops`, e `burst-duration`, defina essas opções como 0.
++
+[source, cli]
+----
+qos policy-group modify -policy-group <policy-group> -burst-percent 0 -burst-iops 0 -burst-duration 0
+----
+

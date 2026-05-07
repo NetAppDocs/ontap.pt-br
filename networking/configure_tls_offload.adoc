@@ -1,0 +1,110 @@
+---
+sidebar: sidebar 
+permalink: networking/configure-tls-offload.html 
+keywords: TLS offload, TLS, performance 
+summary: Configurar as definições de descarregamento TLS 
+---
+= Configurar o descarregamento de hardware TLS do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.19.1, você pode configurar o descarregamento de TLS para melhorar o desempenho pós-handshake do TLS, aproveitando os recursos em placas Ethernet compatíveis. Esse recurso descarrega a criptografia e a descriptografia, reduzindo a sobrecarga da CPU e melhorando o desempenho.
+
+.Sobre esta tarefa
+* O descarregamento TLS está desativado por padrão.
+* Apenas os conjuntos de cifras AES-GCM (TLSv1.2/TLSv1.3, 128/256-bit) são descarregados.
+* A fase de handshake TLS não é descarregada. Apenas a fase de dados pós-handshake é descarregada.
+* A migração da interface lógica de rede (LIF) para portas que não possuem capacidade de offload causa um fallback automático de software.
++
+Para conexões com TLS descarregado, as operações criptográficas do TLS normalmente ignoram o software e são tratadas por uma NIC com capacidade de descarregamento. Se a LIF associada a essa conexão migrar para uma porta de rede sem capacidade de descarregamento de TLS, as operações criptográficas passam a ser tratadas por software e pelo kernel do sistema.
+
+* As interfaces de gerenciamento (HTTPS, API REST) não são afetadas por essa configuração.
+* A configuração de descarregamento de hardware TLS é válida para todo o cluster.
+
+
+O descarregamento de hardware TLS requer uma placa de rede compatível. As seguintes placas de rede são compatíveis:
+
+* CX7 de 4 portas 10/25 GbE
+* CX6-Dx de 2 portas 40/100 GbE
+* CX7 de 2 portas 40/100 GbE
+* CX7 de 2 portas 40/100/200
+
+
+As placas CX7 de 4 portas 10/25 GbE, CX6-Dx de 2 portas 40/100 GbE e CX7 de 2 portas 40/100 GbE são compatíveis com as seguintes plataformas AFF:
+
+* AFF A20
+* AFF A30
+* AFF A50
+* AFF C30
+* AFF C60
+
+
+As placas CX6-Dx 40/100 GbE de 4 portas, CX7 40/100 GbE de 2 portas e CX7 40/100/200 GbE de 2 portas são compatíveis com as seguintes plataformas AFF e FAS:
+
+* AFF A70-90
+* AFF C80
+* FAS70
+* FAS90
+* AFF A1K
+
+
+.Antes de começar
+* Você precisa ser um administrador do ONTAP no `admin` Nível de privilégio necessário para executar as seguintes tarefas.
+* Todos os nós devem estar executando ONTAP 9.19.1 ou posterior.
+
+
+
+
+== Ativar ou desativar o offload de TLS
+
+.Passos
+. Veja o status atual do descarregamento TLS:
++
+[source, cli]
+----
+security config show
+----
++
+Este comando exibe a configuração de descarregamento TLS em todo o cluster:
+
++
+[listing]
+----
+cluster1::*> security config show
+Cluster    Supported Offload
+FIPS Mode  Protocols Enabled Supported Cipher Suites
+---------- --------- ------- --------------------------------------------------
+false      TLSv1.3,  false   TLS_RSA_WITH_AES_128_CCM,
+           TLSv1.2           TLS_RSA_WITH_AES_128_CCM_8,
+                             TLS_RSA_WITH_AES_128_GCM_SHA256,
+                             TLS_RSA_WITH_AES_128_CBC_SHA,
+                             TLS_RSA_WITH_AES_128_CBC_SHA256,
+                             TLS_RSA_WITH_AES_256_CCM,
+[...]
+----
+. Ativar ou desativar o descarregamento TLS:
++
+[source, cli]
+----
+security config modify -is-offload-enabled {true|false}
+----
++
+Este comando ativa ou desativa o descarregamento de hardware para a fase de dados TLS em novas conexões. Conexões existentes criadas antes da ativação do recurso de descarregamento de TLS não são descarregadas até que essas conexões sejam removidas e recriadas.
+
++
+Ao ativar o descarregamento TLS, a interface deve ser especificada:
+
++
+[source, cli]
+----
+security config modify -is-offload-enabled true -interface SSL
+----
+
+
+.Informações relacionadas
+* link:https://docs.netapp.com/us-en/ontap-cli/security-config-show.html["security config show"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/security-config-modify.html["modificar configuração de segurança"^]
+

@@ -1,0 +1,87 @@
+---
+sidebar: sidebar 
+permalink: task-assign-svm-admin-access-sm.html 
+keywords: netapp, system manager, ontap, administration, svm, storage vm, volume, vserver, dashboard, administrator, tenant, multi-tenancy, protocol, network interface, performance, assign 
+summary: Forneça aos administradores do ONTAP SVM recursos aprimorados de monitoramento e gerenciamento de SVM. 
+---
+= Atribua acesso de administrador SVM com ONTAP System Manager
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ./media/
+
+
+[role="lead"]
+A partir do ONTAP 9.19.1, os administradores de cluster do ONTAP podem atribuir acesso ao System Manager à pessoa que gerencia a SVM, conhecida como administrador da SVM.
+
+Isso é particularmente útil em um ambiente ONTAP com locatários, onde o administrador do cluster pode fornecer um painel SVM para cada locatário.
+
+Os administradores de cluster também podem permitir que seus administradores de SVM criem volumes.
+
+
+
+== Etapa 1: Prepare a interface de rede de gerenciamento para o painel do SVM
+
+Antes de atribuir o painel de controle do SVM ao administrador do SVM, certifique-se de que o SVM possua uma interface de rede de gerenciamento. Se o SVM não possuir uma interface de rede, você pode criar uma.
+
+.Passos
+. No System Manager, selecione *Interfaces de rede > Visão geral* e, em seguida, selecione *Adicionar* para criar uma interface de rede.
+. Selecione *Gerenciamento de VM de armazenamento* como o tipo de interface de rede.
+. Especifique o *endereço IP* e a *máscara de sub-rede* para a interface de gerenciamento de rede da SVM.
+
+
+
+
+== Etapa 2: verifique a configuração da conta de usuário vsadmin
+
+Sempre que uma SVM é criada, ONTAP cria automaticamente uma conta de usuário vsadmin associada. Antes de atribuir o painel da SVM ao administrador, certifique-se de que a conta de usuário vsadmin tenha uma senha e esteja desbloqueada.
+
+.Passos
+. Abra o painel do System Manager como administrador do cluster.
+. Selecione *Cluster > VMs de armazenamento*.
+. Selecione o SVM, selecione *Configurações* e, em seguida, selecione *Segurança > Usuários e funções*.
+. Ao lado do usuário *vsadmin*, selecione image:icon_kabob.gif["Ícone de opções do menu"] e, se necessário, selecione:
++
+.. *Alterar senha* para atualizar a senha do vsadmin.
+.. *Desbloqueie* para garantir que seja utilizável.
+
+
+
+
+
+
+== Etapa 3: permitir que os administradores do SVM adicionem volumes (opcional)
+
+Como administrador de cluster ONTAP, se você deseja que seus administradores de SVM possam adicionar volumes locais em suas SVMs, você pode conceder permissão.
+
+.Passos
+. Abra o painel do System Manager e faça Sign in como administrador do cluster.
+. Em *Cluster*, selecione *Storage VMs*.
+. Selecione image:icon_kabob.gif["Ícone de opções do menu"] para a SVM aplicável.
+. Selecione *Editar*.
+. Em *Alocação de Recursos*, selecione a caixa de seleção *Limitar a criação de volumes às camadas locais preferenciais*.
+. Por padrão, todas as camadas locais são incluídas quando você seleciona a caixa de seleção. Você pode remover camadas específicas se necessário. Se você remover todas as camadas locais ou deixar a caixa de seleção desmarcada, os administradores do SVM não poderão provisionar volumes locais.
+. Selecione *Guardar*.
+
+
+
+
+== Etapa 4: atribua acesso de administrador do SVM
+
+Para atribuir acesso ao painel de controle do SVM, forneça o endereço IP de gerenciamento do SVM e a senha vsadmin para cada administrador do SVM.
+
+.Passos
+. No System Manager, selecione *Interfaces de rede > Visão geral* e, em seguida, selecione a interface de rede *Management*.
+. Selecione o endereço IP e compartilhe-o, juntamente com o nome de usuário e a senha do *vsadmin* com o administrador do SVM.
+
+
+.Tópicos relacionados:
+* link:disks-aggregates/assign-aggregates-svms-task.html["Atribuir camadas locais do ONTAP a VMs de storage (SVMs)"]
+* link:authentication/create-svm-user-accounts-task.html#cluster-and-svm-administrators["Saiba mais sobre como criar contas de login do ONTAP"]
+* link:concepts/cluster-svm-administrators-concept.html["Administração de clusters e SVM"]
+* link:https://docs.netapp.com/us-en/ontap-cli/security-login-password.html#description["senha de login de segurança"]
+

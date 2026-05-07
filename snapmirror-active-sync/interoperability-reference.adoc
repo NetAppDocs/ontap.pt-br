@@ -29,7 +29,12 @@ O SnapMirror Active Sync oferece suporte a hipervisores, incluindo Hyper-V, ESXi
 
 O SnapMirror ative Sync é compatível com vários sistemas operacionais, incluindo:
 
-* AIX via PVR (Início ONTAP 9.11,1)
+* AIX
++
+** A partir do ONTAP 9.19.1, o Transparent Application Failover (TAF) é suportado com configurações ativo-ativo simétricas. Não é necessário PVR.
+** A partir do ONTAP 9.11.1 até o ONTAP 9.18.1, o AIX é suportado apenas por PVR para failover automatizado com configurações simétricas ativo-ativo.
+
+
 * HP-UX (Início do ONTAP 9.10,1)
 * Solaris 11,4 (Início do ONTAP 9.10,1)
 
@@ -38,7 +43,9 @@ O SnapMirror ative Sync é compatível com vários sistemas operacionais, inclui
 
 === AIX
 
-A partir do ONTAP 9.11.1, o AIX é compatível com sincronização ativa do SnapMirror por meio da solicitação de variação de política de recursos (FPVR) de engenharia padrão, com o acordo de que as seguintes estipulações sejam compreendidas:
+A partir do ONTAP 9.19.1, o Failover Transparente de Aplicativos para AIX é suportado com SnapMirror active sync em configurações simétricas ativo-ativo. Você pode usar System Manager ou a ONTAP CLI para criar um LUN AIX. Para garantir o failover transparente, ao usar a ONTAP CLI, você deve usar a opção access-mode local com o comando lun create ou lun modify. Por padrão, o modo de acesso é definido como global. Ao usar o System Manager, escolha AIX como host e local como modo de acesso. Para obter mais informações sobre como criar um LUN, consulte link:../san-admin/provision-storage.html["Provisionamento de storage SAN"].
+
+Se você estiver usando ONTAP 9.11.1 até ONTAP 9.18.1, o AIX é compatível com SnapMirror active sync por meio de uma Solicitação de Variação de Política de Recursos (FPVR) de engenharia padrão, desde que as seguintes estipulações sejam compreendidas:
 
 * O SnapMirror active Sync pode fornecer proteção de dados RPO zero, mas o processo de failover com AIX requer etapas adicionais para reconhecer a alteração de caminho. Os LUNs que não fazem parte de um grupo de volume raiz terão uma pausa de e/S até que um `cfgmgr` comando seja executado. Isso pode ser automatizado, e a maioria dos aplicativos retomará as operações sem interrupções adicionais.
 * Os LUNs que fazem parte de um grupo de volumes raiz geralmente não devem ser protegidos com a sincronização ativa do SnapMirror. Não é possível executar o `cfgmgr` comando após um failover, o que significa que uma reinicialização é necessária para reconhecer as alterações nos caminhos SAN. Você ainda pode alcançar a proteção de dados RPO zero do grupo de volume raiz, mas o failover causará interrupções.

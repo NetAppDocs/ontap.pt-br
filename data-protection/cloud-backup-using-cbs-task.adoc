@@ -2,7 +2,7 @@
 sidebar: sidebar 
 permalink: data-protection/cloud-backup-using-cbs-task.html 
 keywords: cloud, data, backup, back up, storage, volume, lun, connector, secret key, access key, bluexp back and recovery service, Cloud Backup service, CBS, restore data, protect volumes, ipspace, storagegrid, storage grid, archive, archival, archiving, cost, calculator, glacier, deep archive 
-summary: A partir do ONTAP 9.9.1, você pode usar o System Manager para fazer backup de dados na nuvem usando o serviço NetApp Backup and Recovery. 
+summary: A partir do ONTAP 9.19.1, o System Manager não oferece mais suporte ao backup de dados na nuvem usando o serviço NetApp Backup and Recovery. Em vez disso, você deve usar o NetApp Console para configurar o serviço NetApp Backup and Recovery e criar uma relação de SnapMirror com um destino na nuvem. 
 ---
 = Faça backup de dados usando o NetApp Backup and Recovery
 :hardbreaks:
@@ -16,14 +16,14 @@ summary: A partir do ONTAP 9.9.1, você pode usar o System Manager para fazer ba
 
 
 [role="lead"]
-A partir do ONTAP 9.9.1, você pode usar o System Manager para fazer backup de dados na nuvem usando o serviço NetApp Backup and Recovery.
+A partir do ONTAP 9.19.1, o System Manager não oferece mais suporte ao backup de dados na nuvem usando o serviço NetApp Backup and Recovery. Em vez disso, você deve usar o NetApp Console para configurar o serviço NetApp Backup and Recovery e criar uma relação de SnapMirror com um destino na nuvem.
 
 O Backup e Recuperação oferece suporte a volumes de leitura e gravação FlexVol e volumes de proteção de dados (DP).  A partir do ONTAP 9.12.1, o Backup e Recuperação oferece suporte a volumes FlexGroup e SnapLock .
 
 Saiba mais sobre link:https://docs.netapp.com/us-en/data-services-backup-recovery/index.html["Backup e recuperação da NetApp"^] .
 
 .Antes de começar
-Você deve executar os seguintes procedimentos para estabelecer uma conta no NetApp Console.  Para a conta de serviço, você precisa criar a função "Administrador da conta".  (Outras funções de conta de serviço não têm os privilégios necessários para estabelecer uma conexão do Gerenciador do Sistema.)
+Você deve executar os seguintes procedimentos para estabelecer uma conta no NetApp Console. Para a conta de serviço, você precisa criar a função como "Account Admin".
 
 . link:https://docs.netapp.com/us-en/console-setup-admin/task-logging-in.html["Criar uma conta no NetApp Console"^] .
 . link:https://docs.netapp.com/us-en/console-setup-admin/concept-connectors.html["Criar um agente de console no NetApp Console"^]com um dos seguintes provedores de nuvem:
@@ -44,187 +44,9 @@ NOTE: A partir do ONTAP 9.10.1, você pode selecionar o StorageGRID como um prov
 
 
 
-== Registre o cluster com o NetApp Console
+== Use NetApp Console e NetApp Backup and Recovery para gerenciar backups do ONTAP
 
-Você pode registrar o cluster no NetApp Console usando o Console ou o System Manager.
-
-.Passos
-. No System Manager, vá para *Visão geral da proteção*.
-. Em * NetApp Backup and Recovery*, forneça os seguintes detalhes:
-+
-** ID do cliente
-** Chave secreta do cliente
-
-
-. Selecione *Registe-se e continue*.
-
-
-
-
-== Habilitar backup e recuperação do NetApp
-
-Depois que o cluster for registrado no NetApp Console, você precisará habilitar o NetApp Backup and Recovery e iniciar o primeiro backup na nuvem.
-
-.Passos
-. No Gestor do sistema, selecione *proteção > Descrição geral* e, em seguida, desloque-se para a secção *Cloud Backup Service*.
-. Insira *Client ID* e *Client Secret*.
-+
-
-NOTE: A partir do ONTAP 9.10.1, você pode aprender sobre o custo de usar a nuvem selecionando *Saiba mais sobre o custo de usar a nuvem*.
-
-. Selecione *conetar e ativar o Cloud Backup Service*.
-. Na página *Habilitar backup e recuperação do NetApp *, forneça os seguintes detalhes, dependendo do provedor selecionado.
-+
-[cols="35,65"]
-|===
-
-
-| Para este provedor de nuvem... | Introduza os seguintes dados... 
-
-
- a| 
-Azure
- a| 
-** ID de subscrição do Azure
-** Região
-** Nome do grupo de recursos (existente ou novo)
-
-
-
-
- a| 
-AWS
- a| 
-** ID da conta da AWS
-** Chave de acesso
-** Chave secreta
-** Região
-
-
-
-
- a| 
-Projeto Google Cloud (GCP)
- a| 
-** Nome do projeto Google Cloud
-** Chave de acesso ao Google Cloud
-** Chave secreta do Google Cloud
-** Região
-
-
-
-
- a| 
-StorageGRID (ONTAP 9.10.1 e posterior, e somente para implantação local do NetApp Console)
- a| 
-** Servidor
-** Chave de Acesso SG
-** Chave secreta SG
-
-
-|===
-. Selecione uma *Política de proteção*:
-+
-** *Política existente*: Escolha uma política existente.
-** *Nova Política*: Especifique um nome e configure um agendamento de transferência.
-+
-
-NOTE: A partir do ONTAP 9.10,1, você pode especificar se deseja ativar o arquivamento com o Azure ou a AWS.
-
-+
-
-IMPORTANT: Se você habilitar o arquivamento para um volume com o Azure ou AWS, não será possível desativar o arquivamento.
-
-+
-Se você habilitar o arquivamento para o Azure ou AWS, especifique o seguinte:
-
-+
-*** O número de dias após os quais o volume é arquivado.
-*** O número de cópias de segurança a reter no arquivo. Especifique "0" (zero) para arquivar até o backup mais recente.
-*** Para AWS, selecione a classe de armazenamento de arquivo.
-
-
-
-
-. Selecione os volumes que pretende efetuar uma cópia de segurança.
-. Selecione *Guardar*.
-
-
-
-
-== Editar a política de proteção usada para o NetApp Backup and Recovery
-
-Você pode alterar qual política de proteção é usada com o NetApp Backup and Recovery.
-
-.Passos
-. No Gestor do sistema, selecione *proteção > Descrição geral* e, em seguida, desloque-se para a secção *Cloud Backup Service*.
-. image:icon_kabob.gif["Ícone de opções do menu"]Selecione e, em seguida, *Editar*.
-. Selecione uma *Política de proteção*:
-+
-** *Política existente*: Escolha uma política existente.
-** *Nova Política*: Especifique um nome e configure um agendamento de transferência.
-+
-
-NOTE: A partir do ONTAP 9.10,1, você pode especificar se deseja ativar o arquivamento com o Azure ou a AWS.
-
-+
-
-IMPORTANT: Se você habilitar o arquivamento para um volume com o Azure ou AWS, não será possível desativar o arquivamento.
-
-+
-Se você habilitar o arquivamento para o Azure ou AWS, especifique o seguinte:
-
-+
-*** O número de dias após os quais o volume é arquivado.
-*** O número de cópias de segurança a reter no arquivo. Especifique "0" (zero) para arquivar até o backup mais recente.
-*** Para AWS, selecione a classe de armazenamento de arquivo.
-
-
-
-
-. Selecione *Guardar*.
-
-
-
-
-== Proteger novos volumes ou LUNs na nuvem
-
-Ao criar um novo volume ou LUN, você pode estabelecer uma relação de proteção SnapMirror que permite fazer backup na nuvem para o volume ou LUN.
-
-.Antes de começar
-* Você deve ter uma licença SnapMirror.
-* LIFs entre clusters devem ser configurados.
-* NTP deve ser configurado.
-* O cluster deve estar executando o ONTAP 9.9.1 ou posterior.
-
-
-.Sobre esta tarefa
-Não é possível proteger novos volumes ou LUNs na nuvem nas seguintes configurações de cluster:
-
-* O cluster não pode estar em um ambiente MetroCluster.
-* O SVM-DR não é compatível.
-* Os volumes FlexGroup não podem ser copiados usando o NetApp Backup and Recovery.
-
-
-.Passos
-. Ao provisionar um volume ou LUN, na página *proteção* no Gerenciador de sistema, marque a caixa de seleção *Ativar SnapMirror (local ou remoto)*.
-. Selecione o tipo de política de backup e recuperação.
-. Se Backup e Recuperação não estiverem habilitados, selecione *Habilitar Backup usando NetApp Backup e Recuperação*.
-
-
-
-
-== Proteger volumes ou LUNs existentes na nuvem
-
-É possível estabelecer uma relação de proteção SnapMirror para volumes e LUNs existentes.
-
-.Passos
-. Selecione um volume ou LUN existente e selecione *Protect*.
-. Na página *Proteger volumes*, especifique *Backup usando NetApp Backup and Recovery* para a política de proteção.
-. Selecione *Protect*.
-. Na página *proteção*, marque a caixa de seleção *Ativar SnapMirror (local ou remoto)*.
-. Selecione *Conectar e habilitar o NetApp Backup and Recovery*.
-
+A partir do ONTAP 9.19.1, o System Manager não oferece mais suporte ao NetApp Backup and Recovery. Consulte link:https://docs.netapp.com/us-en/data-services-backup-recovery/prev-ontap-backup-manage.html["Gerencie backups para seus sistemas ONTAP com NetApp Backup and Recovery"^] para obter mais informações sobre o uso do NetApp Backup and Recovery com o NetApp Console.
 
 
 

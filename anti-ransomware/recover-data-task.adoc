@@ -25,9 +25,20 @@ Para restaurar a partir de um instantâneo diferente do  `Anti_ransomware` snaps
 
 Se nenhum ataque ao sistema for relatado, você deve primeiro restaurar a partir do  `Anti_ransomware` instantâneo e conclua uma restauração subsequente do volume a partir do instantâneo escolhido.
 
+.Mais informações sobre SnapMirror relationships e snapshots ARP
+[%collapsible]
+====
+Se o volume protegido por ARP fizer parte de um relacionamento SnapMirror , você precisará atualizar manualmente todas as cópias espelhadas do volume após restaurá-lo a partir de um snapshot. Se você pular esta etapa, as cópias espelhadas poderão ficar inutilizáveis e precisarão ser excluídas e recriadas.
 
-NOTE: Se o volume protegido por ARP fizer parte de um relacionamento SnapMirror , você precisará atualizar manualmente todas as cópias espelhadas do volume após restaurá-lo a partir de um snapshot. Se você pular esta etapa, as cópias espelhadas poderão ficar inutilizáveis e precisarão ser excluídas e recriadas.
+Se o volume protegido por ARP fizer parte de uma relação síncrona do SnapMirror ou de sincronização ativa do SnapMirror no ONTAP 9.19.1 RC, considerações adicionais de recuperação se aplicam:
 
+* Os snapshots ARP são criados e mantidos apenas no volume primário. Eles não são replicados para o volume secundário como parte de SnapMirror synchronous ou SnapMirror active sync.
+* O estado de capacitação do ARP não é replicado durante o failover. Você precisa link:enable-task.html["ativar ARP novamente"] no volume de recuperação após o failover.
+* A restauração em nível de volume (`volume snapshot restore` em volumes SnapMirror síncronos ou SnapMirror active sync pode exigir que você suspenda temporariamente ou interrompa a relação SnapMirror síncrona ou SnapMirror active sync.
+* Em muitos casos, você pode evitar a interrupção da SnapMirror synchronous ou da SnapMirror active sync usando FlexClone ou operações de restauração em nível de arquivo a partir de ARP ou outros snapshots no volume primário.
+
+
+====
 .Antes de começar
 link:respond-abnormal-task.html["Você deve marcar o ataque como um potencial ataque de ransomware"] antes de restaurar dados de um instantâneo.
 
@@ -52,6 +63,9 @@ Você pode usar o Gerenciador do sistema ou a CLI do ONTAP para restaurar seus d
 Selecione *armazenamento > volumes* e, em seguida, selecione o volume e *cópias Snapshot*.
 
 . Selecione image:icon_kabob.gif["Ícone de opções do menu"] ao lado do instantâneo que deseja restaurar e depois *Restaurar*.
++
+Se o volume fizer parte de um SnapMirror síncrono ou de SnapMirror active sync em uma relação SAN no ONTAP 9.19.1 RC e você planeja executar uma restauração em nível de volume, siga a documentação de SnapMirror síncrono ou de SnapMirror active sync para suspender ou link:../data-protection/make-destination-volume-writeable-task.html["romper a relação de proteção"] antes de iniciar a restauração e, em seguida, restabeleça a proteção após a conclusão da restauração.
+
 
 
 .Restaure se um ataque do sistema não foi identificado
@@ -71,7 +85,7 @@ Selecione *armazenamento > volumes* e, em seguida, selecione o volume e *cópias
 Para restaurar a partir do instantâneo ARP, passe para a etapa dois. Para restaurar dados de instantâneos anteriores, você deve liberar o bloqueio no instantâneo ARP.
 
 
-NOTE: Só é necessário liberar o SnapLock anti-ransomware antes de restaurar a partir de snapshots anteriores se você estiver usando o `volume snapshot restore` comando como descrito abaixo. Se você estiver restaurando dados usando o FlexClone, a Restauração Snap de Arquivo único ou outros métodos, isso não será necessário.
+NOTE: Só é necessário liberar o anti-ransomware SnapLock antes de restaurar a partir de snapshots anteriores se você estiver usando o comando  `volume snapshot restore` conforme descrito abaixo. Se você estiver restaurando dados usando FlexClone, SnapRestore de arquivo único ou outros métodos, isso não é necessário.
 
 . Marque o ataque como um potencial ataque de ransomware (`-false-positive false` ) e limpar arquivos suspeitos (`clear-suspect` ):
 +
@@ -88,6 +102,7 @@ Use um dos seguintes parâmetros para identificar as extensões:
 ** `[-start-time _date_time_ -end-time _date_time_]` : Horários de início e término para o intervalo de arquivos a serem limpos, no formato "MM/DD/AAAA HH:MM:SS".
 
 
+. Se o volume fizer parte de um SnapMirror synchronous ou SnapMirror active sync relacionamento SAN no ONTAP 9.19.1 RC e você pretender executar uma restauração em nível de volume com  `volume snapshot restore`, coloque em estado quiescente ou link:../data-protection/make-destination-volume-writeable-task.html["romper a relação de sincronização síncrona do SnapMirror ou sincronização ativa do SnapMirror"] de acordo com a documentação do SnapMirror synchronous ou SnapMirror active sync antes de executar a operação de restauração.
 . Listar os instantâneos em um volume:
 +
 [source, cli]

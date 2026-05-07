@@ -9,17 +9,11 @@ summary: O ARP é compatível com cargas de trabalho NAS e SAN. É mais adequado
 
 
 [role="lead"]
-A Proteção Autônoma contra Ransomware (ARP) está disponível para cargas de trabalho NAS a partir do ONTAP 9.10.1 e cargas de trabalho SAN a partir do ONTAP 9.17.1. Antes de implantar a ARP, você deve estar ciente dos usos recomendados e das configurações suportadas, bem como das implicações de desempenho.
+A Proteção Autônoma contra Ransomware (ARP) está disponível para cargas de trabalho NAS a partir do ONTAP 9.10.1 e para cargas de trabalho SAN a partir do ONTAP 9.17.1. Antes de implementar a ARP, você deve estar ciente dos usos recomendados e das configurações suportadas, bem como das implicações de desempenho. Você também deve garantir que a carga de trabalho do seu volume seja adequada para a ARP e que atenda aos requisitos de configuração do sistema.
 
 
 
-== Configurações suportadas e não suportadas
-
-Ao decidir usar o ARP, é importante garantir que a carga de trabalho do seu volume seja adequada ao ARP e que atenda às configurações do sistema necessárias.
-
-
-
-=== Workloads adequados
+== Workloads adequados
 
 O ARP é adequado para estes tipos de cargas de trabalho:
 
@@ -36,7 +30,7 @@ Por exemplo, Registros de saúde e dados de automação de design eletrônico (E
 
 
 
-=== Cargas de trabalho inadequadas
+== Cargas de trabalho inadequadas
 
 O ARP não é adequado para estes tipos de cargas de trabalho:
 
@@ -50,51 +44,95 @@ O ARP depende da distinção entre dados recebidos criptografados e não criptog
 
 
 
-=== Configurações compatíveis
+== Configurações compatíveis
 
-O ARP está disponível para volumes NAS NFS e SMB FlexVol a partir do ONTAP 9.10.1. A partir da versão 9.17.1, o ARP está disponível para volumes SAN FlexVol para iSCSI, FC e NVMe com armazenamento SAN.
+O ARP oferece suporte a cargas de trabalho NAS e SAN em diversas versões do ONTAP e ambientes. Verifique os recursos de suporte para confirmar se seu ambiente e configuração são compatíveis antes de implementar o ARP.
 
-O ARP é suportado para configurações MetroCluster a partir do ONTAP 9.10.1.
+
+
+=== Suporte básico
+
+O suporte básico ao ARP começa no ONTAP 9.10.1 e inclui cargas de trabalho NAS (NFS e SMB) em FlexVol volumes e MetroCluster configurações.
+
+
+
+=== Suporte a protocolos e hipervisores pela versão do ONTAP
+
+Além do suporte básico ao NAS, versões posteriores do ONTAP adicionam suporte aos seguintes protocolos e ambientes:
+
+* ONTAP 9.17.1 e versões posteriores: cargas de trabalho de dispositivos de bloco SAN (volumes contendo LUNs ou namespaces NVMe) e volumes NAS contendo discos virtuais da VMware
+* ONTAP 9.17.1P5 e versões posteriores: volumes NAS contendo Hyper-V, KVM e OpenStack hipervisores
+
+
+
+
+=== Matriz de suporte de recursos e configurações
 
 O suporte para outras configurações e tipos de volume está disponível nas seguintes versões do ONTAP:
 
 |===
-|  | ONTAP 9.18.1 | ONTAP 9.17.1 | ONTAP 9.16,1 | ONTAP 9.15,1 | ONTAP 9.14,1 | ONTAP 9.13,1 | ONTAP 9.12,1 | ONTAP 9.11,1 | ONTAP 9.10,1 
+|  | ONTAP 9.19.1 | ONTAP 9.18.1 | ONTAP 9.17.1 | ONTAP 9.16,1 | ONTAP 9.15,1 | ONTAP 9.14,1 | ONTAP 9.13,1 | ONTAP 9.12,1 | ONTAP 9.11,1 | ONTAP 9.10,1 
 
 
-| Volumes protegidos com o SnapMirror assíncrono | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  
+| Volumes protegidos com o SnapMirror assíncrono | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  
 
 
-| SVMs protegidas com SnapMirror assíncrono (recuperação de desastres da SVM) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  
+| Volumes protegidos com SnapMirror synchronous ^3^ | ✓ |  |  |  |  |  |  |  |  |  
 
 
-| Mobilidade de (`vserver migrate`dados SVM ) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  
+| Volumes protegidos com SnapMirror active sync ^3^ | ✓ |  |  |  |  |  |  |  |  |  
 
 
-| Volumes FlexGroup ^1^ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  
+| SVMs protegidas com SnapMirror assíncrono (recuperação de desastres da SVM) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  
 
 
-| Verificação multi-admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  
+| Mobilidade de (`vserver migrate`dados SVM ) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  
 
 
-| ARP/AI com atualizações automáticas | ✓ | ✓ | ✓ |  |  |  |  |  |  
+| Volumes FlexGroup ^1^ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  
 
 
-| Capacitação padrão de ARP/AI^2^ | ✓ |  |  |  |  |  |  |  |  
+| Verificação multi-admin | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  |  |  
+
+
+| ARP/AI com atualizações automáticas | ✓ | ✓ | ✓ | ✓ |  |  |  |  |  |  
+
+
+| Capacitação padrão de ARP/AI^2^ | ✓ | ✓ |  |  |  |  |  |  |  |  
 |===
 ^1^ O ONTAP 9.16.1 e 9.17.1 não oferecem suporte a ARP/AI para volumes FlexGroup .  Após a atualização para essas versões, os volumes FlexGroup habilitados para ARP continuam a operar com o mesmo modelo ARP usado antes do ARP/AI.  A partir do ONTAP 9.18.1, os volumes FlexGroup utilizam o modelo ARP/AI.
 
 ^2^ A partir do ONTAP 9.18.1, o comportamento padrão de capacitação do ARP/AI está disponível para AFF série A e AFF série C, ASA e ASA r2. Esse comportamento ativa automaticamente o ARP/AI em todos os novos volumes após um período de carência de 12 horas após uma atualização ou imediatamente para novas instalações do ONTAP 9.18.1. Você precisará ativar o ARP manualmente em link:enable-task.html["volumes existentes"].
 
+^3^ A partir do ONTAP 9.19.1 RC, o ARP/AI oferece suporte a volumes primários em SnapMirror relacionamentos síncronos para NAS e SAN em sistemas FAS, AFF série A, AFF série C e AFX, e a volumes primários em SnapMirror relacionamentos SAN de sincronização ativa em sistemas AFF série A, AFF série C e ASA r2. Para obter mais informações, consulte <<SnapMirror>>.
+
+
+
+=== Interoperabilidade e considerações sobre máquinas virtuais
+
+O ARP opera em conjunto com as relações de proteção de dados do SnapMirror e ambientes de máquina virtual, apresentando alguns comportamentos e limitações específicos de cada versão que você deve conhecer antes de implementar.
+
 
 
 ==== Interoperabilidade SnapMirror e ARP
 
-A partir do ONTAP 9.12.1, o ARP é compatível com volumes de destino assíncronos do SnapMirror . O ARP _não_ é compatível com o SnapMirror síncrono ou o SnapMirror síncrono ativo.
+A partir do ONTAP 9.12.1, o ARP é suportado em volumes de destino assíncronos do SnapMirror.
 
-Se um volume de origem SnapMirror for habilitado para ARP, o volume de destino SnapMirror adquire automaticamente o estado de configuração ARP (como  `dry-run` ou  `enabled` ), dados de treinamento ARP e snapshot do volume de origem criado por ARP. Nenhuma ativação explícita é necessária.
+A partir do ONTAP 9.19.1 RC, o ARP/AI oferece suporte a volumes primários que participam de relacionamentos SAN síncronos do SnapMirror e de sincronização ativa do SnapMirror, com o seguinte comportamento:
 
-Embora o volume de destino consista em snapshots somente leitura (RO), nenhum processamento ARP é realizado em seus dados. No entanto, quando o volume de destino do SnapMirror é convertido para leitura e gravação (RW), o ARP é habilitado automaticamente no volume de destino convertido para RW. O volume de destino não requer nenhum procedimento de aprendizado adicional além do que já está registrado no volume de origem.
+* O ARP/AI é compatível com volumes _primários_ em relações síncronas de SnapMirror para NAS e SAN em sistemas FAS, AFF série A, AFF série C e AFX.
+* O ARP/AI é compatível com volumes _primários_ em SnapMirror active sync SAN relationships nos sistemas AFF A-series, AFF C-series e ASA r2.
+* ARP/AI _não_ é suportado com SnapMirror active sync para NAS no ONTAP 9.19.1 RC.
+* A análise ARP/AI é executada apenas no volume primário ativo de leitura e gravação em relacionamentos SAN síncronos do SnapMirror e de sincronização ativa do SnapMirror, onde o ARP cria snapshots somente do primário e realiza detecção de ransomware baseada em aprendizado de máquina.
+* O estado de configuração ARP e os snapshots ARP não são replicados para o volume secundário como parte da SnapMirror síncrona ou SnapMirror active sync no ONTAP 9.19.1 RC.
+
+
+
+NOTE: Como cada operação de gravação é confirmada em ambos os volumes em uma relação de espelhamento síncrono, habilitar o ARP apenas no volume primário é suficiente para detectar as anomalias. Os metadados internos gerados pela análise de ARP no volume primário também são replicados para o volume secundário. Por isso, se o ARP for habilitado no volume secundário após uma falha, os metadados necessários já existirão nesse volume secundário.
+
+Se um volume de origem SnapMirror _assíncrono_ tiver o ARP habilitado, o volume de destino SnapMirror adquire automaticamente o estado de configuração do ARP (como  `dry-run` ou  `enabled`), os dados de treinamento do ARP e o snapshot criado pelo ARP do volume de origem. Nenhuma capacitação é necessária.
+
+Embora o volume de destino assíncrono consista em snapshots somente leitura (RO), nenhum processamento ARP é realizado em seus dados. No entanto, quando o volume de destino assíncrono do SnapMirror é convertido para leitura e gravação (RW), o ARP é automaticamente habilitado no volume de destino convertido para RW. O volume de destino não requer nenhum procedimento de aprendizado adicional além do que já está registrado no volume de origem.
 
 No ONTAP 9.10.1 e 9.11.1, o SnapMirror não transfere o estado da configuração ARP, os dados de treinamento e os snapshots dos volumes de origem para os de destino. Por esse motivo, quando o volume de destino do SnapMirror é convertido para RW, o ARP no volume de destino deve ser explicitamente habilitado no modo de aprendizagem após a conversão.
 
@@ -102,7 +140,7 @@ No ONTAP 9.10.1 e 9.11.1, o SnapMirror não transfere o estado da configuração
 
 ==== ARP e máquinas virtuais
 
-O ARP é compatível com máquinas virtuais (VMs) no VMware. A detecção de ARP se comporta de maneira diferente para alterações dentro e fora da VM. O ARP não é recomendado para cargas de trabalho que envolvam um grande número de arquivos altamente compactados (como 7z e ZIP) ou arquivos criptografados (como PDF, DOC ou ZIP protegidos por senha) dentro da VM.
+O ARP é compatível com máquinas virtuais (VMs) em VMware, Hyper-V, KVM e OpenStack. O VMware é compatível a partir do ONTAP 9.17.1, e Hyper-V, KVM e OpenStack são compatíveis a partir do ONTAP 9.17.1P5. A detecção de ARP se comporta de maneira diferente para alterações dentro e fora da VM. O ARP não é recomendado para cargas de trabalho que envolvam um grande número de arquivos altamente compactados (como 7z e ZIP) ou arquivos criptografados (como PDF, DOC ou ZIP protegidos por senha) dentro da VM.
 
 .Alterações fora da VM
 O ARP pode detectar alterações na extensão de arquivo em um volume NFS fora da VM se uma nova extensão entrar no volume em um estado criptografado ou se uma extensão de arquivo for alterada.
@@ -119,7 +157,7 @@ NOTE: A detecção de ataques que ocorrem dentro de uma máquina virtual está d
 
 
 
-=== Configurações não suportadas
+== Configurações não suportadas
 
 O ARP não é suportado em ambientes ONTAP S3.
 
@@ -133,8 +171,9 @@ NOTE: A partir da ONTAP 9.13.1 até a 9.17.1, os volumes FlexGroup são suportad
 * Volumes FlexCache (ARP é suportado em volumes FlexVol de origem, mas não em volumes de cache)
 * Volumes offline
 * Volumes SnapLock
-* Sincronização ativa do SnapMirror
-* SnapMirror síncrono
+* SnapMirror active sync no ONTAP 9.18.1 e versões anteriores
+* SnapMirror active sync (NAS) no ONTAP 9.19.1 RC
+* SnapMirror síncrono no ONTAP 9.18.1 e versões anteriores
 * SnapMirror assíncrono (no ONTAP 9.10.1 e 9.11.1). O SnapMirror assíncrono é suportado a partir do ONTAP 9.12.1. Para mais informações, consulte <<SnapMirror>> .
 * Volumes restritos
 * Volumes raiz de VMs de storage

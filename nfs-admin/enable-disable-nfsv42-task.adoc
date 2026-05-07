@@ -1,0 +1,158 @@
+---
+permalink: nfs-admin/enable-disable-nfs-task.html 
+sidebar: sidebar 
+keywords: enable, disable, nfsv3, nfsv4, nfsv4.2, ontap, netapp, nfsv4.1, storage vm, svm, storage virtual machine, nfs, -v3, -v4, -v4.1, -v4.2 
+summary: Você pode habilitar ou desabilitar versões do NFS usando System Manager ou a CLI. Isso permite acesso a arquivos para clientes que utilizam o protocolo NFS. 
+---
+= Ativar ou desativar NFS para ONTAP SVMs
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode habilitar ou desabilitar versões do NFS usando System Manager ou a CLI. Isso permite acesso a arquivos para clientes que utilizam o protocolo NFS.
+
+Por padrão, o NFSv3 está habilitado em todas as versões suportadas do ONTAP 9. A partir do ONTAP 9.9.1, o NFSv4.1 e o NFSv4.2 estão habilitados por padrão; em versões anteriores, eles estão desabilitados por padrão.
+
+A partir do ONTAP 9.19.1, você pode habilitar ou desabilitar o NFSv4.1 e o NFSv4.2 de forma independente. Antes do ONTAP 9.19.1, você só podia habilitar ou desabilitar o NFSv4.1 e o NFSv4.2 juntos. Por padrão, tanto o NFSv4.1 quanto o NFSv4.2 são habilitados quando um novo serviço NFS é criado, a menos que sejam explicitamente desabilitados pelo administrador.
+
+
+NOTE: O monitoramento de eventos de acesso a arquivos NFSv4.2 pelo FPolicy não é suportado. Se você configurar o monitoramento pelo FPolicy, será necessário desativar o NFSv4.2 na SVM. Para referência, consulte link:nas-audit/supported-file-operation-filter-fpolicy-nfsv4-concept.html["Combinações de operação de arquivo e filtro suportadas que o ONTAP FPolicy monitora para NFSv4"].
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+.Passos
+. No System Manager, selecione *Cluster > VMs de Armazenamento*, selecione a VM de armazenamento, selecione *Configurações* e, em seguida, selecione image:icon_gear.gif["Ícone ações"] ou o image:icon-edit-pencil-blue-outline.png["Ícone de edição"] em *NFS*.
+. Selecione a caixa de seleção *Habilitar NFS*.
+. Ativar ou desativar um protocolo NFS:
++
+** Para habilitar o NFSv3, selecione a caixa de seleção *Habilitar suporte à versão 3* e considere a seguinte opção:
++
+*** Selecione a caixa de seleção *Ativar FSIDs e identificadores de arquivo de 64 bits* para habilitar o suporte a IDs de sistema de arquivos e identificadores de arquivo de 64 bits para NFSv3.
+
+
+** Para desativar o NFSv3, desmarque a caixa de seleção *Ativar suporte à versão 3*.
+** Para habilitar o NFSv4.0, selecione a caixa de seleção *Habilitar suporte à versão 4* e considere as seguintes opções:
++
+*** Selecione a caixa de seleção *Habilitar ACL* para permitir o uso de uma lista de controle de acesso.
+*** Selecione a caixa de seleção *Habilitar delegação de leitura* para permitir acesso somente leitura.
+*** Selecione a caixa de seleção *Habilitar delegação de gravação* para permitir o acesso de gravação.
+*** Selecione a caixa de seleção *Habilitar FSIDs e identificadores de arquivo de 64 bits* para ativar o suporte a IDs de sistema de arquivos e identificadores de arquivo de 64 bits. Esta caixa de seleção aplica-se ao NFSv4.0, NFSv4.1 e NFSv4.2. Esta é separada da caixa de seleção usada para controlar o suporte a 64 bits para NFSv3.
+
+
+** Para desativar o NFSv4.0, desmarque a caixa de seleção *Ativar suporte à versão 4*.
+** Para habilitar o NFSv4.1, selecione a caixa de seleção *Habilitar suporte para as versões 4.1 e 4.2* e, em seguida, selecione a caixa de seleção *Habilitar suporte para a versão 4.1*. Considere as seguintes opções:
++
+*** Selecione a caixa de seleção *Habilitar ACL* para permitir o uso de uma lista de controle de acesso.
+*** Selecione a caixa de seleção *Habilitar delegação de leitura* para permitir acesso somente leitura.
+*** Selecione a caixa de seleção *Habilitar delegação de gravação* para permitir o acesso de gravação.
+*** Selecione a caixa de seleção *pNFS* para permitir que os clientes usem parallel NFS (pNFS) para obter melhor desempenho.
+*** Selecione a caixa de seleção *Habilitar FSIDs e identificadores de arquivo de 64 bits* para ativar o suporte a IDs de sistema de arquivos e identificadores de arquivo de 64 bits. Esta caixa de seleção aplica-se ao NFSv4.0, NFSv4.1 e NFSv4.2. Esta é separada da caixa de seleção usada para controlar o suporte a 64 bits para NFSv3.
+
+
+** Para desativar o NFSv4.1, desmarque a caixa de seleção *Ativar suporte à versão 4.1*.
+** Para habilitar o NFSv4.2, selecione a caixa de seleção *Habilitar suporte às versões 4.1 e 4.2* e, em seguida, selecione a caixa de seleção *Habilitar suporte à versão 4.2*. Considere as seguintes opções:
++
+*** Selecione a caixa de seleção *Habilitar ACL* para permitir o uso de uma lista de controle de acesso.
+*** Selecione a caixa de seleção *Habilitar delegação de leitura* para permitir acesso somente leitura.
+*** Selecione a caixa de seleção *Habilitar delegação de gravação* para permitir o acesso de gravação.
+*** Selecione a caixa de seleção *pNFS* para permitir que os clientes usem parallel NFS (pNFS) para obter melhor desempenho.
+*** Selecione a caixa de seleção *Habilitar FSIDs e identificadores de arquivo de 64 bits* para ativar o suporte a IDs de sistema de arquivos e identificadores de arquivo de 64 bits. Esta caixa de seleção aplica-se ao NFSv4.0, NFSv4.1 e NFSv4.2. Esta é separada da caixa de seleção usada para controlar o suporte a 64 bits para NFSv3.
+
+
+** Para desativar o NFSv4.2, desmarque a caixa de seleção *Ativar suporte à versão 4.2*.
+
+
+. Opcionalmente, você pode especificar o *nome de domínio V4 ID* para o protocolo NFS.
+. Selecione *Guardar*.
+
+
+--
+.CLI
+--
+.Passo
+. Execute uma das seguintes ações:
++
+[cols="1*, 1*, 1*"]
+|===
+| Se você quiser... | Para a versão... | Digite o seguinte comando... 
+
+
+.4+| Habilitar NFS  a| 
+NFSv3
+ a| 
+[source, cli]
+----
+vserver nfs modify -vserver vserver_name -v3 enabled
+----
+
+
+ a| 
+NFSv4.0
+ a| 
+[source, cli]
+----
+vserver nfs modify -vserver vserver_name -v4.0 enabled
+----
+
+
+ a| 
+NFSv4.1
+ a| 
+[source, cli]
+----
+vserver nfs modify -vserver vserver_name -v4.1 enabled
+----
+
+
+ a| 
+NFSv4.2
+ a| 
+[source, cli]
+----
+vserver nfs modify -vserver vserver_name -v4.2 enabled
+----
+
+
+.4+| Desativar NFS  a| 
+NFSv3
+ a| 
+[source, cli]
+----
+vserver nfs modify -vserver vserver_name -v3 disabled
+----
+
+
+ a| 
+NFSv4.0
+ a| 
+[source, cli]
+----
+vserver nfs modify -vserver vserver_name -v4.0 disabled
+----
+
+
+ a| 
+NFSv4.1
+ a| 
+[source, cli]
+----
+vserver nfs modify -vserver vserver_name -v4.1 disabled
+----
+
+
+ a| 
+NFSv4.2
+ a| 
+[source, cli]
+----
+vserver nfs modify -vserver vserver_name -v4.2 disabled
+----
+|===
+
+
+--
+====

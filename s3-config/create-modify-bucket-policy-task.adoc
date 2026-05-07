@@ -23,6 +23,8 @@ Você pode adicionar novas instruções para novos usuários e grupos ou modific
 
 Permissões de usuário e grupo podem ser concedidas quando o bucket é criado ou conforme necessário mais tarde. Você também pode modificar a capacidade do bucket e a atribuição do grupo de políticas de QoS.
 
+A partir do ONTAP 9.19.1, você pode usar condições para impor gravações condicionais para uploads de objetos e exclusões condicionais para exclusões de objetos. Gravações e exclusões condicionais oferecem uma maneira de evitar sobrescritas ou exclusões não intencionais de objetos.
+
 A partir do ONTAP 9.9,1, se você planeja oferecer suporte à funcionalidade de marcação de objetos cliente AWS com o servidor ONTAP S3, as ações `GetObjectTagging` `PutObjectTagging` e `DeleteObjectTagging` precisam ser permitidas usando o bucket ou as políticas de grupo.
 
 O procedimento a seguir depende da interface que você usa--System Manager ou CLI:
@@ -115,6 +117,12 @@ O exemplo a seguir cria uma declaração de política de bucket do servidor de a
 [listing]
 ----
 cluster1::> vserver object-store-server bucket policy statement create -vserver svm1.example.com -bucket bucket1 -effect allow -action GetObject,PutObject,DeleteObject,ListBucket -principal group/group1 -resource bucket1/* -sid "fullAccessForGroup1"
+----
+A partir do ONTAP 9.19.1, você pode usar condições para impor gravações condicionais para uploads de objetos e exclusões condicionais para exclusões de objetos. O exemplo a seguir cria uma condição de política de bucket para impor gravações condicionais para o bucket1:
+
+[listing]
+----
+cluster::> vserver object-store-server bucket policy-statement-condition create -vserver vs0 -bucket buck1 -index 1 -operator Null -s3-if-match true
 ----
 A partir do ONTAP 9.14,1, você pode especificar variáveis para uma política de bucket. O exemplo a seguir cria uma declaração de política de bucket do servidor para a VM de armazenamento `svm1` e `bucket1` especifica `${aws:username}` como uma variável para um recurso de diretiva. Quando a política é avaliada, a variável de política é substituída pelo nome de usuário de contexto de solicitação e a ação de política pode ser executada como configurada para esse usuário. Por exemplo, quando a seguinte declaração de política é avaliada, `${aws:username}` é substituída pelo usuário que executa a operação S3. Se um usuário `user1` executar a operação, esse usuário terá acesso ao `bucket1` as `bucket1/user1/*`.
 
