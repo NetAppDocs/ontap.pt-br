@@ -39,4 +39,32 @@ Depois que a autenticação de usuário local ou de domínio for concluída com 
 Para obter mais informações sobre autenticação NTLM para usuários locais, consulte a documentação do Microsoft Windows.
 
 .Informações relacionadas
-xref:enable-disable-local-user-authentication-task.adoc[Habilitar ou desabilitar a autenticação de usuário local em servidores]
+xref:enable-disable-local-users-groups-authentication.adoc[Habilitar ou desabilitar a autenticação de usuário local em servidores]
+
+
+
+== Saiba mais sobre os tokens de acesso de usuário ONTAP SMB
+
+Quando um usuário mapeia um compartilhamento, uma sessão SMB autenticada é estabelecida e um token de acesso de usuário é construído que contém informações sobre o usuário, a associação de grupo do usuário e Privileges cumulativos e o usuário UNIX mapeado.
+
+A menos que a funcionalidade esteja desativada, as informações de usuário local e grupo também são adicionadas ao token de acesso do usuário. A forma como os tokens de acesso são construídos depende se o login é para um usuário local ou um usuário de domínio do ative Directory:
+
+* Início de sessão do utilizador local
++
+Embora os usuários locais possam ser membros de diferentes grupos locais, os grupos locais não podem ser membros de outros grupos locais. O token de acesso de usuário local é composto por uma união de todos os Privileges atribuídos a grupos aos quais um usuário local específico é membro.
+
+* Login de usuário de domínio
++
+Quando um usuário de domínio faz login, o ONTAP obtém um token de acesso de usuário que contém o SID do usuário e os SIDs para todos os grupos de domínio aos quais o usuário é membro. O ONTAP usa a união do token de acesso do usuário de domínio com o token de acesso fornecido por associações locais dos grupos de domínio do usuário (se houver), bem como qualquer Privileges direto atribuído ao usuário do domínio ou qualquer uma de suas associações de grupo de domínio.
+
+
+
+Para login de usuário local e de domínio, o RID de grupo principal também é definido para o token de acesso do usuário. O RID predefinido é `Domain Users` (RID 513). Não é possível alterar a predefinição.
+
+O processo de mapeamento de nomes do Windows para UNIX e UNIX para Windows segue as mesmas regras para contas locais e de domínio.
+
+[NOTE]
+====
+Não há mapeamento automático implícito de um usuário UNIX para uma conta local. Se isso for necessário, uma regra de mapeamento explícito deve ser especificada usando os comandos de mapeamento de nomes existentes.
+
+====

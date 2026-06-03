@@ -1,0 +1,202 @@
+---
+permalink: smb-admin/manage-local-user-accounts.html 
+sidebar: sidebar 
+keywords: modify, local, user, account, change, exist, name, description, enable, disable, rename, compromise, administrative, modify local user accounts 
+summary: Você pode habilitar uma conta de usuário local para permitir o acesso aos dados do SVM via SMB ou desabilitar a conta para impedir o acesso. Você também pode modificar a conta para atualizar o nome completo do usuário, a descrição ou o status de habilitação. Se necessário, você pode renomear a conta por motivos administrativos, como um nome de usuário comprometido. Você também pode visualizar os grupos locais aos quais um usuário pertence, o que ajuda a determinar o acesso a arquivos e pastas e solucionar problemas de acesso. 
+---
+= Gerenciar contas de usuário SMB locais do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode habilitar uma conta de usuário local para permitir o acesso aos dados do SVM via SMB ou desabilitar a conta para impedir o acesso. Você também pode modificar a conta para atualizar o nome completo do usuário, a descrição ou o status de habilitação. Se necessário, você pode renomear a conta por motivos administrativos, como um nome de usuário comprometido. Você também pode visualizar os grupos locais aos quais um usuário pertence, o que ajuda a determinar o acesso a arquivos e pastas e solucionar problemas de acesso.
+
+|===
+| Se você quiser... | Digite o comando... 
+
+
+ a| 
+Alterar a senha do usuário local
+ a| 
+`vserver cifs users-and-groups local-user set-password -vserver <SVM_name> -user-name <user_name>`
+
+
+
+ a| 
+Ative ou desative a conta de utilizador local
+ a| 
+`vserver cifs users-and-groups local-user modify -vserver <SVM_name> -user-name <user_name> -is-account-disabled {true|false}`
+
+
+
+ a| 
+Exibir informações detalhadas da conta para um usuário
+ a| 
+`vserver cifs users-and-groups local-user show -instance -vserver <SVM_name> -user-name <user_name>`
+
+
+
+ a| 
+Exibir informações de associação de usuário local para um usuário local especificado
+ a| 
+`vserver cifs users-and-groups local-user show-membership -user-name <user_name>`
+
+
+
+ a| 
+Exibir informações de associação de usuários locais para o grupo local do qual esse usuário local é membro
+ a| 
+`vserver cifs users-and-groups local-user show-membership -membership _group_name_`
+
+
+
+ a| 
+Exibir informações de associação de usuários para usuários locais associados a uma máquina virtual de armazenamento (SVM) especificada
+ a| 
+`vserver cifs users-and-groups local-user show-membership -vserver <SVM_name>`
+
+
+
+ a| 
+Exibir informações detalhadas de todos os usuários locais em um SVM especificado
+ a| 
+`vserver cifs users-and-groups local-user show-membership -instance -vserver <SVM_name>`
+
+
+
+ a| 
+Exibir informações sobre todos os usuários na máquina virtual de storage (SVM)
+ a| 
+`vserver cifs users-and-groups local-user show -vserver <SVM_name>`
+
+
+
+ a| 
+Modifique a descrição do usuário local
+ a| 
+`vserver cifs users-and-groups local-user modify -vserver <SVM_name> -user-name <user_name> -description text`
+
+Se a descrição contiver um espaço, ela deverá ser colocada entre aspas duplas.
+
+
+
+ a| 
+Modifique o nome completo do usuário local
+ a| 
+`vserver cifs users-and-groups local-user modify -vserver <SVM_name> -user-name <user_name> -full-name text`
+
+Se o nome completo contiver um espaço, ele deverá ser colocado entre aspas duplas.
+
+
+
+ a| 
+Renomeie a conta de usuário local
+ a| 
+`vserver cifs users-and-groups local-user rename -vserver <SVM_name> -user-name <user_name> -new-user-name <new_user_name>`
+
+Ao renomear um usuário local, o novo nome de usuário deve permanecer associado ao mesmo servidor CIFS que o nome de usuário antigo.
+
+|===
+.Exemplo
+O exemplo a seguir renomeia o usuário local "'CIFS_SERVER'" para "'CIFS_Server' sue_new'" na máquina virtual de armazenamento (SVM, anteriormente conhecida como SVM) VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-user rename -user-name CIFS_SERVER\sue -new-user-name CIFS_SERVER\sue_new -vserver vs1
+----
+.Exemplo
+O exemplo a seguir exibe informações sobre todos os usuários locais no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-user show -vserver vs1
+Vserver  User Name                   Full Name     Description
+-------- --------------------------- ------------- -------------
+vs1      CIFS_SERVER\Administrator   James Smith   Built-in administrator account
+vs1      CIFS_SERVER\sue             Sue   Jones
+----
+.Exemplo
+O exemplo a seguir define a senha do usuário local "'CIFS_Server'" associada à máquina virtual de armazenamento (SVM, anteriormente conhecida como SVM) VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-user set-password -user-name CIFS_SERVER\sue -vserver vs1
+
+Enter the new password:
+Confirm the new password:
+----
+.Exemplo
+O exemplo a seguir exibe as informações de associação para todos os usuários locais no SVM VS1; o usuário "CIFS_SERVER" é membro do grupo "BUILTIN" Administradores, e "'CIFS_Server'" é membro do grupo "'CIFS_Server' G1":
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-user show-membership -vserver vs1
+Vserver    User Name                    Membership
+---------- ---------------------------- ------------------------
+vs1        CIFS_SERVER\Administrator    BUILTIN\Administrators
+           CIFS_SERVER\sue              CIFS_SERVER\g1
+----
+.Informações relacionadas
+* Saiba mais sobre `vserver cifs` o link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=vserver+cifs["Referência do comando ONTAP"^]na .
+* xref:enable-disable-password-complexity-local-users-task.adoc[Configurar a complexidade da senha para usuários locais]
+* xref:display-server-security-settings-task.adoc[Exibir informações sobre as configurações de segurança do servidor]
+
+
+
+
+== Excluir contas de usuários locais do ONTAP SMB
+
+Você pode excluir contas de usuários locais da máquina virtual de storage (SVM) se elas não forem mais necessárias para a autenticação SMB local para o servidor CIFS ou para determinar os direitos de acesso aos dados contidos no SVM.
+
+.Sobre esta tarefa
+Tenha em mente o seguinte ao excluir usuários locais:
+
+* O sistema de ficheiros não foi alterado.
++
+Os descritores de segurança do Windows em arquivos e diretórios que se referem a esse usuário não são ajustados.
+
+* Todas as referências a usuários locais são removidas dos bancos de dados de associação e Privileges.
+* Usuários padrão e bem conhecidos, como Administrador, não podem ser excluídos.
+
+
+.Passos
+. Determine o nome da conta de usuário local que você deseja excluir:
++
+[source, cli]
+----
+vserver cifs users-and-groups local-user show -vserver <SVM_name>
+----
+. Exclua o usuário local:
++
+[source, cli]
+----
+vserver cifs users-and-groups local-user delete -vserver <SVM_name> -user-name <user_name>
+----
+. Verifique se a conta de usuário foi excluída:
++
+[source, cli]
+----
+vserver cifs users-and-groups local-user show -vserver <SVM_name>
+----
+
+
+O exemplo a seguir exclui o usuário local "'CIFS_Server'" associado ao SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-user show -vserver vs1
+Vserver  User Name                   Full Name      Description
+-------- --------------------------- -------------- -------------
+vs1      CIFS_SERVER\Administrator   James Smith    Built-in administrator account
+vs1      CIFS_SERVER\sue             Sue   Jones
+
+
+cluster1::> vserver cifs users-and-groups local-user delete -vserver vs1 -user-name CIFS_SERVER\sue
+
+cluster1::> vserver cifs users-and-groups local-user show -vserver vs1
+Vserver      User Name                   Full Name      Description
+-------- --------------------------- -------------- -------------
+vs1      CIFS_SERVER\Administrator   James Smith    Built-in administrator account
+----

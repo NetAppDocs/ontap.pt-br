@@ -17,36 +17,43 @@ Existem quatro estilos de segurança diferentes: UNIX, NTFS, misto e unificado. 
 
 Por exemplo, se um volume usa estilo de segurança UNIX, os clientes SMB ainda podem acessar dados (desde que autentiquem e autorizem adequadamente) devido à natureza multiprotocolo do ONTAP. No entanto, o ONTAP usa permissões UNIX que somente clientes UNIX podem modificar usando ferramentas nativas.
 
-[cols="5*"]
+[cols="5"]
 |===
 | Estilo de segurança | Clientes que podem modificar permissões | Permissões que os clientes podem usar | Estilo de segurança eficaz resultante | Clientes que podem acessar arquivos 
 
 
-.2+| UNIX .2+| NFS | NFSv3 bits de modo .2+| UNIX .9+| NFS e SMB 
+| UNIX | NFS  a| 
+* NFSv3 bits de modo
+* ACLs NFSv4.x
+
+| UNIX | NFS e SMB 
 
 
-| ACLs NFSv4.x 
+| NTFS | SMB | ACLs NTFS | NTFS | NFS e SMB 
 
 
-| NTFS | SMB | ACLs NTFS | NTFS 
+| Misto | NFS ou SMB  a| 
+* NFSv3 bits de modo
+* ACLs NFSv4.x
+* ACLs NTFS
+
+ a| 
+* UNIX (para bits de modo NFSv3 e ACLs NFSv4.x)
+* NTFS (para ACLs NTFS)
+
+| NFS e SMB 
 
 
-.3+| Misto .3+| NFS ou SMB | NFSv3 bits de modo .2+| UNIX 
+| Unificado (somente para volumes infinitos, no ONTAP 9.4 e versões anteriores). | NFS ou SMB  a| 
+* NFSv3 bits de modo
+* ACLs NFSv4,1
+* ACLs NTFS
 
+ a| 
+* UNIX (para bits de modo NFSv3 e ACLs NFSv4.1)
+* NTFS (para ACLs NTFS)
 
-| NFSv4.ACLs 
-
-
-| ACLs NTFS | NTFS 
-
-
-.3+| Unificado (somente para volumes infinitos, no ONTAP 9.4 e versões anteriores). .3+| NFS ou SMB | NFSv3 bits de modo .2+| UNIX 
-
-
-| ACLs NFSv4,1 
-
-
-| ACLs NTFS | NTFS 
+| NFS e SMB 
 |===
 Os volumes FlexVol suportam estilos de segurança UNIX, NTFS e mistos. Quando o estilo de segurança é misto ou unificado, as permissões efetivas dependem do tipo de cliente que modificou as permissões pela última vez porque os usuários definem o estilo de segurança individualmente. Se o último cliente que modificou permissões fosse um cliente NFSv3, as permissões são bits do modo UNIX NFSv3. Se o último cliente foi um cliente NFSv4, as permissões são NFSv4 ACLs. Se o último cliente foi um cliente SMB, as permissões são ACLs do Windows NTFS.
 

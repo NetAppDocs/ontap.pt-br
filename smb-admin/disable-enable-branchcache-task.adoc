@@ -1,18 +1,36 @@
 ---
 permalink: smb-admin/disable-enable-branchcache-task.html 
 sidebar: sidebar 
-keywords: disable, branchcache, storage, virtual, machine, svm, changing, change, operating, mode, disable, operate, per-share, automatic, disable or enable branchcache 
+keywords: disable, enable, branchcache, storage, virtual, machine, svm, changing, change, operating, mode, operate, per-share, automatic, branch, office, client, cache 
 summary: Você pode desativar BranchCache na máquina virtual de storage alterando o modo de operação do BranchCache para desativado. Você pode ativar o BranchCache a qualquer momento alterando o modo de operação para oferecer serviços BranchCache por compartilhamento ou automaticamente para todos os compartilhamentos. 
 ---
-= Desabilitar ou habilitar o BranchCache em compartilhamentos ONTAP SMB
+= Desativar ou ativar BranchCache em uma SVM ONTAP
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-Você pode desativar o BranchCache na máquina virtual de armazenamento (SVM) alterando o modo operacional BranchCache para `disabled`. Você pode ativar o BranchCache a qualquer momento alterando o modo operacional para oferecer serviços BranchCache por compartilhamento ou automaticamente para todos os compartilhamentos.
+Se você configurou anteriormente o BranchCache, mas não deseja que os clientes da filial usem conteúdo em cache, pode desativar o armazenamento em cache no servidor CIFS. Você deve estar ciente do que acontece ao desativar o BranchCache. Você pode desativar o BranchCache na máquina virtual de armazenamento alterando o modo de operação do BranchCache para desativado. Você pode ativar o BranchCache a qualquer momento alterando o modo de operação para oferecer serviços do BranchCache por compartilhamento ou automaticamente para todos os compartilhamentos.
 
+Quando você desativa o BranchCache, o ONTAP não computa hashes ou envia os metadados para o cliente solicitante. No entanto, não há interrupção no acesso aos arquivos. Depois disso, quando clientes habilitados para BranchCache solicitam informações de metadados para conteúdo que desejam acessar, o ONTAP responde com um erro definido pela Microsoft, que faz com que o cliente envie uma segunda solicitação, solicitando o conteúdo real. Em resposta à solicitação de conteúdo, o servidor CIFS envia o conteúdo real armazenado na máquina virtual de storage (SVM).
+
+Depois que o BranchCache é desativado no servidor CIFS, os compartilhamentos SMB não anunciam os recursos do BranchCache. Para acessar dados em novas conexões SMB, os clientes fazem solicitações normais de leitura SMB.
+
+Você pode reativar o BranchCache no servidor CIFS a qualquer momento.
+
+* Como o armazenamento de hash não é excluído quando você desabilita o BranchCache, o ONTAP pode usar os hashes armazenados ao responder a solicitações de hash depois de reativar o BranchCache, desde que o hash solicitado ainda seja válido.
+* Quaisquer clientes que tenham feito conexões SMB com compartilhamentos habilitados para BranchCache durante o tempo em que o BranchCache foi desativado não recebem suporte para BranchCache se o BranchCache for posteriormente reativado.
++
+Isso ocorre porque o ONTAP anuncia o suporte do BranchCache para um compartilhamento no momento em que a sessão SMB é configurada. Os clientes que estabeleceram sessões para compartilhamentos habilitados para BranchCache enquanto o BranchCache foi desativado precisam se desconetar e se reconetar para usar conteúdo em cache para esse compartilhamento.
+
+
+
+[NOTE]
+====
+Se você não quiser salvar o armazenamento de hash depois de desativar o BranchCache em um servidor CIFS, você pode excluí-lo manualmente. Se você rehabilitar o BranchCache, você deve garantir que o diretório de armazenamento de hash existe. Depois que o BranchCache é reativado, os compartilhamentos habilitados para BranchCache anunciam os recursos do BranchCache. O ONTAP cria novos hashes à medida que novas solicitações são feitas por clientes habilitados para BranchCache.
+
+====
 .Passos
 . Execute o comando apropriado:
 +

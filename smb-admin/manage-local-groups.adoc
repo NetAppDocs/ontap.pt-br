@@ -1,0 +1,334 @@
+---
+permalink: smb-admin/manage-local-groups.html 
+sidebar: sidebar 
+keywords: modify, exist, local, group, description, exist, local, group, renaming, rename, modify local groups 
+summary: Você pode modificar grupos locais existentes alterando a descrição de um grupo local existente ou renomeando o grupo. 
+---
+= Gerenciar grupos locais SMB do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Você pode alterar um grupo local atualizando sua descrição ou renomeando-o. Você também pode visualizar todos os grupos locais no cluster ou em uma máquina virtual de armazenamento (SVM) específica e ver quem pertence a cada grupo. Essas informações podem ajudar você a solucionar problemas de acesso a arquivos e direitos de usuário na SVM.
+
+[cols="2,4a"]
+|===
+| Se você quiser... | Use o comando... 
+
+
+ a| 
+Exibir todos os grupos locais no cluster
+ a| 
+`vserver cifs users-and-groups local-group show`
+
+
+
+ a| 
+Exibir todos os grupos locais na SVM
+ a| 
+`vserver cifs users-and-groups local-group show -vserver <SVM_name>`
+
+
+
+ a| 
+Exibir os membros de todos os grupos locais no cluster
+ a| 
+`vserver cifs users-and-groups local-group show-members`
+
+
+
+ a| 
+Exibir os membros de todos os grupos locais no SVM
+ a| 
+`vserver cifs users-and-groups local-group show-members -vserver <SVM_name>`
+
+
+
+ a| 
+Modifique a descrição do grupo local
+ a| 
+`vserver cifs users-and-groups local-group modify -vserver <SVM_name> -group-name <group_name> -description text`
+
+Se a descrição contiver um espaço, ela deverá ser colocada entre aspas duplas.
+
+
+
+ a| 
+Renomeie o grupo local
+ a| 
+`vserver cifs users-and-groups local-group rename -vserver <SVM_name> -group-name <group_name> -new-group-name <new_group_name>`
+
+|===
+.Exemplos de comandos
+[%collapsible]
+====
+.Exemplos
+O exemplo a seguir renomeia o grupo local "'CIFS_SERVER' Engineering" para "'CIFS_Server' Engineering_new'":
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-group rename -vserver vs1 -group-name CIFS_SERVER\engineering -new-group-name CIFS_SERVER\engineering_new
+----
+O exemplo a seguir modifica a descrição do grupo local "'CIFS_SERVER' Engineering":
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-group modify -vserver vs1 -group-name CIFS_SERVER\engineering -description "New Description"
+----
+.Exemplo
+O exemplo a seguir exibe informações sobre todos os grupos locais no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-group show -vserver vs1
+Vserver  Group Name                  Description
+-------- --------------------------- ----------------------------
+vs1      BUILTIN\Administrators      Built-in Administrators group
+vs1      BUILTIN\Backup Operators    Backup Operators group
+vs1      BUILTIN\Power Users         Restricted administrative privileges
+vs1      BUILTIN\Users               All users
+vs1      CIFS_SERVER\engineering
+vs1      CIFS_SERVER\sales
+----
+.Exemplo
+O exemplo a seguir exibe informações sobre membros de todos os grupos locais no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-group show-members -vserver vs1
+Vserver   Group Name                   Members
+--------- ---------------------------- ------------------------
+vs1       BUILTIN\Administrators       CIFS_SERVER\Administrator
+                                       AD_DOMAIN\Domain Admins
+                                       AD_DOMAIN\dom_grp1
+          BUILTIN\Users                AD_DOMAIN\Domain Users
+                                       AD_DOMAIN\dom_usr1
+          CIFS_SERVER\engineering      CIFS_SERVER\james
+----
+====
+
+
+== Excluir grupos ONTAP SMB locais
+
+Você poderá excluir um grupo local da máquina virtual de storage (SVM) se não for mais necessário para determinar direitos de acesso a dados associados a esse SVM ou se não for mais necessário atribuir direitos de usuário (Privileges) a membros do grupo.
+
+.Sobre esta tarefa
+Tenha em mente o seguinte ao excluir grupos locais:
+
+* O sistema de ficheiros não foi alterado.
++
+Os descritores de segurança do Windows em arquivos e diretórios que se referem a esse grupo não são ajustados.
+
+* Se o grupo não existir, um erro será retornado.
+* O grupo especial _todos_ não pode ser excluído.
+* Grupos internos, como _BUILTIN__BUILTIN/Users_, não podem ser excluídos.
+
+
+.Passos
+. Determine o nome do grupo local que deseja excluir exibindo a lista de grupos locais no SVM:
++
+[source, cli]
+----
+vserver cifs users-and-groups local-group show -vserver <SVM_name>
+----
+. Exclua o grupo local:
++
+[source, cli]
+----
+vserver cifs users-and-groups local-group delete -vserver <SVM_name> -group-name <group_name>
+----
+. Verifique se o grupo foi excluído:
++
+[source, cli]
+----
+vserver cifs users-and-groups local-group show -vserver <SVM_name>
+----
+
+
+.Exemplo de comando
+[%collapsible]
+====
+O exemplo a seguir exclui o grupo local "CIFS_SERVER" associado ao SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-group show -vserver vs1
+Vserver   Group Name                   Description
+--------- ---------------------------- ----------------------------
+vs1       BUILTIN\Administrators       Built-in Administrators group
+vs1       BUILTIN\Backup Operators     Backup Operators group
+vs1       BUILTIN\Power Users          Restricted administrative privileges
+vs1       BUILTIN\Users                All users
+vs1       CIFS_SERVER\engineering
+vs1       CIFS_SERVER\sales
+
+cluster1::> vserver cifs users-and-groups local-group delete -vserver vs1 -group-name CIFS_SERVER\sales
+
+cluster1::> vserver cifs users-and-groups local-group show -vserver vs1
+Vserver   Group Name                   Description
+--------- ---------------------------- ----------------------------
+vs1       BUILTIN\Administrators       Built-in Administrators group
+vs1       BUILTIN\Backup Operators     Backup Operators group
+vs1       BUILTIN\Power Users          Restricted administrative privileges
+vs1       BUILTIN\Users                All users
+vs1       CIFS_SERVER\engineering
+----
+====
+
+
+== Adicionar um membro a um grupo local do ONTAP SMB
+
+Você pode gerenciar a associação a grupos locais adicionando usuários locais, usuários de domínio ou grupos de domínio. Isso é útil se você deseja controlar o acesso aos dados com base nos controles de acesso definidos para o grupo ou se deseja que os usuários tenham privilégios associados a esse grupo.
+
+.Sobre esta tarefa
+* Você não pode adicionar usuários ao grupo especial _todos_.
+* O grupo local deve existir antes de poder adicionar um utilizador a ele.
+* O utilizador tem de existir antes de poder adicionar o utilizador a um grupo local.
+* Não é possível adicionar um grupo local a outro grupo local.
+* Para adicionar um usuário ou grupo de domínio a um grupo local, o Data ONTAP deve ser capaz de resolver o nome para um SID.
+
+
+.Passo
+. Adicionar um membro a um grupo:
++
+[source, cli]
+----
+vserver cifs users-and-groups local-group add-members -vserver _vserver_name_ -group-name _group_name_ -member-names name[,...]
+----
+
+
+Você pode especificar uma lista delimitada por vírgulas de usuários locais, usuários de domínio ou grupos de domínio para adicionar ao grupo local especificado.
+
+.Exemplo de comando
+[%collapsible]
+====
+O exemplo a seguir adiciona um usuário local "'SMB_SERVER'" e um grupo de domínio "'AD_Dom_eng'" ao grupo local "'SMB_SERVER' Engineering" no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-group add-members -vserver vs1 -group-name SMB_SERVER\engineering -member-names SMB_SERVER\sue,AD_DOMAIN\dom_eng
+----
+====
+
+
+== Remover um membro de um grupo local do ONTAP SMB
+
+Você pode gerenciar a associação a grupos locais removendo usuários locais, usuários de domínio ou grupos de domínio. Isso é útil se você deseja controlar o acesso aos dados com base nos controles de acesso aplicados ao grupo ou se deseja que os usuários tenham privilégios associados a esse grupo.
+
+.Sobre esta tarefa
+* Você não pode remover membros do grupo especial _todos_.
+* O grupo do qual você deseja remover um membro deve existir.
+* O ONTAP deve ser capaz de resolver os nomes dos membros que você deseja remover do grupo para um SID correspondente.
+
+
+.Passo
+. Remover um membro de um grupo:
++
+[source, cli]
+----
+vserver cifs users-and-groups local-group remove-members -vserver _vserver_name_ -group-name _group_name_ -member-names name[,...]
+----
+
+
+Você pode especificar uma lista delimitada por vírgulas de usuários locais, usuários de domínio ou grupos de domínio a serem removidos do grupo local especificado.
+
+.Exemplo de comando
+[%collapsible]
+====
+O exemplo a seguir remove os usuários locais "'SMB_SERVER'" e "'SMB_SERVER' james' do grupo local "'SMB_Server' Engineering" no SVM VS1:
+
+[listing]
+----
+cluster1::> vserver cifs users-and-groups local-group remove-members -vserver vs1 -group-name SMB_SERVER\engineering -member-names SMB_SERVER\sue,SMB_SERVER\james
+----
+====
+
+
+== Atualizar nomes de usuários e grupos de domínio ONTAP SMB em bancos de dados locais
+
+Você pode adicionar usuários e grupos de domínio aos grupos locais de um servidor CIFS. Esses objetos de domínio são registrados em bancos de dados locais no cluster. Se um objeto de domínio for renomeado, os bancos de dados locais devem ser atualizados manualmente.
+
+.Sobre esta tarefa
+Você deve especificar o nome da máquina virtual de armazenamento (SVM) na qual deseja atualizar nomes de domínio.
+
+.Passos
+. Defina o nível de privilégio como avançado:
++
+[source, cli]
+----
+set -privilege advanced
+----
+. Atualize os nomes dos usuários e grupos de domínio associados à máquina virtual de armazenamento:
++
+[source, cli]
+----
+vserver cifs users-and-groups update-names -vserver <SVM_name>
+----
+. Exibir os usuários e grupos do domínio que foram atualizados com sucesso e que falharam ao atualizar:
++
+[source, cli]
+----
+vserver cifs users-and-groups update-names -vserver <SVM_name> -display-failed-only false|true
+----
+. Se você deseja suprimir todas as informações de status sobre atualizações, use o seguinte comando:
++
+[source, cli]
+----
+vserver cifs users-and-groups update-names -vserver <SVM_name> -suppress-all-output true
+----
+. Voltar ao nível de privilégio de administrador:
++
+[source, cli]
+----
+set -privilege admin
+----
+
+
+.Exemplo de comando
+[%collapsible]
+====
+O exemplo a seguir atualiza os nomes de usuários e grupos de domínio associados à máquina virtual de armazenamento (SVM, anteriormente conhecido como SVM) VS1. Para a última atualização, há uma cadeia de nomes dependente que precisa ser atualizada:
+
+[listing]
+----
+cluster1::> set -privilege advanced
+Warning: These advanced commands are potentially dangerous; use them
+only when directed to do so by technical support personnel.
+Do you wish to continue? (y or n): y
+
+cluster1::*> vserver cifs users-and-groups update-names -vserver vs1
+
+   Vserver:           vs1
+   SID:               S-1-5-21-123456789-234565432-987654321-12345
+   Domain:            EXAMPLE1
+   Out-of-date Name:  dom_user1
+   Updated Name:      dom_user2
+   Status:            Successfully updated
+
+   Vserver:           vs1
+   SID:               S-1-5-21-123456789-234565432-987654322-23456
+   Domain:            EXAMPLE2
+   Out-of-date Name:  dom_user1
+   Updated Name:      dom_user2
+   Status:            Successfully updated
+
+   Vserver:           vs1
+   SID:               S-1-5-21-123456789-234565432-987654321-123456
+   Domain:            EXAMPLE1
+   Out-of-date Name:  dom_user3
+   Updated Name:      dom_user4
+   Status:            Successfully updated; also updated SID "S-1-5-21-123456789-234565432-987654321-123457"
+                      to name "dom_user5"; also updated SID "S-1-5-21-123456789-234565432-987654321-123458"
+                      to name "dom_user6"; also updated SID "S-1-5-21-123456789-234565432-987654321-123459"
+                      to name "dom_user7"; also updated SID "S-1-5-21-123456789-234565432-987654321-123460"
+                      to name "dom_user8"
+
+The command completed successfully. 7 Active Directory objects have been updated.
+
+cluster1::*> set -privilege admin
+----
+====
+.Informações relacionadas
+Saiba mais sobre `vserver cifs` o link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=vserver+cifs["Referência do comando ONTAP"^]na .
