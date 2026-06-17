@@ -111,9 +111,9 @@ Dependendo da configuração multipath, os caminhos entre o host e o sistema de 
 |===
 
 
-== Suporte para failover automático de LIF
+== Suporte para failover automático de LIF do ONTAP
 
-O failover automático de LIF é suportado com configurações multipath ativo-ativo executando os protocolos iSCSI e NVMe/TCP e com configurações multipath ativo-ativo-somente-scsi executando o protocolo iSCSI. As LIFs são configuradas para usar por padrão a política de failover sfo-partner-only criada pelo sistema. A política padrão sfo-partner-only pode ser modificada.
+O failover automático de LIF é suportado com configurações multipath ativo-ativo executando os protocolos iSCSI e NVMe/TCP e com configurações multipath ativo-ativo-somente-scsi executando o protocolo iSCSI. As LIFs são configuradas para usar, por padrão, a política de failover sfo-partner-only criada pelo sistema. A política padrão sfo-partner-only pode ser modificada.
 
 O failover automático de LIF não é compatível com configurações multipath locais-ativas. A política padrão somente local não pode ser modificada.
 
@@ -123,13 +123,13 @@ O suporte para failover automático de LIF depende do seu sistema de storage, ve
 
 [cols="1,1,1,1"]
 |===
-| Sistema | Versão de ONTAP | Protocolo SAN | Suporte de failover LIF 
+| Sistema de storage | Versão de ONTAP | Protocolo SAN | Suporte de failover LIF 
 
 
 | FAS | 9,0 e mais tarde | Tudo | Não suportado 
 
 
-.4+| AFF .3+| 9.19.1 e versões posteriores | ISCSI | Failover automático de LIF com configuração multipath ativo-ativo ou ativo-ativo-somente SCSI 
+.4+| AFF .3+| 9.19.1 e versões posteriores | ISCSI | Failover automático de LIF com configurações de multipath ativo-ativo ou ativo-ativo-somente SCSI 
 
 
 | NVMe/TCP | Failover automático de LIF com configuração ativo-ativo de multipathing 
@@ -145,7 +145,7 @@ O suporte para failover automático de LIF depende do seu sistema de storage, ve
 | 9.18.1 e anteriores | Tudo | Não suportado 
 
 
-.9+| ASA .3+| 9.19.1 e versões posteriores | ISCSI | Failover automático de LIF com configuração multipath ativo-ativo ou ativo-ativo-somente SCSI 
+.9+| ASA .3+| 9.19.1 e versões posteriores | ISCSI | Failover automático de LIF com configurações de multipath ativo-ativo ou ativo-ativo-somente SCSI 
 
 
 | NVMe/TCP | Failover automático de LIF com configuração ativo-ativo de multipathing 
@@ -158,7 +158,7 @@ O suporte para failover automático de LIF depende do seu sistema de storage, ve
 | Failover com portas persistentes 
 
 
-.3+| 9.11.1 a 9.18.1 | ISCSI | Failover automático de LIF 
+.3+| 9.18.1 a 9.11.1 | ISCSI | Failover automático de LIF 
 
 
 | FC | Failover com portas persistentes 
@@ -171,7 +171,7 @@ O suporte para failover automático de LIF depende do seu sistema de storage, ve
 | Não suportado 
 
 
-.2+| 9.8 a 9.10.1 | FC | Failover com portas persistentes 
+.2+| 9.10.1 a 9.8 | FC | Failover com portas persistentes 
 
 
  a| 
@@ -199,18 +199,21 @@ O suporte para failover automático de LIF depende do seu sistema de storage, ve
 | Failover com portas persistentes 
 |===
 
+NOTE: Se ocorrer um failover automático de LIF em um sistema que executa o protocolo NVMe/TCP e o número máximo de controladores NVMe estiver em uso no nó sobrevivente, nenhum novo controlador NVMe poderá ser criado nas LIFs que sofreram failover.
+
+
 
 == Limitações de configuração de multipath
 
 Existem limitações de configuração de multipath SAN para máquinas virtuais de armazenamento (SVMs) em um relacionamento de sincronização ativa do SnapMirror e para configurações do MetroCluster.
 
-* *SnapMirror Active Sync*
+* *SnapMirror sincronização ativa*
 +
-Se suas SVMs estiverem em uma relação de sincronização ativa do SnapMirror, a configuração de multipath na SVM de origem e na SVM de destino deve ser a mesma. Configurações de multipath diferentes para a SVM de origem e a SVM de destino não são suportadas.
+Ambos os clusters em um relacionamento de sincronização ativa do SnapMirror devem estar executando a mesma versão do ONTAP 9.19.1 ou posterior, e a configuração de multipath no SVM de origem e no SVM de destino deve ser a mesma. Não há suporte para configurar diferentes configurações de multipath para o SVM de origem e o SVM de destino.
 
 * *MetroCluster configurações*
 +
-O tipo de sistema de storage nos sites primário e secundário deve ser o mesmo.
+O tipo de sistema de storage nos sites primário e secundário deve ser o mesmo e ambos os clusters devem estar executando ONTAP 9.19.1 ou posterior quando SVMs ativo-ativo forem configuradas em qualquer um dos clusters. Se um cluster estiver executando ONTAP 9.18.1 ou anterior, criar LIFs iSCSI ou NVMe/TCP com a política de failover sfo-partner-only em configurações ativo-ativo ou ativo-ativo-scsi-only pode causar falha na replicação da LIF no cluster de destino.
 
 
 
