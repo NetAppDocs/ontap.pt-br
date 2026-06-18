@@ -1,0 +1,40 @@
+---
+permalink: data-protection/convert-exclude-svm-replication-task.html 
+sidebar: sidebar 
+keywords: exclude, network, name service, other settings, svm replication, disaster recovery, convert 
+summary: 'É possível converter um relacionamento de recuperação de desastres (DR) do SVM que exclui informações de configuração do SVM durante a replicação em um relacionamento que replica as informações de configuração usando o  `-identity-preserve true` parâmetro.' 
+---
+= Converter uma relação de replicação SVM do ONTAP SnapMirror para incluir informações de configuração da SVM
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+É possível converter um relacionamento de recuperação de desastres (DR) do SVM que exclui informações de configuração do SVM durante a replicação em um relacionamento que replica as informações de configuração usando o  `-identity-preserve true` parâmetro.
+
+.Antes de começar
+Se houver alguma transferência SnapMirror em andamento, aguarde a conclusão ou cancele-a.
+
+.Passos
+. A partir do cluster de destino, suspenda a relação:
++
+`snapmirror quiesce -destination-path <destination_svm>`:
+
+. Quando o estado do relacionamento estiver inativo, exclua o relacionamento a partir do cluster de destino:
++
+`snapmirror delete -destination-path <destination_svm>`:
+
+. A partir do cluster de origem, libere o relacionamento sem excluir as informações do snapshot SnapMirror:
++
+`snapmirror release -destination-path <destination_svm>: -relationship-info-only true`
+
+. A partir do destino, recrie a relação de replicação usando  `-identity-preserve true`:
++
+`snapmirror create -source-path <source_svm>: -destination-path <destination_svm>: -policy <policy> -schedule <schedule> -identity-preserve true`
+
+. A partir do cluster de destino, ressincronize a relação SnapMirror:
++
+`snapmirror resync -destination-path <destination_svm>:`
+
+
