@@ -4,61 +4,84 @@ sidebar: sidebar
 keywords: understanding, fabricpool, tiering, policies, types, modify, volume, clone, cloud migration 
 summary: As políticas de disposição em camadas do FabricPool permitem que você mova dados com eficiência entre camadas à medida que os dados ficam inativos. Compreender as políticas de disposição em camadas ajuda você a selecionar a política certa que atende às suas necessidades de gerenciamento de storage. 
 ---
-= Armazene dados em categorias de forma eficiente com as políticas do ONTAP FabricPool
+= FabricPool políticas de escalonamento de volume
 :allow-uri-read: 
 :icons: font
 :imagesdir: ../media/
 
 
 [role="lead"]
-As políticas de disposição em camadas do FabricPool permitem que você mova dados com eficiência entre camadas à medida que os dados ficam inativos. Compreender as políticas de disposição em camadas ajuda você a selecionar a política certa que atende às suas necessidades de gerenciamento de storage.
-
-
-
-== Tipos de políticas de disposição em camadas do FabricPool
-
-As políticas de disposição em camadas do FabricPool determinam quando ou se os blocos de dados do usuário de um volume no FabricPool são movidos para a camada de nuvem, com base na temperatura do volume de quente (ativo) ou frio (inativo). O volume "temperatura" aumenta quando é acessado com frequência e diminui quando não é. Algumas políticas de disposição em camadas têm um período de resfriamento mínimo de disposição em camadas associado, que define o tempo em que os dados do usuário em um volume de FabricPool precisam permanecer inativos para que os dados sejam considerados "inativos" e movidos para a camada de nuvem.
-
-Depois que um bloco foi identificado como frio, ele é marcado como elegível para ser escalonado. Uma verificação diária em camadas de fundo procura blocos frios. Quando suficientes blocos 4KB do mesmo volume forem coletados, eles são concatenados em um objeto 4MB e movidos para a camada de nuvem com base na política de disposição em categorias de volume.
+FabricPool as políticas de hierarquização de volumes determinam quais dados em um volume são elegíveis para serem hierarquizados e o parâmetro de dias mínimos de resfriamento para hierarquização determina quando os dados são considerados inativos e elegíveis para serem hierarquizados.
 
 [NOTE]
 ====
-Os dados em volumes que usam a `all` política de disposição em camadas são imediatamente marcados como inativos e começam a categorização na categoria de nuvem o mais rápido possível. Não é necessário esperar que a digitalização de disposição em camadas diária seja executada.
+Listas de controle de acesso (ACLs), estruturas de diretório e metadados nunca são transferidos de camada; eles sempre permanecem na camada local.
 
 ====
+Uma verificação diária de tiering em segundo plano procura por blocos frios. Quando blocos suficientes de 4KB do mesmo volume são coletados, eles são concatenados em um objeto de 4MB e movidos para a camada de nuvem com base na política de tiering do volume.
+
+Compreender como funcionam as políticas de hierarquização ajudará você a selecionar a política certa para suas necessidades de gerenciamento de storage.
+
+
+
+== Opções de política de escalonamento de volume
+
+Por padrão, os volumes usam a política de hierarquização de volumes None. A exceção a isso são os volumes FlexVol recém-criados em agregados FabricPool, que usam a política de hierarquização de volumes Snapshot-Only.
+
 Você pode usar o `volume object-store tiering show` comando para exibir o status de disposição em camadas de um volume FabricPool. Saiba mais sobre `volume object-store tiering show` o link:https://docs.netapp.com/us-en/ontap-cli//volume-object-store-tiering-show.html["Referência do comando ONTAP"^]na .
 
 A política de disposição em camadas do FabricPool é especificada no nível do volume. Estão disponíveis quatro opções:
 
-* A `snapshot-only` política de disposição em camadas (padrão) move blocos de dados do usuário dos snapshots de volume que não estão associados ao sistema de arquivos ativo para a camada de nuvem.
-+
-O período mínimo de resfriamento em categorias é de 2 dias. É possível modificar a configuração padrão para o período mínimo de resfriamento em camadas com o `-tiering-minimum-cooling-days` parâmetro no nível de privilégio avançado dos `volume create` comandos e. `volume modify` Os valores válidos são de 2 a 183 dias usando o ONTAP 9.8 e posterior. Se você estiver usando uma versão do ONTAP anterior a 9,8, os valores válidos são de 2 a 63 dias.
 
-* A `auto` política de disposição em camadas, compatível apenas com o ONTAP 9,4 e versões posteriores, move blocos de dados inativos dos snapshots e do sistema de arquivos ativo para a camada de nuvem.
-+
-O período de resfriamento mínimo de disposição em camadas padrão é de 31 dias e aplica-se a todo o volume, tanto para o sistema de arquivos ativo quanto para os snapshots.
 
-+
+=== Somente instantâneo
+
+A  `snapshot-only`política de tiering armazena em camadas os dados de snapshot que não estão mais associados ao sistema de arquivos ativo. Por padrão, são necessários dois dias de inatividade para que um snapshot esteja apto a ser armazenado em camadas. A maioria dos agendamentos de proteção de dados é horária ou diária e lê os dados localmente antes de armazená-los em camadas.
+
+Você pode modificar a configuração padrão para o período mínimo de resfriamento do tiering com o parâmetro  `-tiering-minimum-cooling-days` no nível de privilégio avançado dos comandos  `volume create` e  `volume modify`. Os valores válidos são de 2 a 183 dias usando ONTAP 9.8 e versões posteriores. Se você estiver usando uma versão do ONTAP anterior à 9.8, os valores válidos são de 2 a 63 dias.
+
+Quando lidos, os blocos frios associados às cópias de snapshot permanecem frios e não são gravados de volta na camada local.
+
+
+
+=== Automático
+
+A  `auto`política de hierarquização move todos os dados inativos do volume, tanto os snapshots quanto o sistema de arquivos ativo, para a camada de nuvem. O período mínimo de resfriamento padrão para hierarquização é de 31 dias e se aplica a todo o volume, tanto ao sistema de arquivos ativo quanto aos snapshots.
+
 É possível modificar a configuração padrão para o período mínimo de resfriamento em camadas com o `-tiering-minimum-cooling-days` parâmetro no nível de privilégio avançado dos `volume create` comandos e. `volume modify` Os valores válidos são de 2 a 183 dias.
 
-*  `all`A política de disposição em camadas, compatível apenas com o ONTAP 9,6 e posterior, move todos os blocos de dados de usuário no sistema de arquivos ativo e snapshots para a camada de nuvem. Ele substitui a `backup` política de disposição em camadas.
-+
-A `all` política de disposição em categorias de volume não deve ser usada em volumes de leitura/gravação que tenham tráfego de cliente normal.
+Quando lidos aleatoriamente, os blocos frios em um volume com uma política de tiering definida como Auto são tornados quentes e gravados de volta na camada local.
 
-+
+Quando lidos sequencialmente, os blocos frios em um volume com uma política de tiering definida como Auto permanecem frios e continuam na camada de nuvem. Eles não são gravados de volta na camada local.
+
+
+
+=== Tudo
+
+A `all` política de hierarquização marca imediatamente todos os dados no volume como frios e começa a transferi-los para a camada de nuvem o mais rápido possível. Não é necessário esperar 48 horas para que novos blocos em um volume usando a `all` política de hierarquização se tornem frios.
+
 O período de resfriamento mínimo de disposição em camadas não se aplica porque os dados são movidos para a camada de nuvem assim que a verificação de disposição em camadas é executada e não é possível modificar a configuração.
 
-* A `none` política de disposição em categorias mantém os dados de um volume na categoria de performance e não é migrada para a camada de nuvem.
-+
+Quando blocos frios em um volume com uma política de camadas definida como All são lidos, eles permanecem frios e ficam na camada de nuvem. Eles não são gravados de volta na camada local.
+
+[NOTE]
+====
+A `all` política de disposição em categorias de volume não deve ser usada em volumes de leitura/gravação que tenham tráfego de cliente normal.
+
+O armazenamento de objetos não é transacional como o armazenamento de arquivos ou blocos. Fazer alterações em arquivos armazenados como objetos em volumes usando a política de tiering All pode resultar na criação de novos objetos, fragmentação de objetos existentes, redução do desempenho de leitura e adição de ineficiências de storage.
+
+====
+
+
+=== Nenhum
+
+A  `none`política de hierarquização mantém os dados de um volume na camada de desempenho e não os hierarquiza.
+
 Definir a política de disposição em categorias `none` para impedir a nova disposição em camadas. Os dados de volume anteriormente movidos para a camada de nuvem permanecem na camada de nuvem até que fiquem ativos e são movidos automaticamente de volta para a camada local.
 
-+
 O período de resfriamento mínimo de disposição em camadas não se aplica porque os dados nunca são movidos para a camada de nuvem e não é possível modificar a configuração.
 
-+
 Quando blocos frios em um volume com uma política de disposição em categorias definida como `none` são lidos, eles ficam ativos e gravados no nível local.
-
-
 
 O `volume show` comando output mostra a política de disposição em camadas de um volume. Um volume que nunca foi usado com o FabricPool mostra a `none` política de disposição em camadas na saída.
 
@@ -67,7 +90,7 @@ NOTE: Em uma relação SVM DR, os volumes de origem e destino não precisam usar
 
 
 
-== O que acontece quando você modifica a política de disposição em camadas de um volume no FabricPool
+== O que acontece quando você modifica uma política de escalonamento de volume
 
 Você pode modificar a política de disposição em categorias de um volume executando `volume modify` uma operação. Você deve entender como mudar a política de disposição em camadas pode afetar o tempo necessário para que os dados fiquem inativos e sejam movidos para a categoria de nuvem.
 
