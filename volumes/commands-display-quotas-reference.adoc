@@ -13,11 +13,8 @@ summary: Você pode usar comandos para exibir um relatório de cota contendo cot
 [role="lead"]
 Você pode usar comandos para exibir um relatório de cota contendo cotas aplicadas e uso de recursos, exibir informações sobre o estado e erros da cota ou sobre políticas de cota e regras de cota.
 
-[NOTE]
-====
 Você pode executar os seguintes comandos apenas no FlexVol volumes.
 
-====
 [cols="2*"]
 |===
 | Se você quiser... | Use este comando... 
@@ -86,3 +83,44 @@ Exibir o nome da política de cota atribuída a uma máquina virtual de storage 
 
 |===
 Saiba mais sobre `volume quota` o link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=volume+quota["Referência do comando ONTAP"^]na .
+
+
+
+== Quando usar os comandos `volume quota policy rule show` e `volume quota report` do ONTAP
+
+Embora ambos os comandos mostrem informações sobre cotas, o `volume quota policy rule show` exibe rapidamente regras de cota configuradas enquanto o `volume quota report` comando, que consome mais tempo e recursos, exibe cotas aplicadas e uso de recursos.
+
+O `volume quota policy rule show` comando é útil para os seguintes propósitos:
+
+* Verifique a configuração das regras de quota antes de as ativar
++
+Este comando exibe todas as regras de cota configuradas, independentemente de as cotas terem sido inicializadas ou redimensionadas.
+
+* Visualize rapidamente as regras de cota sem afetar os recursos do sistema
++
+Como ele não exibe o uso do disco e do arquivo, esse comando não é tão intensivo em recursos quanto um relatório de cota.
+
+* Exiba as regras de cota em uma política de cota que não esteja atribuída ao SVM.
+
+
+Saiba mais sobre `volume quota policy rule show` o link:https://docs.netapp.com/us-en/ontap-cli/volume-quota-policy-rule-show.html["Referência do comando ONTAP"^]na .
+
+O `volume quota report` comando é útil para os seguintes propósitos:
+
+* Veja cotas aplicadas, incluindo cotas derivadas
+* Visualize o espaço em disco e o número de arquivos usados por cada cota em vigor, incluindo alvos afetados por cotas derivadas
++
+(Para cotas padrão, o uso aparece como "0" porque o uso é rastreado contra a cota derivada resultante.)
+
+* Determine quais limites de cota afetam quando uma gravação em um arquivo será permitida
++
+Adicione o `-path` parâmetro ao `volume quota report` comando.
+
+
+
+[NOTE]
+====
+O relatório de cota é uma operação intensiva em recursos. Se você executá-lo em muitos volumes do FlexVol no cluster, poderá levar muito tempo para ser concluído. Uma maneira mais eficiente seria visualizar o relatório de cotas de um determinado volume em um SVM.
+
+====
+Saiba mais sobre `volume quota report` o link:https://docs.netapp.com/us-en/ontap-cli/volume-quota-report.html["Referência do comando ONTAP"^]na .

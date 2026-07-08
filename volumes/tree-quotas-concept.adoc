@@ -21,3 +21,99 @@ Quando você aplica uma cota a uma qtree, o resultado é semelhante a uma parti�
 O tamanho da cota não garante qualquer quantidade específica de espaço disponível. O tamanho da cota pode ser maior do que a quantidade de espaço livre disponível para a qtree. Você pode usar o `volume quota report` comando para determinar a verdadeira quantidade de espaço disponível na qtree.
 
 Saiba mais sobre `volume quota report` o link:https://docs.netapp.com/us-en/ontap-cli/volume-quota-report.html["Referência do comando ONTAP"^]na .
+
+
+
+== Saiba como as quotas de usuários e grupos do ONTAP funcionam com qtrees
+
+As cotas de árvore limitam o tamanho geral da qtree. Para impedir que usuários ou grupos individuais consumam toda a qtree, você especifica uma cota de usuário ou grupo para essa qtree.
+
+.Exemplo de cota de usuário em uma qtree
+[%collapsible]
+====
+Suponha que você tenha as seguintes regras de cota:
+
+[listing]
+----
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol1
+
+Vserver: vs0               Policy: default           Volume: vol1
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   ""        ""      off          50MB        -       -        -       45MB
+user   jsmith    ""      off          80MB        -       -        -       75MB
+----
+Você percebe que um determinado usuário, kjones, está ocupando muito espaço em uma qtree crítica, proj1, que reside no vol1. Você pode restringir o espaço desse usuário adicionando a seguinte regra de cota:
+
+[listing]
+----
+cluster1::> volume quota policy rule create -vserver vs0 -volume vol1 -policy-name default -type user -target "kjones" -qtree "proj1" -disk-limit 20m -threshold 15m
+
+cluster1::> volume quota policy rule show -vserver vs0 -volume vol1
+
+Vserver: vs0               Policy: default           Volume: vol1
+                                               Soft             Soft
+                         User         Disk     Disk   Files    Files
+Type   Target    Qtree   Mapping     Limit    Limit   Limit    Limit  Threshold
+-----  --------  ------- -------  --------  -------  ------  -------  ---------
+user   ""        ""      off          50MB        -       -        -       45MB
+user   jsmith    ""      off          80MB        -       -        -       75MB
+user   kjones    proj1   off          20MB        -       -        -       15MB
+----
+====
+
+
+== Saiba como as quotas de árvore padrão em um volume ONTAP FlexVol criam quotas de árvore derivadas
+
+Quando você cria uma cota de árvore padrão em um FlexVol volume, as cotas de árvore derivadas correspondentes são criadas automaticamente para cada qtree nesse volume.
+
+Essas cotas de árvore derivadas têm os mesmos limites que a cota de árvore padrão. Se não existirem quotas adicionais, os limites têm os seguintes efeitos:
+
+* Os usuários podem usar tanto espaço em uma qtree como eles são alocados para todo o volume (desde que eles não excedessem o limite para o volume usando espaço na raiz ou em outra qtree).
+* Cada um dos qtrees pode crescer para consumir todo o volume.
+
+
+A existência de uma cota de árvore padrão em um volume continua a afetar todos os novos qtrees que são adicionados ao volume. Cada vez que uma nova qtree é criada, uma cota de árvore derivada também é criada.
+
+Como todas as cotas derivadas, as cotas de árvore derivadas exibem os seguintes comportamentos:
+
+* São criados somente se o alvo ainda não tiver uma cota explícita.
+* Aparecem nos relatórios de cota, mas não aparecem quando você mostra regras de cota com o `volume quota policy rule show` comando. Saiba mais sobre `volume quota policy rule show` o link:https://docs.netapp.com/us-en/ontap-cli/volume-quota-policy-rule-show.html["Referência do comando ONTAP"^]na .
+
+
+.Exemplo de cotas de árvores derivadas
+[%collapsible]
+====
+Você tem um volume com três qtrees (proj1, proj2 e proj3) e a única cota de árvore é uma cota explícita na qtree proj1 que limita seu tamanho de disco a 10 GB. Se você criar uma cota de árvore padrão no volume e reinicializar cotas no volume, o relatório de cota agora contém quatro cotas de árvore:
+
+[listing]
+----
+                                    ----Disk----  ----Files-----   Quota
+Volume   Tree      Type    ID        Used  Limit    Used   Limit   Specifier
+-------  --------  ------  -------  -----  -----  ------  ------   ---------
+vol1     proj1     tree    1           0B   10GB       1       -   proj1
+vol1               tree    *           0B   20GB       0       -   *
+vol1     proj2     tree    2           0B   20GB       1       -   proj2
+vol1     proj3     tree    3           0B   20GB       1       -   proj3
+...
+----
+A primeira linha mostra a cota explícita original na qtree proj1. Esta quota permanece inalterada.
+
+A segunda linha mostra a nova cota de árvore padrão no volume. O especificador de cota asterisco (*) indica que é uma cota padrão. Essa cota é resultado da regra de cota que você criou.
+
+As duas últimas linhas mostram novas cotas de árvores derivadas para os qtrees proj2 e proj3. O ONTAP criou automaticamente essas cotas como resultado da cota de árvore padrão no volume. Essas cotas de árvore derivadas têm o mesmo limite de disco de 20 GB que a cota de árvore padrão no volume. O ONTAP não criou uma cota de árvore derivada para a qtree proj1 porque a qtree proj1 já tinha uma cota explícita.
+
+====
+
+
+== Saiba como as quotas de usuário padrão em um volume FlexVol do ONTAP afetam as quotas para qtrees
+
+Se uma cota de usuário padrão for definida para um FlexVol volume, uma cota de usuário padrão será criada automaticamente para cada qtree contido nesse volume para o qual existe uma cota de árvore explícita ou derivada.
+
+Se uma cota de usuário padrão na qtree já existir, ela permanecerá inalterada quando a cota de usuário padrão no volume for criada.
+
+As cotas de usuário padrão criadas automaticamente no qtrees têm os mesmos limites que a cota de usuário padrão criada para o volume.
+
+Uma cota de usuário explícita para uma qtree substitui (substitui os limites aplicados) a cota de usuário padrão criada automaticamente, da mesma forma que substitui uma cota de usuário padrão nessa qtree criada por um administrador.
