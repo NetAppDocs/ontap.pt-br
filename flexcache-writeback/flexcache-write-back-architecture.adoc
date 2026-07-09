@@ -15,12 +15,14 @@ Os conceitos a seguir detalham como o FlexCache write-back funciona.
 
 
 
+[[delegations]]
 == Delegações
 
 As delegações de bloqueio e de dados ajudam a FlexCache a manter os dados de cache de gravação e gravação consistentes, coerentes e atuais. A origem orquestra ambas as delegações.
 
 
 
+[[lock-delegations]]
 === Bloquear delegações
 
 Uma delegação de bloqueio é uma autoridade de bloqueio em nível de protocolo que a origem concede a um cache por ficheiro para emitir bloqueios de protocolo aos clientes, conforme necessário. Estes incluem xref:flexcache-write-back-overview.html#flexcache-write-back-terminology[Delegações exclusivas de bloqueio (XLD)] e xref:flexcache-write-back-overview.html#flexcache-write-back-terminology[Delegações de bloqueio partilhado (SLD)].
@@ -47,6 +49,7 @@ NOTE: Há um limite de 170 XLDs por componente de origem.
 
 
 
+[[data-delegations]]
 === Delegações de dados
 
 Uma delegação de dados é uma garantia por arquivo dada a um cache pela origem em que os dados armazenados em cache para esse arquivo estão atualizados. Desde que o cache tenha uma delegação de dados para um arquivo, ele pode servir os dados em cache para esse arquivo ao cliente sem ter que entrar em Contato com a origem. Se o cache não tiver uma delegação de dados para o arquivo, ele deve entrar em Contato com a origem para receber os dados solicitados pelo cliente.
@@ -57,6 +60,7 @@ As leituras em um cache habilitado para write-back geralmente funcionam como lei
 
 
 
+[[tracking-dirty-data]]
 == Rastrear dados sujos
 
 Write-back do cache para o Origin acontece assincronamente. Isso significa que os dados sujos não são imediatamente gravados de volta à origem. O ONTAP emprega um sistema de Registro de dados sujos para manter o controle dos dados sujos por arquivo. Cada Registro de dados sujos (DDR) representa aproximadamente 20MBMB de dados sujos para um arquivo específico. Quando um arquivo está sendo escrito ativamente, o ONTAP começará a liberar dados sujos de volta depois que dois DDRS foram preenchidos e o terceiro DDR está sendo escrito. Isso resulta em aproximadamente 40MBMB de dados sujos restantes em um cache durante as gravações. Para protocolos stateful (NFSv4.x, SMB), os 40MB restantes de dados serão lavados de volta para a origem quando o arquivo for fechado. Para protocolos sem estado (NFSv3), o 40MB de dados será limpo de volta quando o acesso ao arquivo for solicitado em um cache diferente ou depois que o arquivo estiver ocioso por dois ou mais minutos, até um máximo de cinco minutos. Para obter mais informações sobre a lavagem de dados sujos acionada por temporizador ou acionada por espaço, <<Limpadores de cache>>consulte .
@@ -78,6 +82,7 @@ Além dos DDRS e depuradores, algumas operações nas front-end também acionam 
 
 
 
+[[disconnected-mode]]
 == Modo desligado
 
 Quando um XLD para um arquivo é mantido em um cache write-around e esse cache é desconetado da origem, as leituras para esse arquivo ainda são permitidas nos outros caches e origem. Esse comportamento difere quando um XLD é mantido por um cache habilitado para write-back. Neste caso, se o cache estiver desconetado, as leituras para o arquivo ficarão em todos os lugares. Isso ajuda a garantir que 100% de consistência, moeda e coerência sejam mantidas. As leituras são permitidas no modo write-around porque a origem é garantida para ter todos os dados disponíveis que foram gravados-reconhecidos para o cliente. No modo write-back durante uma desconexão, a origem não pode garantir que todos os dados gravados e reconhecidos pelo cache habilitado para write-back chegaram à origem antes da desconexão ocorrer.
@@ -89,6 +94,7 @@ WARNING: Revogar manualmente o XLD resultará na perda de quaisquer dados sujos 
 
 
 
+[[cache-scrubbers]]
 == Limpadores de cache
 
 Existem depuradores no ONTAP que são executados em resposta a eventos específicos, como expiração de um temporizador ou limites de espaço sendo violados. Os limpadores pegam um bloqueio exclusivo no arquivo que está sendo limpo, efetivamente congelando io para esse arquivo até que a limpeza seja concluída.
@@ -104,18 +110,23 @@ Os lavadores incluem:
 
 
 
+[[sequence-diagrams]]
 == Diagramas de sequência
 
 Esses diagramas de sequência descrevem a diferença nos reconhecimentos de escrita entre o modo write-around e write-back.
 
 
 
+[[write-around-sequence-diagram]]
+[[write-around]]
 === Escrever em torno
 
 image:flexcache-write-around-sequence-diagram.png["Diagrama de sequência de escrita FlexCache"]
 
 
 
+[[write-back-sequence-diagram]]
+[[write-back]]
 === Write-back
 
 image:flexcache-write-back-sequence-diagram.png["Diagrama de sequência FlexCache-write-back"]

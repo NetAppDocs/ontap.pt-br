@@ -15,28 +15,33 @@ Para remediar o hotspotting, explore as causas subjacentes dos gargalos, por que
 
 
 
+[[understanding-the-bottleneck]]
 == Compreender o gargalo
 
 O seguinte <<Figure-1,imagem>> mostra um cenário típico de hotspotting de arquivo único. O volume é um FlexGroup com um único componente por nó e o arquivo reside no nó 1.
 
 Se você distribuir todas as conexões de rede dos clientes nas entre nós diferentes no cluster, você ainda poderá colocar o gargalo na CPU que atende a afinidade de volume onde o arquivo quente reside. Você também introduz o tráfego de rede do cluster (tráfego leste-oeste) às chamadas provenientes de clientes conetados a nós que não sejam onde o arquivo reside. A sobrecarga de tráfego leste-oeste geralmente é pequena, mas para cargas de trabalho de computação de alto desempenho cada bit conta.
 
+[[Figure-1]]
 .Figura 1: Cenário de hotspot de arquivo único do FlexGroup
 image:flexcache-hotspot-hdfa-flexgroup.png["Figura 1: Cenário de hotspot de arquivo único do FlexGroup"]
 
 
 
+[[why-an-auto-provisioned-flexcache-isnt-the-answer]]
 == Por que um FlexCache auto-provisionado não é a resposta
 
 Para remediar hotspotting, elimine o gargalo da CPU e, de preferência, o tráfego leste-oeste também. O FlexCache pode ajudar se estiver configurado corretamente.
 
 No exemplo a seguir, o FlexCache é provisionado automaticamente com argumentos do System Manager, do NetApp Console ou da CLI padrão. <<Figure-1,Figura 1>> e<<Figure-2,figura 2>> à primeira vista parecem iguais: ambos são contêineres NAS de quatro nós e um único componente.  A única diferença é que o contêiner NAS da figura 1 é um FlexGroup e o contêiner NAS da figura 2 é um FlexCache.  Cada figura descreve o mesmo gargalo: a CPU do nó 1 para acesso de serviço de afinidade de volume ao arquivo ativo e o tráfego leste-oeste contribuindo para a latência.  Um FlexCache provisionado automaticamente não eliminou o gargalo.
 
+[[Figure-2]]
 .Figura 2: Cenário de FlexCache provisionado automaticamente
 image:flexcache-hotspot-hdfa-1x4x1.png["Figura 2: Cenário de FlexCache provisionado automaticamente"]
 
 
 
+[[anatomy-of-a-flexcache]]
 == Anatomia de um FlexCache
 
 Para arquitetar de forma eficaz um FlexCache para correção de hotspot, você precisa entender alguns detalhes técnicos sobre o FlexCache.
@@ -51,6 +56,7 @@ A solução é uma matriz de FlexCaches de alta densidade.
 
 
 
+[[anatomy-of-a-high-density-flexcache]]
 == Anatomia de um FlexCache de alta densidade
 
 Um FlexCache de alta densidade (HDF) terá componentes em apenas alguns nós como os requisitos de capacidade para os dados armazenados em cache permitem. O objetivo é fazer com que seu cache fique ativo em um único nó. Se os requisitos de capacidade impossibilitarem isso, você poderá ter componentes em apenas alguns nós.
