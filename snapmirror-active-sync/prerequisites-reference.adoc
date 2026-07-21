@@ -21,6 +21,7 @@ Ao Planejar sua implantação de sincronização ativa do SnapMirror, verifique 
 [[hardware]]
 == Hardware
 
+.Suporte a SAN
 A tabela a seguir descreve as configurações de cluster do NetApp compatíveis.
 
 [cols="25,25,25,25"]
@@ -35,10 +36,10 @@ AFF
  a| 
 Série a, série C.
  a| 
-Failover Duplex Automatizado (ativo/ativo simétrico), Failover Automatizado (ativo-passivo assimétrico)
+Failover automatizado duplex (ativo-ativo assimétrico), failover automatizado (ativo-passivo assimétrico)
  a| 
 * 2 (ONTAP 9.9.1 ou posterior)
-* 4 (ONTAP 9.16.1 com configurações simétricas ativas/ativas)
+* 4 (ONTAP 9.16.1 com configurações ativo-ativo simétricas)
 
 
 
@@ -48,10 +49,10 @@ ASA
  a| 
 Série a, série C.
  a| 
-Failover Duplex Automatizado (ativo/ativo simétrico), Failover Automatizado (ativo-passivo assimétrico)
+Failover Duplex automatizado (simétrico ativo-ativo), failover automatizado (assimétrico ativo-passivo)
  a| 
 * 2 (ONTAP 9.9.1 ou posterior
-* 4 (ONTAP 9.16.1 com configurações simétricas ativas/ativas)
+* 4 (ONTAP 9.16.1 com configurações ativo-ativo simétricas)
 
 
 
@@ -61,13 +62,43 @@ ASA r2
  a| 
 Tudo
  a| 
-Failover Duplex Automatizado (Ativo/Ativo Simétrico)
+Duplex de failover automatizado (simétrico ativo-ativo)
  a| 
 * 2 (ONTAP 9.17.1 ou anterior)
 * 4 (ONTAP 9.18.1 ou posterior)
 
 
 |===
+.Suporte a NAS
+A tabela a seguir descreve as configurações de cluster do NetApp compatíveis.
+
+[cols="25,25,25,25"]
+|===
+| Tipo de cluster | Modelos suportados | Recursos suportados | Nós de cluster máximos suportados 
+
+
+ a| 
+AFF
+ a| 
+Série a, série C.
+ a| 
+Ativo-passivo (failover automatizado)
+ a| 
+2 (ONTAP 9.19.1 ou posterior)
+
+
+
+ a| 
+AFX
+ a| 
+Tudo
+ a| 
+Ativo-passivo (failover automatizado)
+ a| 
+4 (ONTAP 9.19.1 ou posterior)
+
+|===
+.Replicação entre plataformas
 A tabela abaixo descreve a capacidade de replicação entre tipos de cluster.
 
 [cols="33,33,33"]
@@ -83,6 +114,15 @@ AFF Série A
 Série C da AFF
  a| 
 Sim
+
+
+
+ a| 
+AFF
+ a| 
+AFX
+ a| 
+Não
 
 
 
@@ -111,15 +151,6 @@ ASA r2
  a| 
 Não
 
-
-
- a| 
-ASA r2
- a| 
-ASA r2
- a| 
-Sim
-
 |===
 
 
@@ -136,6 +167,21 @@ Sim
 
 
 | ONTAP versão mediadora | Versões Linux suportadas 
+
+
+ a| 
+1.12.1
+ a| 
+* Red Hat Enterprise Linux
++
+** Compatível: 10.1 e 9.7 ^1^
+** Recomendado: 10.2, 10.0, 9.8, 9.6, 9.4 e 8.10
+
+
+* Rocky Linux 10.2, 9.8 e 8.10
+* Oracle Linux 10.1 e 9.7
+
+
 
 
  a| 
@@ -320,7 +366,7 @@ NOTE: Se seus sistemas de armazenamento ONTAP foram adquiridos antes de junho de
 [[supported-protocols]]
 == Protocolos compatíveis
 
-A sincronização ativa do SnapMirror suporta protocolos SAN.
+SnapMirror active sync oferece suporte aos seguintes protocolos SAN.
 
 * Os protocolos FC e iSCSI são suportados a partir do ONTAP 9.9.1.
 * O protocolo NVMe é compatível com cargas de trabalho VMware a partir do ONTAP 9.17.1.
@@ -339,6 +385,23 @@ Não é possível expandir ou reduzir um grupo de consistência sem interrupçã
 
 
 
+A partir do ONTAP 9.19.1, o SnapMirror active sync oferece suporte aos seguintes protocolos NAS.
+
+* NFSv3 e versões posteriores
++
+O failover sem interrupção é compatível com NFSv3 e versões posteriores.
+
+* SMB
++
+** O failover sem interrupção é suportado para compartilhamentos SMB 3 CA.
+** O failover disruptivo (mas com RPO zero mantido) é suportado para compartilhamentos SMB2 e SMB3 não CA.
+** SMB1 não é suportado.
+
+
+
+
+Os clusters NAS exigem o mesmo endereço IP e configuração de protocolo no cluster primário e no cluster secundário para permitir o failover sem interrupções. Como as SVMs podem ser configuradas com o mesmo endereço IP e protocolos, SnapMirror active sync oferece suporte a configurações NAS no nível da SVM; no entanto, a SVM secundária permanece inativa (não está em execução) porque as LIFs devem permanecer desativadas até que ocorra um failover para evitar colisão de IP com a SVM primária.
+
 
 
 [[ipspace]]
@@ -346,12 +409,14 @@ Não é possível expandir ou reduzir um grupo de consistência sem interrupçã
 
 O espaço IP padrão é exigido pela sincronização ativa do SnapMirror para relacionamentos entre pares de cluster. Espaços IP personalizados não são suportados.
 
+Com o SnapMirror active sync para NAS, as SVMs primária e secundária podem estar em diferentes IPspaces.
+
 
 
 [[ntfs-security-style]]
 == Estilo de segurança NTFS
 
-O estilo de segurança NTFS é *não* suportado em volumes de sincronização ativos do SnapMirror.
+O estilo de segurança NTFS *não* é suportado em volumes do SnapMirror active sync para SAN. O estilo de segurança NTFS é suportado com o SnapMirror active sync para NAS.
 
 
 
@@ -370,7 +435,7 @@ O estilo de segurança NTFS é *não* suportado em volumes de sincronização at
 [[other-prerequisites]]
 == Outros pré-requisitos
 
-* Em versões anteriores ao ONTAP 9.15.1, os relacionamentos de sincronização ativa do SnapMirror não são suportados em volumes de destino de leitura/gravação (volumes convertidos para leitura/gravação a partir de DP em um ativo-passivo assimétrico). Antes de poder usar um volume de leitura/gravação, você deve convertê-lo em um volume DP criando uma relação do SnapMirror em nível de volume (assíncrona ou síncrona) e, em seguida, excluindo a relação. Para obter detalhes, consulte link:convert-active-sync-task.html["Converta relações SnapMirror existentes para a sincronização ativa do SnapMirror"].
+* Em versões anteriores ao ONTAP 9.15.1, os relacionamentos de sincronização ativa do SnapMirror não são suportados em volumes de destino de leitura/gravação (volumes convertidos de DP para leitura/gravação em um ativo-passivo assimétrico). Antes de usar um volume de leitura/gravação, você deve convertê-lo em um volume DP criando uma relação do SnapMirror em nível de volume (assíncrona ou síncrona) e, em seguida, excluindo a relação. Para obter detalhes, consulte link:convert-active-sync-task.html["Converta relações SnapMirror existentes para a sincronização ativa do SnapMirror"].
 * VMs de armazenamento que usam a sincronização ativa do SnapMirror não podem ser associadas ao Active Directory como um computador cliente.
 
 

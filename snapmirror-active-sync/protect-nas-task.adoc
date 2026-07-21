@@ -1,0 +1,304 @@
+---
+sidebar: sidebar 
+permalink: snapmirror-active-sync/protect-nas-task.html 
+keywords: SM-BC, snapmirror business continuity, svm, remote protection, destination, nfs, smb 
+summary: Configurar a proteção para continuidade dos negócios em uma configuração NAS envolve selecionar uma SVM e seus volumes a serem protegidos e criar uma SVM de destino. 
+---
+= Proteja com ONTAP SnapMirror active sync para NAS
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+
+
+[[configure-snapmirror-active-sync-for-nas]]
+== Configurar a sincronização ativa do SnapMirror para NAS
+
+A partir do ONTAP 9.19.1, você pode configurar a sincronização ativa do SnapMirror para configurações NAS.
+
+.Antes de começar
+* Ambos os clusters na relação de sincronização ativa do SnapMirror devem estar executando ONTAP 9.19.1 ou posterior.
+* Você deve ser um administrador de cluster.
+* Você deve ter configurado ONTAP Mediator ou ONTAP Cloud Mediator.
+* Os clusters de origem e destino devem ser percorridos.
+
+
+.Recursos suportados e não suportados do ONTAP com SnapMirror active sync para NAS
+A tabela a seguir descreve os recursos do ONTAP compatíveis e não compatíveis com SnapMirror active sync para NAS.
+
+|===
+| Recurso ONTAP | Compatível com SnapMirror active sync | Informações adicionais 
+
+
+| Grupos de consistência de aplicativos | Não |  
+
+
+| Auditoria | Sim | Somente os registros consolidados no SVM são replicados. 
+
+
+| Volumes DP | Não |  
+
+
+| FabricPool | Parcialmente | A  `all`política de armazenamento em camadas não é permitida em volumes NAS com sincronização ativa do SnapMirror. 
+
+
+| Análise do sistema de arquivos | Parcialmente | Na SVM secundária, a File System Analytics está definida como  `Off`por padrão, e você deve configurá-la manualmente para  `On`após um failover. 
+
+
+| Volume FlexCache | Não |  
+
+
+| Volume FlexGroup | Não |  
+
+
+| Fpolicy e verificação antivírus | Sim |  
+
+
+| Espelhos de partilha de carga | Não | No ONTAP 9.19.1, SnapMirror active sync para NAS suporta apenas 2 nós em um cluster AFF. 
+
+
+| Configuração do MetroCluster | Não |  
+
+
+| Verificação de múltiplos administradores para comandos NAS | Não |  
+
+
+| S3 NAS | Não |  
+
+
+| Volumes SAN em uma SVM NAS protegida por sincronização ativa do SnapMirror | Não | SnapMirror active sync para inicialização do NAS falha se existirem volumes que hospedam LUNs no SVM. 
+
+
+| SnapLock | Não |  
+
+
+| SnapMirror para a nuvem | Não |  
+
+
+| Migrar SVM | Não |  
+|===
+.Sobre esta tarefa
+Para habilitar a sincronização ativa do SnapMirror para NAS, você cria uma SVM de destino. A SVM de destino permanece inativa até que ocorra uma falha.
+
+.Passos
+Você pode usar o System Manager ou a ONTAP CLI para configurar a sincronização ativa do SnapMirror para NAS.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. No cluster de origem, navegue até Cluster > Storage VMs.
+. Clique image:icon_kabob.gif["Ícone de opções do menu"] ao lado do nome da SVM que você deseja configurar e selecione *Proteger*.
+. Na janela *Proteger VM de armazenamento*, escolha o cluster de destino.
+. Escolha  `AutomatedFailOver` como política de replicação.
+. Insira um nome para a máquina virtual de armazenamento que está sendo criada no destino.
+. Selecione os volumes que deseja proteger:
++
+.. *Proteger todos os volumes* – por padrão, todos os volumes estão protegidos
+.. *Selecione os volumes a proteger* - apenas os volumes selecionados são protegidos
+.. *Selecione os volumes a excluir* - os volumes selecionados são excluídos da proteção
+
+
+. Clique em *Inicializar relação*.
+. Clique em *Salvar*.
+. Na janela *Proteger VM de armazenamento*, verifique o status de proteção da SVM na coluna *Proteção*.
+
+
+--
+.CLI
+--
+. No cluster de destino, crie uma SVM do tipo dp-destination:
++
+`vserver create -vserver <SVM name> -sub-type dp-destination`
+
++
+Exemplo:
+
++
+[listing]
+----
+destination::> vserver create -vserver vs_b -sub-type dp-destination
+----
+. Crie uma relação de pares SVM com a SVM de origem:
++
+`vserver peer create -vserver <destination SVM> -peer-vserver <souce SVM> -peer-cluster <source cluster> -applications snapmirror`
+
++
+Exemplo:
+
++
+[listing]
+----
+destination::> vserver peer create -vserver vs_b -peer-vserver vs_a -peer-cluster SiteA -applications snapmirror
+----
+. Na SVM de origem, aceite a solicitação do par:
++
+`vserver peer accept -vserver <source SVM name> -peer-vserver <destination SVM name>vserver peer accept -vserver <source SVM name> -peer-vserver <destination SVM name>`
+
++
+Exemplo:
+
++
+[listing]
+----
+source::> vserver peer accept -vserver vs_a -peer-vserver vs_b
+----
+. Crie a relação do SnapMirror:
++
+`snapmirror create -source-path <source SVM name>: -destination-path <destination SVM name>: -policy AutomatedFailOver`
+
++
+Exemplo:
+
++
+[listing]
+----
+destination::> snapmirror create -source-path vs_a: -destination-path vs_b: -policy AutomatedFailOver
+----
+. Verifique se a relação do SnapMirror foi criada e confira o status:
++
+'snapmirror show'
+
++
+Exemplo:
+
++
+[listing]
+----
+destination::> snapmirror show
+Progress
+	Source            Destination Mirror        Relationship   Total             Last
+	Path        Type  Path        State         Status         Progress  Healthy Updated
+	----------- ---- ------------ -------       -------------- --------- ------- --------
+	vs_a:       XDP  vs_b:        Uninitialized Idle           -         true    -
+
+----
+. No SVM de destino, inicialize a relação:
++
+`snapmirror initialize -destination-path <SVM name>:`
+
++
+Exemplo:
+
++
+[listing]
+----
+destination::> snapmirror initialize -destination-path vs_b:
+----
+. Verifique o status de inicialização:
++
+`snapmirror show`
+
++
+Exemplo:
+
++
+[listing]
+----
+	destination::> snapmirror show
+	                                                                             Progress
+	Source            Destination Mirror        Relationship   Total             Last
+	Path        Type  Path        State         Status         Progress  Healthy Updated
+	----------- ---- ------------ -------       -------------- --------- ------- --------
+	vs_a:       XDP  vs_b:        Snapmirrored  InSync         -         true    -
+
+----
+
+
+--
+====
+
+
+[[create-an-unprotected-volume-in-a-snapmirror-active-sync-nas-configuration]]
+== Crie um volume desprotegido em uma configuração NAS de sincronização ativa do SnapMirror
+
+Você pode excluir volumes do SnapMirror active sync se a proteção não for necessária; por exemplo, ao criar um volume FlexClone para testes de desenvolvimento.
+
+.Passo
+Você pode usar System Manager ou a ONTAP CLI para excluir um volume clonado da sincronização ativa do SnapMirror para NAS.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. No cluster de origem, navegue até *Armazenamento > Volumes*.
+. Na lista de volumes, clique image:icon_kabob.gif["Ícone de opções do menu"] ao lado do nome do volume que você deseja clonar e selecione *Clonar*.
+. Na janela *Clonar volume*, certifique-se de que a opção *Incluir clone na proteção para continuidade dos negócios* esteja desmarcada.
+. Clique em *Clone*.
+
+
+--
+.CLI
+--
+. A partir do cluster de origem, adicione um volume desprotegido a uma configuração de sincronização ativa SnapMirror existente:
++
+`volume clone create -vserver <SVM name> -flexclone <clone vol name> -parent-vserver <SVM name> -parent-volume <vol name> -parent-snapshot <snapshot name>`
+`volume add -vserver <SVM name> -volume <volume name> -smas-protection unprotected`
+
+
+
+--
+====
+
+
+[[use-the-ontap-cli-to-exclude-a-volume-from-a-snapmirror-active-sync-nas-configuration]]
+== Use a ONTAP CLI para excluir um volume de uma configuração NAS de sincronização ativa do SnapMirror
+
+Você pode excluir um volume de uma configuração NAS de sincronização ativa do SnapMirror se a proteção não for mais necessária ou se você quiser excluir o volume.
+
+
+NOTE: Marcar um volume atualmente protegido como desprotegido inicia uma operação de redução na relação de sincronização ativa do SnapMirror. A operação de redução exclui as entradas do SnapMirror para o volume tanto no cluster de origem quanto no cluster de destino.
+
+
+NOTE: Marcar um volume como desprotegido não exclui automaticamente o volume na relação primária ou secundária. Se você quiser excluir o volume, pode excluí-lo manualmente tanto no SVM primário quanto no secundário.
+
+.Passo
+. Remova um volume da proteção NAS ativa do SnapMirror:
++
+`volume modify -vserver <SVM name> -volume <volume name> -smas-protection unprotected`
+
+
+
+
+
+[[convert-an-svm-dr-relationship-to-a-snapmirror-active-sync-relationship]]
+== Converter um relacionamento SVM DR em um relacionamento de sincronização ativa do SnapMirror
+
+No ONTAP 9.19.1, você não pode converter diretamente uma relação SVM DR em uma relação SnapMirror active sync para NAS. Em vez disso, você deve excluir a relação SVM DR, criar uma nova SVM de destino, estabelecer uma nova relação SnapMirror active sync e inicializar a relação.
+
+
+NOTE: O  `snapmirror resync`comando não é suportado atualmente.
+
+. No cluster de destino, exclua a relação do SnapMirror:
++
+`snapmirror delete -destination-path`
+
+. No cluster primário, libere as informações da relação:
++
+`snapmirror release -relationship-info-only true`
+
+. No cluster de destino, crie uma SVM com o subtipo dp-destination:
++
+`vserver create -vserver <SVM name> -sub-type dp-destination`
+
+. No cluster de destino, crie a relação do SnapMirror usando a  `AutomatedFailover` política:
++
+`snapmirror create -source-path <source SVM name> -destination-path <destination SVM name> -policy AutomatedFailOver`
+
+. No cluster de destino, inicialize a relação:
++
+`snapmirror initialize -destination-path <SVM name>`
+
+
+
+.Informações relacionadas
+* link:https://docs.netapp.com/us-en/ontap-cli/snapmirror-create.html["SnapMirror create"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/snapmirror-initialize.html["inicialização do snapmirror"^]
+* link:https://docs.netapp.com/us-en/ontap-cli/snapmirror-show.html["show de espelhos instantâneos"^]
+
