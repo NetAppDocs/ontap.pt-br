@@ -26,12 +26,15 @@ A partir do ONTAP 9.6, você pode usar o `security key-manager external modify-s
 
 . Modifique as propriedades do servidor do gerenciador de chaves externo para o cluster:
 +
-`security key-manager external modify-server -vserver admin_SVM -key-server host_name|IP_address:port,... -timeout 1...60 -username user_name`
+`security key-manager external modify-server -vserver admin_SVM -key-server host_name|IP_address:port,... -timeout 0...60 -username user_name`
 
 +
 [NOTE]
 ====
-O valor de tempo limite é expresso em segundos. Se você modificar o nome de usuário, será solicitado que você insira uma nova senha. Se você executar o comando no prompt de login do cluster, `_admin_SVM_` o padrão será o administrador SVM do cluster atual. Você deve ser o administrador do cluster para modificar as propriedades do servidor do gerenciador de chaves externo.
+** O valor de tempo limite é o tempo necessário para estabelecer a conexão com o servidor KMIP, expresso em segundos. Se você especificar 0, não haverá tempo limite e a solicitação de conexão pode aguardar indefinidamente. Se você especificar qualquer valor no intervalo de 1 a 60, a solicitação de conexão expira se uma conexão com o servidor de chaves KMIP não puder ser criada dentro do número de segundos especificado.
+** Se você alterar o nome de usuário, será solicitado a inserir uma nova senha.
+** Se você executar o comando no prompt de login do cluster,  `_admin_SVM_` o padrão será o SVM de administrador do cluster atual. Você deve ser o administrador do cluster para modificar as propriedades do servidor gerenciador de chaves externo.
+
 
 ====
 +
@@ -42,14 +45,17 @@ O comando a seguir altera o valor de tempo limite para 45 segundos para que o `c
 ----
 clusterl::> security key-manager external modify-server -vserver cluster1 -key-server ks1.local -timeout 45
 ----
-. Modificar as propriedades do servidor do gerenciador de chaves externo para uma SVM (somente NVE):
+. Modificar as propriedades do servidor gerenciador de chaves externas para uma SVM:
 +
-`security key-manager external modify-server -vserver SVM -key-server host_name|IP_address:port,... -timeout 1...60 -username user_name`
+`security key-manager external modify-server -vserver SVM -key-server host_name|IP_address:port,... -timeout 0...60 -username user_name`
 
 +
 [NOTE]
 ====
-O valor de tempo limite é expresso em segundos. Se você modificar o nome de usuário, será solicitado que você insira uma nova senha. Se você executar o comando no prompt de login SVM, `_SVM_` o padrão será SVM atual. Você deve ser o administrador do cluster ou SVM para modificar as propriedades do servidor do gerenciador de chaves externo.
+** O valor de tempo limite é o tempo necessário para estabelecer a conexão com o servidor KMIP, expresso em segundos. Se você especificar 0, não haverá tempo limite e a solicitação de conexão pode aguardar indefinidamente. Se você especificar qualquer valor no intervalo de 1 a 60, a solicitação de conexão expira se uma conexão com o servidor de chaves KMIP não puder ser criada dentro do número de segundos especificado.
+** Se você alterar o nome de usuário, será solicitado a inserir uma nova senha.
+** Se você executar o comando no prompt de login do SVM, `_SVM_` o padrão será o SVM atual. Você precisa ser o administrador do cluster ou do SVM para modificar as propriedades do servidor gerenciador de chaves externo.
+
 
 ====
 +
