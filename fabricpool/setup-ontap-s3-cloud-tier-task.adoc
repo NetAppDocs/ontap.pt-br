@@ -33,6 +33,11 @@ NOTE: A degradação do desempenho pode ocorrer se os recursos de LIF do cluster
 .Sobre esta tarefa
 O balanceamento de carga está habilitado para servidores ONTAP S3 no ONTAP 9.8 e posterior. Quando o nome do host do servidor resolve mais de um endereço IP, o ONTAP estabelece conexões de cliente com todos os endereços IP retornados (até um máximo de 16 endereços IP). Os endereços IP são coletados em um método round-robin quando as conexões são estabelecidas.
 
+
+
+[[set-up-the-ontap-s3-cloud-tier-for-fabricpool]]
+== Configure a camada de nuvem S3 do ONTAP para FabricPool
+
 .Passos
 Você pode configurar o ONTAP S3 como a categoria de nuvem para o FabricPool com o Gerenciador de sistemas do ONTAP ou a CLI do ONTAP.
 
@@ -103,6 +108,41 @@ O `storage aggregate object-store config modify` comando permite modificar as `O
 
 --
 ====
+
+
+[[change-the-ontap-s3-fqdn-for-fabricpool-tiering]]
+== Altere o FQDN do ONTAP S3 para o tiering do FabricPool
+
+Quando você precisar fazer alterações na sua rede que incluam atualizações de FQDN, deve alterar o FQDN do ONTAP S3 usado para o tiering do FabricPool para evitar interrupções na rede.
+
+.Passos
+. Desative a verificação de certificado para o nível FabricPool:
++
+`storage aggregate object-store config modify -object-store-name <object store> -is-certificate-validation-enabled false`
+
+. Altere o FQDN do servidor ONTAP S3:
++
+`vserver object-store-server modify -vserver <vserver> -object-store-server <new fqdn>`
+
+. (Opcional) Se a validação do certificado for necessária e o nome do host tiver sido alterado, link:../s3-config/create-install-ca-certificate-svm-task.html["renovar o certificado"].
+. Atualize o nível do FabricPool com o novo FQDN:
++
+`storage aggregate object-store config modify -object-store-name <object_store_name> -server <new fqdn>`
+
+. Verifique se todos os repositórios de objetos, e seus espelhos, se houver, estão disponíveis na camada FabricPool:
++
+`storage aggregate object-store show -fields object-store-availability,mirror-type,is-mirror-degraded`
+
++
+Para obter mais informações, consulte link:https://docs.netapp.com/us-en/ontap-cli/storage-aggregate-object-store-show.html#description["objeto de armazenamento agregado-armazenamento mostrar"^].
+
+. Repita esses passos em quaisquer outros object stores.
+. Se você renovou os certificados no servidor ONTAP S3 e renovou os certificados na camada FabricPool, reative a verificação de certificados:
++
+`storage aggregate object-store config modify -object-store-name <object store> -is-certificate-validation-enabled true`
+
+
+
 [[create-lif]]
 .Informações relacionadas
 * link:../smb-config/create-lif-task.html["Criar LIF para SMB"]
