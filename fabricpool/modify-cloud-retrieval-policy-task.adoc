@@ -1,0 +1,41 @@
+---
+permalink: fabricpool/modify-cloud-retrieval-policy-task.html 
+sidebar: sidebar 
+keywords: cloud retrieval, controls, volume, default, tiering policy 
+summary: Você pode alterar a política de recuperação na nuvem de um volume usando a opção -cloud-retrieval-policy introduzida no ONTAP 9.8. 
+---
+= Modificar a política de recuperação de nuvem de um volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A recuperação de dados de nuvem do FabricPool é controlada por políticas de recuperação que determinam quando os dados são gravados de volta na camada local. Os padrões de leitura podem ser sequenciais ou aleatórios.
+
+Por exemplo, ao usar a política de tiering de volume "Auto", se os blocos frios forem lidos sequencialmente, eles permanecem frios e continuam na camada de nuvem. Para a maioria dos aplicativos cliente, esse é o comportamento desejado e impede que varreduras profundas de arquivos, comuns em aplicativos antivírus e de análise, gravem dados frios de volta na camada local.
+
+A partir do ONTAP 9.8, você pode alterar a política de recuperação na nuvem de um volume para substituir o link:tiering-policies-concept.html#how-cloud-retrieval-policies-work-with-tiering-policies["recuperação de nuvem padrão"] comportamento.
+
+.Antes de começar
+* Modificar um volume usando a `-cloud-retrieval-policy` opção requer ONTAP 9.8 ou posterior.
+* Tem de ter o nível de privilégio avançado para executar esta operação.
+* Você deve entender o comportamento das políticas de disposição em camadas com `-cloud-retrieval-policy`o .
++
+link:tiering-policies-concept.html#how-cloud-retrieval-policies-work-with-tiering-policies["Como as políticas de recuperação na nuvem funcionam com políticas de tiering"]
+
+
+
+.Passo
+. Modifique a política de recuperação na nuvem para um volume existente usando o comando  `volume modify` com a opção  `-cloud-retrieval-policy`:
++
+[listing]
+----
+volume create -volume <volume_name> -vserver <vserver_name> - tiering-policy <policy_name> -cloud-retrieval-policy
+----
++
+[listing]
+----
+vol modify -volume fp_volume4 -vserver vs0 -cloud-retrieval-policy promote
+----
+

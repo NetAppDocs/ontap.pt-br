@@ -204,17 +204,17 @@ Ao clonar volumes, tenha em mente as seguintes práticas recomendadas:
 
 
 
-[[how-tiering-policies-work-with-cloud-migration]]
-== Como as políticas de disposição em camadas funcionam com a migração para a nuvem
+[[how-cloud-retrieval-policies-work-with-tiering-policies]]
+== Como as políticas de recuperação na nuvem funcionam com políticas de tiering
 
-A recuperação de dados em nuvem do FabricPool é controlada por políticas de disposição em camadas que determinam a recuperação de dados da camada de nuvem para a camada de performance com base no padrão de leitura. Os padrões de leitura podem ser sequenciais ou aleatórios.
+A recuperação de dados de nuvem do FabricPool é controlada por políticas de recuperação que determinam quando os dados são gravados de volta na camada local. Os padrões de leitura podem ser sequenciais ou aleatórios.
 
-A tabela a seguir lista as políticas de disposição em camadas e as regras de recuperação de dados na nuvem para cada política.
+A tabela a seguir lista as políticas de hierarquização de volumes e o comportamento de recuperação padrão para cada política.
 
 |===
 
 
-| Política de disposição em camadas | Comportamento de recuperação 
+| Política de disposição em camadas | Comportamento de recuperação padrão 
 
 
  a| 
@@ -257,30 +257,44 @@ A tabela a seguir lista as políticas de recuperação de nuvem suportadas e seu
  a| 
 padrão
  a| 
-A política de disposição em camadas decide quais dados devem ser retirados, portanto, não há alteração na recuperação de dados na nuvem com "falha,`" `cloud-retrieval-policy`". Esta política é o valor padrão para qualquer volume, independentemente do tipo de agregado hospedado.
+Quando blocos frios em um volume são lidos, eles usam o comportamento padrão da política de camadas do volume. Essa política é o valor padrão para qualquer volume, independentemente do tipo de agregado hospedado.
 
 
 
  a| 
 na leitura
  a| 
-Todas as leituras de dados orientadas pelo cliente são extraídas da camada de nuvem para a camada de performance.
+Quando blocos frios em um volume com uma política de recuperação na nuvem definida como "`On-Read`" são lidos, aleatoriamente ou sequencialmente, eles se tornam quentes e são gravados na camada local.
+
+Aplicações que utilizam leituras sequenciais acionam gravações de retorno para a camada local ao definir a política de recuperação de volume na nuvem como "`On-Read`". Isso pode ser benéfico para aplicações que necessitam do desempenho da camada local a partir de dados anteriormente inativos que agora estão sendo lidos por cargas de trabalho ativas
 
 
 
  a| 
 nunca
  a| 
-Nenhum dado orientado pelo cliente é extraído da camada de nuvem para a camada de performance
+Quando blocos frios em um volume com uma política de recuperação na nuvem definida como "Nunca" são lidos, eles permanecem frios e ficam na camada de nuvem. Eles não são gravados de volta na camada local.
+
+Definir a política de recuperação na nuvem como "Nunca" é semelhante à política de tiering "All", pois os dados não podem retornar à camada local, mas difere da política de tiering "All" por continuar usando a configuração tiering-minimum-cooling-days do volume, em vez de realizar o tiering o mais rápido possível.
+
+Por exemplo, um volume que utiliza a configuração padrão da política de tiering automático não marcará os dados como frios até que ocorram 31 dias de inatividade. Após 31 dias, os dados inativos serão movidos para o storage de objetos e não serão recuperados quando lidos, pois a política de recuperação na nuvem do volume foi definida como "Never".
 
 
 
  a| 
 promover
  a| 
-* Para a política de disposição em categorias "nenhuma", todos os dados de nuvem são extraídos da camada de nuvem para a camada de performance
-* Para a política de disposição em camadas "somente snapshot", os dados do AFS são extraídos.
+* Para a política de hierarquização "`none,`" todos os dados hierarquizados são gravados de volta na camada local.
+* Para a política de hierarquização "`snapshot-only,`", os dados em camadas, sem snapshot, são gravados de volta na camada local.
 
 
 |===
-Saiba mais sobre os comandos descritos neste procedimento no link:https://docs.netapp.com/us-en/ontap-cli/["Referência do comando ONTAP"^].
+.Exemplo de modificação da política de recuperação na nuvem
+O exemplo a seguir altera a política de tiering do volume para  `none` e a política de recuperação para  `promote`:
+
+[listing]
+----
+set -privilege advanced
+
+volume modify -vserver vs1 -volume myvol -tiering-policy none -cloud-retrieval-policy promote
+----
