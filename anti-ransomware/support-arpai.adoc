@@ -1,0 +1,244 @@
+---
+sidebar: sidebar 
+permalink: anti-ransomware/support-arpai.html 
+keywords: ARP AI, arpai, autonomous ransomware protection AI, ONTAP 9.16.1, supported configurations, SAN ransomware, NAS ransomware, machine learning ransomware, hypervisor ransomware, SnapMirror ARP AI, AFF ransomware protection, ASA ransomware, FlexVol ARP AI, FlexGroup ARP AI, current ARP AI model ONTAP, ARP AI requirements ONTAP, SAN ransomware support ONTAP 
+summary: 'O ARP/AI (ONTAP 9.16.1 e posterior) é o modelo atual de proteção contra ransomware e oferece suporte a cargas de trabalho NAS e SAN nos volumes FlexVol e FlexGroup em sistemas AFF, ASA, FAS e ASA r2.' 
+---
+= Configurações suportadas para o ONTAP Autonomous Ransomware Protection com IA
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A Proteção Autônoma contra Ransomware com IA (ARP/AI) está disponível para cargas de trabalho NAS (a partir do ONTAP 9.16.1) e SAN (a partir do ONTAP 9.17.1). Antes de implementar o ARP/AI, revise as configurações e casos de uso suportados e confirme se seu ambiente atende aos requisitos.
+
+
+NOTE: Se você estiver executando o ONTAP 9.15.1 ou anterior, consulte link:support-arp.html["Configurações suportadas para ARP"].
+
+
+
+[[suitable-workloads]]
+== Workloads adequados
+
+ARP/AI é adequado para estes tipos de cargas de trabalho:
+
+* Bancos de dados em armazenamento NFS ou SAN
+* Diretórios home do Windows ou do Linux
+* Imagens e vídeos (por exemplo, registros de saúde e dados de Automação de Projeto Eletrônico (EDA))
+* Cargas de trabalho SAN em volumes que contêm LUNs ou namespaces NVMe (ONTAP 9.17.1 e posterior)
+* Cargas de trabalho de máquinas virtuais em VMware, Hyper-V, KVM e OpenStack (ONTAP 9.17.1 e posterior)
+
+
+
+
+[[unsuitable-workloads]]
+== Cargas de trabalho inadequadas
+
+ARP/AI não é adequado para esses tipos de cargas de trabalho:
+
+* Cargas de trabalho com alta frequência de operações de criação ou exclusão de arquivos (centenas de milhares de arquivos em poucos segundos; por exemplo, cargas de trabalho de teste/desenvolvimento).
++
+A detecção de ameaças do ARP/AI depende da sua capacidade de reconhecer um aumento incomum nas operações de criação, renomeação ou exclusão de arquivos. Se o próprio aplicativo for a fonte da atividade de arquivos, não será possível distingui-lo efetivamente da atividade de ransomware.
+
+* Cargas de trabalho em que o aplicativo ou o host criptografa dados.
++
+O ARP/AI depende da distinção entre dados recebidos como criptografados ou não criptografados. Se o próprio aplicativo estiver criptografando os dados, a eficácia do recurso é reduzida. No entanto, o ARP/AI ainda pode funcionar com base na atividade do arquivo (excluir, sobrescrever ou criar, ou criar ou renomear com uma nova extensão de arquivo) e no tipo de arquivo.
+
+* Cargas de trabalho dentro de máquinas virtuais que envolvem um grande número de arquivos altamente compactados ou criptografados (como 7z, ZIP ou PDF ou DOC protegidos por senha).
+
+
+
+
+[[supported-configurations]]
+== Configurações compatíveis
+
+O ARP/AI oferece suporte a cargas de trabalho NAS e SAN em várias versões e ambientes do ONTAP. Revise os recursos suportados para confirmar se o seu ambiente é compatível antes de implantar o ARP/AI.
+
+
+
+[[baseline-support]]
+=== Suporte básico
+
+O suporte a ARP/AI começa no ONTAP 9.16.1 e inclui cargas de trabalho NAS (NFS e SMB) em FlexVol volumes e MetroCluster configurações sem necessidade de período de aprendizagem.
+
+
+
+[[protocol-and-hypervisor-support-by-ontap-version]]
+=== Suporte a protocolos e hipervisores pela versão do ONTAP
+
+* ONTAP 9.17.1 e versões posteriores: cargas de trabalho de dispositivos de bloco SAN (volumes contendo LUNs ou namespaces NVMe) e volumes NAS contendo discos virtuais VMware.
+* ONTAP 9.17.1P5 e versões posteriores: volumes NAS contendo Hyper-V, KVM e OpenStack hipervisores.
+
+
+
+
+[[feature-and-configuration-support-matrix]]
+=== Matriz de suporte de recursos e configurações
+
+O suporte para configurações e tipos de volume adicionais está disponível nas seguintes versões do ONTAP:
+
+|===
+|  | ONTAP 9.19.1 | ONTAP 9.18.1 | ONTAP 9.17.1 | ONTAP 9.16,1 
+
+
+| Volumes protegidos com o SnapMirror assíncrono | ✓ | ✓ | ✓ | ✓ 
+
+
+| Volumes protegidos com o SnapMirror síncrono ^1^ | ✓ |  |  |  
+
+
+| Volumes protegidos com SnapMirror active sync ^1^ | ✓ |  |  |  
+
+
+| SVMs protegidas com SnapMirror assíncrono (recuperação de desastres da SVM) | ✓ | ✓ | ✓ | ✓ 
+
+
+| Mobilidade de (`vserver migrate`dados SVM ) | ✓ | ✓ | ✓ | ✓ 
+
+
+| Volumes FlexGroup | ✓ | ✓ | ✓ ^2^ | ✓ ^2^ 
+
+
+| Verificação multi-admin | ✓ | ✓ | ✓ | ✓ 
+
+
+| Capacitação padrão de ARP/AI | ✓ | ✓ |  |  
+|===
+^1^ A partir do ONTAP 9.19.1, o ARP/AI oferece suporte a volumes primários em SnapMirror relacionamentos síncronos para NAS e SAN em FAS, AFF série A, AFF série C e sistemas AFX, e a volumes primários em SnapMirror relacionamentos SAN de sincronização ativa em AFF série A, AFF série C e sistemas ASA r2. Para mais informações, consulte <<SnapMirror>>.
+
+^2^ O ONTAP 9.16.1 e 9.17.1 FlexGroup volumes usam o modelo ARP anterior ao ARP/AI; o suporte completo ao ARP/AI para FlexGroup volumes começa no ONTAP 9.18.1.
+
+
+
+[[snapmirror-and-arpai-interoperability]]
+[[snapmirror]]
+== SnapMirror e interoperabilidade ARP/AI
+
+A partir do ONTAP 9.12.1, o ARP é suportado em volumes de destino assíncronos do SnapMirror.
+
+A partir do ONTAP 9.19.1, o ARP/AI suporta volumes primários que participam de relacionamentos SAN do SnapMirror synchronous e do SnapMirror active sync, com o seguinte comportamento:
+
+* O ARP/AI é compatível com volumes _primários_ em relações síncronas de SnapMirror para NAS e SAN em sistemas FAS, AFF série A, AFF série C e AFX.
+* O ARP/AI é compatível com volumes _primários_ em SnapMirror active sync SAN relationships nos sistemas AFF A-series, AFF C-series e ASA r2.
+* A análise ARP/AI é executada apenas no volume primário ativo de leitura e gravação em SnapMirror síncrono e SnapMirror active sync em relacionamentos SAN.
+* Os snapshots ARP/AI não são replicados para o volume secundário em relacionamentos de SnapMirror síncrono ou de sincronização ativa de SnapMirror. Você precisa link:enable-arpai.html["Ativar ARP/AI novamente"] no volume de recuperação após o failover.
+
+
+
+NOTE: Como cada operação de gravação é confirmada em ambos os volumes em uma relação de espelhamento síncrono, habilitar o ARP/AI apenas no volume primário é suficiente para detectar anomalias. Os metadados internos gerados pela análise do ARP/AI no volume primário são replicados para o secundário. Por isso, se o ARP/AI for habilitado no volume secundário após uma falha, os metadados necessários já existirão.
+
+Se um volume de origem SnapMirror _assíncrono_ tiver o ARP/AI habilitado, o volume de destino SnapMirror adquire automaticamente o estado de configuração do ARP/AI (como  `enabled`), os dados de segurança do ARP/AI e os snapshots criados pelo ARP/AI do volume de origem. Nenhuma capacitação é necessária.
+
+Embora o volume de destino assíncrono consista em snapshots somente leitura (RO), nenhum processamento ARP/AI é realizado em seus dados. No entanto, quando o volume de destino assíncrono do SnapMirror é convertido para leitura e gravação (RW), o ARP/AI é ativado automaticamente no volume de destino convertido para RW.
+
+
+
+[[arpai-and-virtual-machines]]
+== ARP/AI e máquinas virtuais
+
+O ARP/AI é compatível com máquinas virtuais (VMs) em VMware, Hyper-V, KVM e OpenStack. O suporte para VMware começa com ONTAP 9.17.1; o suporte para Hyper-V, KVM e OpenStack começa com ONTAP 9.17.1P5. A detecção por ARP/AI se comporta de maneira diferente para alterações dentro e fora da VM. O ARP/AI não é recomendado para cargas de trabalho que envolvam um grande número de arquivos altamente compactados (como 7z e ZIP) ou arquivos criptografados (como PDF, DOC ou ZIP protegidos por senha) dentro da VM.
+
+.Alterações fora da VM
+O ARP/AI consegue detectar alterações nas extensões de arquivos em um volume NFS fora da máquina virtual se uma nova extensão entrar no volume em um estado criptografado ou se uma extensão de arquivo for alterada.
+
+.Alterações dentro da VM
+Se um ataque de ransomware alterar arquivos dentro da máquina virtual sem fazer alterações fora da máquina virtual, o ARP/AI detecta a ameaça se a entropia padrão da máquina virtual for baixa (por exemplo, arquivos .txt, .docx ou .mp4). A partir do suporte a SAN no ONTAP 9.17.1, o ARP/AI gera um alerta de ameaça adicionalmente se detectar uma anomalia de entropia dentro da máquina virtual.
+
+Se, por padrão, os arquivos forem de alta entropia (por exemplo, arquivos .gzip ou protegidos por senha), os recursos de detecção do ARP/AI são limitados. O ARP/AI ainda pode tirar snapshots proativos nesse caso; no entanto, nenhum alerta é acionado se as extensões dos arquivos não tiverem sido adulteradas externamente.
+
+
+NOTE: A detecção de ataques que ocorrem dentro de uma máquina virtual está disponível apenas para volumes FlexVol e não está disponível se o armazenamento de dados da máquina virtual estiver configurado em um volume FlexGroup no ONTAP 9.18.1 e versões posteriores.
+
+
+
+[[unsupported-configurations]]
+== Configurações não suportadas
+
+ARP/AI não é suportado em ambientes ONTAP S3.
+
+[[unsupported-configurations]]
+ARP/AI não suporta as seguintes configurações de volume:
+
+* FlexGroup volumes com o ONTAP 9.16.1 e 9.17.1 (FlexGroup volumes usam o modelo ARP mais antigo nessas versões; o suporte a ARP/AI para FlexGroup volumes começa no ONTAP 9.18.1)
+* FlexCache volumes (ARP/AI é suportado em volumes de origem FlexVol, mas não em volumes de cache)
+* Volumes offline
+* Volumes SnapLock
+* SnapMirror active sync no ONTAP 9.18.1 e versões anteriores
+* SnapMirror síncrono no ONTAP 9.18.1 e versões anteriores
+* Configurações em cascata a partir de um volume de destino SnapMirror síncrono
+* Volumes restritos
+* Volumes raiz de VMs de storage
+* Volumes de VMs de storage interrompidas
+* FlexVol para FlexGroup conversão (ARP/AI deve ser desativado antes da conversão)
+
+
+
+
+[[arpai-performance-and-frequency-considerations]]
+== Considerações sobre desempenho e frequência do ARP/AI
+
+O ARP/AI pode ter um impacto mínimo no desempenho do sistema, medido em taxa de transferência e IOPS de pico. O impacto depende da carga de trabalho específica. Para cargas de trabalho comuns, os seguintes limites de configuração são recomendados:
+
+[cols="30,20,30"]
+|===
+| Características do workload | Limite de volume recomendado por nó | Degradação de desempenho quando o limite de volume por nó é excedido ^1^ 
+
+
+| Leitura intensiva ou os dados podem ser compactados | 150 | 4% do máximo de IOPS 
+
+
+| Gravação intensiva e os dados não podem ser compactados | 60  a| 
+* NAS: 4% do IOPS máximo para ONTAP 9.16.1 e versões posteriores
+* SAN: 5% do IOPS máximo para ONTAP 9.17.1 e posterior
+
+
+|===
+^1^ O desempenho do sistema não é degradado além dessas porcentagens, independentemente do número de volumes adicionados além dos limites recomendados.
+
+[NOTE]
+====
+Habilitar ARP/AI por padrão em um grande número de novos volumes pode aumentar o uso de recursos do sistema. Considere as demandas de espaço para processos concorrentes, como snapshots, ao habilitar ARP/AI em volumes.
+
+====
+A partir do ONTAP 9.18.1, o ARP/AI oferece suporte a limites de volume maiores com base no tipo de plataforma e contagem de núcleos:
+
+[cols="40,30"]
+|===
+| Tipo de plataforma | Volumes máximos habilitados para ARP/AI por nó 
+
+
+| Baixo custo (sistemas com até 20 núcleos de CPU) | 250 
+
+
+| Médio (sistemas com até 64 núcleos de CPU) | 750 
+
+
+| High-end (sistemas com mais de 64 núcleos de CPU) | 1000 
+|===
+
+NOTE: A contagem de núcleos de CPU se aplica a cada nó individual em um par de HA.
+
+
+
+[[upgrade-considerations-for-existing-clusters]]
+[[arp-upgrade-considerations]]
+== Considerações sobre a atualização de clusters existentes
+
+
+NOTE: Se você estiver implantando um novo cluster ONTAP 9.18.1 ou posterior, o ARP/AI será ativado automaticamente por padrão em novos volumes. Consulte link:learn-about-arpai.html["Saiba mais sobre ARP/IA"].
+
+Ao atualizar para o ONTAP 9.18.1 ou posterior em sistemas AFF série A, AFF série C, ASA ou ASA r2, o ARP/AI é ativado automaticamente por padrão para novos volumes após um período de carência de 12 horas. Durante o período de carência, você pode link:default-enable-change-arpai.html["desativar a capacitação automática"]. Os volumes existentes não são alterados; você deve link:enable-arpai.html["habilitar manualmente ARP/AI"] nos volumes existentes.
+
+Para volumes FlexGroup atualizados do ONTAP 9.17.1 ou anterior para o ONTAP 9.18.1, o ARP/AI torna-se disponível automaticamente e os volumes em modo de aprendizagem são migrados para o modo ativo.
+
+
+
+[[multi-admin-verification-with-arpai-protected-volumes]]
+== Verificação multi-administrador com volumes protegidos por ARP/IA
+
+A partir do ONTAP 9.13.1, você pode habilitar a verificação multi-administradora (MAV) para segurança adicional com ARP/AI. A MAV garante que pelo menos dois ou mais administradores autenticados sejam necessários para desativar o ARP/AI, pausar o ARP/AI ou marcar um ataque suspeito como falso positivo em um volume protegido. Saiba como link:../multi-admin-verify/enable-disable-task.html["habilitar o MAV para volumes protegidos por ARP/AI"].
+
+Você precisa definir administradores para um grupo MAV e criar regras MAV para os  `security anti-ransomware volume disable`, `security anti-ransomware volume pause` e  `security anti-ransomware volume attack clear-suspect` comandos que você deseja proteger.
+
+Saiba mais sobre `security anti-ransomware volume disable`o , `security anti-ransomware volume pause` e `security anti-ransomware volume attack clear-suspect` no link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=security+anti-ransomware+volume["Referência do comando ONTAP"^].

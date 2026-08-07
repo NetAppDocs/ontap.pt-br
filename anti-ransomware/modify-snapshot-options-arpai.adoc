@@ -1,0 +1,203 @@
+---
+sidebar: sidebar 
+permalink: anti-ransomware/modify-snapshot-options-arpai.html 
+keywords: ARP AI, arpai, snapshot settings, retention, arw snap, autonomous ransomware protection AI, ONTAP 9.17.1, SAN snapshot parameters, machine learning ransomware 
+summary: Ajuste as configurações de criação e retenção para snapshots ARP/AI gerados automaticamente em resposta a possíveis ameaças de ransomware. 
+---
+= Ajuste as configurações para snapshots ONTAP ARP/AI gerados automaticamente
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.16.1, você pode usar a CLI para controlar as configurações de retenção do Autonomous Ransomware Protection with AI (ARP/AI) para snapshots que são gerados automaticamente em resposta a suspeitas de ataques de ransomware.
+
+
+NOTE: Se você estiver executando o ONTAP 9.15.1 ou anterior, consulte link:modify-snapshot-options-arp.html["Ajustar as configurações para instantâneos ARP gerados automaticamente"].
+
+.Antes de começar
+Você só pode modificar as opções de snapshot ARP/AI em um link:../system-admin/types-svms-concept.html["nó SVM"] SVM e não em outros tipos de SVM.
+
+.Passos
+. Exibir todas as configurações atuais de snapshots de ARP/AI:
++
+[source, cli]
+----
+options -option-name arw*
+----
+. Exibir as configurações atuais selecionadas do snapshot ARP/AI:
++
+[source, cli]
+----
+options -option-name <arw_setting_name>
+----
+. Modificar as configurações de snapshot ARP/AI:
++
+[source, cli]
+----
+options -option-name <arw_setting_name> -option-value <arw_setting_value>
+----
++
+Você pode modificar as seguintes configurações (ONTAP 9.16.1 e versões posteriores):
+
++
+[cols="1,3,1"]
+|===
+| Definição | Descrição | Versões compatíveis com ARP/AI 
+
+
+| `arw.snap.max.count`  a| 
+Especifica o número máximo de snapshots ARP/AI que podem existir em um volume a qualquer momento. Cópias mais antigas são excluídas para garantir que o número total de snapshots ARP/AI permaneça dentro desse limite.
+ a| 
+ONTAP 9.16,1 e posterior
+
+
+
+| `arw.snap.create.interval.hours`  a| 
+Especifica o intervalo _em horas_ entre os snapshots ARP/AI. Um novo snapshot ARP/AI é criado quando há suspeita de um ataque baseado em entropia de dados e o snapshot mais recente é mais antigo que o intervalo especificado.
+ a| 
+ONTAP 9.16,1 e posterior
+
+
+
+| `arw.snap.normal.retain.interval.hours`  a| 
+Especifica a duração _em horas_ durante a qual um snapshot ARP/AI é retido. Quando um snapshot ARP/AI atinge o limite de retenção, ele é excluído.
+ a| 
+ONTAP 9.16.1 (descontinuado na versão 9.17.1 e posteriores)
+
+
+
+| `arw.snap.max.retain.interval.days`  a| 
+Especifica a duração máxima _em dias_ que um snapshot ARP/AI pode ser retido. Qualquer snapshot ARP/AI mais antigo do que essa duração é excluído quando não há ataque relatado no volume.
+
+
+NOTE: O intervalo máximo de retenção é ignorado se o ARP/AI detectar uma ameaça. O snapshot do ARP/AI criado em resposta à ameaça é retido até que você responda à ameaça. Quando você marca uma ameaça como um falso positivo, o timer de retenção especificado por `arw.snap.retain.hours.after.clear.suspect.false.alert` é aplicado aos snapshots do ARP/AI. Após o término desse timer, as configurações de retenção padrão são retomadas.
+ a| 
+ONTAP 9.16.1 (descontinuado na versão 9.17.1 e posteriores)
+
+
+
+| `arw.snap.create.interval.hours.post.max.count`  a| 
+Especifica o intervalo _em horas_ entre os snapshots ARP/AI quando o volume já contém o número máximo de snapshots ARP/AI. Quando o número máximo é atingido, um snapshot ARP/AI é excluído para liberar espaço para uma nova cópia. Use esta opção para reduzir a velocidade de criação e reter as cópias mais antigas.
+ a| 
+ONTAP 9.16.1 (descontinuado na versão 9.17.1 e posteriores)
+
+
+
+| `arw.snap.new.extns.interval.hours`  a| 
+Especifica o intervalo _em horas_ entre os snapshots ARP/AI criados quando uma nova extensão de arquivo é detectada. Um novo snapshot ARP/AI é criado quando uma nova extensão de arquivo é observada e o snapshot anterior é mais antigo que o intervalo especificado. Esta opção existe independentemente de  `arw.snap.create.interval.hours``interval`, que especifica o intervalo para snapshots baseados em entropia.
+ a| 
+ONTAP 9.16.1 (descontinuado na versão 9.17.1 e posteriores)
+
+
+
+| `arw.snap.low.encryption.retain.duration.hours`  a| 
+Especifica o período de retenção _em horas_ para snapshots ARP/AI criados durante períodos de baixa atividade de criptografia.
+ a| 
+ONTAP 9.17.1 e posterior
+
+
+
+| `arw.snap.retain.hours.after.clear.suspect.false.alert`  a| 
+Especifica o intervalo _em horas_ durante o qual um snapshot ARP/AI é retido como precaução após um incidente de ataque ser marcado como falso positivo pelo administrador.
+ a| 
+ONTAP 9.16,1 e posterior
+
+
+
+| `arw.snap.retain.hours.after.clear.suspect.real.attack`  a| 
+Especifica o intervalo _em horas_ durante o qual um snapshot ARP/AI é retido como precaução após um incidente de ataque ser marcado como um ataque real pelo administrador.
+ a| 
+ONTAP 9.16,1 e posterior
+
+
+
+| `arw.snap.surge.interval.days`  a| 
+Especifica o intervalo _em dias_ entre os snapshots ARP/AI criados em resposta a picos de E/S. Esta opção também especifica o período de retenção _em dias_ para um snapshot de pico de E/S ARP/AI.
+ a| 
+ONTAP 9.16,1 e posterior
+
+
+
+| `arw.high.encryption.alert.enabled`  a| 
+Habilita alertas para altos níveis de criptografia. Quando definido como  `on` (padrão), o ONTAP envia um alerta quando a porcentagem de criptografia excede o limite especificado em  `arw.high.encryption.percentage.threshold`.
+ a| 
+ONTAP 9.17.1 e posterior
+
+
+
+| `arw.high.encryption.percentage.threshold`  a| 
+Especifica a porcentagem máxima de criptografia para um volume. Se a porcentagem de criptografia exceder esse limite, o ONTAP trata o aumento como um ataque e cria um snapshot ARP/AI. `arw.high.encryption.alert.enabled` deve ser definido como  `on` para que esta opção entre em vigor.
+ a| 
+ONTAP 9.17.1 e posterior
+
+
+
+| `arw.snap.high.encryption.retain.duration.hours`  a| 
+Especifica o intervalo de duração de retenção _em horas_ para instantâneos criados durante um evento de limite alto de criptografia.
+ a| 
+ONTAP 9.17.1 e posterior
+
+|===
+. Se você estiver usando ARP/AI em um ambiente SAN, também poderá modificar as seguintes configurações do período de avaliação:
++
+[cols="1,3,1"]
+|===
+| Definição | Descrição | Versões suportadas 
+
+
+| `arw.block_device.auto.learn.threshold.min_value`  a| 
+Especifica o valor percentual mínimo do limite de criptografia durante a fase de autoaprendizagem da avaliação para dispositivos de bloco.
+ a| 
+ONTAP 9.17.1 e posterior
+
+
+
+| `arw.block_device.auto.learn.threshold.max_value`  a| 
+Especifica o valor percentual máximo do limite de criptografia durante a fase de autoaprendizagem da avaliação para dispositivos de bloco.
+ a| 
+ONTAP 9.17.1 e posterior
+
+
+
+| `arw.block_device.evaluation.phase.min_hours`  a| 
+Especifica o intervalo mínimo _em horas_ que a fase de avaliação deve ser executada antes que o limite de criptografia seja definido.
+ a| 
+ONTAP 9.17.1 e posterior
+
+
+
+| `arw.block_device.evaluation.phase.max_hours`  a| 
+Especifica o intervalo máximo _em horas_ que a fase de avaliação deve ser executada antes que o limite de criptografia seja definido.
+ a| 
+ONTAP 9.17.1 e posterior
+
+
+
+| `arw.block_device.evaluation.phase.min_data_ingest_size_GB`  a| 
+Especifica a quantidade mínima de dados _em GB_ que deve ser ingerida durante a fase de avaliação antes que o limite de criptografia seja definido.
+ a| 
+ONTAP 9.17.1 e posterior
+
+
+
+| `arw.block_device.evaluation.phase.alert.enabled`  a| 
+Especifica se os alertas estão habilitados para a fase de avaliação do ARP/AI em dispositivos de bloco. O valor padrão é  `True`.
+ a| 
+ONTAP 9.17.1 e posterior
+
+
+
+| `arw.block_device.evaluation.phase.alert.threshold`  a| 
+Especifica a porcentagem limite durante a fase de avaliação do ARP/AI em dispositivos de bloco. Se a porcentagem de criptografia exceder esse limite, um alerta é acionado.
+ a| 
+ONTAP 9.17.1 e posterior
+
+|===
+
+
+.Informações relacionadas
+* link:learn-about-arpai.html#arp-ai-snapshots["Avaliação de ameaças e instantâneos de ARP/AI"]
+* link:entropy-eval-period-arpai.html["Período de avaliação de entropia ARP/AI para volumes SAN"]
+

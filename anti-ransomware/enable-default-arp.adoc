@@ -1,0 +1,108 @@
+---
+sidebar: sidebar 
+permalink: anti-ransomware/enable-default-arp.html 
+keywords: ARP, enable by default, autonomous ransomware protection, new volumes, SVM default, dry-run, learning mode, ONTAP 9.10.1, NAS, legacy ARP default enablement, ONTAP 9.15.1 or earlier 
+summary: 'Configure uma SVM para que novos volumes NAS sejam habilitados por padrão para ARP no modo de aprendizado (ONTAP 9.10.1 a 9.15.1).' 
+---
+= Ative o ONTAP ARP por padrão em novos volumes
+:hardbreaks:
+:toclevels: 1
+:allow-uri-read: 
+:toclevels: 1
+:nofooter: 
+:icons: font
+:linkattrs: 
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.10.1, você pode configurar máquinas virtuais de armazenamento (SVMs) para que novos volumes NAS sejam habilitados por padrão com a Proteção Autônoma contra Ransomware (ARP) no modo de aprendizado. Você pode modificar essa configuração usando o System Manager ou a CLI do ONTAP.
+
+
+NOTE: Se você estiver executando o ONTAP 9.16.1 ou posterior, consulte link:enable-default-arpai.html["Ative o ARP/AI por padrão em novos volumes"].
+
+
+NOTE: Para o ONTAP 9.13.1 a 9.17.1, os volumes FlexGroup usam o modelo ARP anterior e exigem um período de aprendizado. Use este procedimento para volumes FlexGroup que executam o ONTAP 9.17.1 e versões anteriores.
+
+.Sobre esta tarefa
+Por padrão, novos volumes são criados com o ARP desativado. Quando você ativa o ARP por padrão em uma SVM, novos volumes criados nessa SVM iniciam automaticamente no modo de aprendizado de ARP (`dry-run` state). Volumes existentes sem o ARP ativado não terão o status de capacitação de ARP alterado quando você modificar o padrão da SVM.
+
+A partir do ONTAP 9.13.1, o aprendizado adaptável está habilitado por padrão, o que significa que o ARP alterna automaticamente do modo de aprendizado para o modo ativo após determinar que o período de aprendizado é suficiente. Você pode desabilitar essa alternância automática para controlar a transição manualmente.
+
+[[arp-enablement-default-behavior-table]]
+Após ativar a Proteção Autônoma contra Ransomware, ela pode entrar em um período de transição, dependendo do seu ambiente e da versão do ONTAP:
+
+[cols="25,25,50"]
+|===
+| Tipo de volume | Versão de ONTAP | Comportamento após a ativação 
+
+
+.2+| NAS FlexGroup | ONTAP 9.18.1 e posterior | O ARP/AI é ativado imediatamente, sem período de aprendizagem. 
+
+
+| ONTAP 9.13.1 a 9.17.1 | O ARP inicia em modo de aprendizagem por 30 dias. 
+
+
+.2+| NAS FlexVol | ONTAP 9.16,1 e posterior | O ARP/AI é ativado imediatamente, sem período de aprendizagem. 
+
+
+| ONTAP 9.10.1 a 9.15.1 | O ARP inicia em modo de aprendizagem por 30 dias. 
+
+
+| Volumes SAN | ONTAP 9.17.1 e posterior | O ARP/AI é ativado imediatamente, iniciando um período de avaliação para estabelecer um limite de alerta adequado antes de passar de um limite inicial conservador. 
+|===
+.Antes de começar
+* Uma máquina virtual de armazenamento (SVM) com o protocolo NFS ou SMB (ou ambos) habilitado.
+* Um ativolink:../concepts/namespaces-junction-points-concept.html["caminho de junção"] para o volume.
+* O link:index.html#licenses-for-autonomous-ransomware-protection["licença correta"] para a sua versão do ONTAP.
+* (Recomendado) Verificação multi-administradora (MAV) ativada (ONTAP 9.13.1 e posterior). Verlink:../multi-admin-verify/enable-disable-task.html["Ative a verificação de vários administradores"] .
+
+
+.Passos
+Você pode usar o System Manager ou a ONTAP CLI para habilitar o ARP por padrão para novos volumes no nível do SVM.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *VMs de armazenamento* e, em seguida, selecione a VM de armazenamento que conterá os volumes que você deseja proteger com ARP.
+. Navegue até a aba *Configurações*. Em *Segurança*, localize o bloco *Anti-ransomware* e selecione image:icon_pencil.gif["Ícone de edição"] .
+. Marque a caixa para habilitar o anti-ransomware (ARP). Marque a caixa adicional para habilitar o ARP em todos os volumes qualificados na VM de armazenamento.
+. Selecione *Alternar automaticamente do modo de aprendizagem para o modo ativo após aprendizagem suficiente* para permitir que o ARP determine o período de aprendizagem ideal e automatize a mudança para o modo ativo (ONTAP 9.13.1 e posterior).
+
+
+--
+.CLI
+--
+*Modificar uma SVM existente para habilitar o ARP por padrão no modo de aprendizado para novos volumes:*
+
+[source, cli]
+----
+vserver modify -vserver <svm_name> -anti-ransomware-default-volume-state dry-run
+----
+*Crie uma nova SVM com ARP ativado por padrão (no modo de aprendizado) para novos volumes:*
+
+[source, cli]
+----
+vserver create -vserver <svm_name> -anti-ransomware-default-volume-state dry-run
+----
+*Desative a transição automática do modo de aprendizagem para o modo ativo (opcional):*
+
+Se você estiver executando o ONTAP 9.13.1 até 9.15.1 e quiser controlar manualmente a transição do modo de aprendizado para o modo ativo em todos os volumes associados à SVM:
+
+[source, cli]
+----
+vserver modify -vserver <svm_name> -anti-ransomware-auto-switch-from-learning-to-enabled false
+----
+*Verifique o estado do ARP:*
+
+[source, cli]
+----
+security anti-ransomware volume show
+----
+--
+====
+.Informações relacionadas
+* link:switch-learning-arp.html["Alternar do modo de aprendizagem para o modo ativo"]
+* link:https://docs.netapp.com/us-en/ontap-cli/security-anti-ransomware-volume-show.html["segurança anti-ransomware volume mostrar"^]
+

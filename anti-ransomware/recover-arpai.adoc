@@ -1,0 +1,252 @@
+---
+sidebar: sidebar 
+permalink: anti-ransomware/recover-arpai.html 
+keywords: ARP AI, arpai, recover data, ransomware attack, ARP AI snapshot, restore, FlexClone, SnapRestore, ONTAP 9.16.1, machine learning ransomware, SnapMirror 
+summary: Utilize snapshots ARP/AI ou outro snapshot de sua escolha para restaurar os dados após confirmar um ataque de ransomware. 
+---
+= Recupere dados após um ataque de ransomware com o ONTAP ARP/AI
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A Proteção Autônoma contra Ransomware com IA (ARP/AI) cria snapshots para proteger contra ameaças de ransomware. Você pode usar os snapshots do ARP/AI ou outro snapshot do seu volume para restaurar dados.
+
+
+NOTE: Se você estiver executando o ONTAP 9.15.1 ou anterior, consulte link:recover-arp.html["Recupere dados após um ataque de ransomware com o ARP"].
+
+.Sobre esta tarefa
+Dependendo da situação potencial do ataque, você restaurará os dados de uma das seguintes maneiras:
+
+* *<<restore-from-arp-snapshot,Restaurar a partir do snapshot ARP/AI mais recente>>*: Use o snapshot ARP/AI mais recente disponível quando tiver confiança em sua integridade.
+* *<<restore-from-earlier-snapshot,Restaurar a partir de um snapshot anterior>>*: Libere o bloqueio no snapshot ARP/AI mais recente e, em seguida, restaure a partir de um snapshot anterior.
+* *<<restore-without-attack,Restaurar quando nenhum ataque for relatado>>*: Primeiro, restaure a partir do snapshot ARP/AI mais recente e, em seguida, conclua uma restauração subsequente a partir do snapshot de sua escolha.
+
+
+O ARP/AI cria snapshots com um dos seguintes nomes prefixados:
+
+* `Anti_ransomware_periodic_backup`: Usado no ONTAP 9.17.1 e versões posteriores para snapshots criados em intervalos regulares de 4 horas. Por exemplo,  `Anti_ransomware_periodic_backup.2025-06-01_1248`.
+* `Anti_ransomware_attack_backup`: Utilizado no ONTAP 9.17.1 e versões posteriores para snapshots criados em resposta a anomalias. Esses snapshots têm uma retenção padrão de 10 dias. Por exemplo, `Anti_ransomware_attack_backup.2025-08-25_1248`.
+* `Anti_ransomware_backup`: Usado no ONTAP 9.16.1 e versões anteriores para snapshots criados em resposta a anomalias. Por exemplo,  `Anti_ransomware_backup.2022-12-20_1248`.
+
+
+.Antes de começar
+* Se você estiver respondendo a um aviso de atividade anormal, link:respond-arpai.html#classify-as-potential-ransomware-attack-and-recover-data["você deve primeiro categorizá-lo como um possível ataque de ransomware"] antes de prosseguir com a restauração de dados.
+* Escolha um <<choose-a-recovery-method,método de restauração>> e revise <<recovery-constraints-and-considerations,restrições de recuperação>> antes de concluir um procedimento de restauração.
+
+
+
+
+[[choose-a-recovery-method]]
+== Escolha um método de recuperação
+
+Dependendo da extensão da corrupção de dados e das suas necessidades operacionais, escolha um ou uma combinação destes métodos de recuperação.
+
+* *Restauração de snapshot de volume*: Reverte todo o volume para um snapshot selecionado (ARP/AI ou agendado). Este é o método mais rápido, mas remove todos os snapshots criados após o ponto de restauração.
+* *FlexClone de um snapshot limpo*: Cria um volume clone a partir do snapshot selecionado, preservando o volume original e todos os seus snapshots para análise forense ou recuperação adicional. Recomenda-se separar o clone do volume pai para isolar o volume pai infectado do clone limpo.
++
+Saiba mais sobre link:../volumes/create-flexclone-task.html["Criando um volume FlexClone a partir de um Snapshot"] e link:../volumes/split-flexclone-from-parent-task.html["dividir um FlexClone de seu volume pai"].
+
+* *Arquivo único SnapRestore*: restaura arquivos individuais a partir de snapshots. Cada arquivo pode ser proveniente de um snapshot diferente. Isso é prático quando o número de arquivos afetados é relativamente pequeno.
++
+Saiba mais sobre link:../data-protection/restore-single-file-snapshot-task.html["Restaurar um único arquivo a partir de um Snapshot"].
+
+* *Cópia de dados do  `.snapshot`diretório*: Copia os dados do ponto de montagem do snapshot para um novo volume usando operações padrão de cópia de arquivos. Este método preserva o volume original e os snapshots para análise.
+* *Abordagem híbrida*: O volume é primeiro revertido para o Snapshot limpo mais próximo usando SnapRestore, depois quaisquer arquivos corrompidos restantes são restaurados individualmente a partir de outro Snapshot ou backup externo.
+
+
+
+
+[[recovery-constraints-and-considerations]]
+== Restrições e considerações para a recuperação
+
+* Para o ONTAP 9.16.1 e versões posteriores: limpe o evento suspeito *primeiro* (em link:respond-arpai.html["Responder a atividades anormais"]) e depois execute a restauração. Após a limpeza, os snapshots ARP/AI são mantidos com base em como você categoriza a atividade. A partir do ONTAP 9.17.1, os padrões são 7 dias (ataque real) ou 24 horas (falso positivo). No ONTAP 9.16.1, os padrões são 5 dias (ataque real) ou 48 horas (falso positivo). A opção clear-suspect fica indisponível após uma restauração de volume, então você deve limpar antes de restaurar.
+* A liberação do bloqueio do snapshot ARP/AI só é necessária quando você usa  `volume snapshot restore` para restaurar a partir de um snapshot anterior. Não é necessária para o FlexClone, SnapRestore de arquivo único, operações de cópia de dados ou métodos similares.
+* Para volumes SAN onde o ataque é detectado apenas por análise de entropia, somente o snapshot criado imediatamente antes da linha do tempo do ataque e o snapshot do ataque são retidos por um período estendido (10 dias por padrão, configurável). Outros snapshots periódicos continuam seguindo as regras normais de retenção. Isso difere dos volumes NAS, onde todos os snapshots criados antes da linha do tempo do ataque são retidos até que o administrador execute uma ação de limpar suspeitos.
+
+
+.SnapMirror considerações
+* Se o volume fizer parte de uma relação SAN do SnapMirror síncrono ou do SnapMirror active sync no ONTAP 9.19.1 e você planejar uma restauração no nível do volume, suspenda ou link:../data-protection/make-destination-volume-writeable-task.html["rompa a relação antes de restaurar"] e, em seguida, reestabeleça a proteção após a restauração.
+* Se você restaurar um volume protegido por ARP/AI a partir de um snapshot enquanto ele participa de uma relação do SnapMirror, atualize manualmente todas as cópias espelhadas após a restauração. Caso contrário, as cópias espelhadas podem se tornar inutilizáveis e talvez precisem ser excluídas e recriadas.
+
+
+Para obter o comportamento completo de interoperabilidade do SnapMirror e ARP/AI, consulte link:support-arpai.html#snapmirror["SnapMirror e interoperabilidade ARP/AI"].
+
+
+
+[[restore-after-a-system-attack]]
+[[restore-after-system-attack]]
+== Restaurar após um ataque ao sistema
+
+Para restaurações de snapshots de volume, escolha um destes fluxos dependendo da origem do snapshot e da situação:
+
+* <<restore-from-arp-snapshot,Restaurar a partir do snapshot ARP/AI mais recente>>
+* <<restore-from-earlier-snapshot,Restaurar a partir de um snapshot anterior>>
+* <<restore-without-attack,Restaurar quando nenhum ataque for identificado>>
+
+
+
+
+[[restore-from-the-most-recent-arpai-snapshot]]
+[[restore-from-arp-snapshot]]
+=== Restaurar a partir do snapshot ARP/AI mais recente
+
+Escolha este fluxo quando você puder restaurar com segurança a partir do snapshot ARP/AI mais recente, que é o snapshot mais atualizado disponível para recuperação.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *armazenamento > volumes* e, em seguida, selecione o volume e *cópias Snapshot*.
+. Antes de executar uma restauração de volume, link:respond-arpai.html#arp-snapshot-decision-sm-pre-restore["limpar arquivos suspeitos"].
++
+
+NOTE: Após você eliminar arquivos suspeitos, o snapshot ARP/AI é retido por 7 dias (por padrão). Se você precisar de mais tempo para a recuperação de dados, link:modify-snapshot-options-arpai.html["Ajustar configurações de snapshot ARP/AI"] para aumentar o período de retenção. Após a conclusão da recuperação de todos os dados, você pode diminuir o período de retenção.
+
+. Selecione image:icon_kabob.gif["Ícone de opções do menu"] ao lado do snapshot ARP/AI mais recente (`Anti_ransomware` que você deseja restaurar e, em seguida, selecione *Restaurar*.
+
+
+--
+.CLI
+--
+. Listar os instantâneos em um volume:
++
+[source, cli]
+----
+volume snapshot show -vserver <svm> -volume <volume>
+----
+. Antes de executar `volume snapshot restore`, link:respond-arpai.html#arp-snapshot-decision-cli-pre-restore["limpar arquivos suspeitos"].
+. Restaure o conteúdo de um volume a partir de um instantâneo:
++
+[source, cli]
+----
+volume snapshot restore -vserver <svm> -volume <volume> -snapshot <snapshot>
+----
+
+
+--
+====
+
+
+[[restore-from-an-earlier-snapshot]]
+[[restore-from-earlier-snapshot]]
+=== Restaurar a partir de um snapshot anterior
+
+Escolha este fluxo quando desejar restaurar a partir de um snapshot anterior. Libere o bloqueio no snapshot ARP/AI mais recente antes de restaurar a partir do snapshot anterior.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Libere o bloqueio no snapshot ARP/AI mais recente:
++
+.. Selecione *armazenamento > volumes*.
+.. Selecione *Segurança* e depois *Exibir tipos de arquivos suspeitos*.
+.. Marque os arquivos como "possível ataque de ransomware".
+.. Selecione *Atualizar e limpar tipos de arquivo suspeitos*.
+
+
+. Selecione *armazenamento > volumes* e, em seguida, selecione o volume e *cópias Snapshot*.
+. Selecione image:icon_kabob.gif["Ícone de opções do menu"] ao lado do Snapshot anterior que deseja restaurar e, em seguida, selecione *Restaurar*.
+
+
+--
+.CLI
+--
+. Marque o ataque como potencial ransomware (`-false-positive false` e limpe os arquivos suspeitos para liberar o bloqueio:
++
+[source, cli]
+----
+security anti-ransomware volume attack clear-suspect -vserver <svm_name> -volume <vol_name> [<extension identifiers>] -false-positive false
+----
+. Listar os instantâneos em um volume:
++
+[source, cli]
+----
+volume snapshot show -vserver <svm> -volume <volume>
+----
++
+O exemplo a seguir mostra o instantâneo no `vol1`:
+
++
+[listing]
+----
+
+clus1::> volume snapshot show -vserver vs1 -volume vol1
+
+Vserver Volume Snapshot                State    Size  Total% Used%
+------- ------ ---------- ----------- ------   -----  ------ -----
+vs1	    vol1   hourly.2013-01-25_0005  valid   224KB     0%    0%
+               daily.2013-01-25_0010   valid   92KB      0%    0%
+               hourly.2013-01-25_0105  valid   228KB     0%    0%
+               hourly.2013-01-25_0205  valid   236KB     0%    0%
+               hourly.2013-01-25_0305  valid   244KB     0%    0%
+               hourly.2013-01-25_0405  valid   244KB     0%    0%
+               hourly.2013-01-25_0505  valid   244KB     0%    0%
+
+7 entries were displayed.
+----
+. Restaure o conteúdo de um volume a partir de um instantâneo:
++
+[source, cli]
+----
+volume snapshot restore -vserver <svm> -volume <volume> -snapshot <snapshot>
+----
++
+O exemplo a seguir restaura o conteúdo `vol1` de :
+
++
+[listing]
+----
+cluster1::> volume snapshot restore -vserver vs0 -volume vol1 -snapshot daily.2013-01-25_0010
+----
+
+
+--
+====
+
+
+[[restore-when-no-attack-is-identified]]
+[[restore-without-attack]]
+== Restaurar quando nenhum ataque for identificado
+
+Quando nenhum ataque for identificado, primeiro restaure a partir do snapshot ARP/AI mais recente e depois restaure a partir de um snapshot anterior.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *armazenamento > volumes* e, em seguida, selecione o volume e *cópias Snapshot*.
+. Selecione image:icon_kabob.gif["Ícone de opções do menu"]e escolha a  `Anti_ransomware`Snapshot mais recente.
+. Selecione *Restaurar*.
+. Volte ao menu *Snapshot Copies* e escolha o instantâneo anterior que deseja usar.
+. Selecione *Restaurar*.
+
+
+--
+.CLI
+--
+. Restaure primeiro a partir do snapshot ARP/AI mais recente:
++
+.. Listar os instantâneos em um volume:
++
+[source, cli]
+----
+volume snapshot show -vserver <svm> -volume <volume>
+----
+.. Restaure o conteúdo de um volume a partir de um instantâneo:
++
+[source, cli]
+----
+volume snapshot restore -vserver <svm> -volume <volume> -snapshot <snapshot>
+----
+
+
+. Selecione o snapshot anterior que deseja usar e repita a restauração.
+
+
+Saiba mais sobre `volume snapshot` o link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=volume+snapshot["Referência do comando ONTAP"^]na .
+
+--
+====

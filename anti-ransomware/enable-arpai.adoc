@@ -1,0 +1,210 @@
+---
+sidebar: sidebar 
+permalink: anti-ransomware/enable-arpai.html 
+keywords: ARP AI, arpai, enable, autonomous ransomware protection AI, ONTAP 9.16.1, NAS, SAN, FlexVol, FlexGroup, machine learning ransomware, active mode, enable ransomware protection ONTAP 9.16.1, enable ARP AI SAN volumes, no learning period ARP AI enablement 
+summary: A partir do ONTAP 9.16.1, habilite o ARP/AI em volumes compatíveis para proteção ativa imediata, sem período de aprendizado. O suporte a SAN e FlexGroup estará disponível em versões posteriores. 
+---
+= Ativar o ONTAP ARP/AI em um volume
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.16.1, você pode habilitar a Proteção Autônoma contra Ransomware com IA (ARP/AI) em um volume existente ou criar um novo volume com ARP/AI habilitado. O ARP/AI fica ativo imediatamente, sem necessidade de período de aprendizado.
+
+
+NOTE: Se você estiver executando o ONTAP 9.15.1 ou anterior, consulte link:enable-arp.html["Ativar ARP em um volume"].
+
+.Sobre esta tarefa
+ARP/AI é o modelo atual de proteção contra ransomware para o ONTAP 9.16.1 e versões posteriores. Para habilitar o ARP/AI, siga o procedimento adequado ao seu ambiente após garantir que seu ambiente atenda aos requisitos:
+
+* <<enable-nas-flexvol,NAS com volumes FlexVol>> (ONTAP 9.16.1 e posterior)
+* <<enable-nas-flexgroup,NAS com volumes FlexGroup>> (ONTAP 9.18.1 e posterior)
+* <<enable-san,Volumes SAN>> (ONTAP 9.17.1 e posterior)
+
+
+Após ativar a Proteção Autônoma contra Ransomware, ela pode entrar em um período de transição, dependendo do seu ambiente e da versão do ONTAP:
+
+[cols="25,25,50"]
+|===
+| Tipo de volume | Versão de ONTAP | Comportamento após a ativação 
+
+
+.2+| NAS FlexGroup | ONTAP 9.18.1 e posterior | O ARP/AI é ativado imediatamente, sem período de aprendizagem. 
+
+
+| ONTAP 9.13.1 a 9.17.1 | O ARP inicia em modo de aprendizagem por 30 dias. 
+
+
+.2+| NAS FlexVol | ONTAP 9.16,1 e posterior | O ARP/AI é ativado imediatamente, sem período de aprendizagem. 
+
+
+| ONTAP 9.10.1 a 9.15.1 | O ARP inicia em modo de aprendizagem por 30 dias. 
+
+
+| Volumes SAN | ONTAP 9.17.1 e posterior | O ARP/AI é ativado imediatamente, iniciando um período de avaliação para estabelecer um limite de alerta adequado antes de passar de um limite inicial conservador. 
+|===
+.Antes de começar
+Antes de habilitar o ARP/AI, certifique-se de que seu ambiente possua o seguinte:
+
+.Requisitos específicos da NAS
+* Uma máquina virtual de armazenamento (SVM) com o protocolo NFS ou SMB (ou ambos) habilitado.
+* Carga de trabalho NAS com clientes configurados.
+* Um ativolink:../concepts/namespaces-junction-points-concept.html["caminho de junção"] para o volume.
+
+
+.Requisitos específicos de SAN
+* Uma máquina virtual de armazenamento (SVM) com protocolo iSCSI, FC ou NVMe habilitado.
+* Carga de trabalho SAN com clientes configurados.
+
+
+.Requisitos gerais
+* O link:index.html#licenses-for-autonomous-ransomware-protection["licença correta"] para a sua versão do ONTAP.
+* (Recomendado) Verificação multi-administradora (MAV) ativada (ONTAP 9.13.1 e posterior). Verlink:../multi-admin-verify/enable-disable-task.html["Ative a verificação de vários administradores"] .
+
+
+
+
+[[enable-arpai-on-nas-flexvol-volumes]]
+[[enable-nas-flexvol]]
+== Ativar ARP/AI em volumes NAS FlexVol
+
+A partir do ONTAP 9.16.1, o ARP/AI fica ativo imediatamente após a capacitação para volumes NAS FlexVol.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *armazenamento > volumes* e, em seguida, selecione o volume que pretende proteger.
+. Na guia *Security* da visão geral *volumes*, selecione *Status* para alternar de Disabled (Desativado) para Enabled (habilitado).
+. Verifique o estado ARP/AI do volume na caixa *Anti-ransomware*.
++
+Para exibir o status ARP/AI de todos os volumes: no painel *Volumes*, selecione *Mostrar/Ocultar* e certifique-se de que o status *Anti-ransomware* esteja marcado.
+
+
+
+--
+.CLI
+--
+*Habilitar ARP/AI em um volume existente:*
+
+[source, cli]
+----
+security anti-ransomware volume enable -volume <vol_name> -vserver <svm_name>
+----
+*Crie um novo volume com ARP/AI ativado:*
+
+[source, cli]
+----
+volume create -volume <vol_name> -vserver <svm_name> -aggregate <aggr_name> -size <nn> -anti-ransomware-state enabled -junction-path </path_name>
+----
+*Verifique o estado do ARP/AI:*
+
+[source, cli]
+----
+security anti-ransomware volume show
+----
+Saiba mais sobre `security anti-ransomware volume show` o link:https://docs.netapp.com/us-en/ontap-cli/security-anti-ransomware-volume-show.html["Referência do comando ONTAP"^]na .
+
+--
+====
+
+
+[[enable-arpai-on-nas-flexgroup-volumes]]
+[[enable-nas-flexgroup]]
+== Ative ARP/AI em volumes NAS FlexGroup
+
+A partir do ONTAP 9.18.1, o ARP/AI fica ativo imediatamente após a capacitação para volumes FlexGroup.
+
+
+NOTE: Para o ONTAP 9.13.1 a 9.17.1, os volumes FlexGroup usam o modelo ARP anterior e exigem um período de aprendizagem. Consulte link:enable-arp.html#enable-arp-on-nas-flexgroup-volumes["Ativar ARP em volumes NAS FlexGroup"].
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *Armazenamento > Volumes* e, em seguida, selecione o volume FlexGroup que deseja proteger.
+. Na guia *Security* da visão geral *volumes*, selecione *Status* para alternar de Disabled (Desativado) para Enabled (habilitado).
+. Verifique o estado ARP/AI do volume na caixa *Anti-ransomware*.
++
+Para exibir o status ARP/AI de todos os volumes: no painel *Volumes*, selecione *Mostrar/Ocultar* e certifique-se de que o status *Anti-ransomware* esteja marcado.
+
+
+
+--
+.CLI
+--
+*Habilitar ARP/AI em um volume FlexGroup existente:*
+
+[source, cli]
+----
+security anti-ransomware volume enable -volume <vol_name> -vserver <svm_name>
+----
+*Crie um novo FlexGroup volume com ARP/AI ativado:*
+
+[source, cli]
+----
+volume create -volume <vol_name> -vserver <svm_name> -aggr-list <aggregate name> -aggr-list-multiplier <integer> -size <nn> -anti-ransomware-state enabled -junction-path </path_name>
+----
+*Verifique o estado do ARP/AI:*
+
+[source, cli]
+----
+security anti-ransomware volume show
+----
+--
+====
+
+
+[[enable-arpai-on-san-volumes]]
+[[enable-san]]
+== Ativar ARP/AI em volumes SAN
+
+A partir do ONTAP 9.17.1, você pode habilitar o ARP/AI em volumes SAN. O ARP/AI é ativado automaticamente logo após a capacitação e começa a monitorar e proteger os volumes SAN durante o link:entropy-eval-period-arpai.html["período de avaliação da entropia"]período de carência, enquanto simultaneamente determina se as cargas de trabalho são adequadas para o ARP/AI e define um limite de criptografia ideal para detecção.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione *Armazenamento > Volumes* e, em seguida, selecione o volume SAN que deseja proteger.
+. Na guia *Security* da visão geral *volumes*, selecione *Status* para alternar de Disabled (Desativado) para Enabled (habilitado).
+. O ARP/AI entra automaticamente no período de avaliação.
+. Verifique o estado do ARP/AI e o status de avaliação na caixa *Anti-ransomware*.
++
+Para exibir o status ARP/AI de todos os volumes: no painel *Volumes*, selecione *Mostrar/Ocultar* e certifique-se de que o status *Anti-ransomware* esteja marcado.
+
+
+
+--
+.CLI
+--
+*Habilite ARP/AI em um volume SAN existente:*
+
+[source, cli]
+----
+security anti-ransomware volume enable -volume <vol_name> -vserver <svm_name>
+----
+*Crie um novo volume SAN com ARP/AI ativado:*
+
+[source, cli]
+----
+volume create -volume <vol_name> -vserver <svm_name> -aggregate <aggr_name> -size <nn> -anti-ransomware-state enabled
+----
+*Verifique o estado e o status de avaliação do ARP/AI:*
+
+[source, cli]
+----
+security anti-ransomware volume show
+----
+Verifique o campo  `Block device detection status` para acompanhar o progresso do período de avaliação. Saiba mais sobre  `security anti-ransomware volume show` no link:https://docs.netapp.com/us-en/ontap-cli/security-anti-ransomware-volume-show.html["Referência do comando ONTAP"^].
+
+--
+====
+
+
+[[related-information]]
+== Informações relacionadas
+
+* link:entropy-eval-period-arpai.html["Período de avaliação de entropia ARP/AI para volumes SAN"]
+

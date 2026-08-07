@@ -1,0 +1,218 @@
+---
+sidebar: sidebar 
+permalink: anti-ransomware/respond-arp.html 
+keywords: ARP, respond, abnormal activity, false positive, ransomware attack, NAS, suspected file types, clear suspect, ONTAP 9.10.1, restore first, learning mode, autonomous ransomware protection, legacy ARP response, ONTAP 9.15.1 or earlier 
+summary: Quando o ARP legado no ONTAP 9.10.1 até 9.15.1 detecta atividade anormal em um volume NAS protegido, avalie se é um falso positivo ou um ataque de ransomware real e responda de acordo. 
+---
+= Responder a atividade anormal detetada pelo ONTAP ARP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando a Proteção Autônoma contra Ransomware (ARP) detecta atividade anormal em um volume NAS protegido, ela emite um aviso. Você deve avaliar a notificação para determinar se a atividade é aceitável (falso positivo) ou se um ataque parece malicioso. Após classificar o ataque, você pode limpar o aviso e retomar o monitoramento normal.
+
+
+NOTE: Se você estiver executando o ONTAP 9.16.1 ou posterior, consulte link:respond-arpai.html["Responder à atividade anormal detectada pelo ARP/AI"].
+
+Ao categorizar um ataque, os snapshots ARP são excluídos imediatamente ao limpar o evento suspeito no ONTAP 9.15.1 e versões anteriores. Se você estiver usando  `volume snapshot restore` para restaurar dados, você deve restaurar os dados *antes* de limpar o evento suspeito.
+
+
+NOTE: A partir do ONTAP 9.11.1, você pode modificar o link:modify-snapshot-options-arp.html["definições de retenção"] para snapshots ARP.
+
+.Sobre esta tarefa
+Para volumes NAS, o ARP exibe uma lista de arquivos suspeitos quando detecta qualquer combinação de alta entropia de dados, atividade anormal do volume com criptografia de dados e extensões de arquivo incomuns. O ARP (9.10.1 a 9.15.1) não oferece suporte a volumes SAN.
+
+Embora a Proteção Autônoma contra Ransomware automatize a detecção e a criação de instantâneos, a determinação final sobre se um arquivo ou evento é realmente malicioso requer investigação manual. A Proteção Autônoma contra Ransomware não pode determinar definitivamente se um evento é um ataque de ransomware real. Ela sinaliza atividades suspeitas, mas você precisará investigar e confirmar se o evento é realmente ransomware ou um falso positivo (atividade benigna).
+
+link:determine-ransomware-tips.html["Determine se um arquivo ou evento é realmente malicioso"].
+
+Quando uma notificação de alerta ARP for emitida, responda designando a atividade de uma das duas maneiras:
+
+* *Falso positivo*: O tipo de arquivo identificado é esperado em sua carga de trabalho e pode ser ignorado.
+* *Possível ataque de ransomware*: O tipo de arquivo identificado é inesperado em sua carga de trabalho e deve ser tratado como um possível ataque.
+
+
+O monitoramento normal será retomado após você atualizar sua decisão e limpar as notificações do ARP. O ARP registra sua avaliação no perfil de avaliação de ameaças, usando sua escolha para monitorar atividades de arquivo subsequentes.
+
+Em caso de suspeita de ataque, você deve determinar se é um ataque, responder a ele se for e, em seguida, limpar os avisos e restaurar os dados. link:recover-arp.html["Saiba mais sobre como se recuperar de um ataque de ransomware"].
+
+.Antes de começar
+O ARP deve estar protegendo ativamente um volume (não em modo de aprendizagem ou pausado).
+
+.Passos
+Siga estes passos quando precisar classificar uma atividade anormal:
+
+. <<Analise os detalhes da atividade anormal,Analise os detalhes da atividade anormal>>
+. <<Entenda o comportamento do snapshot ao limpar um evento suspeito,Entenda o comportamento do snapshot ao limpar um evento suspeito>>
+. Execute um dos seguintes procedimentos:
++
+** <<Classificar como falso positivo e retomar o monitoramento,Classificar como falso positivo e retomar o monitoramento>>
+** <<Classificar como potencial ataque de ransomware e recuperar dados,Classificar como possível ataque de ransomware, recuperar dados e finalizar>>
+
+
+
+
+Se você precisar restaurar dados, siga as etapas em link:recover-arp.html["Recupere dados após um ataque de ransomware com o ARP"].
+
+
+
+[[review-abnormal-activity-details]]
+== Analise os detalhes da atividade anormal
+
+Você pode usar System Manager ou a CLI do ONTAP para revisar os detalhes dos avisos ARP antes de escolher um fluxo de resposta.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Ao receber uma notificação de "atividade anormal", siga o link. Como alternativa, acesse *Armazenamento > Volumes*, localize um volume afetado e selecione a guia *Segurança*.
++
+Os avisos são exibidos no painel *Visão geral* do menu *Eventos* do System Manager.
+
+. Na guia *Segurança*, revise o relatório *Tipos de arquivo suspeitos*. Uma caixa de diálogo *Tipos de arquivo suspeitos* mostra as extensões de arquivo e as contagens de arquivos que o ARP identificou.
+
+
+--
+.CLI
+--
+. Quando receber uma notificação de um ataque de ransomware suspeito, verifique a hora e a gravidade do ataque:
++
+[source, cli]
+----
+security anti-ransomware volume show -vserver <svm_name> -volume <vol_name>
+----
++
+Saída da amostra:
+
++
+....
+Vserver Name: vs0
+Volume Name: vol1
+State: enabled
+Attack Probability: moderate
+Attack Timeline: 9/14/2021 01:03:23
+Number of Attacks: 1
+....
++
+Você também pode verificar mensagens EMS:
+
++
+[source, cli]
+----
+event log show -message-name callhome.arw.activity.seen
+----
+
+
+--
+====
+
+
+[[understand-snapshot-behavior-when-clearing-a-suspected-event]]
+== Entenda o comportamento do snapshot ao limpar um evento suspeito
+
+Para o ONTAP 9.15.1 e versões anteriores, os snapshots ARP são *excluídos imediatamente* ao limpar o evento suspeito. Isso significa que você deve *restaurar os dados antes de limpar* se planeja usar  `volume snapshot restore`. Após a limpeza, o snapshot desaparece e não pode ser usado para restauração.
+
+Se você usar outros métodos de recuperação (FlexClone, SnapRestore de arquivo único, cópia de dados), pode realizar a recuperação antes ou depois de limpar o evento suspeito; esses métodos não excluem o snapshot.
+
+A partir do ONTAP 9.13.1, se você usar MAV para proteger as configurações de ARP, a  `clear-suspect` operação pode exigir aprovações adicionais. link:../multi-admin-verify/request-operation-task.html["A aprovação deve ser recebida de todos os administradores"] associadas ao grupo de aprovação do MAV ou a operação falhará.
+
+
+
+[[classify-as-false-positive-and-resume-monitoring]]
+== Classificar como falso positivo e retomar o monitoramento
+
+Utilize este fluxo quando o tipo de arquivo identificado for o _esperado_ para a carga de trabalho.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Selecione os arquivos afetados, escolha *Marcar como falso positivo* e, em seguida, escolha *Atualizar e limpar tipos de arquivo suspeitos*.
+
+
+Essa ação remove o aviso. O ARP então retoma o monitoramento normal do volume.
+
+--
+.CLI
+--
+. Execute o seguinte comando para registrar sua decisão e retomar o monitoramento normal de ARP:
++
+[source, cli]
+----
+security anti-ransomware volume attack clear-suspect -vserver <svm_name> -volume <vol_name> [<extension_identifiers>] -false-positive true
+----
++
+Utilize o seguinte parâmetro opcional para identificar apenas extensões específicas como falsos positivos: `[-extension <text>, ... ]`
+
+
+
+--
+====
+
+
+[[classify-as-potential-ransomware-attack-and-recover-data]]
+== Classificar como potencial ataque de ransomware e recuperar dados
+
+Utilize este fluxo quando o tipo de arquivo identificado for _inesperado_ para a carga de trabalho.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Marque os arquivos selecionados como *Possível ataque de ransomware*.
+. Antes de recuperar os dados, considere a sua link:recover-arp.html#choose-a-recovery-method["opções de método de recuperação"]. Em seguida, faça um dos seguintes procedimentos:
++
+** *Se você planeja restaurar um volume*: Conclua a recuperação de dados *antes* de limpar os avisos:
++
+... link:recover-arp.html["Recupere dados do snapshot ARP mais recente ou de um snapshot anterior"].
+... Após a recuperação de dados ser concluída, finalize apagando o evento suspeito:
++
+**** Para avisos sobre tipos de arquivo NAS, selecione *Atualizar e limpar tipos de arquivo suspeitos*.
++
+
+NOTE: Ao registrar sua decisão, o relatório de ataque é apagado e o snapshot ARP é excluído. Certifique-se de concluir a recuperação de dados antes desta etapa.
+
+
+
+
+
+** *Se você planeja usar outro método de restauração (FlexClone ou SnapRestore de arquivo único)*: Restaure os dados primeiro, depois limpe os avisos:
++
+... link:recover-arp.html["Recupere dados usando FlexClone ou SnapRestore de arquivo único"].
+... Após a recuperação de dados, finalize a categorização:
++
+**** Selecione *Atualizar e limpar tipos de arquivo suspeitos*.
+
+
+
+
+
+
+
+
+--
+.CLI
+--
+. (Opcional) Gere um relatório de ataque e especifique onde salvá-lo:
++
+[source, cli]
+----
+security anti-ransomware volume attack generate-report -vserver <svm_name> -volume <vol_name> -dest-path <[svm_name]:[junction_path/sub_dir_name]>
+----
+. Para o ONTAP 9.15.1 e versões anteriores com  `volume snapshot restore`: Restaure os dados *antes* de limpar o evento suspeito. Consulte link:recover-arp.html["Recupere dados após um ataque com ARP"].
+. Após restaurar os dados (ou se você estiver usando um método de recuperação alternativo), limpe o evento suspeito e marque o ataque como um possível ransomware (`-false-positive false`):
++
+[source, cli]
+----
+security anti-ransomware volume attack clear-suspect -vserver <svm_name> -volume <vol_name> [<extension_identifiers>] -false-positive false
+----
++
+
+IMPORTANT: No ONTAP 9.15.1 e versões anteriores, executar `clear-suspect` *exclui imediatamente* os snapshots ARP. Não execute este comando até concluir a recuperação de dados.
+
+
+
+--
+====
