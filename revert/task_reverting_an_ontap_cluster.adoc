@@ -411,22 +411,36 @@ system node upgrade-revert show -node <nodename>
 O status deve ser listado como "completo", "não necessário" ou "não há entradas de tabela retornadas."
 
 . Repita essas etapas no outro nó no par de HA.
-. Depois que ambos os nós tiverem sido revertidos, reative a alta disponibilidade para o cluster:
+. Após ambos os nós terem sido revertidos, reative o HA para o cluster:
 +
 [source, cli]
 ----
 cluster ha modify -configured true
 ----
++
+
+NOTE: Reativar o HA do cluster pode fazer com que a  `storage failover auto-giveback` configuração volte a ser verdadeira.
+
 . Reative o failover de storage em ambos os nós:
 +
 [source, cli]
 ----
 storage failover modify -node <nodename> -enabled true
 ----
+. Verifique a configuração  `storage failover auto-giveback` em ambos os nós:
++
+[source, cli]
+----
+storage failover show -node <nodename>
+----
++
+Se for necessária uma configuração diferente para o seu ambiente, utilize o comando  `storage failover modify -node <nodename> -auto-giveback <true|false>` para modificá-la.
+
 
 
 --
 ====
 .Informações relacionadas
 * link:https://docs.netapp.com/us-en/ontap-cli/storage-failover-modify.html["modificação de failover de armazenamento"^]
+* link:https://kb.netapp.com/on-prem/ontap/Ontap_OS/OS-KBs/Why_auto-giveback_enabled_after_re-enabling_storage_failover_setting["NetApp Base de conhecimento: por que o auto-giveback é ativado após reativar a configuração de storage failover"^]
 
