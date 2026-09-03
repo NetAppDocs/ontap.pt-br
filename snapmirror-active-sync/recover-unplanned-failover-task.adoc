@@ -2,7 +2,7 @@
 sidebar: sidebar 
 permalink: snapmirror-active-sync/recover-unplanned-failover-task.html 
 keywords: fan-out, snapmirror active sync, unplanned failover 
-summary: 'Uma operação automática de failover não planejado (AUFO) ocorre quando o cluster primário está inativo ou isolado. Quando isso ocorre, o cluster secundário é convertido para o primário e começa a servir clientes.' 
+summary: 'Uma operação automática de failover não planejado (AUFO) ocorre quando o cluster primário está inativo ou isolado. SnapMirror active sync lida com essas falhas e inicia um failover automático não planejado para o cluster secundário. O cluster secundário é convertido em primário e começa a atender os clientes.' 
 ---
 = Recuperar de operações automáticas de failover de cluster ONTAP não planejadas
 :hardbreaks:
@@ -14,7 +14,7 @@ summary: 'Uma operação automática de failover não planejado (AUFO) ocorre qu
 
 
 [role="lead"]
-Uma operação de failover automático não planejado (AUFO) ocorre quando o cluster primário está inativo ou isolado. O ONTAP Mediator detecta quando ocorre uma falha e executa uma transição automática não planejada para o cluster secundário.  Esta operação é realizada somente com a assistência do Mediador ONTAP . O cluster secundário é convertido para o primário e começa a atender os clientes. Essa operação é realizada somente com a ajuda do ONTAP Mediator.
+Uma operação automática de failover não planejado (AUFO) ocorre quando o cluster primário está inativo ou isolado. SnapMirror active sync detecta essas falhas e inicia um failover automático não planejado para o cluster secundário. O cluster secundário é convertido em primário (o cluster preferencial) e começa a atender clientes. Observe que a detecção de falhas e o processamento de failover só podem ser realizados com assistência do ONTAP Mediator.
 
 
 NOTE: Após uma falha automática não planejada, é importante verificar novamente os caminhos do host para que não haja perda de caminhos de E/S.
@@ -24,7 +24,7 @@ NOTE: Após uma falha automática não planejada, é importante verificar novame
 [[reestablish-the-protection-relationship-after-an-unplanned-failover]]
 == Restabeleça o relacionamento de proteção após um failover não planejado
 
-É possível restabelecer a relação de proteção usando o Gerenciador de sistema ou a CLI do ONTAP.
+Assim que o cluster primário original, por exemplo, o Cluster A, se recuperar, SnapMirror active sync estabelecerá automaticamente a proteção na direção inversa. Se você quiser restaurar o estado original, tornando o Cluster A o cluster primário preferencial, pode realizar um failback manual iniciando uma operação de failover planejada usando o System Manager ou a ONTAP CLI.
 
 [role="tabbed-block"]
 ====
@@ -35,7 +35,7 @@ NOTE: Após uma falha automática não planejada, é importante verificar novame
 IMPORTANT: Do ONTAP 9.8 até o ONTAP 9.14.1, SnapMirror active sync é denominado SnapMirror Business Continuity (SM-BC).
 
 . Navegue até *Proteção > Relacionamentos* e aguarde até que o estado do relacionamento mostre "InSync".
-. Para retomar as operações no cluster de origem original, clique image:icon_kabob.gif["Ícone de opções do menu"] e selecione *failover*.
+. Para realizar um failback e retomar as operações no cluster de origem, clique image:icon_kabob.gif["Ícone de opções do menu"] e selecione *Failover*.
 
 
 --
@@ -57,6 +57,25 @@ Primary Data Cluster: cluster-2
 Last Progress Update: -
        Failover Type: unplanned
   Error Reason codes: -
+....
+Você pode monitorar o status da relação de proteção reversa usando o comando  `snapmirror show` no cluster primário original.
+
+Por exemplo:
+
+....
+ClusterA::> snapmirror show
+                                                                               Progress
+Source             Destination  Mirror        Relationship   Total             Last
+Path         Type  Path         State         Status         Progress  Healthy Updated
+-----------  ----  ------------ -------       -------------- --------- ------- --------
+vs3:/cg/dcg3 XDP   vs1:/cg/scg3 Snapmirrored  InSync          -         true    -
+....
+Você pode realizar um failback para o cluster primário original usando o comando  `snapmirror failover start`.
+
+Por exemplo:
+
+....
+ClusterA::> snapmirror failover start -destination-path vs1:/cg/scg3
 ....
 Consulte link:https://docs.netapp.com/us-en/ontap-ems-9131/smbc-aufo-events.html["Referência da EMS"^]para obter informações sobre mensagens de eventos e sobre ações corretivas.
 
