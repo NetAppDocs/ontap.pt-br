@@ -11,7 +11,9 @@ summary: Configurar as definições de descarregamento TLS
 
 
 [role="lead"]
-A partir do ONTAP 9.19.1, você pode configurar o descarregamento de TLS para melhorar o desempenho pós-handshake do TLS, aproveitando os recursos em placas Ethernet compatíveis. Esse recurso descarrega a criptografia e a descriptografia, reduzindo a sobrecarga da CPU e melhorando o desempenho.
+A partir do ONTAP 9.19.1, você pode configurar o descarregamento de TLS para melhorar o desempenho pós-handshake do TLS, utilizando recursos em placas Ethernet compatíveis. Esse recurso descarrega a criptografia e a descriptografia, reduzindo a sobrecarga da CPU e melhorando o desempenho.
+
+Você pode habilitar o descarregamento de TLS apenas para o tráfego que usa KTLS. Essa configuração não se aplica a todo o tráfego habilitado para TLS. O tráfego de gerenciamento, como HTTPS e tráfego de API REST, não é afetado por essa configuração. O tráfego de HA não é compatível.
 
 .Sobre esta tarefa
 * O descarregamento TLS está desativado por padrão.
@@ -22,7 +24,8 @@ A partir do ONTAP 9.19.1, você pode configurar o descarregamento de TLS para me
 Para conexões com TLS descarregado, as operações criptográficas do TLS normalmente ignoram o software e são tratadas por uma NIC com capacidade de descarregamento. Se a LIF associada a essa conexão migrar para uma porta de rede sem capacidade de descarregamento de TLS, as operações criptográficas passam a ser tratadas por software e pelo kernel do sistema.
 
 * As interfaces de gerenciamento (HTTPS, API REST) não são afetadas por essa configuração.
-* A configuração de descarregamento de hardware TLS é válida para todo o cluster.
+* O descarregamento de hardware TLS é uma configuração que se aplica a todo o cluster.
+* O tráfego HA não é compatível com o descarregamento de hardware TLS.
 
 
 .Placas de rede e plataformas suportadas
@@ -79,20 +82,44 @@ O descarregamento de hardware TLS requer uma placa de rede compatível. A tabela
 
 |===
 .Tipos de tráfego suportados
-O descarregamento de hardware TLS suporta os seguintes tipos de tráfego:
+A tabela a seguir mostra se o descarregamento de hardware TLS é compatível com cada tipo de tráfego.
 
-* NVMe/TCP
-* Criptografia de emparelhamento de cluster
-* FabricPool
-* S3
-* NFS
+[cols="1,1,2"]
+|===
+| Tipo de tráfego | Suportado | Notas 
 
 
+| NVMe/TCP | Sim | Compatível com plataformas e placas de rede que suportam o descarregamento de TLS. 
+
+
+| Criptografia de emparelhamento de cluster | Sim | Compatível com tráfego de rede do cluster. Isso não inclui tráfego de alta disponibilidade (HA). 
+
+
+| FabricPool | Sim | Compatível com plataformas e placas de rede que suportam o descarregamento de TLS. 
+
+
+| S3 | Sim | Compatível com plataformas e placas de rede que suportam o descarregamento de TLS. 
+
+
+| NFS sobre TLS | Sim, a partir do ONTAP 9.19.1 | Compatível para o tráfego de NFS do ONTAP sobre TLS onde KTLS é utilizado. 
+
+
+| KMIP | Não | Não suportado. 
+
+
+| System Manager | Não | As interfaces de gerenciamento não são afetadas por esta configuração. 
+
+
+| API REST | Não | As interfaces de gerenciamento não são afetadas por esta configuração. 
+
+
+| Tráfego HA | Não | O descarregamento de hardware TLS não se aplica ao tráfego HA. 
+|===
 
 NOTE: Em sistemas ASA, o descarregamento de hardware TLS se aplica apenas ao tráfego NVMe/TCP. NFS sobre TLS, FabricPool e S3 não são suportados em plataformas ASA.
 
 
-NOTE: Nas plataformas AFX, o descarregamento de hardware TLS é compatível com os tipos de tráfego front-end NFS e S3. NVMe/TCP não é compatível com as plataformas AFX porque AFX não suporta protocolos SAN/block.
+NOTE: Nas plataformas AFX, o descarregamento de hardware TLS suporta NFS sobre TLS e tipos de tráfego front-end S3. NVMe/TCP não é suportado nas plataformas AFX porque o AFX não suporta protocolos SAN/block.
 
 .Antes de começar
 * Você precisa ser um administrador do ONTAP no `admin` Nível de privilégio necessário para executar as seguintes tarefas.
