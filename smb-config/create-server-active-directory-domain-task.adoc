@@ -38,6 +38,7 @@ Ao criar um servidor SMB em um domínio do diretório de atividades:
 * Você deve usar o nome de domínio totalmente qualificado (FQDN) ao especificar o domínio.
 * A configuração padrão é adicionar a conta de máquina do servidor SMB ao objeto de computador do ative Directory.
 * Você pode optar por adicionar o servidor SMB a uma Unidade Organizacional (UO) diferente usando a opção  `-ou`.
+* A partir do ONTAP 9.13.1, você pode configurar um site padrão para o servidor SMB. O ONTAP pode usar esse site quando uma LIF não tiver associação a um site e como alternativa caso a descoberta de sites falhe para um domínio confiável ao localizar controladores de domínio do domínio confiável.
 * Opcionalmente, você pode optar por adicionar uma lista delimitada por vírgulas de um ou mais aliases NetBIOS (até 200) para o servidor SMB.
 +
 A configuração de aliases NetBIOS para um servidor SMB pode ser útil quando você está consolidando dados de outros servidores de arquivos para o servidor SMB e deseja que o servidor SMB responda aos nomes dos servidores originais.
@@ -58,7 +59,7 @@ A licença SMB está incluída no link:../system-admin/manage-licenses-concept.h
 +
 Não é necessária uma licença CIFS se o servidor SMB for utilizado apenas para autenticação.
 
-. Crie o servidor SMB em um domínio AD: `+vserver cifs create -vserver vserver_name -cifs-server smb_server_name -domain FQDN [-ou organizational_unit][-netbios-aliases NetBIOS_name, ...][-keytab-uri {(ftp|http)://hostname|IP_address}][-comment text]+`
+. Criar o servidor SMB em um domínio AD: `+vserver cifs create -vserver vserver_name -cifs-server smb_server_name -domain FQDN [-ou organizational_unit][-default-site site_name][-netbios-aliases NetBIOS_name, ...][-keytab-uri {(ftp|http)://hostname|IP_address}][-comment text]+`
 +
 Ao ingressar em um domínio, esse comando pode levar vários minutos para ser concluído.
 
@@ -97,6 +98,10 @@ Default Site Used by LIFs Without Site Membership:
                           CIFS Server Description: -
                           List of NetBIOS Aliases: -
 ----
+
+
+A partir do ONTAP 9.13.1, o site padrão do servidor SMB também é usado como alternativa caso o ONTAP não consiga descobrir informações do site para um domínio confiável.
+
 . Se desejar, ative a comunicação criptografada com o controlador de domínio (ONTAP 9.8 e posterior): `vserver cifs security modify -vserver svm_name -encryption-required-for-dc-connection true`
 
 
