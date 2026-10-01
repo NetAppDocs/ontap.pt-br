@@ -1,0 +1,41 @@
+---
+permalink: volumes/migration-compression-type-coexistence.html 
+sidebar: sidebar 
+keywords: access control lists, flexclone files, flexclone luns, inheritance, ACL, ACLs, acl, acls, flexclone 
+summary: Os arquivos FlexClone e LUNs FlexClone herdam as listas de controle de acesso de seus arquivos pai e LUNs. 
+---
+= Suporte para coexistência de tipos de compressão durante a migração de volumes do ONTAP
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+Quando um volume é migrado entre sistemas ONTAP, o volume de origem pode usar um tipo de compactação de dados diferente do volume de destino.
+
+Os tipos de compressão compatíveis incluem secundária, adaptável 8K e armazenamento sensível à temperatura (TSSE). Durante a migração, esses tipos de compressão podem coexistir temporariamente no volume de destino da seguinte forma:
+
+[cols="4"]
+|===
+| Tipo de compressão de origem | Tipo de compressão de destino | A coexistência é compatível com a migração | Tamanho de leitura/gravação de E/S do aplicativo 
+
+
+| Secundário | TSSE | Sim | Automático 
+
+
+| Adaptável 8K | TSSE | Sim | Automático 
+
+
+| Secundário | Adaptável 8K | Não | Não suportado 
+|===
+.Migração da compressão secundária e adaptável de 8k para a compressão TSSE
+Os volumes secundários e adaptáveis de 8k são convertidos progressivamente para TSSE por meio de processos em segundo plano após a migração ou à medida que os dados são regravados no volume de destino durante a migração.
+
+Após a migração de um volume da compressão secundária ou adaptável de 8K para a compressão TSSE, o *tipo de compressão* exibido na  `volume efficiency show`saída do comando não muda, mesmo após a conversão de todos os blocos existentes. O tipo de compressão permanece *secundário* para um volume secundário convertido e *adaptável* para um volume adaptável de 8K convertido.
+
+Os novos dados gravados em volumes convertidos de compressão secundária ou adaptável de 8K são comprimidos com TSSE.
+
+.Migração da compressão secundária para a compressão adaptável de 8k
+Não há suporte para a coexistência direta da compressão secundária e da compressão adaptável de 8K no mesmo volume.
+
+Aprenda a link:move-between-secondary-adaptive-compression-task.html["alternar entre a compressão secundária e a compressão adaptável"].
