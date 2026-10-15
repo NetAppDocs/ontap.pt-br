@@ -18,7 +18,7 @@ Como prática recomendada, teste sua carga de trabalho de produção em um ambie
 As seguintes diretrizes são bem testadas internamente na NetApp. É *_fortemente_* recomendado que você fique dentro deles. Se não o fizer, poderá ocorrer um comportamento inesperado.
 
 * Melhorias significativas para o recurso de write-back do FlexCache foram introduzidas no ONTAP 9.17.1P1. É *altamente* recomendável que você execute a versão recomendada mais recente, posterior à 9.17.1P1, tanto no cluster de origem quanto no cluster de cache. Caso não consiga executar a linha de código 9.17.1, a versão P mais recente, 9.16.1, é a próxima versão sugerida. O ONTAP 9.15.1 não possui todas as correções e melhorias necessárias para o recurso de write-back do FlexCache e não é recomendado para cargas de trabalho de produção.
-* Em sua iteração atual, os caches write-back do FlexCache devem ser configurados com um único constituinte para todo o volume FlexCache. FlexCaches multiconstitutivos pode resultar em despejos indesejados de dados do cache.
+* Os caches write-back do FlexCache com múltiplos constituintes são suportados com o ONTAP 9.19.1 GA, 9.18.1P2, 9.17.1P3, 9.16.1P10 e versões P posteriores em cada respectiva família de versões. Para versões anteriores do ONTAP, você deve usar um único constituinte para todo o volume FlexCache. Os FlexCaches com múltiplos constituintes em versões anteriores podem resultar na expulsão indesejada de dados do cache.
 * Os testes foram realizados com arquivos menores que 100 GB e tempos de ida e volta na WAN entre o cache e a origem não superiores a 200 ms. Cargas de trabalho que excedam esses limites podem resultar em características de desempenho inesperadas.
 * A gravação em fluxos de dados alternativos SMB faz com que o arquivo principal seja despejado do cache. Todos os dados sujos para o arquivo principal precisam ser lavados para a origem antes que qualquer outra operação possa ocorrer nesse arquivo. O fluxo de dados alternativo também é encaminhado para a origem.
 * Renomear um arquivo faz com que o arquivo seja despejado do cache. Todos os dados sujos para o arquivo precisam ser lavados para a origem antes que qualquer outra operação possa ocorrer nesse arquivo.
@@ -37,6 +37,32 @@ Quaisquer outros atributos que sejam alterados ou definidos são encaminhados pa
 
 * Os instantâneos tirados na origem causam a recuperação de todos os dados sujos pendentes de cada cache habilitado para gravação associada a esse volume de origem. Isso pode exigir várias tentativas da operação se houver uma atividade significativa de retorno de gravação em andamento, já que os despejos desses arquivos sujos podem levar algum tempo.
 * Os bloqueios oportunistas (Oplocks) SMB para gravações não são suportados em volumes FlexCache com write-back habilitado.
-* Os caches de gravação reversa alternam automaticamente para o modo de gravação em torno quando o espaço livre do volume de origem cai para 20% ou menos. Isso ajuda a evitar a falta de espaço na origem, o que resultaria em deixar dados sujos órfãos em um cache com gravação reversa habilitada. No entanto, se o volume de origem estiver superprovisionado, ou seja, se seu tamanho lógico provisionado for maior que o espaço livre no agregado, a porcentagem de espaço livre relatada pode acionar esse limite antes do esperado. O limite de 20% é avaliado tanto em relação ao espaço livre relatado do volume de origem quanto à capacidade física disponível do agregado.
-* Redes intercluster com baixa largura de banda e/ou com perda de dados podem ter um impacto negativo significativo no desempenho de gravação do FlexCache . Embora não haja um requisito específico de largura de banda, já que isso depende muito da sua carga de trabalho, é *altamente* recomendável que você verifique a integridade do link entre clusters, entre o(s) cache(s) e a origem.
+* Os caches write-back alternam automaticamente para o modo write-around quando o espaço livre do volume de origem cai para 20% ou menos. Isso ajuda a evitar a falta de espaço na origem, o que resultaria em dados sujos órfãos em um cache com write-back habilitado. Se o volume de origem estiver superprovisionado, seu tamanho provisionado lógico será maior que o espaço livre no agregado. O limite de 20% é avaliado em relação ao espaço disponível do volume de origem e à capacidade física disponível do agregado. `percent-used` e `capacity` ainda podem mostrar 0% quando o espaço disponível já estiver abaixo desse limite.
++
+O exemplo a seguir mostra um volume de origem com provisionamento excessivo. Quase nenhum dado é gravado, mas o agregado não consegue suportar o tamanho lógico total:
+
++
+[source, cli]
+----
+ORIGIN::> vol show -volume origin_volume -fields percent-used,available,size
+vserver             volume           size    available percent-used
+------------------- ---------------- ------- --------- ------------
+origin_svm          origin_volume    19.70TB 1.33TB    0%
+----
++
+Observe que `percent-used` está em 0%, mas o espaço disponível é de 1,33 TB de 19,70 TB, ou seja, 1,33 / 19,70, ou cerca de 7% disponível. Isso já está abaixo do limite de 20%, portanto os caches de write-back dessa origem mudam para o modo write-around.
+
++
+[source, cli]
+----
+ORIGIN::> df -h origin_volume
+Filesystem               total       used      avail   capacity  Mounted on       Vserver
+/vol/origin_volume/      18TB        515MB     1363GB         0%    ---           origin_svm
+
+2 entries were displayed.
+----
++
+Observe que `capacity` também é 0%, e apenas 515 MB estão em uso. O espaço disponível é de 1363 GB de 18 TB, ou cerca de 7% do sistema de arquivos. As colunas de porcentagem mostram quão poucos dados estão armazenados. Elas não mostram quanto do tamanho do volume o agregado pode realmente fornecer.
+
+* Redes intercluster com baixa largura de banda e/ou com perda de pacotes podem ter um efeito negativo significativo no desempenho de write-back do FlexCache. Embora não haja um requisito específico de largura de banda, como isso depende muito da sua carga de trabalho, é *_fortemente_* recomendável que você garanta a integridade do link intercluster entre o(s) cache(s) e a origem. Se sua rede for propensa à perda de pacotes e você estiver executando o ONTAP 9.19.1 ou posterior, considere usar link:../networking/improve-tcp-wan-performance.html["TCP RACK"] para melhorar o desempenho.
 
