@@ -29,6 +29,13 @@ A menos que seja indicado para uma operação específica, os seguintes cabeçal
 * `x-amz-date`
 
 
+A partir do ONTAP 9.20.1, os seguintes cabeçalhos de checksum são compatíveis com buckets S3 NAS:
+
+* `x-amz-checksum-algorithm`
+* `x-amz-checksum-crc64nvme`
+* `x-amz-checksum-type`
+
+
 
 
 [[bucket-operations]]
@@ -154,6 +161,13 @@ DeleteObjects
 If-Match
 
 |===
+A partir do ONTAP 9.20.1, o ONTAP S3 oferece suporte a checksums flexíveis para buckets S3 NAS.
+
+* O ONTAP valida, armazena e retorna checksums quando os clientes incluem cabeçalhos de checksum nas solicitações.
+* Somente o algoritmo CRC-64NVME e o `FULL_OBJECT` tipo de checksum são suportados.
+* O suporte flexível a checksum se aplica apenas a buckets S3 NAS.
+
+
 A partir do ONTAP 9.9,1, o ONTAP S3 oferece suporte a metadados e marcação de objetos.
 
 * PutObject e CreateMultipartUpload incluem pares de chave-valor usando `x-amz-meta-<key>.`
@@ -276,7 +290,7 @@ O ONTAP S3 suporta estes parâmetros de consulta URI adicionais:
 * `response-expires`
 
 
-E este cabeçalho de solicitação adicional:
+E estes cabeçalhos de solicitação adicionais:
 
 * Alcance
 
@@ -289,7 +303,7 @@ E este cabeçalho de solicitação adicional:
  a| 
 ObterAtributosDeObjeto
 
-O ONTAP S3 suporta este cabeçalho adicional:
+O ONTAP S3 suporta todos os parâmetros e cabeçalhos comuns para esta solicitação, o ONTAP S3 também suporta este cabeçalho adicional:
 
 * `x-amz-object-attributes`
 
@@ -302,7 +316,7 @@ O ONTAP S3 suporta este cabeçalho adicional:
 | GetObjectTagging | ONTAP 9.9,1 
 
 
-| HeadObject | ONTAP 9,8 
+| HeadObject o ONTAP S3 suporta todos os parâmetros e cabeçalhos comuns para esta solicitação. | ONTAP 9,8 
 
 
  a| 
@@ -410,7 +424,7 @@ O ONTAP S3 suporta este cabeçalho adicional:
 | Marcação de objetos | ONTAP 9.9,1 
 
 
-| UploadPart | ONTAP 9,8 
+| Para UploadPart, o ONTAP S3 suporta todos os parâmetros e cabeçalhos comuns para esta solicitação. | ONTAP 9,8 
 
 
  a| 
@@ -461,6 +475,25 @@ Essas operações não são específicas do S3 e geralmente estão associadas ao
 
 [[s3-actions-by-release]]
 == S3 ações por liberação
+
+.ONTAP 9.20.1
+A partir do ONTAP 9.20.1, os buckets NAS S3 em volumes FlexCache oferecem suporte a operações de cópia de objetos no lado do servidor usando as APIs S3 `CopyObject` e `UploadPartCopy`. Você pode copiar objetos no mesmo bucket NAS FlexCache ou de um bucket NAS S3 com suporte de um volume FlexGroup para um bucket NAS FlexCache. Não há suporte para cópia de um bucket NAS S3 com suporte de um volume FlexVol para um bucket NAS FlexCache, entre dois buckets NAS FlexCache ou de um bucket NAS FlexCache para um bucket NAS não FlexCache.
+
+O ONTAP 9.20.1 adiciona suporte a checksums flexíveis usando o algoritmo CRC-64NVME para buckets S3 NAS. O ONTAP valida, armazena e retorna checksums quando os clientes incluem cabeçalhos de checksum em suas solicitações. As seguintes operações suportam cabeçalhos de checksum flexíveis:
+
+* PutObject
+* CreateMultipartUpload
+* UploadPart
+* CompleteMultipartUpload
+* CopyObject
+* UploadPartCopy
+* GetObject
+* HeadObject
+* ListObjectsV2
+* ListParts
+
+
+Somente o algoritmo CRC-64NVME e o tipo de checksum FULL_OBJECT são suportados. O suporte flexível a checksum está disponível apenas para buckets S3 NAS.
 
 .ONTAP 9.14,1
 ONTAP 9.14,1 adiciona suporte para bloqueio de objetos S3.

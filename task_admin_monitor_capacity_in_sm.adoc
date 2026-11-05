@@ -131,6 +131,63 @@ Para obter mais informações, link:./concepts/capacity-measurements-in-sm-conce
 
 
 
+[[view-the-data-reduction-rate]]
+== Veja a taxa de redução de dados
+
+A taxa de redução de dados indica o quanto a quantidade de armazenamento consumida pelos seus dados é reduzida após a aplicação de recursos de eficiência de storage, como compressão, compactação e deduplicação.
+
+A partir do ONTAP 9.20.1, a taxa de redução de dados (DRR) é informada com e sem dados redutíveis. Dados redutíveis são dados nos quais a economia de espaço é obtida após a aplicação de recursos de eficiência de storage. No ONTAP 9.19.1 e anteriores, a DRR inclui dados redutíveis e não redutíveis. Dados não redutíveis são dados para os quais a economia de espaço não é obtida após a aplicação de recursos de eficiência de storage, ou dados aos quais os recursos de eficiência de storage não podem ser aplicados. A DDR sem dados redutíveis fornece uma representação mais precisa do espaço economizado pela eficiência de storage do ONTAP.
+
+.Passos
+Você pode usar a ONTAP CLI ou o System Manager para visualizar seu DRR.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+A partir do ONTAP 9.13.1, a taxa de redução de dados exibida no System Manager considera os resultados da maioria dos recursos de eficiência de storage; no entanto, snapshots e thin provisioning não são contabilizados como parte da taxa de redução de dados. No ONTAP 9.12.1 e em versões anteriores, você tem a opção de visualizar essa taxa sem incluir snapshots e clones.
+
+.Para visualizar a DRR no nível do agregado:
+. No System Manager, selecione *Armazenamento > Camadas*.
+. Selecione o nível local (agregado) para o qual você deseja visualizar a DRR.
++
+O DRR está listado em *Capacidade da camada local*.
+
+
+
+.Para visualizar o DRR no nível do cluster:
+. No System Manager, selecione *Dashboard*.
++
+A DRR é exibida em Capacidade.
+
+
+
+--
+.CLI
+--
+A forma como você visualiza sua taxa de redução de dados na CLI varia dependendo da sua versão do ONTAP.
+
+
+NOTE: Você não deve usar o  `df -S`comando para visualizar sua taxa de redução de dados. Se o  `df -S`comando for usado em um processo de automação, substitua-o pelo comando volume show, conforme mostrado.
+
+[cols="1,3,3,3"]
+|===
+| Versão de ONTAP | Para visualizar o DRR em nível de cluster | Para visualizar a DRR no nível do agregado | Para visualizar a DRR no nível do volume 
+
+
+| 9.20.1 e versões posteriores | `cluster-show` | `storage aggregate show-cumulated-efficiency`  a| 
+* `volume efficiency`
+* `volume show -volume <vol_name> -vserver <SVM> -fields used, sis-space-saved, dedupe-space-saved, compression-space-saved`
+
+
+
+
+| 9.19.1 e anteriores | `cluster-show` | `cluster space show` | `volume show -volume <vol_name> -vserver <SVM> -fields used, sis-space-saved, dedupe-space-saved, compression-space-saved` 
+|===
+--
+====
+
+
 [[view-the-capacity-of-the-volumes-in-a-storage-vm]]
 == Visualizar a capacidade dos volumes em uma VM de storage
 

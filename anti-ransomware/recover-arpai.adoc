@@ -34,6 +34,7 @@ O ARP/AI cria snapshots com um dos seguintes nomes prefixados:
 .Antes de começar
 * Se você estiver respondendo a um aviso de atividade anormal, link:respond-arpai.html#classify-as-potential-ransomware-attack-and-recover-data["você deve primeiro categorizá-lo como um possível ataque de ransomware"] antes de prosseguir com a restauração de dados.
 * Escolha um <<choose-a-recovery-method,método de restauração>> e revise <<recovery-constraints-and-considerations,restrições de recuperação>> antes de concluir um procedimento de restauração.
+* A partir do ONTAP 9.20.1, se a política de resposta de snapshot ARP/AI estiver definida como `alert-only`, nenhum snapshot ARP/AI será criado e a recuperação de snapshot ARP/AI não estará disponível. Para recuperar dados, use um snapshot agendado do ONTAP ou sua própria solução de backup.
 
 
 
@@ -64,6 +65,12 @@ Saiba mais sobre link:../data-protection/restore-single-file-snapshot-task.html[
 * Para o ONTAP 9.16.1 e versões posteriores: limpe o evento suspeito *primeiro* (em link:respond-arpai.html["Responder a atividades anormais"]) e depois execute a restauração. Após a limpeza, os snapshots ARP/AI são mantidos com base em como você categoriza a atividade. A partir do ONTAP 9.17.1, os padrões são 7 dias (ataque real) ou 24 horas (falso positivo). No ONTAP 9.16.1, os padrões são 5 dias (ataque real) ou 48 horas (falso positivo). A opção clear-suspect fica indisponível após uma restauração de volume, então você deve limpar antes de restaurar.
 * A liberação do bloqueio do snapshot ARP/AI só é necessária quando você usa  `volume snapshot restore` para restaurar a partir de um snapshot anterior. Não é necessária para o FlexClone, SnapRestore de arquivo único, operações de cópia de dados ou métodos similares.
 * Para volumes SAN onde o ataque é detectado apenas por análise de entropia, somente o snapshot criado imediatamente antes da linha do tempo do ataque e o snapshot do ataque são retidos por um período estendido (10 dias por padrão, configurável). Outros snapshots periódicos continuam seguindo as regras normais de retenção. Isso difere dos volumes NAS, onde todos os snapshots criados antes da linha do tempo do ataque são retidos até que o administrador execute uma ação de limpar suspeitos.
+* Para o ONTAP 9.20.1 e versões posteriores: uma restauração de snapshot do volume pode reverter a política de resposta de snapshot do ARP/AI do volume para a política que estava em vigor quando o snapshot foi capturado. Após uma restauração do volume, verifique se a política de resposta de snapshot ainda está correta:
++
+[source, cli]
+----
+security anti-ransomware volume snapshot-settings show -vserver <svm_name> -volume <volume_name>
+----
 
 
 .SnapMirror considerações

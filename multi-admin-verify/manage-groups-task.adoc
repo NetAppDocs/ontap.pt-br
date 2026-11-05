@@ -22,6 +22,13 @@ Você pode configurar o MAV para alertar os administradores do MAV de que as sol
 
 A partir do ONTAP 9.15.1, você pode configurar usuários do Active Directory (AD) como administradores do MAV. O usuário do AD deve serlink:../authentication/grant-access-active-directory-users-groups-task.html["configurado como administrador ONTAP"] .
 
+A partir do ONTAP 9.20.1, os grupos de aprovação também podem incluir grupos de provedor de identidade (IdP), Active Directory (AD) ou LDAP (nsswitch). Os tipos de grupo suportados incluem Entra ID (anteriormente Azure AD), ADFS, grupos de domínio do AD e grupos LDAP.
+
+As alterações na associação de um usuário a grupos no provedor de identidade entram em vigor após o próximo login bem-sucedido do usuário. Nenhuma reconfiguração do MAV é necessária.
+
+
+NOTE: Antes de adicionar um grupo IdP, AD ou LDAP a um grupo de aprovação MAV, o grupo já deve ter o acesso de login configurado e estar registrado na `security login group` tabela com um mapeamento de função. Consulte os procedimentos a seguir.
+
 
 
 [[system-manager-procedure]]
@@ -33,22 +40,32 @@ Para modificar um grupo de aprovação existente ou criar um grupo de aprovaçã
 
 . Identifique os administradores para receber a verificação de vários administradores.
 +
-.. Clique em *Cluster > Settings.*
-.. Clique image:icon_arrow.gif["Ícone de seta"] ao lado de *usuários e funções.*
-.. Clique image:icon_add.gif["Adicionar ícone"]em *Users.*
+.. Selecione *Cluster > Configurações.*
+.. Selecione image:icon_arrow.gif["Ícone de seta"] ao lado de *Usuários, grupos e funções.*
+.. Selecione image:icon_add.gif["Adicionar ícone"] em *Usuários*.
 .. Modifique a lista conforme necessário.
 +
 Para obter mais informações, consulte link:../task_security_administrator_access.html["Controle o acesso do administrador."]
 
 
 
+. A partir do ONTAP 9.20.1, se você quiser adicionar um IdP, grupo do Active Directory ou LDAP como aprovador do MAV, primeiro registre o grupo para que ele possa ser referenciado na configuração do MAV.
++
+.. Em *Grupos*, selecione image:icon_add.gif["Adicionar ícone"] para adicionar um grupo.
++
+Insira o nome do grupo. O campo UUID é obrigatório apenas para grupos do Microsoft Entra; outros provedores de identidade usam o nome do grupo.
+
+.. Em *Mapeamento de grupo para função*, selecione image:icon_add.gif["Adicionar ícone"], selecione o grupo e atribua uma função com privilégios suficientes para aprovar solicitações MAV.
+
+
 . Criar ou modificar o grupo de aprovação MAV:
 +
-.. Clique em *Cluster > Settings.*
-.. Clique image:icon_arrow.gif["Ícone de seta"] ao lado de *aprovação Multi-Admin* na seção *Segurança*. (Você verá o image:icon_gear.gif["Ícone ações"] ícone se o MAV ainda não estiver configurado.)
+.. Selecione *Cluster > Configurações.*
+.. Selecione image:icon_arrow.gif["Ícone de seta"] ao lado de *Aprovação de múltiplos administradores* na seção *Segurança*. (Você verá o ícone image:icon_gear.gif["Ícone ações"] se o MAV ainda não estiver configurado.)
 +
 *** Nome: Introduza um nome de grupo.
-*** Aprovadores: Selecione aprovadores de uma lista de usuários.
+*** Aprovadores (usuários): selecione aprovadores individuais a partir de uma lista de usuários.
+*** Aprovadores (grupos): a partir do ONTAP 9.20.1, é possível selecionar opcionalmente um ou mais grupos de IdP, AD ou LDAP registrados.
 *** Endereço de e-mail: Insira o(s) endereço(s) de e-mail.
 *** Grupo padrão: Selecione um grupo.
 
@@ -90,7 +107,7 @@ Para configurar estes parâmetros, introduza:
 +
 Saiba mais sobre `event config show` e `event config modify` no link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=event+config["Referência do comando ONTAP"^].
 
-. Identifique os administradores para receber a verificação de vários administradores
+. Identifique os administradores que participarão da verificação de múltiplos administradores.
 +
 [cols="50,50"]
 |===
@@ -114,22 +131,62 @@ Saiba mais sobre `event config show` e `event config modify` no link:https://doc
 +
 Saiba mais sobre `security login show`o , `security login modify` e `security login create` no link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=security+login["Referência do comando ONTAP"^].
 
-. Crie o grupo de aprovação MAV:
+. A partir do ONTAP 9.20.1, se você quiser adicionar um grupo do IdP, do Active Directory ou do LDAP como aprovador do MAV, confirme se o grupo tem acesso de login configurado e, em seguida, registre-o no MAV.
 +
-`security multi-admin-verify approval-group create [ -vserver _svm_name_] -name _group_name_ -approvers _approver1_[,_approver2_…] [[-email _address1_], _address1_...]`
+Se o grupo ainda não tiver acesso de login configurado, digite:
 
 +
-** `-vserver` - Somente o administrador SVM é suportado nesta versão.
-** `-name` - O nome do grupo MAV, até 64 carateres.
-** `-approvers`- A lista de um ou mais aprovadores. Para usuários do AD, use o formato `domain\user` . Por exemplo,  `mydomain\pavan` .
-** `-email` - Um ou mais endereços de e-mail que são notificados quando uma solicitação é criada, aprovada, vetada ou executada.
+`security login create -user-or-group-name _group_name_ -application http|ssh -authentication-method domain|nsswitch|saml|oauth2 -role _role_`
+
 +
-*Exemplo:* o comando a seguir cria um grupo MAV com dois membros e endereços de e-mail associados.
+Em seguida, registre o grupo para que ele possa ser referenciado na configuração do MAV e mapeie-o para uma função:
+
++
+`security login group create -vserver _svm_name_ -name _group_name_ [-uuid _uuid_]`
+
++
+`security login group role-mapping create -group-id _group_id_ -role _role_`
+
++
+O `-uuid` parâmetro é necessário apenas para grupos do Microsoft Entra ID. Os grupos de domínio do Active Directory, ADFS/SAML e LDAP (nsswitch) são identificados apenas pelo nome.
+
++
+*Exemplo:* Os comandos a seguir registram o grupo do Active Directory `mydomain\mav_approvers` para MAV e o mapeiam para a `admin` função.
 
 +
 [listing]
 ----
-cluster-1::> security multi-admin-verify approval-group create -name mav-grp1 -approvers pavan,julia -email pavan@myfirm.com,julia@myfirm.com
+cluster-1::> security login group create -vserver cluster-1 -name mydomain\mav_approvers
+cluster-1::> security login group show -vserver cluster-1
+
+     Vserver: cluster-1
+  Group Name: mydomain\mav_approvers
+    Group ID: 1
+  Group UUID: -
+     Comment: -
+
+cluster-1::> security login group role-mapping create -group-id 1 -role admin
+----
++
+Saiba mais sobre `security login group create` e `security login group role-mapping create` no link:https://docs.netapp.com/us-en/ontap-cli/search.html?q=security+login+group["Referência do comando ONTAP"^].
+
+. Crie o grupo de aprovação MAV:
++
+`security multi-admin-verify approval-group create [ -vserver _svm_name_] -name _group_name_ [-approvers _approver1_[,_approver2_…]] [-groups _group1_[,_group2_…]] [[-email _address1_], _address1_...]`
+
++
+** `-vserver` - Somente o administrador SVM é suportado nesta versão.
+** `-name` - O nome do grupo MAV, até 64 carateres.
+** `-approvers` - A lista de um ou mais aprovadores individuais. Para usuários do AD, use o formato `domain\user`. Por exemplo, `mydomain\pavan`.
+** `-groups` - A lista de um ou mais grupos de IdP, AD ou LDAP a serem incluídos no grupo de aprovação. Cada grupo já deve estar registrado na  `security login group`tabela com um mapeamento de função.
+** `-email` - Um ou mais endereços de e-mail que são notificados quando uma solicitação é criada, aprovada, vetada ou executada.
++
+*Exemplo:* O comando a seguir cria um grupo MAV com dois aprovadores individuais e um grupo do Entra ID.
+
++
+[listing]
+----
+cluster-1::> security multi-admin-verify approval-group create -name mav-grp1 -approvers pavan,julia -groups entra-group-mav-approvers -email pavan@myfirm.com,julia@myfirm.com
 ----
 
 
@@ -144,9 +201,9 @@ cluster-1::> security multi-admin-verify approval-group create -name mav-grp1 -a
 [listing]
 ----
 cluster-1::> security multi-admin-verify approval-group show
-Vserver  Name        Approvers        Email
--------  ---------------- ------------------  ------------------------------------------------------------
-svm-1    mav-grp1   pavan,julia      email pavan@myfirm.com,julia@myfirm.com
+Vserver  Name        Approvers        Approver Groups                  Email
+-------  ---------------- ------------------  ------------------------------- ------------------------------------------------------------
+svm-1    mav-grp1   pavan,julia      entra-group-mav-approvers        pavan@myfirm.com,julia@myfirm.com
 ----
 
 
@@ -160,12 +217,12 @@ Use esses comandos para modificar a configuração inicial do grupo MAV.
 
 
 | Modifique as caraterísticas do grupo ou modifique as informações de membros existentes  a| 
-`security multi-admin-verify approval-group modify [_parameters_]`
+`security multi-admin-verify approval-group modify [-vserver _svm_name_] -name _group_name_ [-approvers _approver1_[,_approver2_…]] [-groups _group1_[,_group2_…]] [[-email _address1_], _address1_...]`
 
 
 
 | Adicionar ou remover membros  a| 
-`security multi-admin-verify approval-group replace [-vserver _svm_name_] -name _group_name_ [-approvers-to-add _approver1_[,_approver2_…]][-approvers-to-remove _approver1_[,_approver2_…]]`
+`security multi-admin-verify approval-group replace [-vserver _svm_name_] -name _group_name_ [-approvers-to-add _approver1_[,_approver2_…]][-approvers-to-remove _approver1_[,_approver2_…]] [-groups-to-add _group1_[,_group2_…]][-groups-to-remove _group1_[,_group2_…]]`
 
 
 

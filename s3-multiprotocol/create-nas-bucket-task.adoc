@@ -30,17 +30,26 @@ Você também pode definir políticas de bucket que permitem ou não permitem o 
 
 Por exemplo, você pode querer configurar uma política de bucket que conceda acesso somente leitura aos dados a um grande grupo de usuários e outra política de bucket que permita que um grupo limitado execute operações em um subconjunto desses dados.
 
-A partir do ONTAP 9.18.1, você pode criar buckets NAS que permitem que aplicativos acessem dados em FlexCache volumes usando o protocolo S3. Todos os nós no cluster devem estar executando ONTAP 9.18.1 ou posterior. Antes de poder acessar um volume FlexCache usando o protocolo S3, você deve definir a  `-is-s3-enabled` opção para  `true` link:../flexcache/create-volume-task.html["sobre o FlexCache volume"]. O parâmetro é definido como  `false` por padrão.
+A partir do ONTAP 9.18.1, você pode criar buckets S3 NAS que permitem que os aplicativos acessem dados em volumes FlexCache usando o protocolo S3. Antes de acessar um volume FlexCache usando o protocolo S3, você deve definir a  `-is-s3-enabled`opção como  `true` link:../flexcache/create-volume-task.html["sobre o FlexCache volume"]. O parâmetro é definido como  `false` por padrão.
 
-A partir do ONTAP 9.17.1, você pode vincular diretamente um bucket S3 NAS a um volume, em vez de vincular ao caminho de junção. Por padrão, um bucket S3 em um volume NAS é associado a um caminho de junção, que pode ser alterado por um administrador do ONTAP a qualquer momento. Essas alterações podem interromper as operações do bucket S3. A partir do ONTAP 9.17.1, você pode usar o  `-is-nas-path-mutable false` opção com o  `vserver object-store-server bucket create` comando na CLI do ONTAP para habilitar a vinculação do bucket S3 NAS a um volume. Por padrão,  `-is-nas-path-mutable` está definido para  `true` .
+A partir do ONTAP 9.20.1, os buckets NAS do S3 em volumes FlexCache são suportados quando o volume de origem é um volume FlexVol.
+
+No ONTAP 9.18.1 e 9.19.1, os buckets NAS do S3 em volumes FlexCache são suportados somente quando o volume de origem FlexCache é um volume FlexGroup. A partir do ONTAP 9.17.1, você pode:
+
+* vincule diretamente um bucket S3 NAS a um volume, em vez do caminho de junção. Por padrão, um bucket S3 em um volume NAS é associado a um caminho de junção, que pode ser alterado por um administrador do ONTAP a qualquer momento. Essas alterações podem potencialmente interromper as operações do bucket S3.
+* Use a `-is-nas-path-mutable false` opção com o `vserver object-store-server bucket create` comando na CLI do ONTAP para habilitar a vinculação do bucket S3 NAS a um volume. Por padrão, `-is-nas-path-mutable` está definido como `true`.
+
 
 Como os "buckets" do S3 NAS são mapeamentos e não buckets do S3, as seguintes propriedades dos buckets padrão do S3 não se aplicam aos buckets do S3 NAS.
 
-* * aggr-list-multiplicador / storage-Service-level / volume / exclude-aggr-list / qos-policy-group * não são criados volumes ou qtree ao configurar buckets do S3 nas.
+* *aggr-list \ aggr-list-multiplier \ storage-service-level \ volume \ size \ exclude-aggr-list \ qos-policy-group* + Nenhum volume ou qtree é criado ao configurar buckets NAS do S3.
 * *role \ is -protected \ is -protected-on-ontap \ is -protected-on-cloud* + Os buckets NAS S3 não são protegidos ou espelhados usando o SnapMirror S3, mas usam a proteção regular do SnapMirror disponível na granularidade do volume.
 * Os volumes nas geralmente têm tecnologia de snapshot disponível para salvar versões diferentes. No entanto, o controle de versão não está disponível atualmente em buckets do nas S3.
 * *As estatísticas equivalentes usadas em lógica estão disponíveis para volumes nas através dos comandos de volume.
 * *objetos multipartes* + A partir do ONTAP 9.16.1, objetos multipartes são suportados em buckets S3 NAS quando link:../flexgroup/enable-adv-capacity-flexgroup-task.html["balanceamento de capacidade avançado"] está habilitado no volume FlexGroup subjacente. O balanceamento de capacidade avançado só pode ser habilitado em volumes FlexGroup . Não pode ser habilitado em volumes FlexVol .
++
+A partir do ONTAP 9.20.1, o acesso a buckets NAS do S3 também é compatível com volumes FlexCache com origens FlexVol. As operações de upload multipart não são compatíveis com buckets NAS do S3 em volumes FlexCache com origens FlexVol, porque os volumes FlexVol não oferecem suporte à distribuição granular de dados. Você pode copiar objetos no mesmo bucket NAS FlexCache quando o volume de origem for um volume FlexVol.
+
 
 
 .Passos

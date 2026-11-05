@@ -19,6 +19,9 @@ As solicitações de aprovação são identificadas com números de índice, que
 
 NOTE: `multi-admin-verify`solicitações em estado terminal podem ser substituídas ou removidas automaticamente.  Use olink:../system-admin/audit-display-log-contents-task.html["registro de auditoria"] para revisar solicitações anteriores.
 
+
+NOTE: A partir do ONTAP 9.20.1, os membros de um grupo de aprovadores configurado no IdP, no Active Directory ou no LDAP podem aprovar ou vetar solicitações sem serem listados como aprovadores nomeados. As alterações na associação de um usuário a grupos no provedor de identidade entram em vigor no próximo login bem-sucedido do usuário. Não é necessário reconfigurar o MAV.
+
 As seguintes informações da fila de pedidos podem ser exibidas:
 
 Operação:: A operação protegida para a qual a solicitação é criada.
@@ -26,6 +29,7 @@ Consulta:: O objeto (ou objetos) sobre o qual o usuário deseja aplicar a opera�
 Estado:: O estado atual da solicitação; pendente, aprovado, rejeitado, expirado, executado. Se uma solicitação for rejeitada por um aprovador, nenhuma outra ação será possível.
 Aprovadores necessários:: O número de administradores MAV que são necessários para aprovar a solicitação. Um usuário pode definir o parâmetro de aprovadores necessários para a regra de operação. Se um usuário não definir os aprovadores necessários para a regra, os aprovadores necessários da configuração global serão aplicados.
 Aprovadores pendentes:: O número de administradores MAV que ainda são obrigados a aprovar a solicitação para que a solicitação seja marcada como aprovada.
+Grupos de possíveis aprovadores:: A partir do ONTAP 9.20.1, os grupos de IdP, do Active Directory ou de LDAP cujos membros podem aprovar ou vetar a solicitação.
 Validade da aprovação:: O período durante o qual um administrador do MAV deve responder a uma solicitação de aprovação. Qualquer utilizador autorizado pode definir a validade da aprovação para uma regra de operação. Se a expiração da aprovação não for definida para a regra, então a expiração da aprovação do ajuste global é aplicada.
 Expiração da execução:: O período durante o qual o administrador requerente deve concluir a operação. Qualquer usuário autorizado pode definir a expiração de execução para uma regra de operação. Se a execução-expiração não estiver definida para a regra, então a execução-expiração da configuração global será aplicada.
 Usuários aprovados:: Os administradores do MAV que aprovaram a solicitação.
@@ -42,9 +46,9 @@ Usuários permitidos:: A lista de utilizadores autorizados a realizar a operaç�
 ====
 .System Manager
 --
-Os administradores do MAV recebem mensagens de e-mail com detalhes da solicitação de aprovação, período de expiração da solicitação e um link para aprovar ou rejeitar a solicitação.  Eles podem acessar uma caixa de diálogo de aprovação clicando no link no e-mail ou navegar até *Eventos e trabalhos > Solicitações* no Gerenciador de sistema.
+Os administradores do MAV recebem mensagens de e-mail com detalhes da solicitação de aprovação, o período de expiração da solicitação e um link para aprovar ou rejeitar a solicitação. Eles podem acessar uma caixa de diálogo de aprovação selecionando o link no e-mail ou navegando até *Eventos e Tarefas > Solicitações de Vários Administradores* no System Manager.
 
-A janela *Solicitações* fica disponível quando a verificação de vários administradores está habilitada, mostrando solicitações pendentes com base no ID de login do usuário e na função MAV (aprovador ou não).
+A janela *Multi-Admin Requests* fica disponível quando a verificação de múltiplos administradores está habilitada, mostrando as solicitações pendentes com base no ID de login do usuário e na função de MAV (aprovador ou não). Selecione *My Approvals* para listar apenas as solicitações nas quais o usuário conectado pode agir, incluindo solicitações disponíveis por meio da associação a um grupo de aprovadores de um IdP, do Active Directory ou do LDAP.
 
 * Operação
 * Índice (número)
@@ -56,7 +60,7 @@ Se uma solicitação for rejeitada por um aprovador, nenhuma outra ação será 
 * Utilizador a solicitar
 * A solicitação expira em
 * (Número de) Aprovadores pendentes
-* (Número de) potenciais Aprovadores
+* Aprovadores potenciais (a partir do ONTAP 9.20.1, isso inclui usuários elegíveis como aprovadores designados e por meio da participação em um grupo de aprovadores elegível de IdP, AD ou LDAP)
 
 
 Os administradores do MAV têm controles adicionais nesta janela; eles podem aprovar, rejeitar ou excluir operações individuais ou grupos selecionados de operações. No entanto, se o administrador MAV for o Usuário solicitante, ele não poderá aprovar, rejeitar ou excluir seus próprios pedidos.
@@ -64,7 +68,7 @@ Os administradores do MAV têm controles adicionais nesta janela; eles podem apr
 --
 .CLI
 --
-. Ao ser notificado por e-mail sobre solicitações pendentes, anote o número de índice da solicitação e o período de expiração da aprovação.  O número do índice também pode ser exibido usando as opções *show* ou *show-pending* mencionadas abaixo.
+. Ao receber notificações por e-mail sobre solicitações pendentes, anote o número de índice da solicitação e o período de expiração da aprovação. O número de índice também pode ser exibido usando as opções *show* ou *show-pending* na tabela a seguir.
 . Aprovar ou vetar o pedido.
 +
 [cols="50,50"]
@@ -126,17 +130,20 @@ cluster-1::> security multi-admin-verify request show 3
              State: approved
 Required Approvers: 2
  Pending Approvers: 0
+Potential Approver Groups: entra-group-mav-approvers
    Approval Expiry: 2/25/2022 14:32:03
   Execution Expiry: 2/25/2022 14:35:36
-         Approvals: mav-admin2
-       User Vetoed: -
-           Vserver: cluster-1
+        Approvals: mav-admin2
+      User Vetoed: -
+          Vserver: cluster-1
     User Requested: julia
-      Time Created: 2/25/2022 13:32:03
-     Time Approved: 2/25/2022 13:35:36
-           Comment: -
+     Time Created: 2/25/2022 13:32:03
+    Time Approved: 2/25/2022 13:35:36
+          Comment: -
    Users Permitted: -
 ----
+A partir do ONTAP 9.20.1, o `security multi-admin-verify request show` comando inclui um `Potential Approver Groups` campo que lista quaisquer grupos de IdP, AD ou LDAP cujos membros podem aprovar ou vetar a solicitação.
+
 .Exemplo:
 A sequência a seguir veta uma solicitação depois que o administrador do MAV recebeu o e-mail da solicitação com o índice número 3, que já tem uma aprovação.
 

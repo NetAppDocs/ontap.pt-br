@@ -1,0 +1,109 @@
+---
+permalink: antivirus/icap-vscan.html 
+sidebar: sidebar 
+keywords: antivirus, vscan, icap, on-access scanning, smb 
+summary: Configure o Vscan baseado em ICAP para varredura de acesso SMB a partir do ONTAP 9.20.1. 
+---
+= Configure o Vscan baseado em ICAP para varredura no acesso
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.20.1, você pode configurar o Vscan baseado no Internet Content Adaptation Protocol (ICAP) para enviar solicitações de verificação antivírus em tempo real diretamente para mecanismos de verificação compatíveis com ICAP, sem instalar o ONTAP Antivirus Connector. O Vscan baseado em ICAP usa a infraestrutura existente de notificação de memória compartilhada do FPolicy para gerenciar conexões e encaminhar solicitações de verificação.
+
+O Vscan baseado em ICAP usa uma extensão ICAP proprietária chamada FILEMOD (Solicitação de Modificação para arquivos) em vez dos métodos ICAP padrão REQMOD ou RESPMOD:
+
+* *Digitalização baseada em caminho*: ONTAP envia apenas o caminho do arquivo e os metadados nos cabeçalhos da solicitação ICAP. Ele não transmite o conteúdo do arquivo pela rede para o mecanismo de digitalização.
+* *Acesso direto a arquivos*: o mecanismo de varredura monta o compartilhamento relevante do ONTAP e lê os dados do arquivo diretamente pelo protocolo SMB usando uma conta de usuário privilegiada configurada.
+* *Benefícios*: essa abordagem evita a sobrecarga de CPU e memória do streaming de arquivos grandes, reduz o tráfego de rede e mantém o caminho de leitura eficiente usado pelo Antivirus Connector.
+
+
+
+
+[[supported-scan-engines]]
+== Mecanismos de varredura compatíveis
+
+Há suporte aos seguintes mecanismos de varredura compatíveis com ICAP:
+
+* O Symantec Protection Engine (SPE)
+* O OPSWAT MetaDefender
+
+
+
+
+[[configuration-considerations]]
+== Considerações sobre a configuração
+
+Ao configurar o Vscan baseado em ICAP, tenha em mente o seguinte:
+
+* Cada SVM deve usar a configuração Vscan baseada em ICAP ou os conjuntos de scanners do Antivirus Connector, não é possível configurar ambos na mesma SVM. Para alternar entre eles, você deve remover a configuração existente primeiro.
+* O Vscan baseado em ICAP suporta varredura em tempo real apenas para SMB. As varreduras sob demanda e a varredura em tempo real via NFS não são compatíveis.
+* Remova todas as configurações de Vscan baseadas em ICAP antes de reverter do ONTAP 9.20.1 para uma versão anterior.
+
+
+.Antes de começar
+* O cluster deve estar executando o ONTAP 9.20.1 ou posterior.
+* A SVM deve ter o SMB configurado e ativado.
+* Um mecanismo de varredura de antivírus compatível com ICAP, como o SPE ou o OPSWAT, deve estar instalado e em execução em um servidor acessível a partir da rede do cluster.
+* A SVM não deve ter uma configuração existente do Antivirus Connector. Cada SVM oferece suporte a Vscan baseado em ICAP ou ao Antivirus Connector, não a ambos.
+* Caso a criptografia TLS seja necessária para a conexão ICAP, instale os certificados de CA de servidor apropriados no cluster.
+
+
+.Passos
+. Crie uma configuração ICAP para a SVM. Apenas uma configuração ICAP é suportada por SVM:
++
+`vserver vscan icap-config create -vserver <svm_name> -server-ip <icap_server_ip> -port <port> -max-connections <max_conn> -service-path <service_path> -ssl-enabled {true|false} -skip-cert-validation {true|false}`
+
++
+.Exemplo:
+`cluster1::> vserver vscan icap-config create -vserver vs1 -server-ip 10.10.10.1 -port 1344 -max-connections 10 -service-path SYMCSCANRESPEX-AV -ssl-enabled false -skip-cert-validation false`
+
++
+[cols="25,20,15,40"]
+|===
+
+
+| Parâmetro | Padrão | Alcance | Descrição 
+
+
+ a| 
+`-port`
+| 1344 | 1–65535 | Porta TCP do mecanismo de varredura ICAP 
+
+
+ a| 
+`-max-connections`
+| 10 | 1–256 | Número máximo de conexões simultâneas ao servidor ICAP 
+
+
+ a| 
+`-service-path`
+| SYMCSCANRESPEX-AV | N/A. | Caminho de serviço ICAP exposto pelo mecanismo de varredura 
+
+
+ a| 
+`-ssl-enabled`
+| falso | N/A. | Ative a criptografia TLS para a conexão ICAP 
+
+
+ a| 
+`-skip-cert-validation`
+| falso | N/A. | Ignorar validação do certificado do servidor 
+|===
+. Crie uma política de acesso em tempo real, caso ainda não exista.
++
+`vserver vscan on-access-policy create -vserver <svm_name> -policy-name <policy_name> -protocol CIFS -max-file-size <size> -filters <filter_list> -file-ext-to-exclude <extensions> -paths-to-exclude <paths>`
+
++
+
+NOTE: Se já existir uma política on-access de uma configuração anterior do Vscan e ela for adequada para sua carga de trabalho, você poderá reutilizá-la com o caminho ICAP.
+
+. Habilite o Vscan para começar a interceptar operações de arquivo e encaminhar solicitações de varredura para o servidor ICAP.
++
+`vserver vscan enable -vserver <svm_name>`
+
+. Verifique o status da conexão ICAP:
+`vserver vscan icap-connection-status show -vserver <svm_name>`
+

@@ -1,0 +1,39 @@
+---
+permalink: revert/remove-persistent-reservation-registrations.html 
+sidebar: sidebar 
+keywords: revert, persistent reservation, registrations, SCSI-3, LUN, 9.20.1 
+summary: Se alguma LUN tiver excedido historicamente 182 registros de reserva persistente SCSI-3, o ONTAP bloqueará a reversão para versões anteriores ao ONTAP 9.20.1. Antes de reverter, verifique cada LUN e remova quaisquer registros. 
+---
+= Remova os registros de reserva persistente antes de reverter do ONTAP 9.20.1
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+As versões do ONTAP anteriores à 9.20.1 suportam no máximo 182 registros de reserva persistente SCSI-3 por LUN. A partir do ONTAP 9.20.1, esse limite aumenta para 256. Se alguma LUN tiver excedido historicamente 182 registros, o ONTAP bloqueia a reversão independentemente da contagem atual de registros. Antes de reverter da 9.20.1 para a 9.19.1, identifique e remova os registros de reserva persistente nas LUNs afetadas.
+
+
+IMPORTANT: A remoção de registros de reserva persistente pode exigir a reconfiguração do host em ambientes clusterizados. Dependendo do sistema operacional do host e do software de clustering, pode ser necessário colocar os recursos do cluster offline, remover os LUNs afetados do gerenciamento do cluster e restabelecer o acesso ao cluster após a reversão. Consulte a documentação da sua solução de clustering e valide o fluxo de trabalho de recuperação em um ambiente de teste antes de reverter.
+
+.Passos
+. Verifique se alguma LAN historicamente excedeu 182 registros de reserva persistente:
++
+[source, cli]
+----
+lun show -field persistent-reservation-scale-tier
+----
++
+Um valor acima de 182 no campo persistent-reservation-scale-tier indica que o LUN alocou metadados adicionais de reserva persistente. Isso impede a reversão, independentemente da contagem atual de registros.
+
+. Para cada LUN afetado, exiba a contagem atual de registros ativos:
++
+[source, cli]
+----
+lun persistent-reservation show -vserver <vserver_name> -path <lun_path>
+----
+. Remova os registros de reserva persistente em todos os LUNs afetados.
++
+Execute a verificação prévia de reversão. Se essa condição for detectada, a saída da verificação prévia incluirá os comandos de limpeza específicos necessários.
+
+

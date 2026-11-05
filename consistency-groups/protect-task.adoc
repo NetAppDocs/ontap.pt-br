@@ -14,18 +14,34 @@ summary: Use grupos de consistência para proteger dados usando snapshots locais
 [role="lead"]
 Os grupos de consistência oferecem proteção local e remota facilmente gerenciada para aplicações SAN, nas e NVMe que abrangem vários volumes.
 
-Criar um grupo de consistência não ativa automaticamente a proteção. As políticas de proteção podem ser definidas no momento da criação ou após a criação do seu grupo de consistência. Você pode proteger grupos de consistência usando:
+A criação de um grupo de consistência não habilita automaticamente a proteção. As políticas de proteção podem ser definidas no momento da criação ou após criar seu grupo de consistência.
 
-* Instantâneos locais
-* SnapMirror ative Sync (referido como SnapMirror Business Continuity em versões do ONTAP anteriores a 9.15.1)
-* xref:index.html#mcc[MetroCluster (início de 9.11.1)]
-* SnapMirror assíncrono (início de 9.13.1)
-* Recuperação assíncrona de desastres do SVM (início de 9.14.1)
+O tipo de proteção de dados disponível para grupos de consistência varia de acordo com a sua versão do ONTAP.
+
+[cols="2"]
+|===
+| Disponível a partir do ONTAP... | Proteção de dados para grupos de consistência 
 
 
+| 9.20.1 | SnapLock for SnapVault de volumes não SnapLock 
+
+
+| 9.14.1 | Recuperação de desastres da SVM 
+
+
+| 9.13.1 | Assíncrono com SnapMirror 
+
+
+| 9.11.1 | Os grupos de consistência oferecem <<two-phase,criação de snapshot de grupo de consistência de duas fases>>. A operação de snapshot em duas fases executa uma verificação prévia, garantindo que o snapshot seja capturado com sucesso. 
+
+
+| 9.10.1  a| 
+* Políticas do Snapshot
+* Sincronização ativa do SnapMirror
+
+
+|===
 Se você estiver utilizando grupos de consistência aninhados, poderá definir políticas de proteção diferentes para os grupos de consistência pai e filho.
-
-Começando com ONTAP 9.11,1, grupos de consistência oferecem <<two-phase,criação de snapshot de grupo de consistência de duas fases>>. A operação de snapshot de duas fases executa uma pré-verificação, garantindo que o snapshot seja capturado com êxito.
 
 A recuperação pode ocorrer para um grupo inteiro de consistência, um único grupo de consistência em uma configuração hierárquica ou para volumes individuais dentro do grupo de consistência. A recuperação pode ser obtida selecionando o grupo de consistência do qual você deseja recuperar, selecionando o tipo de snapshot e identificando o snapshot para basear a restauração. Para obter mais informações sobre esse processo, link:../task_dp_restore_from_vault.html["Restaurar um volume a partir de um instantâneo anterior"]consulte .
 
@@ -201,7 +217,14 @@ For more information about the ONTAP REST API, see link:https://docs.netapp.com/
 [[set-remote-protection-for-a-consistency-group]]
 == Defina a proteção remota para um grupo de consistência
 
-Os grupos de consistência oferecem proteção remota por meio da sincronização ativa do SnapMirror e, a partir do ONTAP 9.13,1, assíncrono do SnapMirror.
+Dependendo da sua versão do ONTAP, os grupos de consistência oferecem proteção remota por meio da sincronização ativa do SnapMirror, do SnapMirror assíncrono e de relacionamentos do SnapLock para SnapVault.
+
+A partir do ONTAP 9.20.1, a proteção SnapLock for SnapVault está disponível. A partir do ONTAP 9.13.1, a proteção assíncrona do SnapMirror está disponível.
+
+.Antes de começar
+* Você deve link:../peering/create-cluster-relationship-93-later-task.html["crie um relacionamento de pares de cluster"].
+* Você deve link:../peering/create-intercluster-svm-peer-relationship-93-later-task.html["criar uma relação de peering de SVM entre clusters"].
+
 
 
 
@@ -247,6 +270,12 @@ Para replicar snapshots granulares por volume, você precisa executar o ONTAP 9.
 Ao ressincronizar a relação do SnapMirror com snapshots granulares em volume, é possível preservar snapshots granulares em volume com o `-preserve` sinalizador. Snapshots granulares em volume mais recentes que os snapshots de grupo de consistência são preservados. Se não houver um snapshot de grupo de consistência, nenhum instantâneo granular de volume poderá ser transferido na operação ressincronizada.
 
 .Antes de começar
+* A partir do ONTAP 9.20.1, você pode configurar a replicação de backend do SnapMirror em fabrics FC existentes. Se você quiser usar o fabric FC para replicação, você deve link:..//data-protection/configure-backend-fc-replication.html["configurar seu sistema para replicação FC de backend"]. Você também deve:
++
+** Selecione FC como protocolo de transporte ao criar sua relação assíncrona do SnapMirror para replicar pela sua malha FC. A replicação de backend usa o protocolo IP por padrão.
+** Use uma política de proteção assíncrona compatível. link:../data-protection/default-protection-policies-concept.html["Saiba quais políticas padrão de proteção de dados assíncrona são compatíveis com a replicação FC de back-end"].
+
+
 * A proteção assíncrona do SnapMirror está disponível apenas para um único grupo de consistência. Não é suportado para grupos hierárquicos de consistência. Para converter um grupo de consistência hierárquica em um único grupo de consistência, xref:modify-geometry-task.html[modifique a arquitetura do grupo de consistência]consulte .
 * Os rótulos de política no cluster de origem e destino devem corresponder.
 * Você pode sem interrupções xref:modify-task.html#add-volumes-to-a-consistency-group[adicione volumes a um grupo de consistência] com uma relação assíncrona ativa do SnapMirror. Quaisquer outras alterações em um grupo de consistência exigem que você quebre o relacionamento SnapMirror, modifique o grupo de consistência e, em seguida, restabeleça e ressincronize o relacionamento.
@@ -275,6 +304,109 @@ NOTE: O cronograma mínimo com suporte (objetivo do ponto de restauração ou RP
 . O grupo de consistência precisa inicializar e sincronizar. Confirme se a sincronização foi concluída com êxito retornando ao menu *Grupo de consistência*. O status *SnapMirror (remoto)* é exibido `Protected` ao lado image:../media/icon_shield.png["Ícone de escudo"]de .
 
 
+
+
+[[configure-snaplock-for-snapvault-replication-from-a-non-snaplock-source]]
+=== Configure o SnapLock para replicação do SnapVault a partir de uma origem que não seja SnapLock
+
+A partir do ONTAP 9.20.1, você pode replicar um grupo de consistência de um volume de origem que não é SnapLock para um volume de destino SnapLock for SnapVault. Os snapshots protegidos por SnapLock for SnapVault no destino não podem ser excluídos acidental ou maliciosamente.
+
+.Antes de começar
+* Você deve link:../system-admin/manage-license-task.html["Verifique se uma licença SnapLock está instalada"]. Se uma licença do SnapLock não estiver instalada no nó, você deve link:..//system-admin/install-license-task.html["instale-o"]. Esta licença está incluída em link:..//system-admin/manage-licenses-concept.html["ONTAP One"].
+* O link:..//snaplock/initialize-complianceclock-task.html["O relógio de conformidade deve ser inicializado"] em ambos os nós do cluster.
+* Você pode configurar o backend SnapLock para a replicação do SnapVault em fabrics FC existentes. Se você quiser usar o fabric FC para replicação, você deve link:..//data-protection/configure-backend-fc-replication.html["configurar seu sistema para replicação FC de backend"]. Você também deve:
++
+** Selecione FC como protocolo de transporte ao criar sua relação do SnapLock for SnapVault para replicar pela sua malha FC. A replicação de backend usa o protocolo IP por padrão.
+** Use a política de proteção assíncrona MirrorAndVault..
+
+
+
+
+.Passos
+Use o System Manager ou a CLI para configurar sua relação de replicação do SnapLock for SnapVault
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+Habilite o SnapLock para SnapVault no System Manager selecionando uma política de replicação _vault_ e, em seguida, selecionando a opção para bloquear os snapshots de destino.
+
+. No System Manager, selecione *Proteção > grupos de consistência*.
+. Selecione um grupo de consistência e, em seguida, selecione *Protect*.
++
+O System Manager preenche automaticamente as informações do lado da origem.
+
+. Selecione o cluster de destino e a VM de armazenamento.
+. Selecione uma política de proteção.
++
+Você deve selecionar uma política de replicação _vault_ configurada com regras de retenção. No ONTAP 9.20.1 e versões posteriores, para usar a replicação FC de backend, você deve selecionar a política _MirrorAndVault_.
+
+. Selecione *Bloquear grupos de consistência de destino*.
+. Certifique-se de que a opção *Inicializar relacionamento* esteja selecionada.
+. Selecione *Guardar*.
+
+
+--
+.CLI
+--
+. Crie um volume de destino SnapLock para o grupo de consistência de origem:
++
+[source, cli]
+----
+volume create -vserver <dst_svm> -volume <dst_vol> -aggregate <aggr> -size <size> -type DP -snaplock-type enterprise
+----
+. Criar uma política de cofre do SnapMirror:
++
+[source, cli]
+----
+snapmirror policy create -vserver <dst_svm> -policy <policy_name> -type vault
+----
+. Adicione regras de retenção à política:
++
+[source, cli]
+----
+snapmirror policy add-rule -vserver <dst_svm> -policy <policy_name> -snapmirror-label daily -keep <retention_length> -retention-period <retention_period>
+----
++
+No exemplo a seguir, o período de retenção está definido como 1 ano:
+
++
+`snapmirror policy add-rule -vserver svm1 -policy vault -snapmirror-label monthly -keep 12 -retention-period "1 years"`
+
++
+No exemplo a seguir, o período de retenção está definido como 30 dias:
+
++
+`snapmirror policy add-rule -vserver svm1 -policy vault -snapmirror-label daily -keep 30 -retention-period "30 days"`
+
+. Crie a relação do SnapLock for SnapVault:
++
+[source, cli]
+----
+snapmirror create -source-path <src_svm>:/cg/<src_cg> -destination-path <dst_svm>:/cg/<dst_cg> -policy <policy_name>
+----
+. Inicialize o relacionamento:
++
+[source, cli]
+----
+snapmirror initialize -destination-path <dst_svm>:<dst_vol>
+----
+. Verifique se a relação está estabelecida:
++
+[source, cli]
+----
+snapmirror show -destination-path <dst_svm>:<dst_vol> -fields policy,status,state
+----
+. Verifique se os snapshots estão bloqueados no destino:
++
+[source, cli]
+----
+volume snapshot show -vserver <dst_svm> -volume <dst_vol> -fields snapshot,snaplock-expiry-time,is-snaplock-expiry-locked
+----
+
+
+--
+====
 
 
 [[configure-svm-disaster-recovery]]

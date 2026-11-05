@@ -17,10 +17,12 @@ A partir do ONTAP 9.15,1, o FPolicy suporta o protocolo NFSv4,1.
 
 A partir do ONTAP 9.19.1, os administradores podem controlar a disponibilidade do NFSv4.2 no nível da SVM, habilitando ou desabilitando o protocolo para VMs de armazenamento individuais usando o System Manager, a CLI ou a API REST.
 
+A partir do ONTAP 9.20.1, o FPolicy oferece suporte ao monitoramento de eventos de acesso a arquivos NFSv4.2, incluindo novas operações de arquivo para gravações de atributos estendidos (xattr) e filtros de rótulo de segurança para a atividade de NFS rotulado. Saiba mais sobre link:../nfs-admin/enable-disable-nfs-task.html["habilitar ou desabilitar o NFS para SVMs do ONTAP"].
 
-NOTE: O monitoramento de eventos de acesso a arquivos NFSv4.2 pelo FPolicy não é suportado. Se você configurar o monitoramento pelo FPolicy, será necessário desativar o NFSv4.2 na SVM. Para referência, consulte link:../nfs-admin/enable-disable-nfs-task.html["Ativar ou desativar NFS para ONTAP SVMs"].
 
-A lista de combinações de filtros e operação de arquivos compatíveis para monitoramento FPolicy de eventos de acesso a arquivos NFSv4 ou NFSv4,1 é fornecida na seguinte tabela:
+NOTE: Os filtros de rótulo de segurança (`setattr_with_security_label_change` e `getattr_with_security_label_read`) exigem que os rótulos de segurança do NFSv4.2 (Labeled NFS) sejam habilitados na SVM. Saiba mais sobre link:../nfs-admin/enable-nfsv42-security-labels-task.html["habilitando rótulos de segurança do NFSv4.2"]. `getxattr` e `listxattrs` são operações somente leitura e não são monitoradas pelo FPolicy.
+
+A lista de combinações compatíveis de operações de arquivo e filtros para o monitoramento pelo FPolicy de eventos de acesso a arquivos NFSv4, NFSv4.1 ou NFSv4.2 é fornecida na tabela a seguir:
 
 [cols="30,70"]
 |===
@@ -67,7 +69,7 @@ Atualmente, nenhum filtro é suportado para esta operação de arquivo.
  a| 
 getattr
  a| 
-offline-bit, exclude-directory
+offline-bit, exclude-directory getattr_with_security_label_read (A partir do ONTAP 9.20.1, este filtro é suportado e requer Labeled NFS)
 
 
 
@@ -123,7 +125,21 @@ Atualmente, nenhum filtro é suportado para esta operação de arquivo.
  a| 
 ajuste
  a| 
-offline-bit, setattr_with_owner_change, setattr_with_group_change, setattr_with_mode_change, setattr_with_sacl_change, setattr_with_dacl_change, setattr_with_modify_time_change, setattr_with_access_time_change, setattr_time_change, setattr_change, setattr_time_change, setattr_change
+offline-bit, setattr_with_owner_change, setattr_with_group_change, setattr_with_mode_change, setattr_with_sacl_change, setattr_with_dacl_change, setattr_with_modify_time_change, setattr_with_access_time_change, setattr_with_size_change, exclude_directory setattr_with_security_label_change (a partir do ONTAP 9.20.1, este filtro é suportado e requer Labeled NFS)
+
+
+
+ a| 
+setxattr
+ a| 
+A partir do ONTAP 9.20.1, esta operação de arquivo é suportada e requer Labeled NFS. Atualmente, nenhum filtro é suportado para esta operação de arquivo.
+
+
+
+ a| 
+removexattr
+ a| 
+A partir do ONTAP 9.20.1, esta operação de arquivo é suportada e requer Labeled NFS. Atualmente, nenhum filtro é suportado para esta operação de arquivo.
 
 
 
@@ -133,7 +149,7 @@ link simbólico
 bit offline
 
 |===
-A partir do ONTAP 9.13,1, os usuários podem receber notificações para operações de arquivos com falha devido à falta de permissões. A lista de combinações de filtro e operação de arquivo negado de acesso com suporte para monitoramento FPolicy de eventos de acesso a arquivos NFSv4 ou NFSv4,1 é fornecida na tabela a seguir:
+A partir do ONTAP 9.13.1, os usuários podem receber notificações de falha em operações de arquivo devido à falta de permissões. A lista de combinações compatíveis de operações de arquivo com acesso negado e filtros para o monitoramento pelo FPolicy de eventos de acesso a arquivos NFSv4, NFSv4.1 ou NFSv4.2 é apresentada na tabela a seguir:
 
 [cols="30,70"]
 |===
@@ -145,83 +161,83 @@ A partir do ONTAP 9.13,1, os usuários podem receber notificações para operaç
  a| 
 acesso
  a| 
-NA
+N/A.
 
 
 
  a| 
 criar
  a| 
-NA
+N/A.
 
 
 
  a| 
 criar_dir
  a| 
-NA
+N/A.
 
 
 
  a| 
 eliminar
  a| 
-NA
+N/A.
 
 
 
  a| 
 delete_dir
  a| 
-NA
+N/A.
 
 
 
  a| 
 link
  a| 
-NA
+N/A.
 
 
 
  a| 
 abrir
  a| 
-NA
+N/A.
 
 
 
  a| 
 leia
  a| 
-NA
+N/A.
 
 
 
  a| 
 mudar o nome
  a| 
-NA
+N/A.
 
 
 
  a| 
 rename_dir
  a| 
-NA
+N/A.
 
 
 
  a| 
 ajuste
  a| 
-NA
+N/A.
 
 
 
  a| 
 escreva
  a| 
-NA
+N/A.
 
 |===

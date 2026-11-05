@@ -327,6 +327,40 @@ Job ID Name                 Vserver    Node           State
 ----
 
 
+
+
+[[verify-key-manager-state-before-reverting]]
+== Verifique o estado do gerenciador de chaves antes de reverter
+
+Antes de reverter do ONTAP 9.20.1 para uma versão anterior do ONTAP, verifique se as configurações do gerenciador de chaves estão em um estado válido para a versão de destino.
+
+.Passos
+. Veja o estado do gerenciador de chaves:
++
+[source, cli]
+----
+security key-manager keystore show
+----
+. Se alguma configuração estiver `inactive`, exclua-a antes de prosseguir com a reversão:
++
+[source, cli]
+----
+security key-manager keystore delete -vserver <svm_name>
+----
+. Verifique se alguma tarefa do gerenciador de chaves ainda está em execução:
++
+[source, cli]
+----
+job show -name *keymanager*
+----
+. Se alguma tarefa do gerenciador de chaves ainda estiver sendo inicializada, aguarde a conclusão antes de iniciar a reversão.
+
+
+[NOTE]
+====
+As configurações ativas do keystore são tratadas como parte do processo padrão de reversão. A principal preocupação na reversão são as entradas inativas do keystore ou os trabalhos em andamento do gerenciador de chaves introduzidos pelo fluxo de trabalho do gerenciador de chaves do ONTAP 9.20.1.
+
+====
 .Informações relacionadas
 * link:https://docs.netapp.com/us-en/ontap-cli/storage-disk-show.html["exibição do disco de armazenamento"^]
 

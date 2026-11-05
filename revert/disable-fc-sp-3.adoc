@@ -1,0 +1,35 @@
+---
+permalink: revert/disable-fc-sp-3.html 
+sidebar: sidebar 
+keywords: disable, fc-sp-3, fc, security, revert 
+summary: 'Se as interfaces de rede FC ou NVMe/FC (LIFs) estiverem habilitadas para FC-SP-3 no seu sistema ONTAP, você deverá desabilitá-las antes de reverter para o ONTAP 9.19.1.' 
+---
+= Desative o FC-SP-3 nas LIFs FC antes de reverter do ONTAP 9.20.1
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.20.1, o ONTAP oferece suporte à autenticação e à criptografia do Fibre Channel Security Protocol 3 (FC-SP-3) usando adaptadores de barramento de host (HBAs) seguros da Broadcom com os sistemas AFF e FAS. Se as interfaces de rede FC ou NVMe/FC (LIFs) estiverem habilitadas para FC-SP-3 no seu sistema ONTAP, você deverá desativá-las antes de reverter para o ONTAP 9.19.1.
+
+.Passos
+. Verifique a configuração FC-SP-3 em suas LIFs:
++
+[source, cli]
+----
+network interface show -fields fc-transport-security
+----
+. Se o status do campo *transport-security-state* não estiver disponível, nenhuma ação adicional será necessária. Se o status for *mandatory* ou *preferred*, altere-o para *disabled*.
++
+[source, cli]
+----
+network interface modify -vserver <vserver_name> -lif <lif_name> -fc-transport-security disabled
+----
+. Verifique se o FC-SP-3 está desativado nas LIFs previamente ativadas:
++
+[source, cli]
+----
+network interface show -fields fc-transport-security
+----
+

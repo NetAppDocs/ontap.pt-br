@@ -1,0 +1,68 @@
+---
+permalink: s3-config/delete-recover-bucket-with-data-task.html 
+sidebar: sidebar 
+keywords: s3, bucket, system manager, cli, delete, restore, recover 
+summary: A partir do ONTAP 9.20.1, é possível agendar operações de exclusão de buckets em servidores de armazenamento de objetos para remover buckets sem precisar esvaziá-los primeiro. 
+---
+= Excluir um bucket S3 do ONTAP que contenha objetos
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.20.1, é possível agendar operações de exclusão de buckets em servidores de armazenamento de objetos para remover buckets sem esvaziá-los primeiro. Você faz isso usando uma janela de recuperação configurável baseada em retenção, que permite a recuperação do bucket antes que o intervalo de retenção expire.
+
+A capacidade de excluir buckets que não estão vazios ajuda a simplificar o descomissionamento de buckets, evitando a limpeza manual objeto por objeto antes que um bucket possa ser removido, reduzindo o acúmulo de expiração e tornando a capacidade reutilizável mais rapidamente.
+
+.Antes de começar
+* Você precisa ser um administrador de cluster ou um administrador de SVM.
+* Você deve estar no nível de privilégio avançado.
+
+
+
+
+[[delete-a-bucket-that-contains-objects]]
+== Excluir um bucket que contenha objetos
+
+Você pode agendar a exclusão de um bucket sem precisar esvaziá-lo primeiro, definindo um intervalo de retenção. Por padrão, a retenção é definida para 12 horas.
+
+.Passos
+Você pode executar esta tarefa a partir do Gerenciador do sistema ou da CLI do ONTAP.
+
+[role="tabbed-block"]
+====
+.System Manager
+--
+. Acesse *Armazenamento > Buckets* e localize o bucket que deseja excluir.
+. Clique ao lado do nome do bucket e selecione *Excluir*.
+. Se o bucket não estiver vazio, na janela *Excluir Bucket*, selecione a opção para excluir os dados e esvaziar o bucket, e selecione *Excluir*.
+
+
+--
+.CLI
+--
+. Especifique o intervalo de retenção após o qual o bucket será excluído permanentemente:
++
+`object-store-server create -vserver <SVM name> -bucket-delete-retention-hours <integer>`
+
+. Inicie o agendamento de exclusão do bucket:
++
+`object-store-server bucket delete -bucket <bucket name> -delete-objects tru`e
+
+
+
+--
+====
+
+
+[[recover-a-deleted-bucket]]
+== Recuperar um bucket excluído
+
+Se um bucket for excluído acidentalmente, você poderá recuperá-lo usando a ONTAP CLI durante o período de retenção que você especificou.
+
+. Recupere um bucket excluído digitando o seguinte comando:
++
+`object-store-server bucket recover-deleted-bucket -bucket <bucket name>`
+
+

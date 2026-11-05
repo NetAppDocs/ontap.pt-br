@@ -1,0 +1,99 @@
+---
+permalink: volumes/enable-large-dir-max-support-task.html 
+sidebar: sidebar 
+keywords: create, modify, volume, large directory, maxdir-size, directory size, 25 million files 
+summary: Você pode habilitar o suporte para um tamanho máximo de diretório maior ao criar um novo volume ou ao modificar um volume existente. 
+---
+= Ative o suporte do ONTAP para o tamanho máximo de diretórios grandes
+:allow-uri-read: 
+:icons: font
+:imagesdir: ../media/
+
+
+[role="lead"]
+A partir do ONTAP 9.20.1, você pode habilitar e configurar o suporte para um tamanho máximo de diretório maior, seja ao criar um volume ou ao modificar um volume existente. Isso permite que os diretórios contenham até aproximadamente 25 milhões de arquivos, pastas e outras entradas, com base em um tamanho máximo de diretório de 4 GB.
+
+[CAUTION]
+====
+Após aumentar o tamanho máximo do diretório, não é possível reduzi-lo sem recriar o diretório afetado ou os diretórios afetados no volume.
+
+====
+.Antes de começar
+Antes de criar ou modificar um volume para suportar um tamanho máximo de diretório maior, certifique-se de que você é um administrador de cluster ou SVM.
+
+
+
+[[create-a-new-volume]]
+== Crie um novo volume
+
+Você pode definir um tamanho máximo de diretório maior ao criar um novo volume.
+
+.Passos
+. Crie um volume com suporte ativado para o maior tamanho máximo de diretório:
++
+[source, cli]
+----
+volume create -vserver <svm_name> -volume <volume_name> -aggregate <aggr_name> -is-dir-index-transfer-enabled true
+----
++
+.Exemplo
+[listing]
+----
+volume create -vserver vs1 -volume big_dir1 -aggregate aggr1 -is-dir-index-transfer-enabled true
+----
+. Aumente o tamanho máximo do diretório para até 4 GB:
++
+[source, cli]
+----
+volume modify -vserver <svm_name> -volume <volume_name> -maxdir-size <dir_size>
+----
++
+.Exemplo
+[listing]
+----
+volume modify -vserver vs1 -volume big_dir1 -maxdir-size 4GB
+----
+
+
+
+
+[[modify-an-existing-volume]]
+== Modificar um volume existente
+
+Você pode definir um tamanho máximo de diretório maior modificando um volume existente.
+
+.Passos
+. Ative o suporte ao maior tamanho máximo de diretório em um volume existente:
++
+[source, cli]
+----
+volume modify -vserver <svm_name> -volume <volume_name> -is-dir-index-transfer-enabled true
+----
++
+.Exemplo
+[listing]
+----
+volume modify -vserver vs2 -volume data_vol -is-dir-index-transfer-enabled true
+----
+. Aumente o tamanho máximo do diretório para até 4 GB:
++
+[source, cli]
+----
+volume modify -vserver <svm_name> -volume <volume_name> -maxdir-size <dir_size>
+----
++
+.Exemplo
+[listing]
+----
+volume modify -vserver vs2 -volume data_vol -maxdir-size 4GB
+----
+
+
+
+
+[[related-information]]
+== Informações relacionadas
+
+* link:../volumes/cautions-increasing-maximum-directory-size-concept.html["Tamanho máximo do diretório para volumes FlexVol do ONTAP"]
+* https://docs.netapp.com/us-en/ontap-cli/["Referência do comando ONTAP"^]
+

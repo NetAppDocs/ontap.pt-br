@@ -11,7 +11,7 @@ summary: O Vscan é uma solução de verificação antivírus desenvolvida pela 
 
 
 [role="lead"]
-O Vscan é uma solução de verificação antivírus desenvolvida pela NetApp que permite aos clientes proteger seus dados de serem comprometidos por vírus ou outros códigos maliciosos. Ele combina software antivírus fornecido pelo parceiro com recursos do ONTAP para dar aos clientes a flexibilidade de que precisam para gerenciar a verificação de arquivos.
+O Vscan é uma solução de varredura antivírus que permite proteger seus dados contra vírus e outros códigos maliciosos. Ele combina softwares antivírus fornecidos por parceiros com os recursos do ONTAP, oferecendo a flexibilidade de que você precisa para gerenciar a varredura de arquivos.
 
 
 
@@ -34,6 +34,42 @@ Você pode usar a verificação sob demanda para qualquer caminho no namespace S
 
 Normalmente, você ativa os modos de digitalização sob demanda e de acesso sob demanda em uma SVM. Em ambos os modos, o software antivírus toma medidas corretivas em arquivos infetados com base em suas configurações de software.
 
-O conetor do antivírus ONTAP, fornecido pelo NetApp e instalado no servidor externo, lida com a comunicação entre o sistema de armazenamento e o software antivírus.
+O ONTAP Antivirus Connector, fornecido pela NetApp e instalado no servidor externo, gerencia a comunicação entre o sistema de storage e o software antivírus. A partir do ONTAP 9.20.1, o ONTAP oferece suporte a um caminho de varredura baseado no Internet Content Adaptation Protocol (ICAP), eliminando a necessidade do ONTAP Antivirus Connector. Cada SVM usa ICAP ou ONTAP Antivirus Connector, não ambos.
+
+
+NOTE: O Vscan baseado em ICAP suporta apenas varredura no acesso.
+
+
+
+[[icap-based-vscan-compared-with-the-antivirus-connector]]
+== Comparação entre o Vscan baseado em ICAP e o Antivirus Connector
+
+A tabela a seguir resume as diferenças entre o Antivirus Connector e o Vscan baseado em ICAP:
+
+[cols="30,35,35"]
+|===
+
+
+| Recurso | O Antivirus Connector | Vscan baseado em ICAP 
+
+
+| Componente | O ONTAP Antivirus Connector instalado em um servidor Windows | Nenhum requisito; o ONTAP se conecta diretamente ao mecanismo de varredura 
+
+
+| Protocolo de comunicação | Pipes nomeados SMB e MS-RPC | ICAP sobre TCP 
+
+
+| Infraestrutura | Gerenciador de conexões Vscan dedicado | Pipeline de notificação de memória compartilhada do FPolicy 
+
+
+| Sistemas operacionais compatíveis do mecanismo de varredura | Somente para Windows | Windows e Linux 
+
+
+| Escalabilidade | Limitado a 400 conexões de LIF por instância do Antivirus Connector | Aproveita o agrupamento de conexões do FPolicy para maior escalabilidade 
+
+
+| Mecanismo de descoberta | Descoberta de SVMs e LIFs baseada em sondagem | Gerenciamento de conexões orientado por eventos por meio do FPolicy 
+|===
+O exemplo abaixo mostra o método de comunicação do Antivirus Connector.
 
 image:how-virus-scanning-works-new.gif["Fluxo de trabalho de verificação de vírus. Isso explica como o conetor lida com a comunicação entre o sistema de armazenamento e o software antivírus."]

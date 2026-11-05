@@ -67,17 +67,30 @@ NOTE: No ONTAP 9.13.1, você só pode recuperar métricas históricas usando a A
 [[protect-consistency-groups]]
 == Proteja grupos de consistência
 
-Os grupos de consistência oferecem proteção consistente com a aplicação, garantindo a consistência dos seus dados em vários volumes ou LIFs. Ao criar um snapshot de um grupo de consistência, uma "barreira" é estabelecida no grupo de consistência. Essa barreira inicia uma fila de E/S até que a operação de snapshot seja concluída, garantindo a consistência de ponto no tempo dos dados em todas as entidades do grupo de consistência. A barreira pode causar um pico transitório de latência durante as operações de criação de snapshot, como uma política de snapshot agendada ou a criação de um snapshot com System Manager. Saiba mais sobre o contexto da ONTAP REST API e ONTAP CLI na link:https://kb.netapp.com/on-prem/ontap/DM/REST-API["Documentação da API REST do ONTAP"^] e na link:https://docs.netapp.com/us-en/ontap-cli/["Referência do comando ONTAP"^].
+Os grupos de consistência oferecem proteção consistente com a aplicação, garantindo a consistência dos seus dados em vários volumes ou LIFs. Ao criar um snapshot de um grupo de consistência, uma "barreira" é estabelecida no grupo de consistência. Essa barreira inicia uma fila de E/S até que a operação de snapshot seja concluída, garantindo a consistência de ponto no tempo dos dados em todas as entidades do grupo de consistência. A barreira pode causar um pico transitório de latência durante as operações de criação de snapshot, como uma política de snapshot agendada ou a criação de um snapshot com System Manager.
 
-Os grupos de consistência oferecem proteção através de:
+O tipo de proteção de dados disponível para grupos de consistência varia de acordo com a sua versão do ONTAP.
 
+[cols="2"]
+|===
+| Disponível a partir do ONTAP... | Proteção de dados para grupos de consistência 
+
+
+| 9.20.1 | link:protect-task.html#configure-snaplock-for-snapvault-replication-from-a-non-snaplock-source["SnapLock for SnapVault de volumes não SnapLock"] 
+
+
+| 9.14.1 | link:../data-protection/snapmirror-svm-replication-concept.html["Recuperação de desastres da SVM"] 
+
+
+| 9.13.1 | xref:../data-protection/snapmirror-disaster-recovery-concept.html[Assíncrono com SnapMirror] 
+
+
+| 9.10.1  a| 
 * Políticas do Snapshot
 * xref:../snapmirror-active-sync/index.html[Sincronização ativa do SnapMirror]
-* <<mcc>> (Começando com ONTAP 9.11,1)
-* xref:../data-protection/snapmirror-disaster-recovery-concept.html[Assíncrono com SnapMirror] (Começando com ONTAP 9.13,1)
-* link:../data-protection/snapmirror-svm-replication-concept.html["Recuperação de desastres da SVM"] (Começando com ONTAP 9.14,1)
 
 
+|===
 Criar um grupo de consistência não ativa automaticamente a proteção. As políticas de proteção locais e remotas podem ser definidas ao criar ou depois de criar um grupo de consistência.
 
 Para configurar a proteção em um grupo de consistência, link:protect-task.html["Proteja um grupo de consistência"]consulte .
@@ -125,9 +138,7 @@ NOTE: Recomenda-se manter pelo menos 20% de espaço livre para agregados espelha
 [[upgrade-considerations]]
 == Considerações sobre a atualização
 
-Ao atualizar para o ONTAP 9.10,1 ou posterior, os grupos de consistência criados com o SnapMirror ative Sync (anteriormente conhecido como SnapMirror Business Continuity) no ONTAP 9.8 e 9.9.1 são atualizados automaticamente e podem ser gerenciados em *armazenamento > grupos de consistência* no Gerenciador de sistemas ou na API REST do ONTAP para obter mais informações sobre a atualização do ONTAP 9.8 ou 9,9.1, link:../snapmirror-active-sync/upgrade-revert-task.html["Considerações sobre atualização e reversão da sincronização ativa do SnapMirror"]consulte .
-
-Os snapshots de grupo de consistência criados na ONTAP REST API podem ser gerenciados pela interface de Consistency Group do System Manager e pelos endpoints de grupo de consistência da ONTAP REST API. A partir do ONTAP 9.14.1, os snapshots de grupo de consistência também podem ser gerenciados com a ONTAP CLI.
+Ao atualizar para o ONTAP 9.10.1 ou posterior, os grupos de consistência criados com SnapMirror active sync, anteriormente conhecido como SnapMirror Business Continuity, no ONTAP 9.8 e 9.9.1 são atualizados automaticamente e podem ser gerenciados em *Storage > Consistency Groups* no System Manager ou na API REST do ONTAP. Para obter mais informações sobre a atualização do ONTAP 9.8 ou 9.9.1, consulte link:../snapmirror-active-sync/upgrade-revert-task.html["Considerações sobre atualização e reversão da sincronização ativa do SnapMirror"].
 
 
 NOTE: Os snapshots criados com os comandos ONTAPI `cg-start` e `cg-commit` não são reconhecidos como snapshots de grupo de consistência e, portanto, não podem ser gerenciados por meio da interface de grupo de consistência do Gerenciador de sistemas ou pelos endpoints do grupo de consistência na API REST do ONTAP. A partir do ONTAP 9.14.1, esses snapshots podem ser espelhados para o volume de destino se você estiver usando uma política assíncrona do SnapMirror. Para obter mais informações, xref:protect-task.html#configure-snapmirror-asynchronous[Configurar o SnapMirror assíncrono]consulte .
@@ -137,60 +148,58 @@ NOTE: Os snapshots criados com os comandos ONTAPI `cg-start` e `cg-commit` não 
 [[supported-features-by-release]]
 == Recursos suportados pelo lançamento
 
-[cols="3,1,1,1,1,1,1,1"]
+[cols="2"]
 |===
-|  | ONTAP 9.16,1 | ONTAP 9.15,1 | ONTAP 9.14,1 | ONTAP 9.13,1 | ONTAP 9.12,1 | ONTAP 9.11,1 | ONTAP 9.10,1 
+| Começando com ONTAP... | Recursos suportados 
 
 
-| Grupos hierárquicos de consistência | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 
+| 9.20.1 | SnapLock for SnapVault proteção em sistemas secundários 
 
 
-| Proteção local com snapshots | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 
+| 9.16.1  a| 
+Verificação multi-admin
 
 
-| Sincronização ativa do SnapMirror | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 
+
+| 9.14.1  a| 
+* Recuperação de desastres de SVM (somente para um único grupo de consistência)
+* Suporte CLI
 
 
-| Suporte à MetroCluster | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  
 
 
-| Commits de duas fases (somente API REST) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |  
+| 9.13.1  a| 
+* Mover volumes entre grupos de consistência filho
+* Modifique a geometria do grupo de consistência
+* Monitorização
+* Assíncrono SnapMirror (somente grupos de consistência únicos)
 
 
-| Tags de aplicativos e componentes | ✓ | ✓ | ✓ | ✓ | ✓ |  |  
 
 
-| Grupos de consistência de clones | ✓ | ✓ | ✓ | ✓ | ✓ |  |  
+| 9.12.1  a| 
+* Adicionar e remover volumes
+* Tags de aplicativos e componentes
+* Grupos de consistência de clones
+* Criar CGs com novos volumes NAS (somente API REST)
+* Criar CGs com namespaces NVMe (somente API REST)
 
 
-| Adicionar e remover volumes | ✓ | ✓ | ✓ | ✓ | ✓ |  |  
 
 
-| Crie CGS com novos volumes nas | ✓ | ✓ | ✓ | ✓ | Somente API REST |  |  
+| 9.11.1  a| 
+* Configurações do MetroCluster
+* Commits de duas fases (somente API REST)
 
 
-| Crie CGS com novos namespaces NVMe | ✓ | ✓ | ✓ | ✓ | Somente API REST |  |  
 
 
-| Mover volumes entre grupos de consistência filho | ✓ | ✓ | ✓ | ✓ |  |  |  
+| 9.10.1  a| 
+* Grupos hierárquicos de consistência
+* Proteção local com snapshots
+* Sincronização ativa do SnapMirror
 
 
-| Modifique a geometria do grupo de consistência | ✓ | ✓ | ✓ | ✓ |  |  |  
-
-
-| Monitorização | ✓ | ✓ | ✓ | ✓ |  |  |  
-
-
-| Verificação multi-admin | ✓ |  |  |  |  |  |  
-
-
-| Assíncrono SnapMirror (somente grupos de consistência únicos) | ✓ | ✓ | ✓ | ✓ |  |  |  
-
-
-| Recuperação de desastres da SVM (somente grupos de consistência únicos) | ✓ | ✓ | ✓ |  |  |  |  
-
-
-| Suporte CLI | ✓ | ✓ | ✓ |  |  |  |  
 |===
 
 
