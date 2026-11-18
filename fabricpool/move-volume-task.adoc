@@ -2,7 +2,7 @@
 permalink: fabricpool/move-volume-task.html 
 sidebar: sidebar 
 keywords: aggregate, local tier, moving, volume, fabricpool, fabric pool, tiering, policy, policies, block, capacity, cold data, 
-summary: 'É importante entender como a migração de volume funciona com o FabricPool porque as mudanças ocorridas na camada local, na camada de nuvem conectada e no volume (políticas de disposição em categorias de volumes) podem ter um grande impacto na funcionalidade.' 
+summary: Mova um volume sem interrupções para uma camada local habilitada para o FabricPool e saiba como os dados da camada de nuvem, as políticas de hierarquização e as movimentações de volume otimizadas afetam a movimentação. 
 ---
 = Mover um volume para um nível local ONTAP habilitado para FabricPool
 :allow-uri-read: 
@@ -11,9 +11,9 @@ summary: 'É importante entender como a migração de volume funciona com o Fabr
 
 
 [role="lead"]
-A link:../volumes/move-volume-task.html["movimentação de volume"] é a maneira como o ONTAP move um volume sem interrupções de um nível local (fonte) para outro (destino). As movimentações de volume podem ser executadas por diversos motivos, embora os motivos mais comuns sejam o gerenciamento do ciclo de vida do hardware, a expansão do cluster e o balanceamento de carga.
+Uma link:../volumes/move-volume-task.html["movimentação de volume"] move um volume sem interrupções de uma camada local do ONTAP (origem) para outra (destino), mais comumente para gerenciamento de ciclo de vida do hardware, expansão de cluster ou balanceamento de carga. Quando você move um volume para uma camada local habilitada para o FabricPool, entender como a movimentação afeta os dados em camadas e as políticas de hierarquização ajuda você a evitar tráfego de rede desnecessário e custos de armazenamento de objetos.
 
-É importante entender como a migração de volume funciona com o FabricPool porque as mudanças ocorridas na camada local, na camada de nuvem conectada e no volume (políticas de disposição em categorias de volumes) podem ter um grande impacto na funcionalidade.
+As alterações que uma movimentação de volume provoca na camada local, na camada de nuvem associada e nas políticas de hierarquização de volumes podem ter um impacto significativo na funcionalidade do FabricPool.
 
 
 NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para descrever um nível _local_. Independentemente da sua versão do ONTAP, a CLI do ONTAP usa o termo _agregado_. Para saber mais sobre os níveis locais, link:../disks-aggregates/index.html["Discos e camadas locais"]consulte .
@@ -23,20 +23,20 @@ NOTE: Antes do ONTAP 9,7, o Gerenciador de sistema usa o termo _agregado_ para d
 [[destination-local-tier]]
 == Nível local de destino
 
-Se o nível local de destino de uma movimentação de volume não tiver um nível de nuvem anexado, os dados sobre o volume de origem armazenado na categoria de nuvem serão gravados no nível local no nível local de destino.
+Se a camada local de destino de uma movimentação de volume não tiver uma camada de nuvem anexada, os dados no volume de origem armazenados na camada de nuvem serão gravados na camada local de destino.
 
-A partir do ONTAP 9,8, quando um volume estiver link:determine-data-inactive-reporting-task.html["relatórios de dados inativos"] ativado, o FabricPool usará o mapa de calor do volume para colocar imediatamente os dados inativos na fila para começar a disposição em categorias assim que forem gravados no nível local de destino.
+A partir do ONTAP 9.8, quando um volume tem link:determine-data-inactive-reporting-task.html["relatórios de dados inativos"] ativado, o FabricPool usa o mapa de calor do volume para enfileirar dados frios para armazenamento em camadas assim que os dados são gravados na camada local de destino.
 
-Antes do ONTAP 9,8, mover um volume para outro nível local redefine o período de inatividade dos blocos no nível local. Por exemplo, um volume usando a política de disposição automática de volumes com dados no nível local que ficaram inativos por 20 dias, mas ainda não tinham sido categorizados, terá a temperatura dos dados redefinida para 0 dias após uma movimentação de volume.
+No ONTAP 9.7 e em versões anteriores, mover um volume para outra camada local redefine o período de inatividade dos blocos na camada local. Por exemplo, se um volume usa a política de tiering de volume Auto e tem dados na camada local que estão inativos há 20 dias, mas ainda não passaram por tiering, a movimentação do volume redefine a temperatura desses dados para 0 dias.
 
 
 
 [[optimized-volume-moves]]
 == Movimentos de volume otimizados
 
-A partir do ONTAP 9,6, se o nível local de destino de uma movimentação de volume usar o mesmo bucket do nível local de origem, os dados do volume de origem armazenado no bucket não serão movidos de volta para o nível local. Os dados em camadas permanecem em repouso e somente os dados ativos precisam ser movidos de um nível local para outro. Essa movimentação otimizada de volume resulta em eficiências de rede significativas.
+A partir do ONTAP 9.6, se a camada local de destino de uma movimentação de volume usar o mesmo bucket que a camada local de origem, os dados do volume de origem armazenados no bucket não voltam para a camada local. Os dados em camadas permanecem em repouso, e apenas os dados mais acessados precisam ser movidos de uma camada local para outra. Essa movimentação de volume otimizada resulta em eficiências significativas de rede.
 
-Por exemplo, uma movimentação de volume otimizada de 300 TB significa que, mesmo que 300 TB de dados frios sejam movidos de uma camada local para outra, isso não acionará 300 TB de leituras e 300 TB de gravações no armazenamento de objetos.
+Por exemplo, em uma movimentação otimizada de volume de 300 TB, embora 300 TB de dados frios sejam movidos de uma camada local para outra, a movimentação não aciona 300 TB de leituras e 300 TB de gravações no armazenamento de objetos.
 
 As movimentações de volume em excesso geram tráfego adicional de rede e computação (leituras/obtenção e gravações/puts), aumentando as demandas do cluster e do armazenamento de objetos do ONTAP, aumentando os custos ao dispor em categorias em armazenamentos de objetos públicos.
 
@@ -44,46 +44,49 @@ As movimentações de volume em excesso geram tráfego adicional de rede e compu
 ====
 Algumas configurações são incompatíveis com movimentos de volume otimizados:
 
-* Alteração da política de disposição em camadas durante a movimentação de volume
+* Alterando a política de tiering durante uma movimentação de volume
 * Camadas locais de origem e destino usando diferentes chaves de criptografia
 * Volumes FlexClone
 * Volumes pai do FlexClone
 * MetroCluster (suporta movimentos de volume otimizados no ONTAP 9,8 e posteriores)
 * Baldes de espelho FabricPool não sincronizados
+* O volume é movido de uma plataforma que oferece suporte à tecnologia QuickAssist (QAT) para uma plataforma que não oferece
 
+
+Saiba mais sobre link:https://kb.netapp.com/on-prem/ontap/DP/SnapMirror/SnapMirror-KBs/How_do_platforms_supporting_QAT_or_zlib_compression_impact_SnapMirror_and_volume_move["como o QAT afeta as movimentações de volume"^].
 
 ====
-Se o nível local de destino de uma movimentação de volume tiver um nível de nuvem anexado, os dados sobre o volume de origem armazenado na categoria de nuvem serão gravados primeiro no nível local no nível local de destino. Ele será gravado no nível de nuvem no nível local de destino, se essa abordagem for apropriada para a política de disposição em camadas do volume.
+Se a camada local de destino de uma movimentação de volume tiver uma camada de nuvem anexada, os dados no volume de origem que estão armazenados na camada de nuvem são gravados primeiro na camada local do destino. Em seguida, se a política de disposição em camadas do volume permitir, os dados serão gravados na camada de nuvem anexada à camada local de destino.
 
-Gravar dados na camada local primeiro melhora a performance da movimentação de volume e reduz o tempo de redução. Se uma política de disposição em categorias de volume não for especificada durante a movimentação de volume, o volume de destino usará a política de disposição em categorias do volume de origem.
+Gravar os dados primeiro na camada local melhora o desempenho da movimentação do volume e reduz o tempo de transição. Se você não especificar uma política de hierarquização de volumes ao mover um volume, o volume de destino usará a política de hierarquização do volume de origem.
 
-Se uma política de disposição em camadas diferente for especificada ao executar a movimentação de volume, o volume de destino será criado com a política de disposição em camadas especificada e a movimentação de volume não será otimizada.
+Se você especificar uma política de hierarquização diferente ao mover o volume, o volume de destino será criado com a política de hierarquização especificada e a movimentação do volume não será otimizada.
 
 
 
 [[volume-metadata]]
 === Metadados de volume
 
-Independentemente de a movimentação de um volume ser otimizada, o ONTAP armazena uma quantidade significativa de metadados sobre a localização, eficiência de armazenamento, permissões, padrões de uso, etc., de todos os dados, tanto locais quanto em camadas. Os metadados sempre permanecem na camada local e não são hierarquizados. Quando um volume é movido de um nível local para outro, essas informações também precisam ser movidas para o nível local de destino.
+Independentemente de a movimentação de um volume ser otimizada ou não, o ONTAP armazena uma quantidade significativa de metadados sobre todos os dados, tanto locais quanto em camadas, incluindo sua localização, eficiência de storage, permissões e padrões de uso. Os metadados sempre permanecem na camada local e não são movidos em camadas. Quando um volume é movido de uma camada local para outra, essas informações também precisam ser movidas para a camada local de destino.
 
 
 
 [[duration]]
 === Duração
 
-As movimentações de volume ainda levam tempo para serem concluídas e a expectativa é que uma movimentação de volume otimizada leve aproximadamente o mesmo tempo que mover uma quantidade igual de dados não hierárquicos.
+As movimentações de volume ainda levam tempo para ser concluídas. Espere que uma movimentação de volume otimizada leve aproximadamente o mesmo tempo que a movimentação de uma quantidade equivalente de dados não hierarquizados.
 
-É importante entender que a “taxa de transferência” relatada pelo  `volume move show` O comando não representa a taxa de transferência em termos de dados sendo movidos da camada de nuvem, mas dados de volume sendo atualizados localmente.
+A taxa de transferência que o  `volume move show` comando relata representa dados de volume atualizados localmente, não dados movidos da camada de nuvem.
 
 
-NOTE: Em uma relação com o SVM DR, os volumes de origem e destino devem usar a mesma política de disposição em categorias.
+NOTE: Quando os volumes estão em um relacionamento SVM DR, os volumes de origem e de destino devem usar a mesma política de hierarquização.
 
 .Passos
 . Use o `volume move start` comando para mover um volume de um nível local de origem para um nível local de destino.
 
 
 .Exemplo de mover um volume
-O exemplo a seguir move um volume chamado `myvol2` `vs1` SVM para `dest_FabricPool`, um nível local habilitado para FabricPool.
+O exemplo a seguir move um volume chamado `myvol2` da `vs1` SVM para `dest_FabricPool`, uma camada local habilitada para o FabricPool.
 
 [listing]
 ----
